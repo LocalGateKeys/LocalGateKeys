@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wi-Fi QR and the answer generator (Quick Wins Task 10). -->
+<resources>
+    <string name="detail_wifi_show_qr">QRを表示</string>
+    <string name="detail_wifi_qr_hint">この画像にはWi-Fiのパスワードが含まれています。接続を許可する相手にだけ見せてください。</string>
+    <string name="detail_wifi_enterprise_no_qr">エンタープライズ向けネットワークはQRコードで共有できません。</string>
+    <string name="generator_mode_answer">回答</string>
+</resources>

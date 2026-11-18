@@ -43,7 +43,7 @@ public enum Normalise {
         switch ns {
         case .entry: return try entry(record)
         case .item: return try item(record)
-        case .license: throw NormaliseError.notPhoneKind
+        case .license, .heir: throw NormaliseError.notPhoneKind
         }
     }
 
@@ -169,7 +169,7 @@ public enum Normalise {
     }
 
     /// access_policy.normalized_policy
-    static func policy(_ raw: JSONValue?) -> JSONValue {
+    public static func policy(_ raw: JSONValue?) -> JSONValue {
         let p: Obj
         if case .object(let o)? = raw { p = o } else { p = [:] }
         let fill = p["fill"] ?? .string("click")
@@ -177,7 +177,9 @@ public enum Normalise {
         return .object([
             "fill": fill == .string("click") || fill == .string("never") ? fill : .string("never"),
             "sign_in": [.string("inherit"), .string("never"), .string("enabled")].contains(signIn) ? signIn : .string("never"),
-            "require_master_password": .bool((p["require_master_password"] ?? .bool(false)) == .bool(true)),
+            // "Unknown = strictest" (Python A-L1): absent is off; any present value other than exactly `false` (true,
+            // null, "always", 0, {}) is on and written back as true, so a normalise or merge never loosens the rule.
+            "require_master_password": .bool((p["require_master_password"] ?? .bool(false)) != .bool(false)),
             "save_prompts": .bool((p["save_prompts"] ?? .bool(true)) == .bool(true)),
         ])
     }
@@ -526,7 +528,7 @@ public enum Normalise {
     static let opensshKeyTypes = ["ssh-", "ecdsa-sha2-", "sk-ssh-", "sk-ecdsa-"]
 
     /// item_schema.sniff_private_key_format
-    static func keyFormat(_ privateKey: String) -> String {
+    public static func keyFormat(_ privateKey: String) -> String {
         let s = pyStrip(privateKey)
         if s.isEmpty { return "" }
         for (header, name) in pemFormats where s.unicodeScalars.starts(with: header.unicodeScalars) {

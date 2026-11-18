@@ -47,6 +47,10 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+# Throwaway vaults: their rollback and throttle marks stay in memory, never in the real registry, whichever entry
+# point imports ``localvault`` first (``outside_marks`` reads this when it loads; ``main`` also installs the store).
+os.environ["LOCALGATEKEYS_OUTSIDE_MARKS"] = "memory"
+
 MASTER = "scratch master for android live checks"
 TEST_KDF = {"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32}
 LISTEN_HOST = "127.0.0.1"
@@ -394,6 +398,10 @@ def send(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
+    # Throwaway vaults: keep their rollback and throttle marks out of the real registry.
+    from localvault import outside_marks
+
+    outside_marks.set_backend(outside_marks.MemoryBackend())
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="mode", required=True)
     s = sub.add_parser("serve")

@@ -10,7 +10,7 @@ const EXT = path.join(__dirname, "..", "..", "browser-extension");
 const source = fs.readFileSync(path.join(EXT, "background.js"), "utf8");
 const shim = fs.readFileSync(path.join(EXT, "api.js"), "utf8");
 const TOP = "https://example.test/login";
-const ITEM_LIMIT_TEXT = "Your free LocalGateKeys holds 4 items. Upgrade to Pro for unlimited.";
+const ITEM_LIMIT_TEXT = "Your free LocalGateKeys holds 7 items. Upgrade to Pro for unlimited.";
 
 function harness(response) {
   let listener; const calls = []; const id = "testextension";
@@ -34,19 +34,25 @@ function harness(response) {
 
 for (const type of ["save_browser", "save_pending_browser"]) {
   test(`${type}: an item_limit refusal carries the upgrade message and the limit`, async () => {
-    const h = harness({ ok: false, error: "item_limit", limit: 4 });
+    const h = harness({ ok: false, error: "item_limit", limit: 7 });
     const payload = type === "save_browser" ? { username: "alice", password: "pw" } : { pending_token: "tok-1" };
     const r = await h.send({ type, gesture_nonce: "ab".repeat(16), ...payload });
     assert.equal(h.calls.length, 1, "the request reached the native host");
     assert.equal(r.ok, false);
     assert.equal(r.error, "item_limit");
-    assert.equal(r.limit, 4);
+    assert.equal(r.limit, 7);
     assert.equal(r.message, ITEM_LIMIT_TEXT);
   });
 }
 
 test("the item_limit message uses the limit the host reports", async () => {
-  const h = harness({ ok: false, error: "item_limit", limit: 7 });
+  const h = harness({ ok: false, error: "item_limit", limit: 12 });
   const r = await h.send({ type: "save_browser", gesture_nonce: "ab".repeat(16), username: "alice", password: "pw" });
-  assert.equal(r.message, "Your free LocalGateKeys holds 7 items. Upgrade to Pro for unlimited.");
+  assert.equal(r.message, "Your free LocalGateKeys holds 12 items. Upgrade to Pro for unlimited.");
+});
+
+test("a refusal without a usable limit falls back to the free plan's 7 items", async () => {
+  const h = harness({ ok: false, error: "item_limit" });
+  const r = await h.send({ type: "save_browser", gesture_nonce: "ab".repeat(16), username: "alice", password: "pw" });
+  assert.equal(r.message, ITEM_LIMIT_TEXT);
 });

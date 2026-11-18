@@ -161,4 +161,35 @@ class AttachmentFolderSyncTest {
         val again = SyncMeta.localView(ok.records!!, ok.meta!!, SyncFixtures.PHONE, T0).states.getValue(docId)
         assertEquals(documentWrapper(), again.item)
     }
+
+    private fun heirCapable(folder: MemoryFolder, who: String, id: String, counter: Long = AttachmentSync.HEIR_CAP_COUNTER) {
+        val raw = ViewFile.encode(epochKey("1"), id, counter, emptyList(), FixedClock(T0 + 1000), DetRand("heircap$who"))
+        folder.files[FolderLayout.heirCapabilityFile(id)!!] = raw
+        folder.files[FolderLayout.heirCapabilitySignatureFile(id)!!] = ViewSignature.sign(raw, ViewFile.decodeHeader(raw), SyncFixtures.identity(who))
+    }
+
+    @Test fun the_emergency_access_plan_is_published_only_when_every_member_reads_it() {
+        val p = phone()
+        val me = p.store.snapshot.sync!!.deviceId
+        val own = app.localgatekeys.core.primitives.Base64Std.encode(p.store.snapshot.sync!!.identity.signingPublicKey)
+        assertTrue(p.fs.folderCapable(epochKey("1"), me, own, heir = true), "the phone announces the heir feature")
+        val plan = app.localgatekeys.core.recovery.HeirVectors.data.getValue("wrapper")
+        val snap = p.store.snapshot
+        p.store.snapshot = snap.copy(records = snap.records + (app.localgatekeys.core.recovery.Heir.STATE_ID to plan), revision = snap.revision)
+        p.fs.runOnce(p.store, DetRand("h1"), FixedClock(T0 + 1100))
+        fun published() = ViewFile.decode(p.folder.files[devPath(me)]!!, epochKey("1"), me).second
+            .any { it.itemId == app.localgatekeys.core.recovery.Heir.STATE_ID }
+        assertFalse(published(), "not published while A, B and C do not read the plan")
+        heirCapable(p.folder, "A", A)
+        heirCapable(p.folder, "B", SyncFixtures.devices[1].id)
+        p.fs.runOnce(p.store, DetRand("h2"), FixedClock(T0 + 1200))
+        assertFalse(published())
+        // Review M1: a signed file with another counter (a copied heartbeat or documents capability) is no heir one.
+        heirCapable(p.folder, "C", SyncFixtures.devices[2].id, counter = 0)
+        p.fs.runOnce(p.store, DetRand("h2b"), FixedClock(T0 + 1250))
+        assertFalse(published())
+        heirCapable(p.folder, "C", SyncFixtures.devices[2].id)
+        p.fs.runOnce(p.store, DetRand("h3"), FixedClock(T0 + 1300))
+        assertTrue(published(), "published once every member reads it")
+    }
 }

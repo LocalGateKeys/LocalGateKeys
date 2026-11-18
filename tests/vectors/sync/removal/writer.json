@@ -1,0 +1,128 @@
+{
+  "WARNING": "TEST ONLY. Every private key here is published on purpose. Never use one for a real device or vault.",
+  "about": "removal.make_notice output for fixed removals: canonical JSON (sorted keys, no whitespace, no trailing newline) of the body plus sig. Writers must produce these bytes exactly. 'refusals': inputs the writer must refuse (Python raises RemovalError('bad-notice')).",
+  "cases": [
+    {
+      "body_canonical": "{\"device_id\":\"c3333333-0000-4000-8000-00000000000c\",\"epoch\":2,\"format\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"issued_at\":1790000600,\"signer\":\"a1111111-0000-4000-8000-00000000000a\"}",
+      "description": "A removes C: epoch 1 -> 2 (the notice of notices.json case 'valid').",
+      "inputs": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "epoch": 2,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 1790000600,
+        "signer": "a1111111-0000-4000-8000-00000000000a",
+        "signing_private_seed_b64": "cius9SyX7Cb7dYHEtlcgeRsE1G/3wvUwX90ZEKPOZw4="
+      },
+      "notice_sha256": "196540ef249b939d555e8e076dbc06b2a4d477f14da6d266332d289426e7ff00",
+      "notice_text": "{\"device_id\":\"c3333333-0000-4000-8000-00000000000c\",\"epoch\":2,\"format\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"issued_at\":1790000600,\"sig\":\"VFUb6Dvsq4htt0i9/cUuxcOCW/pialjvsY0OaF7gWAdptSnodZRFdwcK8FhQEswlZvHeZWX5xS9ADfdnREdoAA==\",\"signer\":\"a1111111-0000-4000-8000-00000000000a\"}",
+      "path": "LocalGateKeys Sync/removed/c3333333-0000-4000-8000-00000000000c.lgkremoved",
+      "sig_b64": "VFUb6Dvsq4htt0i9/cUuxcOCW/pialjvsY0OaF7gWAdptSnodZRFdwcK8FhQEswlZvHeZWX5xS9ADfdnREdoAA==",
+      "signed_message_hex": "6c6f63616c676174656b6579737c73796e637c72656d6f76616c2d6e6f746963657c76317c7b226465766963655f6964223a2263333333333333332d303030302d343030302d383030302d303030303030303030303063222c2265706f6368223a322c22666f726d6174223a312c2267726f75705f6964223a2235623063376433652d396134312d346636622d386332642d336531613766393035623634222c226973737565645f6174223a313739303030303630302c227369676e6572223a2261313131313131312d303030302d343030302d383030302d303030303030303030303061227d",
+      "signer": "A"
+    },
+    {
+      "body_canonical": "{\"device_id\":\"c3333333-0000-4000-8000-00000000000c\",\"epoch\":7,\"format\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"issued_at\":1790086400,\"signer\":\"b2222222-0000-4000-8000-00000000000b\"}",
+      "description": "B removes C at epoch 7.",
+      "inputs": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "epoch": 7,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 1790086400,
+        "signer": "b2222222-0000-4000-8000-00000000000b",
+        "signing_private_seed_b64": "usdYBsZh1SPFCIJa2khYszY8zZyzAkyaiQtGqSbUZF0="
+      },
+      "notice_sha256": "cee7203596482319e887d8b09f9903aa96649b1b1f1f051ebab6c6198e6e34db",
+      "notice_text": "{\"device_id\":\"c3333333-0000-4000-8000-00000000000c\",\"epoch\":7,\"format\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"issued_at\":1790086400,\"sig\":\"7sFyGhhmfT8noAl5GnklGetoEtmR5KDYElv/hra87/Z71dW1gdqh691gQbMlteBEX+NRinEg2tlVcWG2t9qeBw==\",\"signer\":\"b2222222-0000-4000-8000-00000000000b\"}",
+      "path": "LocalGateKeys Sync/removed/c3333333-0000-4000-8000-00000000000c.lgkremoved",
+      "sig_b64": "7sFyGhhmfT8noAl5GnklGetoEtmR5KDYElv/hra87/Z71dW1gdqh691gQbMlteBEX+NRinEg2tlVcWG2t9qeBw==",
+      "signed_message_hex": "6c6f63616c676174656b6579737c73796e637c72656d6f76616c2d6e6f746963657c76317c7b226465766963655f6964223a2263333333333333332d303030302d343030302d383030302d303030303030303030303063222c2265706f6368223a372c22666f726d6174223a312c2267726f75705f6964223a2235623063376433652d396134312d346636622d386332642d336531613766393035623634222c226973737565645f6174223a313739303038363430302c227369676e6572223a2262323232323232322d303030302d343030302d383030302d303030303030303030303062227d",
+      "signer": "B"
+    },
+    {
+      "body_canonical": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"epoch\":2,\"format\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"issued_at\":0,\"signer\":\"a1111111-0000-4000-8000-00000000000a\"}",
+      "description": "A removes B at epoch 2, issued_at 0.",
+      "inputs": {
+        "device_id": "b2222222-0000-4000-8000-00000000000b",
+        "epoch": 2,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 0,
+        "signer": "a1111111-0000-4000-8000-00000000000a",
+        "signing_private_seed_b64": "cius9SyX7Cb7dYHEtlcgeRsE1G/3wvUwX90ZEKPOZw4="
+      },
+      "notice_sha256": "dff547c071512176041d431716a536507e8a14036cf25934ae7b7d9ccbf735af",
+      "notice_text": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"epoch\":2,\"format\":1,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"issued_at\":0,\"sig\":\"QuzPVjL9+UW//GpmpzJSRcO3q6W7VpM+dZ68w5Y9rC7konR55E4eq5llidoNpSpJeHXQj+vmfJ3D8x+EHS4OBA==\",\"signer\":\"a1111111-0000-4000-8000-00000000000a\"}",
+      "path": "LocalGateKeys Sync/removed/b2222222-0000-4000-8000-00000000000b.lgkremoved",
+      "sig_b64": "QuzPVjL9+UW//GpmpzJSRcO3q6W7VpM+dZ68w5Y9rC7konR55E4eq5llidoNpSpJeHXQj+vmfJ3D8x+EHS4OBA==",
+      "signed_message_hex": "6c6f63616c676174656b6579737c73796e637c72656d6f76616c2d6e6f746963657c76317c7b226465766963655f6964223a2262323232323232322d303030302d343030302d383030302d303030303030303030303062222c2265706f6368223a322c22666f726d6174223a312c2267726f75705f6964223a2235623063376433652d396134312d346636622d386332642d336531613766393035623634222c226973737565645f6174223a302c227369676e6572223a2261313131313131312d303030302d343030302d383030302d303030303030303030303061227d",
+      "signer": "A"
+    }
+  ],
+  "refusals": [
+    {
+      "description": "signer is the removed device",
+      "error": "bad-notice",
+      "inputs": {
+        "device_id": "a1111111-0000-4000-8000-00000000000a",
+        "epoch": 2,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 1790000600,
+        "signer": "a1111111-0000-4000-8000-00000000000a"
+      }
+    },
+    {
+      "description": "epoch negative",
+      "error": "bad-notice",
+      "inputs": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "epoch": -1,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 1790000600,
+        "signer": "a1111111-0000-4000-8000-00000000000a"
+      }
+    },
+    {
+      "description": "epoch 2^53",
+      "error": "bad-notice",
+      "inputs": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "epoch": 9007199254740992,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 1790000600,
+        "signer": "a1111111-0000-4000-8000-00000000000a"
+      }
+    },
+    {
+      "description": "issued_at negative",
+      "error": "bad-notice",
+      "inputs": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "epoch": 2,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": -1,
+        "signer": "a1111111-0000-4000-8000-00000000000a"
+      }
+    },
+    {
+      "description": "device id with a slash",
+      "error": "bad-notice",
+      "inputs": {
+        "device_id": "c3333333/x",
+        "epoch": 2,
+        "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+        "issued_at": 1790000600,
+        "signer": "a1111111-0000-4000-8000-00000000000a"
+      }
+    },
+    {
+      "description": "group id empty",
+      "error": "bad-notice",
+      "inputs": {
+        "device_id": "c3333333-0000-4000-8000-00000000000c",
+        "epoch": 2,
+        "group_id": "",
+        "issued_at": 1790000600,
+        "signer": "a1111111-0000-4000-8000-00000000000a"
+      }
+    }
+  ]
+}

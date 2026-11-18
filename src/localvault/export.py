@@ -7,7 +7,9 @@ Formats:
 * :func:`export_json` - unencrypted Bitwarden JSON,
 * :func:`export_keepass_xml` - KeePass 2 XML (importable by KeePass 2.x),
 * :func:`export_kdbx` - encrypted KDBX 4 (AES-256, Argon2d, HMAC blocks,
-  ChaCha20 protected stream) readable by KeePass 2.35+ and KeePassXC.
+  ChaCha20 protected stream) readable by KeePass 2.35+ and KeePassXC,
+* ``cxf`` - unencrypted Credential Exchange (CXF) JSON of the selected items
+  only, passkey private keys included (:mod:`localvault.exporters.cxf`).
 
 Writes are atomic (temporary file in the destination directory, then
 ``os.replace``) and the temporary file receives a restrictive ACL before it
@@ -36,6 +38,7 @@ from .importers import ImportedRecord
 from .importers import kdbx as _kdbx
 from .importers._source import iso_timestamp
 from .importers.bitwarden import BITWARDEN_CSV_COLUMNS
+from .item_schema import PROTECTED_FIELDS_BY_KIND
 from .winpaths import system32
 from .i18n import t
 
@@ -44,8 +47,9 @@ EXPORT_FORMATS: dict[str, str] = {
     "json": "export.bitwardenJsonPlaintext",
     "keepass-xml": "export.keepass2XmlPlaintext",
     "kdbx": "export.keepassKdbx4Encrypted",
+    "cxf": "export.cxfPlaintext",
 }
-EXPORT_SUFFIXES = {"csv": ".csv", "json": ".json", "keepass-xml": ".xml", "kdbx": ".kdbx"}
+EXPORT_SUFFIXES = {"csv": ".csv", "json": ".json", "keepass-xml": ".xml", "kdbx": ".kdbx", "cxf": ".json"}
 # Same floor as the master password and .lgk backup passwords.
 KDBX_MIN_PASSWORD = 12
 
@@ -59,6 +63,7 @@ class ExportWarning:
     DELETE_AFTER = ("export.importTheFileIntoThe")
     KDBX = ("export.theKdbxFileIsEncrypted")
     PERMISSIONS = "export.theFileSPermissionsCould"
+    PASSKEYS = "export.cxfPasskeyKeysPlaintext"
 
     @classmethod
     def for_format(cls, export_format: str, *, include_totp: bool) -> tuple[str, ...]:
@@ -69,6 +74,8 @@ class ExportWarning:
             warnings.append(t(cls.TOTP))
         if export_format == "csv":
             warnings.append(t(cls.SPREADSHEET))
+        if export_format == "cxf":
+            warnings.append(t(cls.PASSKEYS))
         warnings.append(t(cls.DELETE_AFTER))
         return tuple(warnings)
 
@@ -90,6 +97,10 @@ class ExportSummary:
     diagnostics: tuple[str, ...] = ()
     permissions_restricted: bool = False
     encrypted: bool = False
+    # Per item kind: items not in the file at all (``left_out``), and items whose
+    # file contents are not in it (``partial``: documents keep their details only).
+    left_out: dict[str, int] = field(default_factory=dict)
+    partial: dict[str, int] = field(default_factory=dict)
 
     @property
     def label(self) -> str:
@@ -192,52 +203,129 @@ def item_to_record(item: Mapping[str, Any]) -> ImportedRecord | None:
         record.notes = str(payload.get("notes") or payload.get("body") or "")
         record.custom_fields.extend(_custom_fields(payload.get("fields")))
         return record
+    if kind == "card":
+        labels = (("cardholder", "Cardholder name"), ("brand", "Brand"), ("number", "Number"),
+                  ("expiry", "Expiry"), ("cvv", "Security code"), ("pin", "PIN"))
+        fields = [{"name": label, "value": str(payload[key]), "hidden": key in _protected("card")}
+                  for key, label in labels if payload.get(key) not in (None, "")]
+        record = ImportedRecord(kind="card", folder="Cards", notes=str(payload.get("notes") or ""),
+                                custom_fields=fields, **base)
+        record.custom_fields.extend(_custom_fields(payload.get("fields")))
+        return record
+    if kind in _NOTE_EXPORT_KINDS:
+        # Kinds no export format has a type for travel as secure notes with one field per value.
+        record = ImportedRecord(kind="note", folder=_NOTE_EXPORT_KINDS[kind], **base)
+        hidden = _protected(kind)
+        for key, value in payload.items():
+            if key in {"template_id", "fields", "notes", "body"} or value in (None, "", [], {}):
+                continue
+            if isinstance(value, (str, int, float, bool)):
+                record.custom_fields.append({"name": key.replace("_", " ").capitalize(), "value": str(value),
+                                             "hidden": key in hidden})
+        record.notes = str(payload.get("notes") or payload.get("body") or "")
+        record.custom_fields.extend(_custom_fields(payload.get("fields")))
+        return record
     return None
+
+
+# Exported as secure notes (folder name per kind).  Passkeys are never exported here:
+# no format below carries them, so they are counted as left out instead.
+_NOTE_EXPORT_KINDS = {"bank_account": "Bank accounts", "ssh_key": "SSH keys", "api_key": "API keys",
+                      "wifi": "Wi-Fi", "document": "Documents"}
+# Exported, but without part of their contents (the document file itself).
+PARTIAL_EXPORT_KINDS = frozenset({"document"})
+
+
+def _protected(kind: str) -> frozenset[str]:
+    return frozenset(PROTECTED_FIELDS_BY_KIND.get(kind, ())) | frozenset(_HIDDEN_PAYLOAD_KEYS)
+
+
+TRAVEL_LEFT_OUT = "travel_hidden"
+
+
+def export_coverage(session: Any) -> dict[str, dict[str, int]]:
+    """Per-kind counts for the confirmation shown before an export: ``left_out`` (not in the file) and
+    ``partial`` (in the file without their attached file). Same rules as the export itself."""
+    _records, _diagnostics, left_out, partial = _collect(session)
+    return {"left_out": left_out, "partial": partial}
 
 
 def collect_export_records(session: Any) -> tuple[list[ImportedRecord], list[str]]:
     """Return every exportable record of an unlocked session plus skip diagnostics."""
+    records, diagnostics, _left_out, _partial = _collect(session)
+    return records, diagnostics
+
+
+def _collect(session: Any) -> tuple[list[ImportedRecord], list[str], dict[str, int], dict[str, int]]:
+    left_out: dict[str, int] = {}
+    partial: dict[str, int] = {}
     if hasattr(session, "is_unlocked") and not session.is_unlocked:
         raise ExportError("Vault is locked")
     records: list[ImportedRecord] = []
     diagnostics: list[str] = []
+    from .travel import hidden_id_set
+
+    hidden = hidden_id_set(session)  # travel mode (feature pack 2026-11-15, 2.3): left out with a count
     for entry in session.all_entries():
+        if str(entry.get("id")) in hidden:
+            left_out[TRAVEL_LEFT_OUT] = left_out.get(TRAVEL_LEFT_OUT, 0) + 1
+            continue
         record = entry_to_record(entry)
         if record is None:
             diagnostics.append(t("export.credentialHasAnUnsupportedKind", v1=entry.get('id', '?')))
+            kind = str(entry.get("kind") or "item")
+            left_out[kind] = left_out.get(kind, 0) + 1
         else:
             records.append(record)
     items = getattr(session, "items", None)
     if items is not None:
         for summary in items.list_items():
+            if str(summary.get("id")) in hidden:
+                left_out[TRAVEL_LEFT_OUT] = left_out.get(TRAVEL_LEFT_OUT, 0) + 1
+                continue
             item = items.get_item(str(summary.get("id")), include_protected=True)
             if item is None:
                 continue
             record = item_to_record(item)
+            kind = str(item.get("kind") or "item")
             if record is None:
-                diagnostics.append(f"{str(item.get('kind') or 'item').capitalize()} '{item.get('title', '')}' is not exportable and was skipped.")
+                diagnostics.append(f"{kind.capitalize()} '{item.get('title', '')}' is not exportable and was skipped.")
+                left_out[kind] = left_out.get(kind, 0) + 1
             else:
                 records.append(record)
-    return records, diagnostics
+                if kind in PARTIAL_EXPORT_KINDS:
+                    partial[kind] = partial.get(kind, 0) + 1
+    return records, diagnostics, left_out, partial
 
 
 def _records_from(source: Any) -> tuple[list[ImportedRecord], list[str]]:
+    records, diagnostics, _left_out, _partial = _records_from_full(source)
+    return records, diagnostics
+
+
+def _records_from_full(source: Any) -> tuple[list[ImportedRecord], list[str], dict[str, int], dict[str, int]]:
     if hasattr(source, "all_entries"):
-        return collect_export_records(source)
+        return _collect(source)
     records: list[ImportedRecord] = []
     diagnostics: list[str] = []
+    left_out: dict[str, int] = {}
+    partial: dict[str, int] = {}
     for item in source:
         if isinstance(item, ImportedRecord):
             records.append(item)
         elif isinstance(item, Mapping):
             record = entry_to_record(item) if item.get("kind") in {"web", "desktop"} else item_to_record(item)
+            kind = str(item.get("kind") or "item")
             if record is None:
                 diagnostics.append(t("export.anEntryWithAnUnsupported"))
+                left_out[kind] = left_out.get(kind, 0) + 1
             else:
                 records.append(record)
+                if kind in PARTIAL_EXPORT_KINDS:
+                    partial[kind] = partial.get(kind, 0) + 1
         else:
             raise ExportError("Export sources must be vault entries or ImportedRecord objects")
-    return records, diagnostics
+    return records, diagnostics, left_out, partial
 
 
 # --------------------------------------------------------------------------- writing
@@ -467,7 +555,8 @@ def atomic_write(path: Path | str, data: bytes, *, overwrite: bool = False, rest
 
 
 def _summary(path: Path, export_format: str, records: list[ImportedRecord], diagnostics: list[str], *,
-             include_totp: bool, restricted: bool, restrict_requested: bool, encrypted: bool) -> ExportSummary:
+             include_totp: bool, restricted: bool, restrict_requested: bool, encrypted: bool,
+             left_out: dict[str, int] | None = None, partial: dict[str, int] | None = None) -> ExportSummary:
     by_kind: dict[str, int] = {}
     for record in records:
         by_kind[record.kind] = by_kind.get(record.kind, 0) + 1
@@ -478,11 +567,20 @@ def _summary(path: Path, export_format: str, records: list[ImportedRecord], diag
         path=Path(path), format=export_format, count=len(records), skipped=len(diagnostics), by_kind=by_kind,
         include_totp=include_totp, totp_count=sum(1 for record in records if record.totp_uri),
         warnings=tuple(warnings), diagnostics=tuple(diagnostics), permissions_restricted=restricted, encrypted=encrypted,
+        left_out=dict(left_out or {}), partial=dict(partial or {}),
     )
 
 
+# Card fields a plain CSV file leaves out (W-L9): a CSV export tends to stay in Downloads, and a card's
+# security code and PIN rarely need to leave the vault.  Encrypted exports (KDBX) keep them.
+_CSV_CARD_LEFT_OUT = frozenset({"security code", "pin"})
+
+
 def _fields_column(record: ImportedRecord) -> str:
-    lines = [f"{item['name']}: {item['value']}" for item in record.custom_fields]
+    # A multi-line value continues on lines that start with one space (read back by the Bitwarden CSV importer).
+    lines = [f"{item['name']}: " + str(item["value"]).replace("\r\n", "\n").replace("\n", "\n ")
+             for item in record.custom_fields
+             if not (record.kind == "card" and str(item["name"]).casefold() in _CSV_CARD_LEFT_OUT)]
     if record.kind == "identity":
         lines.extend(f"{key}: {value}" for key, value in record.identity.items())
     for extra in record.urls[1:] if record.kind != "login" else []:
@@ -577,14 +675,14 @@ def render_keepass_xml(records: Iterable[ImportedRecord], *, include_totp: bool,
 
 def _export(source: Any, path: Path | str, export_format: str, renderer, *, include_totp: bool, overwrite: bool,
             restrict: bool, encrypted: bool) -> ExportSummary:
-    records, diagnostics = _records_from(source)
+    records, diagnostics, left_out, partial = _records_from_full(source)
     data = renderer(records)
     try:
         restricted = atomic_write(path, data, overwrite=overwrite, restrict=restrict)
     finally:
         data = b""
     return _summary(Path(path), export_format, records, diagnostics, include_totp=include_totp, restricted=restricted,
-                    restrict_requested=restrict, encrypted=encrypted)
+                    restrict_requested=restrict, encrypted=encrypted, left_out=left_out, partial=partial)
 
 
 def export_csv(session_or_entries: Any, path: Path | str, *, include_totp: bool = False, overwrite: bool = False,
@@ -637,12 +735,21 @@ def export_records(session_or_entries: Any, path: Path | str, export_format: str
         return export_keepass_xml(session_or_entries, path, include_totp=include_totp, overwrite=overwrite, **kwargs)
     if export_format == "kdbx":
         return export_kdbx(session_or_entries, path, password or "", include_totp=include_totp, overwrite=overwrite, **kwargs)
+    if export_format == "cxf":
+        from .exporters.cxf import export_cxf
+
+        ids = kwargs.pop("ids", None)
+        release = kwargs.pop("release_private_keys", None)
+        if not ids or release is None:
+            raise ExportError(t("export.cxfChooseItems"))
+        return export_cxf(session_or_entries, list(ids), path, release_private_keys=release, include_totp=include_totp,
+                          overwrite=overwrite, **kwargs)
     raise ExportError(f"Unknown export format {export_format!r}")
 
 
 __all__ = [
     "EXPORT_FORMATS", "EXPORT_SUFFIXES", "KDBX_MIN_PASSWORD", "ExportError", "ExportSummary", "ExportWarning",
     "atomic_write", "sweep_stale_temporaries",
-    "collect_export_records", "entry_to_record", "export_csv", "export_json", "export_kdbx", "export_keepass_xml",
+    "collect_export_records", "entry_to_record", "export_coverage", "export_csv", "export_json", "export_kdbx", "export_keepass_xml",
     "export_records", "item_to_record", "render_csv", "render_json", "render_keepass_xml",
 ]

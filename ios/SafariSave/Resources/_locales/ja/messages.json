@@ -135,13 +135,17 @@
     "message": "保存しました。次回LocalGateKeysを開いたときに表示されます。"
   },
   "bg_timeout": {
-    "message": "LocalGateKeysのブリッジが応答しませんでした。古いデスクトップのプロンプトを閉じてから、もう一度お試しください。"
+    "message": "LocalGateKeys での承認がタイムアウトしました。開いている LocalGateKeys の確認画面を閉じて、もう一度お試しください。"
   },
   "content_autosignin_skipped": {
     "message": "入力しました。このフォームは未対応か、判別できないため、自動サインインはスキップしました。手動でサインインしてください。"
   },
   "content_cancel": {
     "message": "キャンセル"
+  },
+  "panel_fill_login": {
+    "message": "入力",
+    "description": "Button on the right of a login row in the in-page picker; fills that login."
   },
   "content_card": {
     "message": "カード"
@@ -234,6 +238,12 @@
   },
   "content_err_not_found": {
     "message": "このサイトの保存済みログインがありません。"
+  },
+  "content_err_entry_required": {
+    "message": "このパスワードを設定する保存済みログインを選んでください。ユーザー名のないパスワードが新しいログインとして保存されることはありません。"
+  },
+  "content_err_entry_not_for_site": {
+    "message": "そのログインはこのサイト用に保存されていないため、パスワードは変更されませんでした。"
   },
   "content_err_session_changed": {
     "message": "保管庫またはプロファイルが変わりました。もう一度アイコンをクリックしてください。"
@@ -363,6 +373,9 @@
   "content_signin_question": {
     "message": "今サインインしましたか?"
   },
+  "content_frame_blocked": {
+    "message": "このページが LocalGateKeys のパネルをブロックしたため、何も入力されませんでした。代わりにブラウザのツールバーにある LocalGateKeys ボタンを使ってください。"
+  },
   "content_tampered": {
     "message": "このページがLocalGateKeysのボタンを隠した、動かした、または覆ったため、クリックを無視しました。"
   },
@@ -454,7 +467,7 @@
     "message": "Windows用パスワードマネージャーLocalGateKeysで、ログインの入力と保存を行います。この拡張機能は、お使いのPC上のアプリとのみ通信します。"
   },
   "ext_description_ios": {
-    "message": "Safariでサインインしたログインを、このiPhoneのLocalGateKeysに保存するよう提案します。"
+    "message": "Safariでサインインしたログインを、このデバイスのLocalGateKeysに保存するよう提案します。"
   },
   "ext_description_macos": {
     "message": "Safariでサインインしたログインを、このMacのLocalGateKeysに保存するよう提案します。"
@@ -491,9 +504,6 @@
   },
   "popup_auto_update_failed": {
     "message": "このサイトの自動保存を更新できませんでした。もう一度お試しください。"
-  },
-  "popup_checking_connection": {
-    "message": "接続を確認しています…"
   },
   "popup_checking_connection_desc": {
     "message": "保管庫をロック解除せずに、LocalGateKeysに接続しています。"
@@ -554,9 +564,6 @@
       }
     }
   },
-  "popup_current_site": {
-    "message": "現在のサイト"
-  },
   "popup_diag_agent_offline": {
     "message": "LocalGateKeysを開き、ブラウザーの接続を修復してから、もう一度お試しください。"
   },
@@ -597,7 +604,7 @@
     "message": "現在のログイン欄が見つかりませんでした。ログインを入力してから、もう一度お試しください。"
   },
   "popup_fill_card": {
-    "message": "カードを入力…"
+    "message": "カードを入力"
   },
   "popup_fill_card_desc": {
     "message": "カードを選び、フィールドをチェックして、アプリで確認します"
@@ -629,26 +636,8 @@
   "popup_generate_password_desc": {
     "message": "登録用のパスワードを作成します"
   },
-  "popup_guidance_checking": {
-    "message": "このページの操作を有効にする前に、LocalGateKeysを確認しています。"
-  },
-  "popup_guidance_connected": {
-    "message": "確認されるのはこのサイトのオリジンだけです。操作を選ぶまで、何も入力されません。"
-  },
-  "popup_guidance_locked": {
-    "message": "操作を選ぶとロック解除を要求します。自動では何も入力されません。"
-  },
-  "popup_guidance_offline": {
-    "message": "このサイトの操作を使うには、LocalGateKeysに再接続してください。"
-  },
-  "popup_guidance_setup": {
-    "message": "このサイトの操作を使う前に、LocalGateKeysのセットアップを完了してください。"
-  },
   "popup_integration_disabled": {
     "message": "ブラウザー連携は一時停止中です。LocalGateKeysの設定で再び有効にしてください。"
-  },
-  "popup_local_vault": {
-    "message": "ローカルの保管庫"
   },
   "popup_locked_desc": {
     "message": "続けるには操作を選んでください。ロック解除の前に、デスクトップアプリが確認します。"
@@ -660,9 +649,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_manual_by_design": {
-    "message": "設計上、手動操作のみ"
   },
   "popup_need_login_page": {
     "message": "先に、ログインフォームのあるhttpまたはhttpsのページを開いてください。"
@@ -676,9 +662,6 @@
   "popup_page_unreachable": {
     "message": "このページに接続できませんでした。ページを再読み込みして、もう一度お試しください。"
   },
-  "popup_quick_actions": {
-    "message": "クイック操作"
-  },
   "popup_ready_version": {
     "message": "LocalGateKeysの準備ができました$VERSION$。操作を選ぶまで、何もロック解除されません。",
     "placeholders": {
@@ -686,9 +669,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_refresh_connection": {
-    "message": "接続状態を更新"
   },
   "popup_refreshed_locked": {
     "message": "接続を更新しました。ロック解除は、操作を選んだ後にのみ行われます。"
@@ -700,16 +680,13 @@
     "message": "接続を更新しました。LocalGateKeysのセットアップを完了してから、更新してください。"
   },
   "popup_save_login": {
-    "message": "ログインを保存"
+    "message": "このログインを保存"
   },
   "popup_save_login_desc": {
     "message": "これらのログイン欄を保存します"
   },
   "popup_setup_desc": {
     "message": "LocalGateKeysから、準備ができたブラウザープロファイルが報告されませんでした。セットアップを完了してから、更新してください。"
-  },
-  "popup_site_hint": {
-    "message": "操作はこのページ内にとどまり、あなたの選択が必要です。"
   },
   "popup_started": {
     "message": "$ACTION$をこのページで開始しました。",
@@ -719,9 +696,6 @@
       }
     }
   },
-  "popup_state_connected": {
-    "message": "接続済み"
-  },
   "popup_state_locked": {
     "message": "ロック中"
   },
@@ -730,12 +704,6 @@
   },
   "popup_state_setup": {
     "message": "セットアップが必要"
-  },
-  "popup_tagline": {
-    "message": "あなたの鍵、あなたの管理。"
-  },
-  "popup_this_page": {
-    "message": "このページ"
   },
   "popup_unlock_on_action": {
     "message": "ロック解除は、フィールドの操作を選んだ後にのみ要求されます。"
@@ -750,5 +718,295 @@
   },
   "popup_wait_checking": {
     "message": "LocalGateKeysを確認中です。接続状態が表示されるまでお待ちいただき、その後もう一度お試しください。"
+  },
+  "content_generate_password": {
+    "message": "パスワードを生成"
+  },
+  "content_generate_title": {
+    "message": "強力なパスワードを生成"
+  },
+  "content_generate_body": {
+    "message": "このフォームの新しいパスワード欄に強力なパスワードを入力します。"
+  },
+  "gen_title": {
+    "message": "パスワード生成"
+  },
+  "gen_mode_password": {
+    "message": "パスワード"
+  },
+  "gen_mode_passphrase": {
+    "message": "パスフレーズ"
+  },
+  "gen_new": {
+    "message": "再生成"
+  },
+  "gen_length": {
+    "message": "長さ"
+  },
+  "gen_avoid_ambiguous": {
+    "message": "紛らわしい文字を避ける (l, 1, O, 0)"
+  },
+  "gen_words": {
+    "message": "単語数"
+  },
+  "gen_separator": {
+    "message": "区切り文字"
+  },
+  "gen_sep_space": {
+    "message": "スペース"
+  },
+  "gen_sep_none": {
+    "message": "なし"
+  },
+  "gen_capitalize": {
+    "message": "先頭を大文字に"
+  },
+  "gen_add_number": {
+    "message": "数字を追加"
+  },
+  "gen_copy": {
+    "message": "コピー"
+  },
+  "gen_fill": {
+    "message": "ページに入力"
+  },
+  "gen_copy_failed": {
+    "message": "コピーできませんでした。テキストを選択してコピーしてください。"
+  },
+  "gen_pick_group": {
+    "message": "文字の種類を 1 つ以上選んでください。"
+  },
+  "site_verified": {
+    "message": "確認済みのサイト"
+  },
+  "site_related": {
+    "message": "関連するサイト"
+  },
+  "site_lookalike": {
+    "message": "なりすましの疑いがあるサイト"
+  },
+  "site_new": {
+    "message": "新しいサイト"
+  },
+  "content_guard_title": {
+    "message": "正しいサイトですか？"
+  },
+  "content_guard_body": {
+    "message": "$HOST$ はログインが保存されている $SAVED$ に似ていますが、別のサイトです。確信がある場合のみ続行してください。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_guard_body_mixed": {
+    "message": "$HOST$ は異なる文字体系の文字を混ぜています。これはよくあるフィッシングの手口です。確信がある場合のみ続行してください。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_continue": {
+    "message": "$HOST$ で続行",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_go_back": {
+    "message": "戻る"
+  },
+  "content_same_account_title": {
+    "message": "$SAVED$ と同じアカウントですか？",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_same_account_body": {
+    "message": "$HOST$ はログインが保存されている $SAVED$ と同じ名前ですが、末尾が異なります。同じ会社の場合のみ続行してください。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_same_account_yes": {
+    "message": "同じアカウント"
+  },
+  "content_new_site_title": {
+    "message": "このユーザー名には新しいサイトです"
+  },
+  "content_new_site_body": {
+    "message": "このユーザー名は別のサイト用に保存されており、$HOST$ 用には保存されていません。このページでパスワードを求められると思っていなかった場合は、アドレスを確認してください。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_chip_unlocked": {
+    "message": "ロック解除中"
+  },
+  "popup_chip_checking": {
+    "message": "確認中"
+  },
+  "popup_logins_heading": {
+    "message": "このサイトのログイン"
+  },
+  "popup_fill_button": {
+    "message": "入力"
+  },
+  "popup_logins_note": {
+    "message": "このサイトの保存済みログインはページ上に表示され、このポップアップには表示されません。Enter キーで入力します。"
+  },
+  "popup_unlock_button": {
+    "message": "デスクトップアプリでロック解除"
+  },
+  "popup_unlock_explain": {
+    "message": "ロックを解除するまで、何も入力・表示されません。"
+  },
+  "popup_check_again": {
+    "message": "もう一度確認"
+  },
+  "popup_auto_label": {
+    "message": "このサイトでログインの保存を確認する"
+  },
+  "cmd_fill_login": {
+    "message": "このページのログインを入力"
+  },
+  "content_use_toolbar": {
+    "message": "代わりにブラウザーのツールバーにある LocalGateKeys ボタンを使ってください。"
+  },
+  "content_username_label": {
+    "message": "ユーザー名"
+  },
+  "content_update_which": {
+    "message": "どの保存済みログインを更新しますか？"
+  },
+  "content_update_pw_title": {
+    "message": "保存済みのパスワードを更新しますか？"
+  },
+  "content_update_pw_one": {
+    "message": "このフォームは新しいパスワードを設定しましたが、ユーザー名の欄がありません。変更はデスクトップアプリで確認します。"
+  },
+  "content_update_pw_many": {
+    "message": "このフォームは新しいパスワードを設定しましたが、ユーザー名の欄がありません。対象のログインを選ぶか、「今はしない」を選んでください。"
+  },
+  "content_update_pw_none": {
+    "message": "LocalGateKeys には現在、このサイトで更新できる保存済みログインがありません。何も変更されていません。"
+  },
+  "content_update_pw_for": {
+    "message": "$NAME$ のパスワードを更新",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_update_pw_action": {
+    "message": "更新"
+  },
+  "content_passkey_title": {
+    "message": "このサイトはパスキーに対応しています"
+  },
+  "content_passkey_body": {
+    "message": "このサイトのアカウント設定でパスキーを追加できます。LocalGateKeys はパスワードもそのまま保持します。サイトで操作しない限り何も作成されません。"
+  },
+  "content_passkey_never": {
+    "message": "このサイトでは今後表示しない"
+  },
+  "popup_site_logins_note": {
+    "message": "ログインを選ぶとページに入力されます。パスワードはここには表示されません。"
+  },
+  "popup_site_logins_empty": {
+    "message": "このサイトの保存済みログインはまだありません。"
+  },
+  "popup_popup_only_label": {
+    "message": "このサイトでは常にこのポップアップを使う"
+  },
+  "popup_popup_only_on_hint": {
+    "message": "オン：このサイトのページに LocalGateKeys のアイコンやメニューを表示せず、ここから入力します"
+  },
+  "popup_popup_only_off_hint": {
+    "message": "オフ：このサイトのログイン欄の横にアイコンとメニューが表示されます"
+  },
+  "popup_why_no_icon": {
+    "message": "ページにアイコンが表示されないのはなぜですか？"
+  },
+  "popup_why_no_icon_text": {
+    "message": "ログインフォームが別のサイトのフレーム内にある、パスワードを別のサイトに送信する、非表示になっている、またはこのサイトでアイコンがオフの場合、LocalGateKeys はアイコンを表示しません。このサイト自身のフォームでは、このポップアップからの入力は引き続き使えます。"
+  },
+  "popup_frame_origin": {
+    "message": "このページには $ORIGIN$ のログインフレームがあります。LocalGateKeys は別のサイトのフレームにはここから入力しません。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_clears": {
+    "message": "コピーしました。このポップアップを開いたままにすると、$SECONDS$ 秒後にクリップボードを消去します。",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_cleared": {
+    "message": "クリップボードを消去しました。"
+  },
+  "safari_popup_fill_title": {
+    "message": "このサインインを入力"
+  },
+  "safari_popup_fill_body": {
+    "message": "メールアドレスまたはパスワードの欄をクリックし、Safari に表示されるリストから LocalGateKeys のログインを選んでください。"
+  },
+  "safari_popup_offer_save": {
+    "message": "このサイトでログインの保存を提案する"
+  },
+  "safari_popup_waiting_one": {
+    "message": "確認待ちのログイン: 1 件"
+  },
+  "safari_popup_waiting_many": {
+    "message": "確認待ちのログイン: $COUNT$ 件",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "safari_popup_waiting_when": {
+    "message": "次回のロック解除時"
+  },
+  "safari_popup_open_app": {
+    "message": "LocalGateKeys を開く"
+  },
+  "safari_popup_open_failed": {
+    "message": "LocalGateKeys を開けませんでした。アプリケーションフォルダから開いてください。"
+  },
+  "safari_popup_footer": {
+    "message": "パスワードはアプリの中に保管されます。このボタンがパスワードを見ることはありません。"
+  },
+  "safari_popup_no_site": {
+    "message": "このタブにはウェブサイトがありません"
+  },
+  "safari_popup_not_allowed": {
+    "message": "このサイトでは LocalGateKeys がまだ許可されていません。Safari の機能拡張の設定から許可してください。"
+  },
+  "safari_popup_offer_save_full": {
+    "message": "保存の確認はすでに 2,000 サイトでオフになっており、これが LocalGateKeys で保持できる上限です。先に、もう使わないサイトでオンに戻してください。"
+  },
+  "safari_popup_loading": {
+    "message": "読み込み中…"
   }
 }

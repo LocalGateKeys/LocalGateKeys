@@ -6,11 +6,25 @@
   import { call } from '../lib/api.js';
   import { formatNumber, t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
+  import EmergencyKit from './EmergencyKit.svelte';
 
   let { card, ondone } = $props();
   // The parent keys this component by card.token, so the first card is the only one it sees.
   let answers = $state(untrack(() => card.positions.map(() => '')));
   let cardError = $state('');
+  // The emergency kit printed with these words: they stay on this screen and are never sent to Python.
+  let kit = $state(null);
+
+  let printBusy = false;
+  async function printKit() {
+    if (printBusy || kit) return;
+    printBusy = true;
+    try {
+      const result = await call('recovery_kit_facts');
+      if (!result.ok) { cardError = result.error.message; return; }
+      kit = { facts: result, words: [...card.words] };
+    } finally { printBusy = false; }
+  }
 
   async function confirmPhrase() {
     const result = await call('phrase_confirm', card.token, answers);
@@ -41,10 +55,12 @@
   </div>
   {#if cardError}<p class="error" role="alert">{cardError}<ErrorLogLink text={cardError} /></p>{/if}
   <footer>
+    <Button label={t('kit.printWithPhrase')} onclick={printKit} />
     <Button label={t('phraseCard.closeWithout')} onclick={closeCard} />
     <Button label={t('common.confirm')} variant="primary" onclick={confirmPhrase} />
   </footer>
 </section>
+{#if kit}<EmergencyKit facts={kit.facts} words={kit.words} ondone={() => { kit = null; }} />{/if}
 
 <style>
   h3 { margin: 0 0 4px; font: 600 15px var(--font-display); }

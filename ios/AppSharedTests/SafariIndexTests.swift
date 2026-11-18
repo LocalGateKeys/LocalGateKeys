@@ -177,7 +177,47 @@ final class SafariIndexTests: XCTestCase {
         SafariIndexPublisher(keychain: vault, directory: { out }).publish(snap)
         let written = try SafariIndex.decode(Array(try Data(contentsOf: indexFile)))
         XCTAssertEqual(written, SafariIndex.fingerprints(records: snap.records, key: key))
-        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: out.path), [SafariSaveFiles.indexFileName])
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: out.path)),
+                       [SafariSaveFiles.indexFileName, SafariSites.fileName])
+        // The phishing shield's site list is sealed under the index key: it opens with it and with nothing else.
+        let sites = Array(try Data(contentsOf: SafariSites.url(in: out)))
+        XCTAssertEqual(SafariSites.open(sites, indexKey: key), ["example.com"])
+        XCTAssertNil(SafariSites.open(sites, indexKey: otherKey))
+        XCTAssertFalse(String(decoding: sites, as: UTF8.self).contains("example.com"))
+    }
+
+    /// Ruling T5b: the sealed list holds registrable domains only (no paths, usernames or full URLs), once each,
+    /// in item id order; other kinds left out. The app's own check reads every URL row.
+    func test_site_list_holds_registrable_domains_only() throws {
+        let second = Wrapper.make(ns: .entry, record: .object([
+            "id": .string("b"), "kind": .string("web"), "label": .string("b"), "username": .string("alex"),
+            "password": .string("pw1"), "updated_at": .int(1),
+            "scope": .object(["origin": .string("https://shop.example.org"), "urls": .array([
+                .object(["url": .string("https://pay.example.net/login"), "match": .string("domain")]),
+                .object(["url": .string("https://example.com"), "match": .string("domain")]),
+            ])]),
+        ]))
+        let records: [String: JSONValue] = ["a": wrapper("a"), "b": second,
+                                            "n": wrapper("n", ns: .item, kind: "note", origin: "https://note.example")]
+        XCTAssertEqual(SafariSites.urlRows(records: records), ["https://example.com", "https://pay.example.net/login"])
+        let matcher = URLMatcher(rules: PublicSuffixRules.parse(lines: ["com", "net", "org"]))
+        let domains = SafariSites.domains(records: records, matcher: matcher)
+        // "a" first (id order); "b"'s URL rows replace its legacy origin; example.com only once; no note.
+        XCTAssertEqual(domains, ["example.com", "example.net"])
+        XCTAssertFalse(domains.contains { $0.contains("/") || $0.contains("alex") || $0.contains("pay.") })
+        let blob = try SafariSites.seal(domains, indexKey: key, random: FixedRandom())
+        XCTAssertEqual(SafariSites.open(blob, indexKey: key), domains)
+        XCTAssertNil(SafariSites.open(Array(blob.dropLast()), indexKey: key))
+    }
+
+    /// The "same account" pair id is keyed (another device key gives another id) and 32 hex digits.
+    func test_pair_id_is_keyed() {
+        let a = SafariSites.pairID(indexKey: key, origin: "https://paypal.net", saved: "https://paypal.com")
+        XCTAssertEqual(a.count, 32)
+        XCTAssertTrue(a.allSatisfy { $0.isHexDigit && !$0.isUppercase })
+        XCTAssertEqual(a, SafariSites.pairID(indexKey: key, origin: "https://paypal.net", saved: "https://paypal.com"))
+        XCTAssertNotEqual(a, SafariSites.pairID(indexKey: otherKey, origin: "https://paypal.net", saved: "https://paypal.com"))
+        XCTAssertNotEqual(a, SafariSites.pairID(indexKey: key, origin: "https://paypal.com", saved: "https://paypal.net"))
     }
 
     func test_device_unlocked_slots_not_app_only() throws {

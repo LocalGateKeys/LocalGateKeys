@@ -39,6 +39,14 @@ def test_green_with_device_count_and_route():
     assert row["last_text"].endswith("(14 min ago)") and out["this_device"]["name"] == "Desk PC"
 
 
+def test_wifi_address_is_not_a_warning_and_this_device_shows_its_id():
+    view = _view(wifi="on", folder="off")
+    view["cards"][0]["members"] = [{"id": "ph", "name": "Pixel 8 · Device ph", "detail": "Connects to this PC"}]
+    view["own_id"] = "This device: Desk PC · Device 1a2b3c4d"
+    out = summarize(view, now=NOW)
+    assert out["devices"][0]["warnings"] == [] and out["this_device"]["id_text"] == "This device: Desk PC · Device 1a2b3c4d"
+
+
 def test_orange_when_older_than_a_day_or_never_or_a_peer_is_stale():
     assert summarize(_view(members=[ME, PHONE]), _status(NOW - 2 * 86400), now=NOW)["colour"] == "orange"
     assert summarize(_view(members=[ME]), _status(None), now=NOW)["text"].startswith("Not synced yet")

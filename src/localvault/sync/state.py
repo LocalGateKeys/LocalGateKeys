@@ -92,12 +92,18 @@ class SyncState:
     #: Optional persistent source of hello counters (called once per hello; must return a
     #: value it has already persisted, strictly above every earlier one).
     counter_source: Callable[[], int] | None = field(default=None, repr=False, compare=False)
+    #: Peers that used the sealed hello (transport version 3): a clear-text hello from them is
+    #: refused from then on, so the older form cannot be forced back (downgrade pin).
+    sealed_peers: set[str] = field(default_factory=set)
+    #: Optional persistence for a new pin (called once per peer, outside every lock of this object).
+    on_sealed: Callable[[str], None] | None = field(default=None, repr=False, compare=False)
     _authorization_epoch: int = field(default=0, init=False, repr=False, compare=False)
     #: Guards the outbound and inbound counters: the transport runs several
     #: connection handlers (and an outbound run) at once.
     _counter_lock: Any = field(default_factory=threading.RLock, init=False, repr=False, compare=False)
     _counters_in_flight: int = field(default=0, init=False, repr=False, compare=False)
     _issued_in_flight: set[int] = field(default_factory=set, init=False, repr=False, compare=False)
+    _sealed_saved: set[str] = field(default_factory=set, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.identity, DeviceIdentity) or not self.identity.device_id:
@@ -116,6 +122,9 @@ class SyncState:
             if not isinstance(peer_id, str):
                 raise SyncStateError("Inbound peer identity is malformed")
             _bounded_counter(counter, "inbound counter")
+        if any(not isinstance(peer_id, str) or not peer_id for peer_id in self.sealed_peers):
+            raise SyncStateError("Sealed-hello peer identity is malformed")
+        self._sealed_saved = set(self.sealed_peers)  # pins given at construction are already stored
         for peer_id, counter in self.acknowledgements.items():
             if not isinstance(peer_id, str):
                 raise SyncStateError("Acknowledgement peer identity is malformed")
@@ -189,6 +198,25 @@ class SyncState:
             raise SyncStateError("Trusted peer limit exceeded")
         self.trusted_peers[peer.device_id] = peer
         self.disabled_devices.discard(peer.device_id)
+
+    def is_sealed(self, device_id: str) -> bool:
+        """Whether *device_id* has used the sealed hello (its clear-text hello is refused)."""
+        with self._counter_lock:
+            return device_id in self.sealed_peers
+
+    def mark_sealed(self, device_id: str) -> None:
+        """Pin *device_id* to the sealed hello; ``on_sealed`` persists the pin once (retried on failure)."""
+        if not isinstance(device_id, str) or not device_id:
+            raise SyncStateError("Peer device identity is malformed")
+        with self._counter_lock:
+            self.sealed_peers.add(device_id)
+            if device_id in self._sealed_saved:
+                return
+        callback = self.on_sealed
+        if callback is not None:
+            callback(device_id)
+        with self._counter_lock:
+            self._sealed_saved.add(device_id)
 
     def disable_peer(self, device_id: str) -> None:
         """Disable a trusted peer and invalidate channels bound to it."""
@@ -320,6 +348,7 @@ class SyncState:
             "tombstones": self.tombstones,
             "selected_item_ids": sorted(self.selected_item_ids),
             "retry_attempt": self.retry_attempt,
+            "sealed_peers": sorted(self.sealed_peers),
         }
 
     def to_encrypted_bytes(self, key: bytes) -> bytes:
@@ -378,6 +407,7 @@ class SyncState:
             tombstones=dict(raw.get("tombstones", {})),
             selected_item_ids=set(raw.get("selected_item_ids", [])),
             retry_attempt=raw.get("retry_attempt", 0),
+            sealed_peers=set(raw.get("sealed_peers", [])),
         )
         return result
 

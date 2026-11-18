@@ -2,12 +2,41 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import time
 import uuid
+from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from .item_schema import ItemSchemaError, validate_events
 from .vault import VaultLockedError
+
+GENESIS_HASH = "0" * 64
+
+
+def event_hash(event: dict[str, Any]) -> str:
+    """SHA-256 of an event's canonical JSON (sorted keys, no spaces)."""
+    canonical = json.dumps(event, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class ChainReport:
+    ok: bool
+    first_bad_id: str | None
+    checkpoint: str | None
+
+
+def _chain_state(payload: dict[str, Any]) -> dict[str, str | None]:
+    raw = payload.get("events_chain")
+    state: dict[str, str | None] = {"checkpoint": None, "head": None}
+    if isinstance(raw, dict):
+        for key in state:
+            value = raw.get(key)
+            if isinstance(value, str) and len(value) == 64:
+                state[key] = value
+    return state
 
 
 class ActivityService:
@@ -16,13 +45,13 @@ class ActivityService:
     # Activity is intentionally a small vocabulary.  Callers can compose a
     # domain and action, but cannot use the history as an arbitrary text log.
     _SAFE_EVENT_DOMAINS: ClassVar[set[str]] = {
-        "activity", "attachment", "auth", "backup", "collection", "credential",
+        "activity", "agent", "attachment", "auth", "backup", "collection", "credential",
         "document", "import", "item", "reminder", "session", "settings", "template",
         "vault",
     }
     _SAFE_EVENT_ACTIONS: ClassVar[set[str]] = {
         "add", "backup", "change", "check", "clear", "close", "complete", "copy",
-        "create", "delete", "deny", "export", "fill", "import", "lock", "open",
+        "create", "delete", "deny", "export", "fill", "import", "lock", "open", "request",
         "prune", "read", "restore", "reveal", "search", "signin", "sign_in",
         "snooze", "start", "stop", "test", "unlock", "update", "view",
     }
@@ -104,13 +133,73 @@ class ActivityService:
                "item_id": item_id, "result": result, "count": count}
         payload = self._payload()
         events = self._validated_events(payload)
+        state = _chain_state(payload)
+        row["prev_hash"] = event_hash(events[-1]) if events else (state["head"] or state["checkpoint"]
+                                                                  or GENESIS_HASH)
         events.append(row)
         cutoff = now - self.retention_days * 86400
-        events = [value for value in events if int(value.get("timestamp", 0)) >= cutoff]
-        events = validate_events(events)[-self.max_events:]
-        payload["events"] = events
-        payload["updated_at"] = now
+        kept = [value for value in events if int(value.get("timestamp", 0)) >= cutoff][-self.max_events:]
+        self._store(payload, events, validate_events(kept), now)
         return row["id"]
+
+    @staticmethod
+    def _store(payload: dict[str, Any], before: list[dict[str, Any]], kept: list[dict[str, Any]],
+               now: int) -> None:
+        """Write the retained events and keep the chain checkpoint and head current.
+
+        Pruning drops events from the front only; the checkpoint is the hash of
+        the last dropped event so the first kept event still verifies.
+        """
+        state = _chain_state(payload)
+        kept_ids = {e["id"] for e in kept}
+        dropped = [e for e in before if e["id"] not in kept_ids]
+        if dropped:
+            state["checkpoint"] = event_hash(dropped[-1])
+        if kept:
+            state["head"] = event_hash(kept[-1])
+        elif before:
+            state["head"] = state["checkpoint"] = event_hash(before[-1])
+        payload["events"] = kept
+        payload["events_chain"] = state
+        payload["updated_at"] = now
+
+    def verify_chain(self) -> ChainReport:
+        """Check every chained event links to the one before it (or the checkpoint)."""
+        payload = self._payload()
+        events = validate_events(payload.get("events", []))
+        state = _chain_state(payload)
+        expected = state["checkpoint"] or GENESIS_HASH
+        chained = False
+        for index, event in enumerate(events):
+            prev = event.get("prev_hash")
+            if prev is None:
+                if chained:
+                    return ChainReport(False, event["id"], state["checkpoint"])
+                expected = event_hash(event)  # pre-chain event from an older build
+                continue
+            chained = True
+            if prev != expected:
+                bad = events[index - 1]["id"] if index else event["id"]
+                return ChainReport(False, bad, state["checkpoint"])
+            expected = event_hash(event)
+        # Once a chain exists its head must match: this catches a cut-off tail, an emptied log and events whose
+        # prev_hash was stripped to pass them off as pre-chain ones.
+        if state["head"] is not None and state["head"] != expected:
+            return ChainReport(False, events[-1]["id"] if events else None, state["checkpoint"])
+        return ChainReport(True, None, state["checkpoint"])
+
+    def export_jsonl(self) -> str:
+        """A JSON-lines export: a chain header, then each event with its own hash."""
+        payload = self._payload()
+        events = validate_events(payload.get("events", []))
+        state = _chain_state(payload)
+        lines = [json.dumps({"type": "chain", "checkpoint": state["checkpoint"], "head": state["head"],
+                             "algorithm": "sha256-canonical-json"}, sort_keys=True)]
+        for event in events:
+            row = dict(event)
+            row["hash"] = event_hash(event)
+            lines.append(json.dumps(row, sort_keys=True))
+        return "\n".join(lines) + "\n"
 
     @classmethod
     def _validated_events(cls, payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -141,8 +230,7 @@ class ActivityService:
                   if int(event.get("timestamp", 0)) >= cutoff]
         retained = events[-self.max_events:]
         if retained != payload.get("events", []):
-            payload["events"] = retained
-            payload["updated_at"] = now
+            self._store(payload, self._validated_events(payload), retained, now)
             self.session.save()
         return copy.deepcopy(retained)
 
@@ -150,6 +238,5 @@ class ActivityService:
 
     def clear(self) -> None:
         payload = self._payload()
-        payload["events"] = []
-        payload["updated_at"] = int(time.time())
+        self._store(payload, self._validated_events(payload), [], int(time.time()))
         self.session.save()

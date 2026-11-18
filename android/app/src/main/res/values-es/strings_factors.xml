@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">Esta bóveda también necesita su archivo de clave.</string>
+    <string name="factors_required_yubikey">Esta bóveda también necesita su YubiKey.</string>
+    <string name="factors_required_both">Esta bóveda también necesita su archivo de clave y su YubiKey.</string>
+    <string name="factors_keyfile_mismatch">Este no es el archivo de clave de esta bóveda.</string>
+    <string name="factors_yubikey_mismatch">Esta no es la YubiKey de esta bóveda.</string>
+    <string name="factors_keyfile_invalid">Este archivo no se puede usar como archivo de clave.</string>
+    <string name="factors_yubikey_bad_answer">La YubiKey no respondió correctamente. Comprueba que la ranura %1$d esté configurada como desafío-respuesta HMAC-SHA1.</string>
+    <string name="factors_yubikey_removed">Vuelva a tocar su YubiKey.</string>
+    <string name="factors_yubikey_timeout">No se detectó ningún toque. Toque su YubiKey cuando parpadee.</string>
+    <string name="factors_yubikey_slot_not_configured">La ranura %1$d de esta YubiKey no está configurada para desafío-respuesta. En Yubico Authenticator, elija Slots y configure la ranura %1$d como Challenge-response (HMAC-SHA1).</string>
+    <string name="factors_keyfile_unreadable">No se pudo leer el archivo de clave %1$s. Vuelva a elegirlo.</string>
+    <string name="factors_keyfile_too_large">Ese archivo es demasiado grande para ser un archivo de clave.</string>
+    <string name="factors_removed_by_phrase">Archivo de clave / YubiKey eliminados; vuelva a añadirlos.</string>
+    <string name="factors_prompt_no_keyfile">Ningún archivo de clave elegido</string>
+    <string name="factors_prompt_keyfile">Archivo de clave: %1$s</string>
+    <string name="factors_prompt_choose">Elegir archivo de clave…</string>
+    <string name="factors_touch_title">Toque su YubiKey</string>
+    <string name="factors_section">Archivo de clave y YubiKey</string>
+    <string name="factors_keyfile">Archivo de clave</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">Archivo de clave configurado</string>
+    <string name="factors_keyfile_none">Sin archivo de clave</string>
+    <string name="factors_yubikey_set">YubiKey configurada (ranura %1$d)</string>
+    <string name="factors_yubikey_none">Sin YubiKey</string>
+    <string name="factors_add_keyfile">Añadir archivo de clave…</string>
+    <string name="factors_create_keyfile">Crear archivo de clave…</string>
+    <string name="factors_add_yubikey">Añadir YubiKey</string>
+    <string name="factors_slot">Ranura</string>
+    <string name="factors_remove_keyfile">Quitar el archivo de clave</string>
+    <string name="factors_remove_yubikey">Quitar la YubiKey</string>
+    <string name="factors_remove_confirm">Después de esto, la bóveda ya no necesita este factor para desbloquearse.</string>
+    <string name="factors_keyfile_added">Archivo de clave %1$s añadido.</string>
+    <string name="factors_keyfile_created">Archivo de clave %1$s creado y añadido. Guarde una copia en un lugar seguro.</string>
+    <string name="factors_yubikey_added">YubiKey añadida (ranura %1$d).</string>
+    <string name="factors_keyfile_removed">Archivo de clave quitado.</string>
+    <string name="factors_yubikey_removed_done">YubiKey quitada.</string>
+    <string name="factors_yubikey_setup">LocalGateKeys nunca programa su YubiKey. Configúrela en Yubico Authenticator: Slots, Challenge-response, HMAC-SHA1, ranura 2 (o ranura 1). Una YubiKey de copia de seguridad necesita el mismo secreto.</string>
+    <string name="factors_always_ask">Pedir siempre el archivo de clave / YubiKey</string>
+    <string name="factors_always_ask_needs_factor">Añada primero un archivo de clave o una YubiKey.</string>
+    <string name="factors_shortcuts_off">Desactive primero «Pedir siempre el archivo de clave / YubiKey».</string>
+    <string name="factors_failed">No se pudo cambiar el archivo de clave o la YubiKey.</string>
+    <string name="factors_yubikey_no_transport">Active NFC para acercar su YubiKey al teléfono, o conéctela.</string>
+    <string name="factors_prompt_remember">Recordar este archivo de clave en este teléfono</string>
+    <string name="factors_prompt_yubikey">Acerque su YubiKey a la parte trasera del teléfono, o conéctela y tóquela (ranura %1$d).</string>
+    <string name="factors_sheet_title">Abra LocalGateKeys para desbloquear</string>
+    <string name="factors_sheet_text">La contraseña de la app necesita su archivo de clave o YubiKey, y solo la app puede pedirlos.</string>
+    <string name="factors_sheet_open">Abrir LocalGateKeys</string>
+    <string name="factors_needs_app_password">Active la contraseña de la app para añadir un archivo de clave o una YubiKey</string>
+    <string name="factors_footer">Entonces se necesitará un archivo de clave o una YubiKey además de la contraseña de la app. La frase de recuperación sigue desbloqueando sin ellos.</string>
+    <string name="factors_always_ask_note">Desactiva el desbloqueo con huella o rostro mientras haya un archivo de clave o una YubiKey.</string>
+    <string name="factors_remember">Recordar la ubicación del archivo de clave en este teléfono</string>
+    <string name="factors_password_text">Introduzca la contraseña de la app. También se pedirá el archivo de clave o la YubiKey que ya estén configurados.</string>
+    <string name="factors_add_confirm">A partir de ahora se necesitan la contraseña de la app y este factor para desbloquear. La frase de recuperación sigue desbloqueando sin él.</string>
+</resources>

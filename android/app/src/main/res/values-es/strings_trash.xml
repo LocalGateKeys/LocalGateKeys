@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Eliminados recientemente</string>
+    <string name="trash_empty">Eliminados recientemente está vacío.</string>
+    <string name="trash_save_failed">No se pudo guardar Eliminados recientemente en este teléfono.</string>
+    <string name="trash_reset">No se pudo leer Eliminados recientemente de este teléfono y se restableció.</string>
+    <string name="trash_moved">Movido a Eliminados recientemente</string>
+    <string name="trash_item_restored">Elemento restaurado</string>
+    <string name="trash_restore_needs_pro">Pásate a Pro para restaurar más elementos</string>
+    <string name="trash_gone">Ya no está en Eliminados recientemente.</string>
+    <string name="trash_cannot_restore">Esta entrada no se puede restaurar.</string>
+    <string name="trash_vault_unreadable">No se pudo leer la bóveda.</string>
+    <string name="trash_same_id">Ya existe un elemento con el mismo ID.</string>
+    <string name="trash_restore_save_failed">No se pudo guardar el elemento en este dispositivo.</string>
+    <string name="trash_delete_forever">Eliminar definitivamente</string>
+    <string name="trash_keep_for">Conservar los elementos eliminados durante</string>
+    <string name="trash_empty_all">Vaciar Eliminados recientemente</string>
+    <string name="trash_footer">Los elementos eliminados siguen cifrados en este teléfono y se borran definitivamente pasado este tiempo. No cuentan para los elementos del plan gratuito. Las copias de seguridad más antiguas aún pueden contenerlos.</string>
+    <string name="trash_empty_all_title">¿Vaciar Eliminados recientemente?</string>
+    <string name="trash_empty_all_message">Todos los elementos de aquí se eliminan definitivamente. Esto no se puede deshacer.</string>
+    <string name="trash_delete_forever_title">¿Eliminar definitivamente?</string>
+    <string name="trash_delete_forever_message">‘%1$s’ se elimina definitivamente. Esto no se puede deshacer.</string>
+    <string name="trash_removed_soon">se quitará pronto</string>
+    <string name="trash_undo">Deshacer</string>
+    <string name="trash_undo_hint">Restaura el elemento eliminado</string>
+    <string name="trash_undo_announcement">%1$s. Se puede deshacer.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">Queda %1$d día</item>
+        <item quantity="other">Quedan %1$d días</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+</resources>

@@ -715,8 +715,11 @@ class GuidedRecoveryDrill:
         *,
         vault_password: str | SecretText,
         verifier: Callable[[Path, str | SecretText], Mapping[str, Any]] | None = None,
+        factors: Any = None,
     ) -> dict[str, Any]:
         """Authenticate the restored profile and all reachable data.
+
+        A restored v4 vault keeps its key file / YubiKey: ``factors`` (``vault.FactorSecrets``) opens it.
 
         A caller may supply the application's richer catalog/blob verifier.
         The fallback unlocks the restored catalog and walks typed items, which
@@ -730,7 +733,7 @@ class GuidedRecoveryDrill:
             result = dict(check(path, vault_password))
         else:
             from .vault import unlock_vault
-            session = unlock_vault(path / "vault.json", vault_password)
+            session = unlock_vault(path / "vault.json", vault_password, factors=factors)
             try:
                 entries = session.all_entries()
                 payload = session._require_typed_catalog()

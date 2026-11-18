@@ -2,17 +2,22 @@
 
 const statusNode = document.getElementById("status");
 const siteNode = document.getElementById("site");
-const siteHintNode = document.getElementById("site-hint");
-const connectionCard = document.getElementById("connection-card");
-const connectionTitleNode = document.getElementById("connection-title");
-const connectionDescriptionNode = document.getElementById("connection-description");
-const connectionNode = document.getElementById("connection");
+const siteStateNode = document.getElementById("site-state");
+const chipNode = document.getElementById("chip");
+const fillNode = document.getElementById("fill");
+const loginsReadyNode = document.getElementById("logins-ready");
+const loginsGateNode = document.getElementById("logins-gate");
+const gateTextNode = document.getElementById("gate-text");
+const gateActionNode = document.getElementById("gate-action");
+const generateNode = document.getElementById("generate");
+const generatorNode = document.getElementById("generator");
 const automaticNode = document.getElementById("automatic");
-const automaticLabelNode = document.getElementById("automatic-label");
 const automaticHintNode = document.getElementById("automatic-hint");
 // Sites where the save prompt is turned off. Every other site asks by default.
 const AUTOMATIC_KEY = "automatic_save_blocked_origins";
-const FIELD_ACTION_IDS = ["fill", "identity", "card", "save", "generate"];
+// "generate" only opens the generator panel (copy works without the app), so it
+// is not gated; the panel's "Fill on page" goes through sendCommand like the rest.
+const FIELD_ACTION_IDS = ["fill", "identity", "card", "save"];
 const PAGE_ACTION_IDS = [...FIELD_ACTION_IDS, "automatic"];
 const COMMAND_LABELS = {
   fill_current: tr("popup_fill_login"),
@@ -55,6 +60,7 @@ let currentTab = null;
 let connectionRequest = null;
 let diagnosticsState = "checking";
 let commandInFlight = false;
+let lastDiagnostics = null;
 
 function setStatus(message, kind = "info") {
   statusNode.textContent = message || "";
@@ -62,10 +68,38 @@ function setStatus(message, kind = "info") {
   statusNode.hidden = !message;
 }
 
+// Header chip: one word for the state, the longer description as its tooltip.
 function setConnectionStatus(state, title, description) {
-  connectionCard.dataset.state = state;
-  connectionTitleNode.textContent = title;
-  connectionDescriptionNode.textContent = description;
+  chipNode.dataset.state = state;
+  chipNode.textContent = title;
+  chipNode.title = description;
+  updateLoginsGate();
+}
+
+// "Logins for this site" shows the Fill row when the app can answer, and one
+// explanation with a single clear action otherwise.
+function updateLoginsGate() {
+  let text = "";
+  let action = null;
+  if (!currentTab && diagnosticsState !== "checking") {
+    text = tr("popup_page_unavailable_hint");
+  } else if (diagnosticsState === "locked") {
+    text = tr("popup_unlock_explain");
+    action = "unlock";
+  } else if (diagnosticsState === "offline") {
+    text = diagnosticError(lastDiagnostics);
+    action = "refresh";
+  } else if (diagnosticsState === "setup") {
+    text = tr("popup_setup_desc");
+    action = "refresh";
+  }
+  const gated = Boolean(text);
+  loginsReadyNode.hidden = gated;
+  loginsGateNode.hidden = !gated;
+  gateTextNode.textContent = text;
+  gateActionNode.hidden = !action;
+  gateActionNode.dataset.action = action || "";
+  if (action) gateActionNode.textContent = action === "unlock" ? tr("popup_unlock_button") : tr("popup_check_again");
 }
 
 function setPageActionsEnabled(enabled) {
@@ -81,21 +115,9 @@ function setAutomaticAvailable(enabled) {
   automaticNode.disabled = enabled !== true || !currentTab;
 }
 
-function updateActionGuidance() {
-  if (!currentTab) return;
-  const guidance = {
-    checking: tr("popup_guidance_checking"),
-    offline: tr("popup_guidance_offline"),
-    setup: tr("popup_guidance_setup"),
-    locked: tr("popup_guidance_locked"),
-    connected: tr("popup_guidance_connected"),
-  };
-  siteHintNode.textContent = guidance[diagnosticsState] || guidance.checking;
-}
-
 function updateFieldActionAvailability() {
   setFieldActionsEnabled(diagnosticsState === "connected" || diagnosticsState === "locked");
-  updateActionGuidance();
+  gateActionNode.disabled = commandInFlight || Boolean(connectionRequest);
 }
 
 function fieldActionsReady() {
@@ -105,8 +127,9 @@ function fieldActionsReady() {
 function setAutomaticButton(enabled) {
   const value = enabled === true;
   automaticNode.dataset.enabled = value ? "true" : "false";
-  automaticNode.setAttribute("aria-pressed", String(value));
-  automaticLabelNode.textContent = value
+  automaticNode.setAttribute("aria-checked", String(value));
+  // The label is fixed ("Ask to save logins on this site"); the tooltip names what a click does.
+  automaticNode.title = value
     ? tr("popup_auto_turn_off")
     : tr("popup_auto_turn_on");
   automaticHintNode.textContent = value
@@ -129,6 +152,7 @@ function diagnosticError(response) {
 // is paused (integration_disabled) or the protocol differs (version_mismatch)
 // is reported by the first real action and shown on the page by content.js.
 function applyDiagnostics(response) {
+  lastDiagnostics = response;
   if (!response?.ok) {
     diagnosticsState = "offline";
     setConnectionStatus("offline", tr("popup_state_offline"), diagnosticError(response));
@@ -149,18 +173,18 @@ function applyDiagnostics(response) {
   }
   diagnosticsState = "connected";
   const version = typeof response.version === "string" && response.version ? tr("popup_version_suffix",response.version) : "";
-  setConnectionStatus("connected", tr("popup_state_connected"), tr("popup_ready_version",version));
+  setConnectionStatus("connected", tr("popup_chip_unlocked"), tr("popup_ready_version",version));
   updateFieldActionAvailability();
   return "connected";
 }
 
 async function refreshConnection({ announce = false } = {}) {
   if (connectionRequest) return connectionRequest;
-  connectionNode.disabled = true;
-  connectionNode.setAttribute("aria-busy", "true");
+  gateActionNode.disabled = true;
+  gateActionNode.setAttribute("aria-busy", "true");
   diagnosticsState = "checking";
   updateFieldActionAvailability();
-  setConnectionStatus("checking", tr("popup_checking_connection"), tr("popup_checking_connection_desc"));
+  setConnectionStatus("checking", tr("popup_chip_checking"), tr("popup_checking_connection_desc"));
   connectionRequest = (async () => {
     try {
       const response = await api.runtime.sendMessage({ type: "diagnostics" });
@@ -179,8 +203,8 @@ async function refreshConnection({ announce = false } = {}) {
       return response;
     } finally {
       connectionRequest = null;
-      connectionNode.disabled = false;
-      connectionNode.setAttribute("aria-busy", "false");
+      gateActionNode.disabled = commandInFlight;
+      gateActionNode.setAttribute("aria-busy", "false");
     }
   })();
   return connectionRequest;
@@ -248,8 +272,10 @@ async function sameOriginFrameIds(tab) {
   return ids.sort((a, b) => a - b);
 }
 
-async function sendCommand(command) {
-  if (commandInFlight) return;
+// sourceButton: the control the user pressed when it is not the command's own
+// button (the locked state's "Unlock in the desktop app" runs fill_current).
+async function sendCommand(command, extra = {}, sourceButton = null) {
+  if (commandInFlight) return false;
   if (!currentTab) {
     setStatus(tr("popup_need_login_page"), "error");
     return;
@@ -268,7 +294,7 @@ async function sendCommand(command) {
   commandInFlight = true;
   updateFieldActionAvailability();
   const buttonId = {fill_current:"fill", fill_identity:"identity", fill_card:"card", save_current:"save", generate_new:"generate"}[command];
-  const button = document.getElementById(buttonId);
+  const button = sourceButton || document.getElementById(buttonId);
   button.setAttribute("aria-busy", "true");
   setStatus(tr("popup_looking",COMMAND_LABELS[command]), "info");
   let restoreFocus = false;
@@ -285,7 +311,7 @@ async function sendCommand(command) {
     // Ask the top frame first, then each same-origin iframe, until one owns a matching field.
     let response = null;
     for (const frameId of frameIds) {
-      try { response = await api.tabs.sendMessage(currentTab.id, { command }, { frameId }); } catch { response = null; }
+      try { response = await api.tabs.sendMessage(currentTab.id, { command, ...extra }, { frameId }); } catch { response = null; }
       if (response?.ok) break;
     }
     if (response?.ok) {
@@ -318,6 +344,25 @@ async function sendCommand(command) {
   }
 }
 
+// Phishing shield: the page's content script asks the app for the verdict
+// (computed there with the saved origins, which never leave it) and returns
+// it. No verdict (locked vault, no app) shows no state.
+const SITE_STATES = {
+  exact: () => tr("site_verified"),
+  related: () => tr("site_related"),
+  lookalike: () => tr("site_lookalike"),
+  unknown: () => tr("site_new"),
+};
+async function refreshSiteState(tab) {
+  let response = null;
+  try { response = await api.tabs.sendMessage(tab.id, { command: "site_state" }, { frameId: 0 }); } catch { response = null; }
+  const kind = response?.verdict?.kind;
+  const label = Object.hasOwn(SITE_STATES, kind) ? SITE_STATES[kind]() : "";
+  siteStateNode.textContent = label;
+  siteStateNode.dataset.state = label ? kind : "";
+  siteStateNode.hidden = !label;
+}
+
 // Fills every data-i18n element from the locale catalog; the English text in
 // popup.html stays as the fallback. textContent only, never innerHTML.
 function applyTranslations() {
@@ -337,20 +382,43 @@ async function initialize() {
     siteNode.textContent = url.origin;
     setFieldActionsEnabled(false);
     setAutomaticAvailable(true);
-    updateActionGuidance();
-    await Promise.all([refreshConnection(), updateAutomaticButton()]);
+    await Promise.all([refreshConnection(), updateAutomaticButton(), refreshSiteState(tab)]);
   } catch {
     currentTab = null;
     siteNode.textContent = tr("popup_page_unavailable");
-    siteHintNode.textContent = tr("popup_page_unavailable_hint");
     setPageActionsEnabled(false);
+    updateLoginsGate();
     await refreshConnection();
   }
 }
 
-for (const [id, command] of [["fill", "fill_current"], ["identity", "fill_identity"], ["card", "fill_card"], ["save", "save_current"], ["generate", "generate_new"]]) {
+for (const [id, command] of [["fill", "fill_current"], ["identity", "fill_identity"], ["card", "fill_card"], ["save", "save_current"]]) {
   document.getElementById(id).addEventListener("click", () => sendCommand(command));
 }
+// "Generate password" opens the existing generator panel; its "Fill on page"
+// sends generate_new with the value shown there.
+generateNode.addEventListener("click", () => {
+  generatorNode.open = !generatorNode.open;
+  generateNode.setAttribute("aria-expanded", String(generatorNode.open));
+  const target = generatorNode.open ? document.getElementById("gen-fill") : null;
+  if (target && typeof target.focus === "function") target.focus();
+});
+generatorNode.addEventListener("toggle", () => generateNode.setAttribute("aria-expanded", String(generatorNode.open)));
+// Locked: choosing an action is what makes the desktop app ask to unlock
+// (opening the popup never unlocks). Offline / setup: check the app again.
+gateActionNode.addEventListener("click", () => {
+  if (gateActionNode.dataset.action === "unlock") return sendCommand("fill_current", {}, gateActionNode);
+  return refreshConnection({ announce: true });
+});
+// Enter fills: the same as the Fill button (fills the only match, or opens this
+// page's login chooser), unless focus is on another control.
+document.addEventListener("keydown", event => {
+  if (event.key !== "Enter" || event.defaultPrevented || event.isComposing) return;
+  const target = event.target;
+  if (target && target !== document.body && target !== document.documentElement && /^(BUTTON|INPUT|SELECT|TEXTAREA|SUMMARY|A)$/.test(target.tagName || "")) return;
+  if (fillNode.disabled || loginsReadyNode.hidden) return;
+  event.preventDefault();
+  fillNode.click();
+});
 automaticNode.addEventListener("click", toggleAutomatic);
-connectionNode.addEventListener("click", () => refreshConnection({ announce: true }));
 initialize();

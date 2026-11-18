@@ -17,6 +17,8 @@ from typing import Any
 from argon2.low_level import Type, hash_secret_raw
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+from . import envelope as _envelope
 from .i18n import t
 
 FORMAT = "localgatekeys-share"
@@ -48,12 +50,9 @@ def _words() -> list[str]:
     return bip39_words()
 
 
-def _canonical(value: Any) -> bytes:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-
-
-def _b64e(value: bytes) -> str:
-    return base64.b64encode(value).decode("ascii")
+# The canonical JSON and base64 rules are shared with the signed ``.lgkheir`` envelope (``envelope.py``).
+_canonical = _envelope.canonical
+_b64e = _envelope.b64e
 
 
 def _b64d(value: Any, size: int | None = None) -> bytes:
@@ -102,15 +101,27 @@ def _aad(header: Mapping[str, Any]) -> bytes:
 
 
 def seal(item: Mapping[str, Any], code: str, *, sender: str, now: int, package_id: str | None = None,
-         salt: bytes | None = None, nonce: bytes | None = None) -> bytes:
-    """The ``.lgkshare`` bytes for one item. ``package_id``/``salt``/``nonce`` are for vectors only."""
+         salt: bytes | None = None, nonce: bytes | None = None, expires: int | None = None,
+         one_use: bool = False) -> bytes:
+    """The ``.lgkshare`` bytes for one item. ``package_id``/``salt``/``nonce`` are for vectors only.
+
+    v1.1 (sub-plan 12): ``expires`` (unix seconds) shortens the 24 h lifetime, never lengthens it; ``one_use`` asks
+    the receiver to refuse a second open. Without both the payload is byte-identical to v1.
+    """
     sender = str(sender or "").strip()[:SENDER_LIMIT] or "A LocalGateKeys device"
     salt = secrets.token_bytes(16) if salt is None else salt
     nonce = secrets.token_bytes(12) if nonce is None else nonce
     header = {"format": FORMAT, "version": VERSION, "id": package_id or str(uuid.uuid4()), "sender": sender,
               "kdf": {**KDF, "salt": _b64e(salt)}, "nonce": _b64e(nonce)}
-    payload = {"version": VERSION, "created_at": int(now), "expires_at": int(now) + LIFETIME,
-               "item": _clean_item(item)}
+    expires_at = int(now) + LIFETIME
+    if expires is not None:
+        if type(expires) is not int or expires <= int(now):
+            raise ShareError("malformed", t("share.theSharedItemIsDamaged"))
+        expires_at = min(expires_at, expires)
+    payload: dict[str, Any] = {"version": VERSION, "created_at": int(now), "expires_at": expires_at,
+                               "item": _clean_item(item)}
+    if one_use:
+        payload["one_use"] = True
     ciphertext = AESGCM(_key(code, salt)).encrypt(nonce, _canonical(payload), _aad(header))
     data = _canonical({**header, "ciphertext": _b64e(ciphertext)})
     if len(data) > MAX_PACKAGE:
@@ -147,10 +158,12 @@ def read_header(data: bytes) -> dict[str, Any]:
     return {"id": package_id, "sender": envelope["sender"], "envelope": envelope}
 
 
-def open_package(data: bytes, code: str, *, now: int, opened: Iterable[str] = ()) -> dict[str, Any]:
+def open_package(data: bytes, code: str, *, now: int, opened: Iterable[str] = (),
+                 revoked: Iterable[str] = ()) -> dict[str, Any]:
     """Decrypt and check one package: ``{"id", "sender", "created_at", "expires_at", "item"}``.
 
     ``opened`` holds the package ids this device already opened; such a package is refused.
+    ``revoked`` holds the package ids of verified revoke notices (``share_revoke``); best effort.
     """
     header = read_header(data)
     envelope = header["envelope"]
@@ -165,12 +178,15 @@ def open_package(data: bytes, code: str, *, now: int, opened: Iterable[str] = ()
         payload = json.loads(plain.decode("utf-8"))
     except (UnicodeDecodeError, ValueError):
         raise ShareError("malformed", t("share.theSharedItemIsDamaged")) from None
+    base = {"version", "created_at", "expires_at", "item"}
     if not isinstance(payload, dict) or payload.get("version") != VERSION \
-            or set(payload) != {"version", "created_at", "expires_at", "item"}:
+            or set(payload) not in (base, base | {"one_use"}) or payload.get("one_use", True) is not True:
         raise ShareError("malformed", t("share.theSharedItemIsDamaged"))
-    created, expires = payload["created_at"], payload["expires_at"]
-    if type(created) is not int or type(expires) is not int or expires != created + LIFETIME:
+    created, embedded = payload["created_at"], payload["expires_at"]
+    if type(created) is not int or type(embedded) is not int or not created < embedded <= created + LIFETIME:
         raise ShareError("malformed", t("share.theSharedItemIsDamaged"))
+    # v1.1: the embedded expiry wins over the 24 h lifetime only when it is earlier (receiver's clock).
+    expires = min(embedded, created + LIFETIME)
     if created > now + CLOCK_SKEW:
         raise ShareError("malformed", t("share.theSharedItemHasA"))
     if now >= expires:
@@ -178,8 +194,10 @@ def open_package(data: bytes, code: str, *, now: int, opened: Iterable[str] = ()
     item = _clean_item(payload["item"]) if isinstance(payload["item"], Mapping) else None
     if item is None or item != payload["item"]:
         raise ShareError("not-shareable", t("share.thisSharedItemHoldsContent"))
+    if header["id"] in set(revoked):
+        raise ShareError("revoked", t("share.revoked"))
     return {"id": header["id"], "sender": header["sender"], "created_at": created, "expires_at": expires,
-            "item": item}
+            "one_use": bool(payload.get("one_use", False)), "item": item}
 
 
 CREDENTIAL_KINDS = ("web", "desktop")

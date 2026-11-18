@@ -135,13 +135,17 @@
     "message": "Gespeichert. Es erscheint in LocalGateKeys, sobald Sie es das nächste Mal öffnen."
   },
   "bg_timeout": {
-    "message": "Die LocalGateKeys-Bridge hat nicht geantwortet. Schließen Sie veraltete Desktop-Abfragen und versuchen Sie es erneut."
+    "message": "Die Bestätigung in LocalGateKeys ist abgelaufen. Schließen Sie offene LocalGateKeys-Abfragen und versuchen Sie es erneut."
   },
   "content_autosignin_skipped": {
     "message": "Ausgefüllt. Die automatische Anmeldung wurde übersprungen, weil dieses Formular nicht unterstützt wird oder mehrdeutig ist. Melden Sie sich manuell an."
   },
   "content_cancel": {
     "message": "Abbrechen"
+  },
+  "panel_fill_login": {
+    "message": "Ausfüllen",
+    "description": "Button on the right of a login row in the in-page picker; fills that login."
   },
   "content_card": {
     "message": "Karte"
@@ -234,6 +238,12 @@
   },
   "content_err_not_found": {
     "message": "Für diese Website ist keine Anmeldung gespeichert."
+  },
+  "content_err_entry_required": {
+    "message": "Wähle, welche gespeicherte Anmeldung dieses Passwort erhält. Ein Passwort ohne Benutzernamen wird nie als neue Anmeldung gespeichert."
+  },
+  "content_err_entry_not_for_site": {
+    "message": "Diese Anmeldung ist für diese Website nicht gespeichert, daher wurde ihr Passwort nicht geändert."
   },
   "content_err_session_changed": {
     "message": "Tresor oder Profil haben sich geändert. Klicken Sie erneut auf das Symbol."
@@ -363,6 +373,9 @@
   "content_signin_question": {
     "message": "Haben Sie sich gerade angemeldet?"
   },
+  "content_frame_blocked": {
+    "message": "Diese Seite hat das LocalGateKeys-Fenster blockiert, deshalb wurde nichts ausgefüllt. Verwende stattdessen die LocalGateKeys-Schaltfläche in der Symbolleiste des Browsers."
+  },
   "content_tampered": {
     "message": "Diese Seite hat eine LocalGateKeys-Schaltfläche versteckt, verschoben oder verdeckt, daher wurde der Klick ignoriert."
   },
@@ -454,7 +467,7 @@
     "message": "Füllen Sie Anmeldungen aus und speichern Sie sie mit dem Passwortmanager LocalGateKeys für Windows. Die Erweiterung kommuniziert nur mit der App auf Ihrem eigenen PC."
   },
   "ext_description_ios": {
-    "message": "Bietet an, die Anmeldungen, mit denen Sie sich in Safari anmelden, in LocalGateKeys auf diesem iPhone zu speichern."
+    "message": "Bietet an, Ihre Safari-Anmeldungen in LocalGateKeys auf diesem Gerät zu speichern."
   },
   "ext_description_macos": {
     "message": "Bietet an, die Anmeldungen, mit denen Sie sich in Safari anmelden, in LocalGateKeys auf diesem Mac zu speichern."
@@ -491,9 +504,6 @@
   },
   "popup_auto_update_failed": {
     "message": "Das automatische Speichern für diese Website konnte nicht aktualisiert werden. Versuchen Sie es erneut."
-  },
-  "popup_checking_connection": {
-    "message": "Verbindung wird geprüft…"
   },
   "popup_checking_connection_desc": {
     "message": "LocalGateKeys wird kontaktiert, ohne Ihren Tresor zu entsperren."
@@ -554,9 +564,6 @@
       }
     }
   },
-  "popup_current_site": {
-    "message": "Aktuelle Website"
-  },
   "popup_diag_agent_offline": {
     "message": "Öffnen Sie LocalGateKeys, reparieren Sie die Browserverbindung und versuchen Sie es dann erneut."
   },
@@ -597,7 +604,7 @@
     "message": "Es wurde kein aktuelles Anmeldefeld gefunden. Geben Sie eine Anmeldung ein und versuchen Sie es dann erneut."
   },
   "popup_fill_card": {
-    "message": "Karte ausfüllen…"
+    "message": "Karte ausfüllen"
   },
   "popup_fill_card_desc": {
     "message": "Karte wählen, Felder anhaken, in der App bestätigen"
@@ -629,26 +636,8 @@
   "popup_generate_password_desc": {
     "message": "Ein Passwort für die Registrierung erstellen"
   },
-  "popup_guidance_checking": {
-    "message": "LocalGateKeys wird geprüft, bevor die Aktionen dieser Seite aktiviert werden."
-  },
-  "popup_guidance_connected": {
-    "message": "Es wird nur der Ursprung dieser Website geprüft. Nichts wird ausgefüllt, bis Sie eine Aktion wählen."
-  },
-  "popup_guidance_locked": {
-    "message": "Wählen Sie eine Aktion, um das Entsperren anzufordern; nichts wird automatisch ausgefüllt."
-  },
-  "popup_guidance_offline": {
-    "message": "Verbinden Sie LocalGateKeys erneut, um die Aktionen dieser Website zu verwenden."
-  },
-  "popup_guidance_setup": {
-    "message": "Schließen Sie die Einrichtung von LocalGateKeys ab, bevor Sie die Aktionen dieser Website verwenden."
-  },
   "popup_integration_disabled": {
     "message": "Die Browser-Integration ist pausiert. Aktivieren Sie sie in den LocalGateKeys-Einstellungen wieder."
-  },
-  "popup_local_vault": {
-    "message": "LOKALER TRESOR"
   },
   "popup_locked_desc": {
     "message": "Wählen Sie eine Aktion, um fortzufahren; die Desktop-App fragt vor dem Entsperren nach."
@@ -660,9 +649,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_manual_by_design": {
-    "message": "ABSICHTLICH MANUELL"
   },
   "popup_need_login_page": {
     "message": "Öffnen Sie zuerst eine http- oder https-Seite mit einem Anmeldeformular."
@@ -676,9 +662,6 @@
   "popup_page_unreachable": {
     "message": "Diese Seite war nicht erreichbar. Laden Sie die Seite neu und versuchen Sie es erneut."
   },
-  "popup_quick_actions": {
-    "message": "Schnellaktionen"
-  },
   "popup_ready_version": {
     "message": "LocalGateKeys ist bereit$VERSION$. Nichts wird entsperrt, bis Sie eine Aktion wählen.",
     "placeholders": {
@@ -686,9 +669,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_refresh_connection": {
-    "message": "Verbindungsstatus aktualisieren"
   },
   "popup_refreshed_locked": {
     "message": "Verbindung aktualisiert. Entsperrt wird erst, nachdem Sie eine Aktion gewählt haben."
@@ -700,16 +680,13 @@
     "message": "Verbindung aktualisiert. Schließen Sie die Einrichtung von LocalGateKeys ab und aktualisieren Sie dann."
   },
   "popup_save_login": {
-    "message": "Anmeldung speichern"
+    "message": "Diese Anmeldung speichern"
   },
   "popup_save_login_desc": {
     "message": "Diese Anmeldefelder speichern"
   },
   "popup_setup_desc": {
     "message": "LocalGateKeys hat kein bereites Browserprofil gemeldet. Schließen Sie die Einrichtung ab und aktualisieren Sie dann."
-  },
-  "popup_site_hint": {
-    "message": "Aktionen bleiben auf dieser Seite und erfordern Ihre Auswahl."
   },
   "popup_started": {
     "message": "$ACTION$ wurde auf dieser Seite gestartet.",
@@ -719,9 +696,6 @@
       }
     }
   },
-  "popup_state_connected": {
-    "message": "Verbunden"
-  },
   "popup_state_locked": {
     "message": "Gesperrt"
   },
@@ -730,12 +704,6 @@
   },
   "popup_state_setup": {
     "message": "Einrichtung erforderlich"
-  },
-  "popup_tagline": {
-    "message": "Ihre Schlüssel. Ihre Kontrolle."
-  },
-  "popup_this_page": {
-    "message": "DIESE SEITE"
   },
   "popup_unlock_on_action": {
     "message": "Das Entsperren wird erst angefordert, nachdem Sie eine Feldaktion gewählt haben."
@@ -750,5 +718,295 @@
   },
   "popup_wait_checking": {
     "message": "LocalGateKeys wird noch geprüft. Warten Sie auf den Verbindungsstatus und versuchen Sie es dann erneut."
+  },
+  "content_generate_password": {
+    "message": "Passwort generieren"
+  },
+  "content_generate_title": {
+    "message": "Starkes Passwort generieren"
+  },
+  "content_generate_body": {
+    "message": "Füllt die Felder für das neue Passwort in diesem Formular mit einem starken Passwort."
+  },
+  "gen_title": {
+    "message": "Passwortgenerator"
+  },
+  "gen_mode_password": {
+    "message": "Passwort"
+  },
+  "gen_mode_passphrase": {
+    "message": "Passphrase"
+  },
+  "gen_new": {
+    "message": "Neu"
+  },
+  "gen_length": {
+    "message": "Länge"
+  },
+  "gen_avoid_ambiguous": {
+    "message": "Ähnliche Zeichen vermeiden (l, 1, O, 0)"
+  },
+  "gen_words": {
+    "message": "Wörter"
+  },
+  "gen_separator": {
+    "message": "Trennzeichen"
+  },
+  "gen_sep_space": {
+    "message": "Leerzeichen"
+  },
+  "gen_sep_none": {
+    "message": "Keins"
+  },
+  "gen_capitalize": {
+    "message": "Großschreiben"
+  },
+  "gen_add_number": {
+    "message": "Zahl anhängen"
+  },
+  "gen_copy": {
+    "message": "Kopieren"
+  },
+  "gen_fill": {
+    "message": "Auf Seite ausfüllen"
+  },
+  "gen_copy_failed": {
+    "message": "Kopieren fehlgeschlagen. Markieren und kopieren Sie den Text."
+  },
+  "gen_pick_group": {
+    "message": "Wählen Sie mindestens eine Zeichenart."
+  },
+  "site_verified": {
+    "message": "Bestätigte Website"
+  },
+  "site_related": {
+    "message": "Zugehörige Website"
+  },
+  "site_lookalike": {
+    "message": "Nachgeahmte Website"
+  },
+  "site_new": {
+    "message": "Neue Website"
+  },
+  "content_guard_title": {
+    "message": "Ist das die richtige Website?"
+  },
+  "content_guard_body": {
+    "message": "$HOST$ sieht aus wie $SAVED$, wo Ihr Login gespeichert ist, ist aber eine andere Website. Fahren Sie nur fort, wenn Sie sicher sind.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_guard_body_mixed": {
+    "message": "$HOST$ mischt Buchstaben aus verschiedenen Alphabeten, ein häufiger Phishing-Trick. Fahren Sie nur fort, wenn Sie sicher sind.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_continue": {
+    "message": "Weiter auf $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_go_back": {
+    "message": "Zurück"
+  },
+  "content_same_account_title": {
+    "message": "Ist das dasselbe Konto wie bei $SAVED$?",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_same_account_body": {
+    "message": "$HOST$ hat denselben Namen wie $SAVED$, wo Ihr Login gespeichert ist, aber eine andere Endung. Fahren Sie nur fort, wenn es dasselbe Unternehmen ist.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_same_account_yes": {
+    "message": "Dasselbe Konto"
+  },
+  "content_new_site_title": {
+    "message": "Neue Website für diesen Benutzernamen"
+  },
+  "content_new_site_body": {
+    "message": "Sie haben diesen Benutzernamen für eine andere Website gespeichert, nie für $HOST$. Wenn Sie nicht erwartet haben, dass diese Seite nach Ihrem Passwort fragt, prüfen Sie die Adresse.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_chip_unlocked": {
+    "message": "Entsperrt"
+  },
+  "popup_chip_checking": {
+    "message": "Wird geprüft"
+  },
+  "popup_logins_heading": {
+    "message": "Anmeldungen für diese Website"
+  },
+  "popup_fill_button": {
+    "message": "Ausfüllen"
+  },
+  "popup_logins_note": {
+    "message": "Ihre gespeicherten Anmeldungen für diese Website öffnen sich auf der Seite, nie in diesem Pop-up. Drücken Sie die Eingabetaste zum Ausfüllen."
+  },
+  "popup_unlock_button": {
+    "message": "In der Desktop-App entsperren"
+  },
+  "popup_unlock_explain": {
+    "message": "Bis zum Entsperren wird nichts ausgefüllt oder angezeigt."
+  },
+  "popup_check_again": {
+    "message": "Erneut prüfen"
+  },
+  "popup_auto_label": {
+    "message": "Speichern von Anmeldungen auf dieser Website anbieten"
+  },
+  "cmd_fill_login": {
+    "message": "Anmeldedaten für diese Seite ausfüllen"
+  },
+  "content_use_toolbar": {
+    "message": "Verwenden Sie stattdessen die LocalGateKeys-Schaltfläche in der Symbolleiste des Browsers."
+  },
+  "content_username_label": {
+    "message": "Benutzername"
+  },
+  "content_update_which": {
+    "message": "Welche gespeicherte Anmeldung soll aktualisiert werden?"
+  },
+  "content_update_pw_title": {
+    "message": "Gespeichertes Passwort aktualisieren?"
+  },
+  "content_update_pw_one": {
+    "message": "Dieses Formular hat ein neues Passwort gesetzt, aber kein Feld für den Benutzernamen. Sie bestätigen die Änderung in der Desktop-App."
+  },
+  "content_update_pw_many": {
+    "message": "Dieses Formular hat ein neues Passwort gesetzt, aber kein Feld für den Benutzernamen. Wählen Sie die zugehörige Anmeldung oder „Nicht jetzt“."
+  },
+  "content_update_pw_none": {
+    "message": "LocalGateKeys hat derzeit keine gespeicherte Anmeldung, die es für diese Website aktualisieren kann. Es wurde nichts geändert."
+  },
+  "content_update_pw_for": {
+    "message": "Passwort für $NAME$ aktualisieren",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_update_pw_action": {
+    "message": "Aktualisieren"
+  },
+  "content_passkey_title": {
+    "message": "Diese Website unterstützt Passkeys"
+  },
+  "content_passkey_body": {
+    "message": "Sie können in den Kontoeinstellungen dieser Website einen Passkey hinzufügen. LocalGateKeys behält Ihr Passwort ebenfalls; es wird nichts erstellt, solange Sie es nicht auf der Website tun."
+  },
+  "content_passkey_never": {
+    "message": "Für diese Website nicht mehr fragen"
+  },
+  "popup_site_logins_note": {
+    "message": "Wählen Sie eine Anmeldung, um sie auf der Seite auszufüllen. Passwörter werden hier nie angezeigt."
+  },
+  "popup_site_logins_empty": {
+    "message": "Noch keine gespeicherten Anmeldungen für diese Website."
+  },
+  "popup_popup_only_label": {
+    "message": "Auf dieser Website immer dieses Pop-up verwenden"
+  },
+  "popup_popup_only_on_hint": {
+    "message": "An: keine LocalGateKeys-Symbole oder -Menüs auf den Seiten dieser Website; füllen Sie von hier aus"
+  },
+  "popup_popup_only_off_hint": {
+    "message": "Aus: Symbole und Menüs erscheinen neben den Anmeldefeldern dieser Website"
+  },
+  "popup_why_no_icon": {
+    "message": "Warum ist auf der Seite kein Symbol?"
+  },
+  "popup_why_no_icon_text": {
+    "message": "LocalGateKeys zeigt kein Symbol, wenn das Anmeldeformular in einem Frame einer anderen Website liegt, das Passwort an eine andere Website sendet, verborgen ist oder Symbole für diese Website aus sind. Das Ausfüllen über dieses Pop-up funktioniert in den eigenen Formularen dieser Website trotzdem."
+  },
+  "popup_frame_origin": {
+    "message": "Diese Seite enthält einen Anmelde-Frame von $ORIGIN$. LocalGateKeys füllt den Frame einer anderen Website nicht von hier aus.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_clears": {
+    "message": "Kopiert. Die Zwischenablage wird in $SECONDS$ s geleert, wenn dieses Pop-up offen bleibt.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_cleared": {
+    "message": "Zwischenablage geleert."
+  },
+  "safari_popup_fill_title": {
+    "message": "Diese Anmeldung ausfüllen"
+  },
+  "safari_popup_fill_body": {
+    "message": "Klicke in das E-Mail- oder Passwortfeld und wähle dann deine Anmeldung von LocalGateKeys in der Liste, die Safari zeigt."
+  },
+  "safari_popup_offer_save": {
+    "message": "Anbieten, Anmeldungen auf dieser Website zu sichern"
+  },
+  "safari_popup_waiting_one": {
+    "message": "1 Anmeldung wartet auf Prüfung"
+  },
+  "safari_popup_waiting_many": {
+    "message": "$COUNT$ Anmeldungen warten auf Prüfung",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "safari_popup_waiting_when": {
+    "message": "beim nächsten Entsperren"
+  },
+  "safari_popup_open_app": {
+    "message": "LocalGateKeys öffnen"
+  },
+  "safari_popup_open_failed": {
+    "message": "LocalGateKeys konnte nicht geöffnet werden. Öffne die App aus dem Ordner „Programme“."
+  },
+  "safari_popup_footer": {
+    "message": "Deine Passwörter bleiben in der App. Diese Taste sieht sie nie."
+  },
+  "safari_popup_no_site": {
+    "message": "Keine Website in diesem Tab"
+  },
+  "safari_popup_not_allowed": {
+    "message": "LocalGateKeys ist auf dieser Website noch nicht erlaubt. Erlaube es in den Erweiterungseinstellungen von Safari."
+  },
+  "safari_popup_offer_save_full": {
+    "message": "Speicherabfragen sind bereits auf 2.000 Websites aus, mehr speichert LocalGateKeys nicht. Schalte sie zuerst für eine Website wieder ein, die du nicht mehr nutzt."
+  },
+  "safari_popup_loading": {
+    "message": "Wird geladen …"
   }
 }

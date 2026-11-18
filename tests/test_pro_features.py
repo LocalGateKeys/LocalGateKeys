@@ -96,7 +96,8 @@ def test_free_plan_has_no_pro_features_and_pro_has_them_all(monkeypatch):
     assert licensing.status().state == "free"
     assert licensing.pro_features() == frozenset()
     monkeypatch.setattr(licensing, "LICENSE_KEYS", {})  # "unconfigured" counts as Pro
-    assert licensing.pro_features() == {"unlimited_items", "sync", "totp", "attachments"}
+    assert licensing.pro_features() == {"unlimited_items", "sync", "totp", "attachments", "emergency_access",
+                                         "duress", "item_history_long", "travel", "hygiene_bulk", "access_policies"}
 
 
 def test_unlock_applies_the_free_plan_to_the_session(controller):

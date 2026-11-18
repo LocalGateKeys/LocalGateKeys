@@ -1,15 +1,17 @@
 ---
 title: [[t:help.intro.1]]
 description: [[t:help.intro.2]]
+body_class: help-page
 ---
 <div class="wrap page-head">
   <h1>[[t:help.intro.1]]</h1>
   <p class="lead">[[t:help.intro.4]]</p>
+[[guide_links]]
 </div>
 
 <div class="wrap page-body help">
 
-  <nav class="help-tabs" aria-label="[[t:help.intro.3]]">
+  <nav class="help-tabs glass" aria-label="[[t:help.intro.3]]">
     <a class="help-tab" href="#windows" data-tab="windows">Windows</a>
     <a class="help-tab" href="#extension" data-tab="extension">[[t:help.intro.tab_extension]]</a>
     <a class="help-tab" href="#iphone" data-tab="iphone">iPhone</a>
@@ -18,7 +20,7 @@ description: [[t:help.intro.2]]
     <a class="help-tab" href="#android" data-tab="android">Android</a>
   </nav>
 
-  <aside class="help-basics">
+  <aside class="help-basics glass">
     <h2>[[t:help.intro.5]]</h2>
     <ul>
       <li>[[t:help.intro.6]]</li>
@@ -34,28 +36,33 @@ description: [[t:help.intro.2]]
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="[[t:help.windows.1]]">
-        <p class="help-toc-title">[[t:help.windows.4]]</p>
-        <ol>
-          <li><a href="#win-setup">[[t:help.windows.5]]</a></li>
-          <li><a href="#win-unlock">[[t:help.windows.6]]</a></li>
-          <li><a href="#win-screen">[[t:help.windows.7]]</a></li>
-          <li><a href="#win-items">[[t:help.windows.8]]</a></li>
-          <li><a href="#win-trash">[[t:help.windows.9]]</a></li>
-          <li><a href="#win-search">[[t:help.windows.10]]</a></li>
-          <li><a href="#win-generator">[[t:help.windows.11]]</a></li>
-          <li><a href="#win-security">[[t:help.windows.12]]</a></li>
-          <li><a href="#win-2fa">[[t:help.windows.13]]</a></li>
-          <li><a href="#win-import">[[t:help.windows.14]]</a></li>
-          <li><a href="#win-export">[[t:help.windows.15]]</a></li>
-          <li><a href="#win-backups">[[t:help.windows.16]]</a></li>
-          <li><a href="#win-sync">[[t:help.windows.17]]</a></li>
-          <li><a href="#win-share">[[t:help.windows.18]]</a></li>
-          <li><a href="#win-apps">[[t:help.windows.19]]</a></li>
-          <li><a href="#win-settings">[[t:help.windows.20]]</a></li>
-          <li><a href="#win-pro">[[t:help.windows.21]]</a></li>
-          <li><a href="#win-updates">[[t:help.windows.22]]</a></li>
-          <li><a href="#win-keys">[[t:help.windows.23]]</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">[[t:help.windows.4]]</summary>
+          <ol>
+            <li><a href="#win-setup">[[t:help.windows.5]]</a></li>
+            <li><a href="#win-unlock">[[t:help.windows.6]]</a></li>
+            <li><a href="#win-screen">[[t:help.windows.7]]</a></li>
+            <li><a href="#win-items">[[t:help.windows.8]]</a></li>
+            <li><a href="#win-trash">[[t:help.windows.9]]</a></li>
+            <li><a href="#win-search">[[t:help.windows.10]]</a></li>
+            <li><a href="#win-generator">[[t:help.windows.11]]</a></li>
+            <li><a href="#win-security">[[t:help.windows.12]]</a></li>
+            <li><a href="#win-2fa">[[t:help.windows.13]]</a></li>
+            <li><a href="#win-import">[[t:help.windows.14]]</a></li>
+            <li><a href="#win-export">[[t:help.windows.15]]</a></li>
+            <li><a href="#win-backups">[[t:help.windows.16]]</a></li>
+            <li><a href="#win-sync">[[t:help.windows.17]]</a></li>
+            <li><a href="#win-share">[[t:help.windows.18]]</a></li>
+            <li><a href="#win-apps">[[t:help.windows.19]]</a></li>
+            <li><a href="#win-shared">[[t:help.v3.win.shared.title]]</a></li>
+            <li><a href="#win-safety">[[t:help.v3.win.safety.title]]</a></li>
+            <li><a href="#win-dev">[[t:help.v3.win.dev.title]]</a></li>
+            <li><a href="#win-settings">[[t:help.windows.20]]</a></li>
+            <li><a href="#win-pro">[[t:help.windows.21]]</a></li>
+            <li><a href="#win-updates">[[t:help.windows.22]]</a></li>
+            <li><a href="#win-keys">[[t:help.windows.23]]</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -117,7 +124,7 @@ description: [[t:help.intro.2]]
             <dt>[[t:help.windows.53]]</dt><dd>[[t:help.windows.54]]</dd>
             <dt>[[t:help.windows.55]]</dt><dd>[[t:help.windows.56]]</dd>
             <dt>[[t:help.windows.57]]</dt><dd>[[t:help.windows.58]]</dd>
-            <dt>[[t:help.windows.59]]</dt><dd>[[t:help.windows.60]]</dd>
+            <dt>[[t:help.windows.59]]</dt><dd>[[t:help.windows.60]] [[t:help.v3.win.tools]]</dd>
             <dt>[[t:help.windows.61]]</dt><dd>[[t:help.windows.62]]</dd>
             <dt>[[t:help.windows.63]]</dt><dd>[[t:help.windows.64]]</dd>
           </dl>
@@ -202,6 +209,7 @@ description: [[t:help.intro.2]]
             <li>[[t:help.windows.106]]</li>
             <li>[[t:help.windows.107]]</li>
           </ul>
+          <p>[[t:help.v3.win.network]]</p>
         </article>
 
         <article class="topic" id="win-2fa">
@@ -253,7 +261,7 @@ description: [[t:help.intro.2]]
               <tr><td>[[t:help.windows.137]]</td><td>[[t:help.windows.138]]</td></tr>
             </tbody>
           </table>
-          <p class="note">[[t:help.windows.139]]</p>
+          <p class="note">[[t:help.windows.139]] [[t:help.v3.win.cxfimport]]</p>
         </article>
 
         <article class="topic" id="win-export">
@@ -262,6 +270,7 @@ description: [[t:help.intro.2]]
           <ul>
             <li>[[t:help.windows.142]]</li>
             <li>[[t:help.windows.143]]</li>
+            <li>[[t:help.v3.win.cxf]]</li>
             <li>[[t:help.windows.144]]</li>
           </ul>
           <p>[[t:help.windows.145]]</p>
@@ -275,6 +284,7 @@ description: [[t:help.intro.2]]
             <li>[[t:help.windows.148]]</li>
             <li>[[t:help.windows.149]]</li>
             <li>[[t:help.windows.150]]</li>
+            <li>[[t:help.v3.win.restoretest]]</li>
           </ol>
           <p class="note">[[t:help.windows.151]]</p>
           <h4>[[t:help.windows.152]]</h4>
@@ -342,16 +352,40 @@ description: [[t:help.intro.2]]
           <p>[[t:help.windows.192]]</p>
         </article>
 
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">[[t:help.v3.win.shared.title]]</a> <span class="badge-pro">Pro</span></h3>
+          <p>[[t:help.v3.win.shared.1]]</p>
+          <p>[[t:help.v3.win.shared.2]]</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">[[t:help.v3.win.safety.title]]</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li>[[t:help.v3.win.safety.1]]</li>
+            <li>[[t:help.v3.win.safety.2]]</li>
+            <li>[[t:help.v3.win.safety.3]]</li>
+            <li>[[t:help.v3.win.safety.4]]</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">[[t:help.v3.win.dev.title]]</a></h3>
+          <p>[[t:help.v3.win.dev.1]]</p>
+          <p>[[t:help.v3.win.dev.2]]</p>
+        </article>
+
         <article class="topic" id="win-settings">
           <h3><a href="#win-settings">[[t:help.windows.20]]</a></h3>
           <p>[[t:help.windows.193]]</p>
           <dl class="defs">
             <dt>[[t:help.windows.194]]</dt><dd>[[t:help.windows.195]]</dd>
             <dt>[[t:help.windows.44]]</dt><dd>[[t:help.windows.196]]</dd>
-            <dt>[[t:help.windows.197]]</dt><dd>[[t:help.windows.198]]</dd>
+            <dt>[[t:help.windows.197]]</dt><dd>[[t:help.windows.198]] [[t:help.v3.win.winpasskeys]]</dd>
             <dt>[[t:help.windows.199]]</dt><dd>[[t:help.windows.200]]</dd>
             <dt>[[t:help.windows.201]]</dt><dd>[[t:help.windows.202]]</dd>
             <dt>[[t:help.windows.203]]</dt><dd>[[t:help.windows.204]]</dd>
+            <dt>[[t:help.v3.win.plan.t]]</dt><dd>[[t:help.v3.win.plan.d]]</dd>
+            <dt>[[t:help.v3.win.dev.t]]</dt><dd>[[t:help.v3.win.dev.d]]</dd>
             <dt>[[t:help.windows.205]]</dt><dd>[[t:help.windows.206]]</dd>
           </dl>
         </article>
@@ -402,18 +436,20 @@ description: [[t:help.intro.2]]
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="[[t:help.extension.1]]">
-        <p class="help-toc-title">[[t:help.windows.4]]</p>
-        <ol>
-          <li><a href="#ext-install">[[t:help.extension.4]]</a></li>
-          <li><a href="#ext-popup">[[t:help.extension.5]]</a></li>
-          <li><a href="#ext-fill">[[t:help.extension.6]]</a></li>
-          <li><a href="#ext-save">[[t:help.extension.7]]</a></li>
-          <li><a href="#ext-2fa">[[t:help.extension.8]]</a></li>
-          <li><a href="#ext-cards">[[t:help.extension.9]]</a></li>
-          <li><a href="#ext-generate">[[t:help.extension.10]]</a></li>
-          <li><a href="#ext-passkeys">[[t:help.extension.11]]</a></li>
-          <li><a href="#ext-trouble">[[t:help.extension.12]]</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">[[t:help.windows.4]]</summary>
+          <ol>
+            <li><a href="#ext-install">[[t:help.extension.4]]</a></li>
+            <li><a href="#ext-popup">[[t:help.extension.5]]</a></li>
+            <li><a href="#ext-fill">[[t:help.extension.6]]</a></li>
+            <li><a href="#ext-save">[[t:help.extension.7]]</a></li>
+            <li><a href="#ext-2fa">[[t:help.extension.8]]</a></li>
+            <li><a href="#ext-cards">[[t:help.extension.9]]</a></li>
+            <li><a href="#ext-generate">[[t:help.extension.10]]</a></li>
+            <li><a href="#ext-passkeys">[[t:help.extension.11]]</a></li>
+            <li><a href="#ext-trouble">[[t:help.extension.12]]</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -516,24 +552,27 @@ description: [[t:help.intro.2]]
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="[[t:help.iphone.1]]">
-        <p class="help-toc-title">[[t:help.windows.4]]</p>
-        <ol>
-          <li><a href="#ios-setup">[[t:help.iphone.4]]</a></li>
-          <li><a href="#ios-apppw">[[t:help.iphone.5]]</a></li>
-          <li><a href="#ios-items">[[t:help.iphone.6]]</a></li>
-          <li><a href="#ios-search">[[t:help.iphone.7]]</a></li>
-          <li><a href="#ios-generator">[[t:help.windows.11]]</a></li>
-          <li><a href="#ios-2fa">[[t:help.iphone.8]]</a></li>
-          <li><a href="#ios-autofill">[[t:help.iphone.9]]</a></li>
-          <li><a href="#ios-passkeys">[[t:help.extension.11]]</a></li>
-          <li><a href="#ios-safari">[[t:help.iphone.10]]</a></li>
-          <li><a href="#ios-security">[[t:help.iphone.11]]</a></li>
-          <li><a href="#ios-import">[[t:help.iphone.12]]</a></li>
-          <li><a href="#ios-sync">[[t:help.windows.17]]</a></li>
-          <li><a href="#ios-share">[[t:help.windows.18]]</a></li>
-          <li><a href="#ios-settings">[[t:help.windows.20]]</a></li>
-          <li><a href="#ios-pro">Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">[[t:help.windows.4]]</summary>
+          <ol>
+            <li><a href="#ios-setup">[[t:help.iphone.4]]</a></li>
+            <li><a href="#ios-apppw">[[t:help.iphone.5]]</a></li>
+            <li><a href="#ios-items">[[t:help.iphone.6]]</a></li>
+            <li><a href="#ios-search">[[t:help.iphone.7]]</a></li>
+            <li><a href="#ios-generator">[[t:help.windows.11]]</a></li>
+            <li><a href="#ios-2fa">[[t:help.iphone.8]]</a></li>
+            <li><a href="#ios-autofill">[[t:help.iphone.9]]</a></li>
+            <li><a href="#ios-passkeys">[[t:help.extension.11]]</a></li>
+            <li><a href="#ios-safari">[[t:help.iphone.10]]</a></li>
+            <li><a href="#ios-security">[[t:help.iphone.11]]</a></li>
+            <li><a href="#ios-import">[[t:help.iphone.12]]</a></li>
+            <li><a href="#ios-sync">[[t:help.windows.17]]</a></li>
+            <li><a href="#ios-share">[[t:help.windows.18]]</a></li>
+            <li><a href="#ios-settings">[[t:help.windows.20]]</a></li>
+            <li><a href="#ios-more">[[t:help.v3.phone.title]]</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -555,7 +594,6 @@ description: [[t:help.intro.2]]
             <li>[[t:help.iphone.19]]</li>
             <li>[[t:help.iphone.20]]</li>
             <li>[[t:help.iphone.21]]</li>
-            <li>[[t:help.iphone.22]]</li>
           </ol>
           <p>[[t:help.iphone.23]]</p>
           <p class="note">[[t:help.iphone.24]]</p>
@@ -647,6 +685,7 @@ description: [[t:help.intro.2]]
           <ul>
             <li>[[t:help.iphone.62]]</li>
             <li>[[t:help.iphone.63]]</li>
+            <li>[[t:help.v3.phone.cxf]]</li>
           </ul>
         </article>
 
@@ -687,6 +726,15 @@ description: [[t:help.intro.2]]
           </dl>
         </article>
 
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">[[t:help.v3.phone.title]]</a></h3>
+          <ul>
+            <li>[[t:help.v3.phone.duress]]</li>
+            <li>[[t:help.v3.ios.host]]</li>
+            <li>[[t:help.v3.ios.emergency]]</li>
+          </ul>
+        </article>
+
         <article class="topic" id="ios-pro">
           <h3><a href="#ios-pro">Pro</a></h3>
           <p>[[t:help.iphone.87]]</p>
@@ -700,25 +748,29 @@ description: [[t:help.intro.2]]
   <!-- ============================== MAC ============================== -->
   <section class="help-panel" id="mac" aria-labelledby="mac-title">
     <h2 class="panel-title" id="mac-title">[[t:help.mac.2]]</h2>
+<!-- if:MAC_APP_URL --><!-- else -->    <p class="callout-soon">[[t:help.mac.soon]]</p><!-- /if -->
     <p class="panel-lead">[[t:help.mac.3]]</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="[[t:help.mac.1]]">
-        <p class="help-toc-title">[[t:help.windows.4]]</p>
-        <ol>
-          <li><a href="#mac-setup">[[t:help.mac.4]]</a></li>
-          <li><a href="#mac-unlock">[[t:help.windows.6]]</a></li>
-          <li><a href="#mac-items">[[t:help.mac.5]]</a></li>
-          <li><a href="#mac-2fa">[[t:help.iphone.8]]</a></li>
-          <li><a href="#mac-security">[[t:help.mac.6]]</a></li>
-          <li><a href="#mac-autofill">[[t:help.mac.7]]</a></li>
-          <li><a href="#mac-import">[[t:help.iphone.12]]</a></li>
-          <li><a href="#mac-backups">[[t:help.windows.201]]</a></li>
-          <li><a href="#mac-sync">[[t:help.windows.17]]</a></li>
-          <li><a href="#mac-share">[[t:help.mac.8]]</a></li>
-          <li><a href="#mac-pro">Pro</a></li>
-          <li><a href="#mac-keys">[[t:help.windows.23]]</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">[[t:help.windows.4]]</summary>
+          <ol>
+            <li><a href="#mac-setup">[[t:help.mac.4]]</a></li>
+            <li><a href="#mac-unlock">[[t:help.windows.6]]</a></li>
+            <li><a href="#mac-items">[[t:help.mac.5]]</a></li>
+            <li><a href="#mac-2fa">[[t:help.iphone.8]]</a></li>
+            <li><a href="#mac-security">[[t:help.mac.6]]</a></li>
+            <li><a href="#mac-autofill">[[t:help.mac.7]]</a></li>
+            <li><a href="#mac-import">[[t:help.iphone.12]]</a></li>
+            <li><a href="#mac-backups">[[t:help.windows.201]]</a></li>
+            <li><a href="#mac-sync">[[t:help.windows.17]]</a></li>
+            <li><a href="#mac-share">[[t:help.mac.8]]</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">[[t:help.windows.20]]</a></li>
+            <li><a href="#mac-keys">[[t:help.windows.23]]</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -771,6 +823,9 @@ description: [[t:help.intro.2]]
             <li>[[t:help.mac.26]]</li>
           </ol>
           <p>[[t:help.mac.27]]</p>
+          <p>[[t:help.mac.safari-save]]</p>
+          <p>[[t:help.mac.safari-none]]</p>
+          <p>[[t:help.mac.safari-update]]</p>
         </article>
 
         <article class="topic" id="mac-import">
@@ -813,6 +868,12 @@ description: [[t:help.intro.2]]
           <p>[[t:help.mac.41]]</p>
         </article>
 
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">[[t:help.windows.20]]</a></h3>
+          <p>[[t:help.v3.mac.settings]]</p>
+          <p>[[t:help.v3.mac.duress]]</p>
+        </article>
+
         <article class="topic" id="mac-keys">
           <h3><a href="#mac-keys">[[t:help.windows.23]]</a></h3>
           <table class="keys">
@@ -837,16 +898,17 @@ description: [[t:help.intro.2]]
   <section class="help-panel" id="watch" aria-labelledby="watch-title">
     <h2 class="panel-title" id="watch-title">[[t:help.watch.2]]</h2>
     <p class="panel-lead">[[t:help.watch.3]]</p>
-    <p class="callout-soon">[[t:help.watch.4]]</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="[[t:help.watch.1]]">
-        <p class="help-toc-title">[[t:help.windows.4]]</p>
-        <ol>
-          <li><a href="#watch-add">[[t:help.watch.5]]</a></li>
-          <li><a href="#watch-use">[[t:help.watch.6]]</a></li>
-          <li><a href="#watch-remove">[[t:help.watch.7]]</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">[[t:help.windows.4]]</summary>
+          <ol>
+            <li><a href="#watch-add">[[t:help.watch.5]]</a></li>
+            <li><a href="#watch-use">[[t:help.watch.6]]</a></li>
+            <li><a href="#watch-remove">[[t:help.watch.7]]</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -881,22 +943,24 @@ description: [[t:help.intro.2]]
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="[[t:help.android.1]]">
-        <p class="help-toc-title">[[t:help.windows.4]]</p>
-        <ol>
-          <li><a href="#and-setup">[[t:help.iphone.4]]</a></li>
-          <li><a href="#and-apppw">[[t:help.iphone.5]]</a></li>
-          <li><a href="#and-items">[[t:help.mac.5]]</a></li>
-          <li><a href="#and-search">[[t:help.iphone.7]]</a></li>
-          <li><a href="#and-generator">[[t:help.windows.11]]</a></li>
-          <li><a href="#and-2fa">[[t:help.iphone.8]]</a></li>
-          <li><a href="#and-autofill">[[t:help.windows.197]]</a></li>
-          <li><a href="#and-passkeys">[[t:help.extension.11]]</a></li>
-          <li><a href="#and-import">[[t:help.windows.14]]</a></li>
-          <li><a href="#and-backups">[[t:help.windows.201]]</a></li>
-          <li><a href="#and-sync">[[t:help.windows.17]]</a></li>
-          <li><a href="#and-share">[[t:help.mac.8]]</a></li>
-          <li><a href="#and-settings">[[t:help.android.5]]</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">[[t:help.windows.4]]</summary>
+          <ol>
+            <li><a href="#and-setup">[[t:help.iphone.4]]</a></li>
+            <li><a href="#and-apppw">[[t:help.iphone.5]]</a></li>
+            <li><a href="#and-items">[[t:help.mac.5]]</a></li>
+            <li><a href="#and-search">[[t:help.iphone.7]]</a></li>
+            <li><a href="#and-generator">[[t:help.windows.11]]</a></li>
+            <li><a href="#and-2fa">[[t:help.iphone.8]]</a></li>
+            <li><a href="#and-autofill">[[t:help.windows.197]]</a></li>
+            <li><a href="#and-passkeys">[[t:help.extension.11]]</a></li>
+            <li><a href="#and-import">[[t:help.windows.14]]</a></li>
+            <li><a href="#and-backups">[[t:help.windows.201]]</a></li>
+            <li><a href="#and-sync">[[t:help.windows.17]]</a></li>
+            <li><a href="#and-share">[[t:help.mac.8]]</a></li>
+            <li><a href="#and-settings">[[t:help.android.5]]</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -989,6 +1053,8 @@ description: [[t:help.intro.2]]
             <li>[[t:help.android.33]]</li>
             <li>[[t:help.android.34]]</li>
             <li>[[t:help.android.35]]</li>
+            <li>[[t:help.v3.phone.duress]]</li>
+            <li>[[t:help.v3.phone.cxf]]</li>
           </ul>
         </article>
 
@@ -998,3 +1064,4 @@ description: [[t:help.intro.2]]
 
   <p class="help-more">[[t:help.outro.1]]</p>
 </div>
+<script src="[[root]]guide.js"></script>

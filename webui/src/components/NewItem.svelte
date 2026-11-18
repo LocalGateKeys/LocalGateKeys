@@ -1,5 +1,6 @@
 <script>
   /** New item chooser (groups and order from shell/new_item.py). */
+  import { dialog } from '../lib/dialog.js';
   import { t } from '../lib/i18n.svelte.js';
 
   let { onchoose, onclose } = $props();
@@ -30,7 +31,7 @@
 <svelte:window onkeydown={key} />
 
 <div class="scrim" role="presentation" onclick={onclose}>
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={t('newItem.title')} tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog aria-label={t('newItem.title')} tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
     <h2>{t('newItem.title')}</h2>
     <button class="scan" onclick={() => choose('scan-qr')}>{t('newItem.scan')}<span>{t('newItem.scanHint')}</span></button>
     <p class="hint">{filter ? t('newItem.hintFilter', { filter }) : t('newItem.hintDefault')}</p>

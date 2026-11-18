@@ -150,6 +150,61 @@ enum Punycode {
         return out.count < 64 ? out : nil
     }
 
+    /// Python's `punycode` codec decode of the text after `xn--` (strict): the basic part is everything before
+    /// the last `-`; digits are case-insensitive. nil on malformed input or a code point past U+10FFFF. The
+    /// result can hold surrogate values, which the caller refuses. Same as Kotlin `Punycode.decode`.
+    static func decode(_ text: [Unicode.Scalar]) -> [UInt32]? {
+        let base: Int64 = 36, tMin: Int64 = 1, tMax: Int64 = 26, skew: Int64 = 38, damp: Int64 = 700
+        func adapt(_ d: Int64, _ numPoints: Int64, _ first: Bool) -> Int64 {
+            var delta = first ? d / damp : d / 2
+            delta += delta / numPoints
+            var k: Int64 = 0
+            while delta > ((base - tMin) * tMax) / 2 { delta /= base - tMin; k += base }
+            return k + (base - tMin + 1) * delta / (delta + skew)
+        }
+        var output: [UInt32] = []
+        let dash = text.lastIndex(of: "-")
+        if let dash, dash > 0 {
+            for c in text[..<dash] {
+                guard c.isASCII else { return nil }
+                output.append(c.value)
+            }
+        }
+        var n: Int64 = 128, bias: Int64 = 72, i: Int64 = 0
+        var index = dash.map { $0 + 1 } ?? 0
+        while index < text.count {
+            let oldi = i
+            var w: Int64 = 1, k = base
+            while true {
+                guard index < text.count else { return nil }
+                let c = text[index].value
+                index += 1
+                let d: Int64
+                switch c {
+                case 0x61...0x7A: d = Int64(c - 0x61)
+                case 0x41...0x5A: d = Int64(c - 0x41)
+                case 0x30...0x39: d = Int64(c - 0x30) + 26
+                default: return nil
+                }
+                i += d * w
+                guard i <= 0x7FFF_FFFF else { return nil }
+                let t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias)
+                if d < t { break }
+                w *= base - t
+                guard w <= 0x7FFF_FFFF else { return nil }
+                k += base
+            }
+            let points = Int64(output.count) + 1
+            bias = adapt(i - oldi, points, oldi == 0)
+            n += i / points
+            i %= points
+            guard n <= 0x10FFFF else { return nil }
+            output.insert(UInt32(n), at: Int(i))
+            i += 1
+        }
+        return output
+    }
+
     static func encode(_ input: [UInt32]) -> [Unicode.Scalar]? {
         let base: UInt32 = 36, tMin: UInt32 = 1, tMax: UInt32 = 26, skew: UInt32 = 38, damp: UInt32 = 700
         var n: UInt32 = 128, delta: UInt32 = 0, bias: UInt32 = 72

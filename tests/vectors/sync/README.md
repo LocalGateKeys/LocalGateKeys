@@ -32,6 +32,12 @@ the docstrings of `src/localvault/sync/{group,keyring,engine,pairing}.py`. The p
 | `lan/messages.json` | Metadata of the 2-chunk view exchange: three connections (own hellos, session id and key each), the sealed frames as files, sizes and hashes, both views, and the plaintext of one error message per reason. | Seal the plaintexts yourself and compare with the `.bin` files; open the frames; reassemble both views from the chunks and decode them with the epoch-1 group key. |
 | `lan/messages/*.bin` | The six sealed frames of that exchange, WITH the 4-byte length prefix. | As above. |
 | `lan/lan_ranges.json` | The LAN address ranges and the `test_lan_address_table` cases with the expected result. | Apply the same rule to every case. |
+| `lan/v3/session.json` | Two protocol-version-3 connections of A and B (A initiates; B initiates): the inner version-3 hellos and session key as in `lan/session.json` (with the `v3` labels), plus `sealed_hello`: the sealing ephemeral key pair, the responder's static exchange key, `es`, HKDF salt, both `info` strings, both keys, nonce, AAD, inner lengths, padded-plaintext hashes and both first frames as text. | Seal both hellos yourself and compare the frames byte for byte; open them as the responder and as the initiator; check that A's and C's keys cannot open the initiator frame; re-derive the session key and decrypt the request and response. |
+| `lan/v3/sealed_hello_initiator.bin`, `lan/v3/sealed_hello_responder.bin` | The two sealed first frames of the first version-3 connection, WITH the 4-byte length prefix. | Open with the matching role; the inner hello is the one in `session.json`. |
+| `lan/v3/frame_initiator.bin`, `lan/v3/frame_responder.bin` | The sealed request and response of the first version-3 connection, WITH the 4-byte length prefix. | Decrypt with that session's `key`. |
+| `lan/v3/qr_payload.txt` | The QR text of a version-2 offer (with `commit`), no trailing newline. | Parse it; the bundle is `lan/v3/enroll.json` `offer_bundle`. |
+| `lan/v3/enroll_request.bin`, `lan/v3/enroll_reveal.bin`, `lan/v3/enroll_reply.bin` | The commit-then-reveal enrollment of B by A: the request (body and transcript version 3), the inviter's reveal frame and the reply, no length prefix. | Check the reveal against the commitment, compute the code from transcript and reveal, open the reply with the reveal (and refuse it without). |
+| `lan/v3/enroll.json` | The values of that enrollment: reveal, commitment, transcript, request plaintext, reveal frame text, the code recipe and result, and the `update-needed` refusal sent for a version-2 body. | Compare each value. |
 | `canonical_json.json` | Known answers for canonical JSON in both dialects (`utf8`, `ascii`) plus `rejected` inputs, each naming the decoder that refuses it (see "Canonical JSON known answers"). | Parse each `value_json`, canonicalise, compare the hex; expect a rejection from the named decoder for every `rejected` text. |
 | `keyring_existing_epoch1.json`, `keyring_existing_epoch3.json` | First keyring of a group the creating device (A) already held a key for, at epoch 1 and at epoch 3 (group `e6a1c2d4-7b30-4c58-9f12-0a8d5b3c6e71`, two fixed group keys in `expected.json` `existing_group`). `prev_mac` is null at both epochs. | Verify structure and `mac`; open the password wrap with the password in `existing_group`; `accept_keyring` with the matching trusted key and A's identity returns that key. |
 | `keyring_attach.json` | `keyring_existing_epoch1.json` after B attached with the same password (two members, trusted key = the epoch-1 key). | Same checks as above for both A and B; the password wrap, salt and A's entry are unchanged. |
@@ -44,6 +50,7 @@ the docstrings of `src/localvault/sync/{group,keyring,engine,pairing}.py`. The p
 | `witness/sidecar/A.lgksync`, `witness/sidecar/A.lgksig` | A's witness file for `devices/A.lgksync` (format 2, zero records, counter 7, generation 40, witness B: 12, C: 9) and A's signature of it (same "View signature" format). | Decode it, verify the signature with A's key, and take A's generation and witness from it because its group, device, epoch and counter equal those of `devices/A.lgksync`. |
 | `witness/lan_witness_A.bin` | A's LAN `witness` message (ASCII canonical JSON, no newline): `{"type":"witness","group_id","epoch","view"}`, `view` = base64 of a witness file with counter 0, generation 40 and witness B: 12. | `parse_message` equivalent accepts it; decode `view` with `expected_device_id` = A and at most 0 records. |
 | `witness/cases.json` | `headers`: format-2 header files (valid and every rejection) with the expected decode result; `witness_file_matches`: witness files that do or do not belong to `devices/A.lgksync`; `checks`: inputs and outputs of the witness rule; `constants`. | Run your decoder, your match rule and your check on every case and compare. |
+| `removal/notices.json`, `removal/writer.json`, `removal/watch.json` | Signed removal notices (`src/localvault/sync/removal.py`): `verify_notice` cases (valid and every rejection), the exact writer output for fixed removals, and the watch file (parse, derive, pin). See "Removal notices". | Run your notice verifier, writer and watch reader on every case and compare. |
 
 ## Rollback witnesses (view format 2, 2026-10-29)
 
@@ -187,6 +194,26 @@ LAN addresses either (no listed network contains them). An IPv6 address with a z
 `fe80::1%1`) is refused too: the zone names an interface of the writing device, so it never appears in
 a pairing QR or an endpoint.
 
+## LAN protocol version 3 (sealed hello, commit-then-reveal)
+
+Byte-level rules: `docs/formats/LAN_SYNC_V3.md`. A version-3 initiator never sends its hello in clear
+text. Its first frame is `{"box","eph","signature":"","version":3}`: `eph` is a fresh X25519 key
+`X_i`, `es = X25519(x_i, S_R)` with the responder's pinned exchange key `S_R`, the keys are
+`HKDF-SHA256(ikm=es, salt=X_i || S_R, info="localgatekeys|sync|sealed-hello|v3|" + role)` for the roles
+`initiator` and `responder`, and `box` is AES-256-GCM (12 zero bytes nonce, AAD
+`"localgatekeys|sync|sealed-hello|v3|" || X_i`) over 1024 bytes: a 2-byte big-endian length, the
+canonical version-3 hello, zero bytes. The responder answers `{"box","version":3}` sealed the same way
+with the responder key. The inner hellos and the session key are version 2 with `v3` in the three labels;
+the encrypted frames keep metadata version 2. A released version-2 responder answers the sealed frame
+with `{"refused":"version","version":2}` (`lan/session.json` `version_refusal`); a version-3
+responder answers a clear-text hello of a peer it has pinned to version 3 with
+`{"refused":"version","version":3}`.
+
+A version-2 pairing offer carries `commit` = SHA-256(`localgatekeys|sync|enroll-commit|v3|` + reveal).
+The request body and transcript of such an offer have version 3; once the request verified, the inviting
+device sends `LGKENROLLRV1\n` + `{"reveal":base64}` before the reply. The code is
+SHA-256(`localgatekeys|sync|enroll-verify|v3|` + transcript + reveal), first 4 bytes big-endian mod 10^6.
+
 ## Item wrapper
 
 Every item state is a wrapper `{"ns", "schema", "updated_at", "record"}` (a conflict copy in engine
@@ -314,6 +341,32 @@ every credential id from a fixed label; ECDSA signatures are randomised, so no s
   (only when valid: rp id casefolded, `discoverable` defaulting to true); `usable` is
   `passkeys.usable_record(input)` (ES256, a P-256 PKCS#8 key and a non-empty credential id).
 
+## Removal notices (2026-10-31)
+
+`removal/` is made by `scripts/gen_removal_vectors.py` and checked by `tests/test_removal_vectors.py`
+(byte-for-byte regeneration plus every case through the Python code). The removed device is C,
+trusted at epoch 1 (`keyring_epoch1.json`, signers A and B); A's removal writes
+`keyring_epoch2.json` and the notice. D is a stranger (seed SHA-256 of
+`localgatekeys|test|removal-vectors|stranger`). Every time is fixed (`issued_at` = T0 + 600); no
+case depends on the clock. All byte fields are standard padded base64 (`*_b64`); `*_text` is the
+same bytes as text, for reading only (null when not UTF-8).
+
+* `notices.json`: `identities` (Ed25519 seed and public key of A, B, C, D), `keyrings` (name ->
+  `b64`, `source`, `synthetic`: an edited copy whose MAC no longer verifies; `verify_notice` only
+  parses the folder keyring and reads `group_id`, `epoch` and `members[].device_id`), `watches`
+  (name -> watch object as in the watch file) and `cases`: `notice_b64`, `watch`, `folder_keyring`
+  and `expected` = `{accept, reason, notice}`. `reason` is the Python `RemovalError` code: null,
+  `bad-notice`, `not-for-this-device`, `stale`, `unknown-signer`, `bad-key`, `bad-signature` or
+  `keyring`, checked in that order. A notice need not be canonical: the signature covers
+  `notice_label` + canonical JSON of the parsed body (all fields but `sig`).
+* `writer.json`: `cases` with the inputs of `make_notice`, the canonical body, the signed message
+  (hex), the signature and the exact notice text (no trailing newline) and its path in the folder;
+  `refusals`: inputs the writer refuses (`bad-notice`).
+* `watch.json`: the watch file C writes (`example`), file names (`paths`), `parse` (bytes ->
+  `load_watch` result, null = ignored), `derive` (`watch_from_state`: signers are the trusted
+  keyring's members with a signing key, minus this device and the unconfirmed members) and
+  `pinned` (`removal.pinned(fresh, old)`).
+
 ## Regenerating
 
 `python scripts/make_sync_vectors.py` (10 Argon2id evaluations at production cost). Randomness
@@ -336,3 +389,5 @@ and install links) from `scripts/gen_licence_text_vectors.py` (checked by
 `tests/test_licence_text_vectors.py`). `mac/from_mac/` is written by the Mac core
 (`LGK_WRITE_FROM_MAC=1 swift test --filter GroupCreateTests` in `ios/LGKCore`) and checked by
 `tests/test_sync_from_mac.py`.
+
+`removal/` comes from `python scripts/gen_removal_vectors.py` (no Argon2id, no randomness).

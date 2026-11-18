@@ -1,7 +1,7 @@
 """Check the translated store listings against the stores' text limits.
 
 Files checked:
-  docs/store/listings/{microsoft,edge,play}/<lang>.md
+  docs/store/listings/{microsoft,edge,firefox,play}/<lang>.md
   ios/appstore/listing-1.1.json (English) and ios/appstore/listing-1.1.<lang>.json
 
 Markdown listing format: an optional HTML comment, then "## <Field>" headings
@@ -12,13 +12,16 @@ Limits (characters, as of 2026-10; recheck in each console when uploading):
   App Store: name 30, subtitle 30, keywords 100 (comma-separated), promotional
     text 170, description 4000, what's new 4000. Characters are counted, not
     bytes.
-  Google Play: title 30, short description 80, full description 4000.
+  Google Play: title 30, short description 80, full description 4000, what's new (release-notes-*.md) 500.
   Microsoft Store: description 10000, short description 1000, features at most
     20 items of 200 each, search terms at most 7 items of 30 each (Partner
     Center has used 30 and 40 per term; the stricter 30 is checked).
   Edge Add-ons: description 250 to 10000; short description 250 (assumed:
     Partner Center does not document it clearly; the Chrome manifest summary
     limit of 132 only applies to the English manifest text).
+  Firefox Add-ons (AMO): name 50, summary 250, description 15000; notes to
+    reviewer, support URL and privacy policy URL are free text (3000 assumed
+    for the notes).
 
 Every language must have exactly the fields of the English file.
 Exit status 0 when clean, 1 with one line per problem otherwise.
@@ -44,6 +47,14 @@ MD_LIMITS: dict[str, dict[str, tuple]] = {
         "Short description": (1, 250),
         "Description": (250, 10000),
     },
+    "firefox": {
+        "Name": (1, 50),
+        "Summary": (1, 250),
+        "Description": (1, 15000),
+        "Notes to reviewer": (1, 3000),
+        "Support URL": (1, 200),
+        "Privacy policy URL": (1, 200),
+    },
     "play": {
         "Title": (1, 30),
         "Short description": (1, 80),
@@ -60,6 +71,7 @@ APPSTORE_LIMITS = {
     "whatsNew": 4000,
 }
 
+PLAY_WHATS_NEW_MAX = 500
 HEADING = re.compile(r"^## (.+?)\s*$")
 
 
@@ -89,6 +101,8 @@ def check_md_store(store: str, folder: Path) -> list[str]:
     en_fields = list(parse_md(en_path.read_text(encoding="utf-8")))
     limits = MD_LIMITS[store]
     for path in sorted(folder.glob("*.md")):
+        if path.name.startswith(("release-notes-", "whats-new-")):
+            continue  # release notes, not a listing (Play ones are checked by check_release_notes)
         fields = parse_md(path.read_text(encoding="utf-8"))
         if list(fields) != en_fields:
             problems.append(f"{path}: fields {list(fields)} differ from en {en_fields}")
@@ -110,13 +124,25 @@ def check_md_store(store: str, folder: Path) -> list[str]:
     return problems
 
 
-def check_appstore(folder: Path) -> list[str]:
+def check_release_notes(folder: Path) -> list[str]:
+    """Play "What's new" (docs/store/listings/play/release-notes-<version>.md): 1 to 500 characters."""
     problems: list[str] = []
-    en_path = folder / "listing-1.1.json"
+    for path in sorted(folder.glob("release-notes-*.md")):
+        body = parse_md(path.read_text(encoding="utf-8")).get("What's new")
+        if body is None:
+            problems.append(f"{path}: no \"What's new\" field")
+        elif not 1 <= len(body) <= PLAY_WHATS_NEW_MAX:
+            problems.append(f"{path}: What's new is {len(body)} characters, allowed 1-{PLAY_WHATS_NEW_MAX}")
+    return problems
+
+
+def check_appstore(folder: Path, version: str = "1.1") -> list[str]:
+    problems: list[str] = []
+    en_path = folder / f"listing-{version}.json"
     if not en_path.exists():
         return [f"{en_path}: missing English source"]
     en_keys = sorted(json.loads(en_path.read_text(encoding="utf-8")))
-    for path in [en_path, *sorted(folder.glob("listing-1.1.*.json"))]:
+    for path in [en_path, *sorted(folder.glob(f"listing-{version}.*.json"))]:
         data = json.loads(path.read_text(encoding="utf-8"))
         if sorted(data) != en_keys:
             problems.append(f"{path}: keys {sorted(data)} differ from en {en_keys}")
@@ -128,6 +154,11 @@ def check_appstore(folder: Path) -> list[str]:
                 problems.append(f"{path}: {key} is empty")
             elif len(value) > limit:
                 problems.append(f"{path}: {key} is {len(value)} characters, max {limit}")
+            elif key == "keywords" and version != "1.1" and len(value.encode()) > limit:
+                # App Store Connect counts keyword bytes (CJK characters are 3 each).
+                problems.append(f"{path}: keywords are {len(value.encode())} bytes, max {limit}")
+            if key == "keywords" and any(w.strip().lower() == "keepass" for w in value.split(",")):
+                problems.append(f"{path}: keywords name another app (App Review 2.3.7)")
     return problems
 
 
@@ -135,7 +166,9 @@ def check_all(root: Path = ROOT) -> list[str]:
     problems: list[str] = []
     for store in MD_LIMITS:
         problems += check_md_store(store, root / "docs" / "store" / "listings" / store)
+    problems += check_release_notes(root / "docs" / "store" / "listings" / "play")
     problems += check_appstore(root / "ios" / "appstore")
+    problems += check_appstore(root / "ios" / "appstore", "1.2")
     return problems
 
 

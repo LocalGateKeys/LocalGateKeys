@@ -2,6 +2,7 @@
   /** Approval dialog for a Python modal.request. Escape and Deny answer false.
    * An optional extra button (extraLabel/onextra) sits between the two, e.g. "Buy Pro".
    * guardMs > 0 (the popup): Deny takes the focus and the other buttons ignore input until guardMs passed. */
+  import { dialog } from '../lib/dialog.js';
   import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
@@ -48,7 +49,7 @@
 <svelte:window {onkeydown} />
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog aria-labelledby={titleId}>
     <h2 id={titleId}>{title}</h2>
     {#if message}<p class="message">{message}</p>{/if}
     <div class="actions">

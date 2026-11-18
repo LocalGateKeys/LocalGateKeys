@@ -51,6 +51,10 @@ Failure handling
 * A local vault that cannot be read for sync gives ``local-data`` and
   ``own_states`` None (publish nothing).
 * Lock/lease errors propagate unchanged: the run stops without writing.
+
+Personal collections (sub-plan 07 Task 4): with ``collections=True`` (every peer of the run reads
+them, see the transports) the collection states are merged and published too; without, the peers'
+collection states are dropped before the merge and none of this device's are built.
 """
 from __future__ import annotations
 
@@ -69,7 +73,14 @@ from .engine import (
     merge,
 )
 from .group import View
-from .vault_bridge import BridgeError, LocalView, apply, load_sync_state, local_view
+from .vault_bridge import (
+    BridgeError,
+    LocalView,
+    apply,
+    is_collection_state_id,
+    load_sync_state,
+    local_view,
+)
 
 USER_FIXABLE = frozenset({"trash-full", "history-quota"})
 
@@ -219,17 +230,28 @@ def _plausible(views: list[View], local: LocalView, known: set[str], issues: lis
     return out
 
 
+def _without_collections(view: View) -> View:
+    kept = tuple(s for s in view.states if not is_collection_state_id(s.item_id))
+    return view if len(kept) == len(view.states) else View(view.header, kept)
+
+
 def run_merge(session: Any, lease: Any, *, device_id: str, views: Iterable[View], now: int,
-              known_devices: Iterable[str] | None = None) -> RunReport:
-    """Merge every peer view into the vault in one apply; see the module docstring."""
+              known_devices: Iterable[str] | None = None, collection_id: str | None = None,
+              collections: bool = False) -> RunReport:
+    """Merge every peer view into the vault in one apply; see the module docstring.
+
+    *collection_id*: the run is for that collection's share group (``vault_bridge`` "Shared collections").
+    *collections*: personal collections sync in this run (module docstring).
+    """
     issues: list[SyncIssue] = []
     peers: list[View] = []
+    collections = collections and collection_id is None
     for view in views:
         dev = _peer_id(view)
         if dev is None:
             issues.append(SyncIssue("bad-peer-data", "?"))
         elif dev != device_id:
-            peers.append(view)
+            peers.append(view if collections else _without_collections(view))
     peers.sort(key=lambda v: v.header["device_id"])
     if known_devices is None:
         known = _known_devices(session, device_id, peers)
@@ -241,7 +263,8 @@ def run_merge(session: Any, lease: Any, *, device_id: str, views: Iterable[View]
     implausible: set[tuple[str, str]] = set()
     while True:
         try:
-            local = local_view(session, lease, device_id=device_id, now=now)
+            local = local_view(session, lease, device_id=device_id, now=now, collection_id=collection_id,
+                               collections=collections)
         except BridgeError as exc:
             issues.append(SyncIssue("local-data", str(exc)))
             return RunReport(issues=tuple(issues))
@@ -249,7 +272,8 @@ def run_merge(session: Any, lease: Any, *, device_id: str, views: Iterable[View]
         outcome, origin, peers = _combine(local, peers, issues)
         local_skipped = tuple(sorted(local.skipped.items()))
         try:
-            report = apply(session, lease, outcome, device_id=device_id, now=now)
+            report = apply(session, lease, outcome, device_id=device_id, now=now, collection_id=collection_id,
+                           collections=collections)
         except BridgeError as exc:
             if exc.reason in ("bad-remote", "update-needed", "attachment-missing") and exc.item_id in origin:
                 bad, record_id = origin[exc.item_id]
@@ -277,7 +301,8 @@ def run_merge(session: Any, lease: Any, *, device_id: str, views: Iterable[View]
         break
 
     try:
-        final = local_view(session, lease, device_id=device_id, now=now)
+        final = local_view(session, lease, device_id=device_id, now=now, collection_id=collection_id,
+                           collections=collections)
     except BridgeError as exc:
         issues.append(SyncIssue("local-data", str(exc)))
         final = None

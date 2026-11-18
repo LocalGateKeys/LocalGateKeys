@@ -90,7 +90,9 @@ extension FolderSync {
     /// The new key is wrapped only to this device and the members in `keep` (the members the user saw and
     /// confirmed, audit M10); every other keyring member is dropped like `remove`. `keep` nil means the members
     /// this device knows at its epoch. A LAN-only peer in `remove` leaves the LAN list only. Use it with no
-    /// `remove` to change the sync password.
+    /// `remove` to change the sync password. Each member in `remove` that is in the keyring gets a signed removal
+    /// notice (`removed/<id>.lgkremoved`, `RemovalNotice`) after the keyring write; unconfirmed members dropped by
+    /// `keep` get none (desktop `rotate_folder_group`).
     public func rotate(store: any ItemStore, newPassword: String, remove: [String] = [], keep: [String]? = nil,
                        random: some RandomSource, clock: some UnixClock) throws -> RunReport {
         try rotate(store: store, newPassword: newPassword, remove: remove, keep: keep, random: random, clock: clock,
@@ -118,6 +120,8 @@ extension FolderSync {
             let ring = try Keyring.parse(raw)
             let ringIDs = Self.memberIDs(ring)
             let lanIDs = Set(state.lanPeers.map(\.deviceID))
+            // Only members the user chose get a signed removal notice (never the unconfirmed ones dropped below).
+            let notify = Set(remove.filter { ringIDs.contains($0) && $0 != state.deviceID }).sorted()
             var drop = remove
             var ringDrop = remove.filter { ringIDs.contains($0) || !lanIDs.contains($0) }
             let unconfirmed = ringIDs.subtracting(kept).subtracting(remove).subtracting([state.deviceID]).sorted()
@@ -138,6 +142,11 @@ extension FolderSync {
                 if let path = FolderLayout.signatureFile(dev) { try? access.remove(path) }
                 if let path = FolderLayout.witnessFile(dev) { try? access.remove(path) }
                 if let path = FolderLayout.witnessSignatureFile(dev) { try? access.remove(path) }
+            }
+            // After the keyring and the state: one notice per removed member, signed for the new epoch.
+            let now = clock.now
+            for dev in notify {
+                writeRemovalNotice(state.identity, groupID: state.groupID, deviceID: dev, epoch: gk.epoch, now: now)
             }
         }
         return runOnce(store: store, random: random, clock: clock)

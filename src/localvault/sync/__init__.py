@@ -4,16 +4,6 @@ Importing this package has no side effects: it does not discover peers, bind a
 socket, read settings, or start a background worker.
 """
 
-from .conflicts import (
-    ConflictCopy,
-    ConflictError,
-    ConflictStore,
-    MergeResult,
-    deterministic_conflict_id,
-    merge_record_pair,
-    merge_records,
-    resolve_conflict,
-)
 from .manifest import (
     Acknowledgement,
     AttachmentDelta,
@@ -76,8 +66,6 @@ __all__ = [
     "Revision", "SyncRecord", "AttachmentMeta", "AttachmentDelta", "Acknowledgement",
     "Manifest", "SyncDelta", "ManifestError", "ManifestReplayError", "build_manifest",
     "make_attachment_delta", "apply_delta", "encrypt_catalog_record", "decrypt_catalog_record",
-    "ConflictCopy", "MergeResult", "ConflictStore", "ConflictError",
-    "deterministic_conflict_id", "merge_record_pair", "merge_records", "resolve_conflict",
     "SyncState", "SyncStateError", "SyncDisabled", "PeerRevoked",
     "LANEndpoint", "SyncTransport", "LANTransport", "LanTransport", "SessionHello",
     "SecureChannel", "AuthenticationError", "ReplayError", "FrameError", "FrameTooLarge",

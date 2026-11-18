@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>LocalGateKeysPasskeyProvider</AssemblyName>
+    <RootNamespace>LocalGateKeys.PasskeyProvider</RootNamespace>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- No runtime injection knobs: DOTNET_STARTUP_HOOKS is ignored, and COM goes through the source-generated
+         ComWrappers only ([GeneratedComClass]/[GeneratedComInterface], StrategyBasedComWrappers). -->
+    <StartupHookSupport>false</StartupHookSupport>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Logos for WebAuthNPluginAddAuthenticator (base64 SVG 1.1). -->
+    <EmbeddedResource Include="..\..\assets\provider-light.svg" LogicalName="LocalGateKeys.PasskeyProvider.provider-light.svg" />
+    <EmbeddedResource Include="..\..\assets\provider-dark.svg" LogicalName="LocalGateKeys.PasskeyProvider.provider-dark.svg" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="LocalGateKeys.PasskeyProvider.Tests" />
+  </ItemGroup>
+</Project>

@@ -9,7 +9,10 @@
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>$(LGK_APP_GROUP)</string>
+		<string>$(LGK_SAFARI_APP_GROUP)</string>
 	</array>
+	<key>com.apple.security.device.usb</key>
+	<true/>
 	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
 	<key>com.apple.security.files.user-selected.read-write</key>
@@ -17,6 +20,8 @@
 	<key>com.apple.security.network.client</key>
 	<true/>
 	<key>com.apple.security.network.server</key>
+	<true/>
+	<key>com.apple.security.print</key>
 	<true/>
 	<key>keychain-access-groups</key>
 	<array>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">이 보관함에는 키 파일도 필요합니다.</string>
+    <string name="factors_required_yubikey">이 보관함에는 YubiKey도 필요합니다.</string>
+    <string name="factors_required_both">이 보관함에는 키 파일과 YubiKey도 필요합니다.</string>
+    <string name="factors_keyfile_mismatch">이 보관함의 키 파일이 아닙니다.</string>
+    <string name="factors_yubikey_mismatch">이 보관함의 YubiKey가 아닙니다.</string>
+    <string name="factors_keyfile_invalid">이 파일은 키 파일로 사용할 수 없습니다.</string>
+    <string name="factors_yubikey_bad_answer">YubiKey가 올바르게 응답하지 않았습니다. 슬롯 %1$d이 HMAC-SHA1 챌린지-응답으로 설정되어 있는지 확인하세요.</string>
+    <string name="factors_yubikey_removed">YubiKey를 다시 터치하세요.</string>
+    <string name="factors_yubikey_timeout">터치가 감지되지 않았습니다. YubiKey가 깜박이면 터치하세요.</string>
+    <string name="factors_yubikey_slot_not_configured">이 YubiKey의 슬롯 %1$d이(가) 챌린지-응답용으로 설정되지 않았습니다. Yubico Authenticator에서 Slots를 선택한 다음 슬롯 %1$d을(를) Challenge-response (HMAC-SHA1)로 설정하세요.</string>
+    <string name="factors_keyfile_unreadable">키 파일 %1$s을(를) 읽을 수 없습니다. 다시 선택하세요.</string>
+    <string name="factors_keyfile_too_large">이 파일은 키 파일로 사용하기에 너무 큽니다.</string>
+    <string name="factors_removed_by_phrase">키 파일 / YubiKey가 제거되었습니다. 다시 추가하세요.</string>
+    <string name="factors_prompt_no_keyfile">선택한 키 파일 없음</string>
+    <string name="factors_prompt_keyfile">키 파일: %1$s</string>
+    <string name="factors_prompt_choose">키 파일 선택…</string>
+    <string name="factors_touch_title">YubiKey를 터치하세요</string>
+    <string name="factors_section">키 파일 및 YubiKey</string>
+    <string name="factors_keyfile">키 파일</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">키 파일 설정됨</string>
+    <string name="factors_keyfile_none">키 파일 없음</string>
+    <string name="factors_yubikey_set">YubiKey 설정됨(슬롯 %1$d)</string>
+    <string name="factors_yubikey_none">YubiKey 없음</string>
+    <string name="factors_add_keyfile">키 파일 추가…</string>
+    <string name="factors_create_keyfile">키 파일 만들기…</string>
+    <string name="factors_add_yubikey">YubiKey 추가</string>
+    <string name="factors_slot">슬롯</string>
+    <string name="factors_remove_keyfile">키 파일 제거</string>
+    <string name="factors_remove_yubikey">YubiKey 제거</string>
+    <string name="factors_remove_confirm">이후에는 보관함을 잠금 해제할 때 이 요소가 필요하지 않습니다.</string>
+    <string name="factors_keyfile_added">키 파일 %1$s을(를) 추가했습니다.</string>
+    <string name="factors_keyfile_created">키 파일 %1$s을(를) 만들고 추가했습니다. 사본을 안전한 곳에 보관하세요.</string>
+    <string name="factors_yubikey_added">YubiKey를 추가했습니다(슬롯 %1$d).</string>
+    <string name="factors_keyfile_removed">키 파일을 제거했습니다.</string>
+    <string name="factors_yubikey_removed_done">YubiKey를 제거했습니다.</string>
+    <string name="factors_yubikey_setup">LocalGateKeys는 YubiKey를 프로그래밍하지 않습니다. Yubico Authenticator에서 설정하세요: Slots, Challenge-response, HMAC-SHA1, 슬롯 2(또는 슬롯 1). 백업 YubiKey에는 같은 비밀 값이 필요합니다.</string>
+    <string name="factors_always_ask">항상 키 파일 / YubiKey 요청</string>
+    <string name="factors_always_ask_needs_factor">먼저 키 파일 또는 YubiKey를 추가하세요.</string>
+    <string name="factors_shortcuts_off">먼저 “항상 키 파일 / YubiKey 요청”을 끄세요.</string>
+    <string name="factors_failed">키 파일 또는 YubiKey를 변경할 수 없습니다.</string>
+    <string name="factors_yubikey_no_transport">YubiKey를 휴대폰에 대려면 NFC를 켜거나 YubiKey를 연결하세요.</string>
+    <string name="factors_prompt_remember">이 휴대폰에 이 키 파일 기억</string>
+    <string name="factors_prompt_yubikey">YubiKey를 휴대폰 뒷면에 대거나 연결한 후 터치하세요(슬롯 %1$d).</string>
+    <string name="factors_sheet_title">잠금을 해제하려면 LocalGateKeys를 여세요</string>
+    <string name="factors_sheet_text">앱 비밀번호에는 키 파일 또는 YubiKey가 필요하며, 이를 요청할 수 있는 것은 앱뿐입니다.</string>
+    <string name="factors_sheet_open">LocalGateKeys 열기</string>
+    <string name="factors_needs_app_password">키 파일 또는 YubiKey를 추가하려면 앱 비밀번호를 켜세요</string>
+    <string name="factors_footer">이후 앱 비밀번호와 함께 키 파일 또는 YubiKey가 필요합니다. 복구 문구는 이것들 없이도 잠금을 해제합니다.</string>
+    <string name="factors_always_ask_note">키 파일 또는 YubiKey가 설정된 동안 지문 또는 얼굴 잠금 해제를 끕니다.</string>
+    <string name="factors_remember">이 휴대폰에 키 파일 위치 기억</string>
+    <string name="factors_password_text">앱 비밀번호를 입력하세요. 이미 설정된 키 파일 또는 YubiKey도 요청됩니다.</string>
+    <string name="factors_add_confirm">이제부터 잠금 해제에는 앱 비밀번호와 이 요소가 필요합니다. 복구 문구는 이것 없이도 잠금을 해제합니다.</string>
+</resources>

@@ -741,6 +741,16 @@ def openssh_fingerprint(public_key: Any) -> str:
     return "SHA256:" + base64.b64encode(hashlib.sha256(blob).digest()).decode("ascii").rstrip("=")
 
 
+def _derive_public_key(private_key: str, passphrase: str) -> str:
+    """Public line for a private key whose public half was not supplied, or ``""`` if it cannot be read."""
+    from .ssh_keys import SshKeyError, load_private_key
+
+    try:
+        return load_private_key(private_key, passphrase or None).public_line("")
+    except SshKeyError:
+        return ""
+
+
 def validate_ssh_key_fields(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ItemSchemaError("SSH key payload must be an object")
@@ -749,12 +759,15 @@ def validate_ssh_key_fields(value: Any) -> dict[str, Any]:
         raise ItemSchemaError("SSH key payload contains unsupported data")
     private_key = _text(value.get("private_key", ""), "private key", MAX_PRIVATE_KEY, allow_empty=True)
     public_key = _text(value.get("public_key", ""), "public key", MAX_PRIVATE_KEY, allow_empty=True)
+    passphrase = _text(value.get("passphrase", ""), "passphrase", MAX_PROTECTED_VALUE, allow_empty=True)
+    if private_key.strip() and not public_key.strip():
+        public_key = _derive_public_key(private_key, passphrase)
     computed = openssh_fingerprint(public_key)
     fingerprint = computed or _text(value.get("fingerprint", ""), "fingerprint", 128, allow_empty=True).strip()
     return {
         "private_key": private_key,
         "public_key": public_key,
-        "passphrase": _text(value.get("passphrase", ""), "passphrase", MAX_PROTECTED_VALUE, allow_empty=True),
+        "passphrase": passphrase,
         "fingerprint": fingerprint,
         "key_format": sniff_private_key_format(private_key),
         "notes": _text(value.get("notes", ""), "SSH key notes", MAX_NOTE_BODY, allow_empty=True),
@@ -824,11 +837,19 @@ def validate_passkey_fields(value: Any) -> dict[str, Any]:
     with another algorithm, is kept as backup data and never offered.  The
     private key is a protected field and is never released by the broker:
     the agent signs with it and returns only the signature.
+
+    ``unconfirmed`` (present only as ``True``) marks a passkey a website
+    created whose page has not yet confirmed it received the credential
+    (``passkey_broker``): it is never offered for sign-in and never synced. An
+    explicit discard removes it for good; otherwise it becomes an ordinary
+    passkey. Only ``ItemService.create_passkey`` sets it: updates and inbound
+    sync drop it.
     """
     if not isinstance(value, dict):
         raise ItemSchemaError("passkey payload must be an object")
     allowed = {"relying_party_id", "user_handle", "credential_id", "private_key", "algorithm", "created",
-               "notes", "template_id", "user_name", "user_display_name", "rp_name", "discoverable"}
+               "notes", "template_id", "user_name", "user_display_name", "rp_name", "discoverable",
+               "unconfirmed"}
     if set(value) - allowed:
         raise ItemSchemaError("passkey payload contains unsupported data")
     rp_id = _text(value.get("relying_party_id", ""), "relying party id", 253, allow_empty=True).strip().casefold()
@@ -842,7 +863,12 @@ def validate_passkey_fields(value: Any) -> dict[str, Any]:
     discoverable = value.get("discoverable", True)
     if type(discoverable) is not bool:
         raise ItemSchemaError("passkey discoverable flag must be true or false")
+    unconfirmed = value.get("unconfirmed", False)
+    if type(unconfirmed) is not bool:
+        raise ItemSchemaError("passkey unconfirmed flag must be true or false")
+    pending = {"unconfirmed": True} if unconfirmed else {}
     return {
+        **pending,
         "relying_party_id": rp_id,
         "user_handle": _base64url(value.get("user_handle", ""), "user handle"),
         "credential_id": _base64url(value.get("credential_id", ""), "credential id"),
@@ -1182,7 +1208,8 @@ def validate_collections(collections: Any) -> list[dict[str, Any]]:
     ids: set[str] = set()
     names: set[str] = set()
     for row in collections:
-        if not isinstance(row, dict) or set(row) - {"id", "name", "description", "created_at", "updated_at", "revision", "starter"}:
+        if not isinstance(row, dict) or set(row) - {"id", "name", "description", "created_at", "updated_at", "revision", "starter",
+                                               "shared_group_id"}:
             raise ItemSchemaError("collection contains unsupported fields")
         collection_id = _id(row.get("id"), "collection id")
         if collection_id in ids:
@@ -1202,17 +1229,25 @@ def validate_collections(collections: Any) -> list[dict[str, Any]]:
         starter = row.get("starter", False)
         if type(starter) is not bool:
             raise ItemSchemaError("collection starter flag is malformed")
-        result.append(
-            {
-                "id": collection_id,
-                "name": name,
-                "description": _text(row.get("description", ""), "collection description", 500, allow_empty=True),
-                "created_at": created,
-                "updated_at": updated,
-                "revision": revision,
-                "starter": starter,
-            }
-        )
+        normalized = {
+            "id": collection_id,
+            "name": name,
+            "description": _text(row.get("description", ""), "collection description", 500, allow_empty=True),
+            "created_at": created,
+            "updated_at": updated,
+            "revision": revision,
+            "starter": starter,
+        }
+        # Shared collections (sub-plan 07): the share group this collection syncs with.  Stored
+        # only when set, so a collection that is not shared keeps its exact record shape.
+        shared_group_id = row.get("shared_group_id")
+        if shared_group_id is not None:
+            # Imported here: only shared collections need the sync id rule.
+            from .sync.engine import is_valid_id
+            if not is_valid_id(shared_group_id):
+                raise ItemSchemaError("collection shared_group_id is malformed")
+            normalized["shared_group_id"] = shared_group_id
+        result.append(normalized)
     return result
 
 
@@ -1315,8 +1350,13 @@ def validate_events(events: Any) -> list[dict[str, Any]]:
         raise ItemSchemaError("activity history exceeds its bound")
     result = []
     for event in events:
-        if not isinstance(event, dict) or set(event) - {"id", "event_type", "timestamp", "item_id", "result", "count"}:
+        if not isinstance(event, dict) or set(event) - {"id", "event_type", "timestamp", "item_id", "result", "count",
+                                                         "prev_hash"}:
             raise ItemSchemaError("activity event contains unsupported fields")
+        prev_hash = event.get("prev_hash")
+        if prev_hash is not None and (not isinstance(prev_hash, str) or len(prev_hash) != 64
+                                      or any(c not in "0123456789abcdef" for c in prev_hash)):
+            raise ItemSchemaError("activity event hash is malformed")
         event_id = _id(event.get("id"), "event id")
         item_id = event.get("item_id")
         if item_id is not None:
@@ -1324,14 +1364,15 @@ def validate_events(events: Any) -> list[dict[str, Any]]:
         count = event.get("count", 0)
         if type(count) is not int or not 0 <= count <= 2**31 - 1:
             raise ItemSchemaError("activity event count is malformed")
-        result.append(
-            {
-                "id": event_id,
-                "event_type": _text(event.get("event_type", ""), "event type", 64),
-                "timestamp": _timestamp(event.get("timestamp"), "event timestamp"),
-                "item_id": item_id,
-                "result": _text(event.get("result", ""), "event result", 32),
-                "count": count,
-            }
-        )
+        row = {
+            "id": event_id,
+            "event_type": _text(event.get("event_type", ""), "event type", 64),
+            "timestamp": _timestamp(event.get("timestamp"), "event timestamp"),
+            "item_id": item_id,
+            "result": _text(event.get("result", ""), "event result", 32),
+            "count": count,
+        }
+        if prev_hash is not None:
+            row["prev_hash"] = prev_hash
+        result.append(row)
     return result

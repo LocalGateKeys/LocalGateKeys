@@ -1,0 +1,42 @@
+# Gitleaks config for CI (.github/workflows/security.yml). Default rules plus an
+# allowlist for test vectors, fixtures, demo data and parser code that names key formats.
+title = "LocalGateKeys"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test vectors, fixtures, demo/screenshot data and translations"
+paths = [
+  '''(^|/)tests?/''',
+  '''(^|/)src/test/''',
+  '''(^|/)[A-Za-z]*Tests/''',
+  '''Tests?\.(swift|kt|py|mjs|cjs|js)$''',
+  '''(^|/)i18n/[^/]+\.json$''',
+  '''^webui/src/screenshot/''',
+  '''^ios/Watch/WatchDemoStore\.swift$''',
+  '''^docs/store/''',
+  '''^scripts/make_[a-z_]*vectors\.py$''',
+  '''^docs/(archive/handoffs/)?LUNA_DIGITAL_SAFE_IMPLEMENTATION_PROMPT\.md$''',
+]
+
+[[allowlists]]
+description = "Key-format parsers and schemas that only contain header strings, not keys"
+paths = [
+  '''^src/localvault/(ssh_keys|item_schema)\.py$''',
+  '''^ios/LGKCore/Sources/LGKCore/(SSH/SSHKey|Records/Normalise)\.swift$''',
+  '''^android/lgk-core/src/main/kotlin/app/localgatekeys/core/records/Normalise\.kt$''',
+]
+
+[[allowlists]]
+description = "Python/Swift type annotations such as `signing_key: Ed25519PrivateKey`"
+regexTarget = "line"
+regexes = ['''\b[a-z_.]*key\s*:\s*[A-Za-z0-9_.| ]*(PrivateKey|PublicKey|AESGCM|ChaCha20Poly1305)\b''']
+
+[[allowlists]]
+description = "Values that are public by design: Paddle client-side token, extension manifest public key, Store package identity"
+paths = [
+  '''^website/(site\.config\.json|public/buy\.html)$''',
+  '''^browser-extension/manifest\.json$''',
+  '''^src/localvault/windows_passkey_provider\.py$''',
+]

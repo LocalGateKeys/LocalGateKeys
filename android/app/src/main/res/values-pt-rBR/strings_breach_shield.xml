@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Site verificado</string>
+    <string name="autofill_site_related">Site relacionado</string>
+    <string name="autofill_site_lookalike">Site imitador</string>
+    <string name="autofill_site_new">Site novo</string>
+    <string name="autofill_guard_title">Este é o site certo?</string>
+    <string name="autofill_guard_body">%1$s parece %2$s, onde seu login está salvo, mas é outro site. Continue somente se tiver certeza.</string>
+    <string name="autofill_guard_body_mixed">%1$s mistura letras de alfabetos diferentes, um truque comum de phishing. Continue somente se tiver certeza.</string>
+    <string name="autofill_guard_continue">Continuar em %1$s</string>
+    <string name="autofill_guard_go_back">Voltar</string>
+    <string name="autofill_same_account_title">É a mesma conta de %1$s?</string>
+    <string name="autofill_same_account_body">%1$s tem o mesmo nome de %2$s, onde seu login está salvo, mas outra terminação. Continue somente se for a mesma empresa.</string>
+    <string name="autofill_same_account_yes">Mesma conta</string>
+    <string name="autofill_pick_other_site_body">Este login está salvo para %2$s, não para %1$s. Preencha em %1$s somente se tiver certeza de que é o site certo.</string>
+    <string name="autofill_pick_no_site_body">Este login não tem um site salvo. Preencha em %1$s somente se tiver certeza de que é o site certo.</string>
+    <string name="autofill_pick_scheme_unknown_body">O navegador não informou se %1$s é uma página segura (https). Preencha somente se tiver certeza.</string>
+</resources>

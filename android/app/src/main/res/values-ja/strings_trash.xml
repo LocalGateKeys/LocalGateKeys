@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">最近削除した項目</string>
+    <string name="trash_empty">最近削除した項目はありません。</string>
+    <string name="trash_save_failed">「最近削除した項目」をこのスマートフォンに保存できませんでした。</string>
+    <string name="trash_reset">このスマートフォンの「最近削除した項目」を読み取れなかったため、リセットされました。</string>
+    <string name="trash_moved">「最近削除した項目」に移動しました</string>
+    <string name="trash_item_restored">項目を復元しました</string>
+    <string name="trash_restore_needs_pro">さらに多くの項目を復元するにはProにアップグレード</string>
+    <string name="trash_gone">「最近削除した項目」にはもうありません。</string>
+    <string name="trash_cannot_restore">このエントリは復元できません。</string>
+    <string name="trash_vault_unreadable">保管庫を読み取れませんでした。</string>
+    <string name="trash_same_id">同じIDの項目がすでにあります。</string>
+    <string name="trash_restore_save_failed">項目をこのデバイスに保存できませんでした。</string>
+    <string name="trash_delete_forever">完全に削除</string>
+    <string name="trash_keep_for">削除した項目を保持する期間</string>
+    <string name="trash_empty_all">「最近削除した項目」を空にする</string>
+    <string name="trash_footer">削除した項目は、このスマートフォン上で暗号化されたまま保持され、この期間が過ぎると完全に削除されます。無料プランの項目数には含まれません。古いバックアップには、まだ含まれている場合があります。</string>
+    <string name="trash_empty_all_title">「最近削除した項目」を空にしますか?</string>
+    <string name="trash_empty_all_message">ここにあるすべての項目が完全に削除されます。この操作は取り消せません。</string>
+    <string name="trash_delete_forever_title">完全に削除しますか?</string>
+    <string name="trash_delete_forever_message">「%1$s」は完全に削除されます。この操作は取り消せません。</string>
+    <string name="trash_removed_soon">まもなく削除</string>
+    <string name="trash_undo">元に戻す</string>
+    <string name="trash_undo_hint">削除した項目を復元します</string>
+    <string name="trash_undo_announcement">%1$s。取り消しできます。</string>
+    <plurals name="trash_days_left">
+        <item quantity="other">残り%1$d日</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="other">%1$d日</item>
+    </plurals>
+</resources>

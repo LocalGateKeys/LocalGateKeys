@@ -214,7 +214,7 @@ class PlayBillingPurchases(private val port: PlayBillingPort) : ProPurchasing {
     }
 
     companion object {
-        /** The Play Console product: one-time, US$4.99. */
+        /** The Play Console product: one-time; the price is set in Play Console. */
         const val PRODUCT_ID = "pro_unlimited"
         const val PRODUCT_TYPE = BillingClient.ProductType.INAPP
     }

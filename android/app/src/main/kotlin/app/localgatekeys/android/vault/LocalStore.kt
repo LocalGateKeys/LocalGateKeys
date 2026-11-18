@@ -10,6 +10,7 @@ import app.localgatekeys.core.json.JsonException
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.lan.DeviceIdentity
 import app.localgatekeys.core.lan.DeviceIdentityException
+import app.localgatekeys.core.lan.LanPeer
 import app.localgatekeys.core.primitives.Base64Exception
 import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.primitives.CryptoBox
@@ -90,6 +91,21 @@ class LocalStore private constructor(
 
     /** Test seam: called after the new generation is renamed into place, before `CURRENT` is written. */
     internal var beforeCurrentWrite: (() -> Unit)? = null
+
+    /**
+     * Called after every durable commit (an edit or a sync run), outside the store lock, with nothing from the
+     * snapshot: the pinned-codes widget re-reads the store and prunes its pins. Best effort: a failure is ignored.
+     */
+    @Volatile var onCommit: (() -> Unit)? = null
+
+    /**
+     * Item history (feature pack 2026-11-15, contract section 1.3): called after every durable commit, outside the
+     * store lock, with the records before and after (id -> synced wrapper). A failure never undoes or blocks the commit.
+     */
+    @Volatile var onHistory: ((before: Map<String, JsonValue>, after: Map<String, JsonValue>) -> Unit)? = null
+
+    /** The records [write] replaced, for [onHistory] (read under [lock] right after the write). */
+    private var replacedRecords: Map<String, JsonValue> = emptyMap()
 
     init {
         try {
@@ -181,20 +197,43 @@ class LocalStore private constructor(
      * generation is written; the plan hint in [AppSettings] is published after both are released.
      */
     override fun commit(change: StoreChange) {
+        var before: Map<String, JsonValue> = emptyMap()
         val committed = synchronized(lock) {
             checkOpen()
-            withFileLock { write(change) }
+            withFileLock { write(change) }.also {
+                before = replacedRecords
+                replacedRecords = emptyMap()
+            }
         }
         publishLimitHint(committed)
+        try {
+            onHistory?.invoke(before, change.records)
+        } catch (e: Exception) {
+            // History is best effort (contract section 1.3): the commit stands.
+        }
+        try {
+            onCommit?.invoke()
+        } catch (e: RuntimeException) {
+            // The commit itself succeeded; the next commit or unlock refreshes the widget.
+        }
     }
 
     private fun write(change: StoreChange): StoreSnapshot {
         val current = currentRevision()
         // The revision readers actually see (CURRENT, or the fallback generation if it is missing).
-        val visible = if (current == 0L) 0L else visibleSnapshot(current).revision
+        val seen = if (current == 0L) null else visibleSnapshot(current)
+        replacedRecords = if (onHistory != null) seen?.records ?: emptyMap() else emptyMap()
+        val visible = seen?.revision ?: 0L
         if (change.baseRevision != visible) {
             throw LocalStoreException(LocalStoreException.Kind.STALE, "expected ${change.baseRevision}, actual $visible")
         }
+        // Share groups (sub-plan 07) are carried over unless this commit is about them.
+        val shares = when (val s = change.shares) {
+            StoreChange.Shares.Keep -> seen?.shares
+            is StoreChange.Shares.Replace -> s.value
+        }
+        // The collections migration marker (sub-plan 07) is set by the migration commit only and kept by every other.
+        val migrated = change.collectionsMigrated ?: (seen?.collectionsMigrated ?: false)
         val rev = current + 1
         val tmp = File(directory, "tmp-${UUID.randomUUID()}")
         val gen = generationDir(rev)
@@ -225,15 +264,19 @@ class LocalStore private constructor(
                 writeFileSynced(File(tmp, file), seal(plain, ITEM_AAD + "$rev|" + id))
                 index.add(JsonValue.Obj(mapOf("id" to JsonValue.Str(id), "file" to JsonValue.Str(file))))
             }
-            val state = JsonValue.Obj(
-                mapOf(
-                    "v" to JsonValue.Int(1),
-                    "revision" to JsonValue.Int(rev),
-                    "items" to JsonValue.Arr(index),
-                    "meta" to JsonValue.Obj(change.meta.mapValues { encodeMeta(it.value) }),
-                    "sync" to (change.sync?.let { encodeSync(it) } ?: JsonValue.Null),
-                ),
+            val fields = linkedMapOf<String, JsonValue>(
+                "v" to JsonValue.Int(1),
+                "revision" to JsonValue.Int(rev),
+                "items" to JsonValue.Arr(index),
+                "meta" to JsonValue.Obj(change.meta.mapValues { encodeMeta(it.value) }),
+                "sync" to (change.sync?.let { encodeSync(it) } ?: JsonValue.Null),
             )
+            // Share groups (sub-plan 07): written only when there are some, so a store without shares is unchanged.
+            // Sealed with the rest of the state; never part of any backup or export.
+            if (shares != null) fields["shares"] = shares
+            // Written only once set, so a store that never migrated keeps its old shape.
+            if (migrated) fields["collections_migrated"] = JsonValue.Bool(true)
+            val state = JsonValue.Obj(fields)
             step = "write state.blob"
             writeFileSynced(File(tmp, "state.blob"), seal(CanonicalJson.encode(state, Dialect.UTF8), STATE_AAD + "$rev"))
             step = "sync tmp"
@@ -262,7 +305,7 @@ class LocalStore private constructor(
             throw LocalStoreException(LocalStoreException.Kind.IO, step)
         }
         prune(rev - 1, rev)
-        return StoreSnapshot(change.records, change.meta, change.sync, rev)
+        return StoreSnapshot(change.records, change.meta, change.sync, rev, shares, migrated)
     }
 
     /**
@@ -344,9 +387,13 @@ class LocalStore private constructor(
                 val plain = open(readFile(File(gen, file)), ITEM_AAD + "$rev|" + id)
                 records[id] = CanonicalJson.parse(plain)
             }
+            // Share groups (sub-plan 07) stay raw here: `ShareGroups.records` decodes them strictly and fails closed.
+            val shares = o["shares"]
             return StoreSnapshot(
                 records, meta.mapValues { decodeMeta(it.value) },
                 if (sync == JsonValue.Null) null else decodeSync(sync), rev,
+                if (shares == JsonValue.Null) null else shares,
+                o["collections_migrated"] == JsonValue.Bool(true),
             )
         } catch (e: JsonException) {
             throw corrupt("json")
@@ -587,6 +634,14 @@ class LocalStore private constructor(
                 if (s.peerSyncedAt.isNotEmpty()) o["peer_synced_at"] = ints(s.peerSyncedAt)
                 // Wi-Fi peers that take documents (attachment sync, 2026-10-29): written only when not empty.
                 if (s.attachmentPeers.isNotEmpty()) o["attachment_peers"] = JsonValue.Arr(s.attachmentPeers.map { JsonValue.Str(it) })
+                // Members added by another device and not confirmed yet (desktop `unacked_members`): only when not empty.
+                if (s.unackedMembers.isNotEmpty()) o["unacked_members"] = JsonValue.Arr(s.unackedMembers.map { JsonValue.Str(it) })
+                // Personal collections (sub-plan 07): Wi-Fi peers that read collection states, written when not empty.
+                if (s.collectionPeers.isNotEmpty()) o["collection_peers"] = JsonValue.Arr(s.collectionPeers.map { JsonValue.Str(it) })
+                // Wi-Fi peers that read the emergency access plan (sub-plan 08, desktop `heir_peers`): only when not empty.
+                if (s.heirPeers.isNotEmpty()) o["heir_peers"] = JsonValue.Arr(s.heirPeers.map { JsonValue.Str(it) })
+                // Devices paired with this phone as the Wi-Fi host (the Mac's `lan_peers`): only when not empty.
+                if (s.lanPeers.isNotEmpty()) o["lan_peers"] = JsonValue.Arr(s.lanPeers.map { it.json })
             },
         )
 
@@ -651,7 +706,27 @@ class LocalStore private constructor(
                 generationOffset = optWitnessInt(f, "generation_offset"),
                 peerSyncedAt = witnessInts(f, "peer_synced_at"),
                 attachmentPeers = witnessPeers(f, "attachment_peers"),
+                unackedMembers = witnessPeers(f, "unacked_members"),
+                // Absent in older states; unique valid ids, at most 64, kept sorted (desktop `collection_peers`).
+                collectionPeers = witnessPeers(f, "collection_peers"),
+                heirPeers = witnessPeers(f, "heir_peers"),
+                lanPeers = lanPeers(f),
             )
+        }
+
+        /** Pinned Wi-Fi peers of a phone host (absent in older states): at most [LanPeers.MAX_PEERS], unique ids. */
+        private fun lanPeers(f: Fields): List<LanPeer> {
+            if (!f.o.containsKey("lan_peers")) return emptyList()
+            val items = (f.o["lan_peers"] as? JsonValue.Arr)?.items ?: throw corrupt("lan_peers")
+            val peers = try {
+                items.map { LanPeer.fromJson(it) }
+            } catch (e: Exception) {
+                throw corrupt("lan_peers")
+            }
+            if (peers.size > app.localgatekeys.core.lan.LanPeers.MAX_PEERS || peers.map { it.deviceId }.toSet().size != peers.size) {
+                throw corrupt("lan_peers")
+            }
+            return peers
         }
 
         private fun optWitnessInt(f: Fields, k: String): Long {

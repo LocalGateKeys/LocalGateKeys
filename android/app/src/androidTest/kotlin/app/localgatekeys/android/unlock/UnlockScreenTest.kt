@@ -39,6 +39,7 @@ class UnlockScreenTest {
         show()
         rule.onNodeWithTag("brandMark").assertIsDisplayed()
         rule.onNodeWithText("LocalGateKeys").assertIsDisplayed()
+        rule.onNodeWithText("Your keys. Your control.").assertIsDisplayed()
         rule.onNodeWithText("Unlock").assertIsDisplayed().assertIsEnabled().performClick()
         assertEquals(1, unlocks)
         rule.onNodeWithText("Start fresh anyway").assertDoesNotExist()

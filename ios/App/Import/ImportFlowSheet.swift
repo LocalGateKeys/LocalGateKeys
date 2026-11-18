@@ -9,7 +9,11 @@ struct ImportFlowSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let review = model.review {
+                if let report = model.report {
+                    ImportReportForm(model: model, report: report)
+                } else if let restore = model.restore {
+                    RestorePreviewForm(model: model, preview: restore)
+                } else if let review = model.review {
                     ImportReviewList(model: model, review: review)
                 } else if let request = model.mappingRequest {
                     ImportMappingForm(model: model, request: request)
@@ -24,6 +28,49 @@ struct ImportFlowSheet: View {
     }
 }
 
+/// What arrived (feature pack §6.1): counts read back from the vault, what was not imported, and Undo.
+private struct ImportReportForm: View {
+    let model: ImportExportModel
+    let report: ImportReport
+    @Environment(\.phoneTrash) private var trash
+    @State private var confirmingUndo = false
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(report.counts, id: \.kind) { Text(ImportReport.countLine($0)) }
+            } footer: {
+                Text(ImportReport.checkHint)
+            }
+            .listRowBackground(Palette.groupSurface)
+            if !report.skipped.isEmpty {
+                Section {
+                    ForEach(report.skipped, id: \.reason) { Text(ImportReport.skipLine($0)) }
+                } header: {
+                    Text(ImportReport.skippedHeader(report.skipped.reduce(0) { $0 + $1.count }))
+                }
+                .listRowBackground(Palette.groupSurface)
+            }
+            if report.canUndo, trash != nil {
+                Section {
+                    Button(ImportReport.undoLabel, role: .destructive) { confirmingUndo = true }
+                } footer: {
+                    Text(ImportReport.undoHelp)
+                }
+                .listRowBackground(Palette.groupSurface)
+            }
+        }
+        .navigationTitle(ImportReport.title)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) { Button("Done") { model.closeReport() } }
+        }
+        .confirmationDialog(ImportReport.undoLabel, isPresented: $confirmingUndo, titleVisibility: .visible) {
+            Button(ImportReport.undoLabel, role: .destructive) { model.undoLastImport(trash: trash) }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+}
+
 /// Asks for the export's password (Bitwarden password-protected JSON, KeePass `.kdbx`); a wrong one asks again.
 /// The field is cleared after each try and when the sheet closes.
 private struct ImportPasswordForm: View {
@@ -34,7 +81,7 @@ private struct ImportPasswordForm: View {
     var body: some View {
         Form {
             Section {
-                SecureField("File password", text: $password)
+                SecureField(request.isPhoneBackup ? String(localized: "Backup password") : String(localized: "File password"), text: $password)
                     .textContentType(.password)
                     .submitLabel(.go)
                     .onSubmit(submit)
@@ -73,6 +120,48 @@ private struct ImportPasswordForm: View {
         password = ""
         guard !p.isEmpty else { return }
         Task { await model.submitPassword(p) }
+    }
+}
+
+/// A phone backup opened with its password: what restoring it does (the Mac's restore step), then Restore.
+/// Nothing is written before Restore.
+private struct RestorePreviewForm: View {
+    let model: ImportExportModel
+    let preview: ImportExportModel.RestorePreview
+
+    static let footer = String(localized: "The backup is merged into this vault like a sync: nothing here is deleted unless the backup deleted it, and nothing newer is overwritten. Items it deletes move to Recently deleted.")
+
+    var body: some View {
+        Form {
+            Section {
+                ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in Text(line) }
+            } header: {
+                Text(preview.fileName)
+            } footer: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(Self.footer)
+                    if let m = model.message { Text(m).foregroundStyle(Palette.warning) }
+                }
+            }
+            .listRowBackground(Palette.groupSurface)
+            if model.busy {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Restoring…").foregroundStyle(Palette.secondaryText)
+                }
+                .listRowBackground(Palette.groupSurface)
+            }
+        }
+        .disabled(model.busy)
+        .navigationTitle("Restore backup")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { model.cancelRestore() }.disabled(model.busy)
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Restore") { Task { await model.commitRestore() } }.disabled(model.busy)
+            }
+        }
     }
 }
 

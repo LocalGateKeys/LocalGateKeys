@@ -69,10 +69,10 @@ def test_generator_reproduces_committed_files_byte_for_byte(tmp_path):
     generator.generate(out)
     fresh = sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file())
     # from_android/ and from_ios/ are written by the phone cores (LGK_WRITE_FROM_ANDROID / LGK_WRITE_FROM_IOS), and
-    # v2/ and schedule/ by scripts/gen_mac_backup_vectors.py (tests/test_mac_backup_vectors.py), not here.
+    # v2/, v3/ and schedule/ by scripts/gen_mac_backup_vectors.py (test_mac_backup_vectors.py, test_backup_v3_vectors.py).
     committed = sorted(
         rel for rel in (p.relative_to(VEC).as_posix() for p in VEC.rglob("*") if p.is_file())
-        if not rel.startswith(("from_android/", "from_ios/", "v2/", "schedule/"))
+        if not rel.startswith(("from_android/", "from_ios/", "v2/", "v3/", "schedule/"))
     )
     assert fresh == committed == list(generator.GENERATED_FILES)
     for rel in committed:

@@ -7,7 +7,7 @@ listing, or relied on.
 
 | File | Rendered at | Covers |
 |---|---|---|
-| [eula.md](eula.md) | `/legal/eula` | Free (4 items) and Pro (unlimited) licence, lifetime updates, revocation, no warranty, liability cap |
+| [eula.md](eula.md) | `/legal/eula` | Free (7 items) and Pro (unlimited) licence, lifetime updates, revocation, no warranty, liability cap |
 | [privacy-policy.md](privacy-policy.md) | `/legal/privacy` | Apps collect nothing; website without cookies or analytics; update-check and revocation-list requests; merchant of record; iOS "Data Not Collected" |
 | [terms-of-sale.md](terms-of-sale.md) | `/legal/terms-of-sale` | Merchant of record, price and tax, delivery, withdrawal rights |
 | [refund-policy.md](refund-policy.md) | `/legal/refunds` | 30-day refund, how to ask, revocation without data loss |

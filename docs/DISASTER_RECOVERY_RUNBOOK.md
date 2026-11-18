@@ -127,6 +127,61 @@ copy according to the organization’s media policy.
 9. Change passwords or revoke sessions if the original computer may have been
    accessed. Treat the original machine and any connected backup as suspect.
 
+## Backup restore test
+
+Once a week (Settings › Backups, on by default) the app restores the newest backup into
+`<data folder>/restore-test/<random id>`, unlocks that copy once, counts its items and deletes the folder. The
+live vault is never opened for this. Security check shows "Last backup restore test: passed N days ago",
+"failed: reason" or "never run". "The backup uses the old password" means the backup (or the vault inside it) was
+made with a password you have since changed: keep that old password with the backup, or make a fresh backup now.
+"Damaged or unreadable" means the file itself is bad: make a new backup and check the copy on the other disk.
+
+## Estate pack
+
+The "Estate pack" template is a note with five headings: where the will is, the executor, accounts to close,
+devices and their unlock, and the shard holders of emergency access (listed by nickname only). Keep it next to
+the printed emergency kit and its holder page; it does not replace either.
+
+## Emergency access for others
+
+Pro. This lets people you trust get your passwords back if you cannot. There is no account and no server.
+
+Set up (on a computer, with the recovery phrase typed in):
+
+1. Pick up to five holders by nickname, how many of them are needed (2 to 5) and a waiting period of 1 to 30 days.
+2. Give each holder their shard as a file, a QR code or a printed sheet. Keep the shards apart. Choose a shared
+   folder (a cloud folder or a USB stick) that the holders can reach; your app writes an encrypted copy of your
+   latest backup there every day while it is open and unlocked.
+3. Write down who holds which shard. The emergency kit lists holders by nickname only.
+
+When a holder needs access:
+
+1. The holder opens "Emergency access" in their own LocalGateKeys (Free is enough), adds the shards and asks.
+2. Your devices show "requested access, N days left" with a Deny button. Denying wins at any time before the
+   holder's app combines the shards. You can also grant at once with your recovery phrase.
+3. When the waiting period has passed with no denial, the holder's app opens the latest backup in the folder as a
+   new profile with a new master password. On a phone the flow ends by showing your recovery phrase, which opens
+   the backup on a computer. The backup must be newer than the plan; if your app has not run for a long time the
+   holder sees "no recent backup".
+
+Limits:
+
+- Any holders who have enough shards and work together can open your backup at once, with no wait and no veto.
+  Only honest apps enforce the wait. Choose people who would not act together.
+- Replacing your recovery phrase, or changing the master password without the phrase, makes the shards stale. The app then
+  deletes the plan's backups from the emergency folder the next time it looks there, so the old shards have nothing
+  left to open. The app says "re-issue shards". Old shards stop working.
+- The folder shows when your app last wrote a backup, so holders can see how long it has been idle.
+- Format and rules: `docs/formats/LGKHEIR_V1.md`.
+
+## Duress password
+
+Pro, on Windows, iPhone and Android (not on the Mac). A second password opens a believable vault with sample items.
+While it is open, the real vault is locked for the hours you chose and nothing syncs. It hides your vault from
+someone looking over your shoulder or forcing you to open the app. It is not hidden from someone who examines the
+files, and it does not protect a copy of the vault that was already taken. Set it up in Settings, Unlocking, Duress
+password. The duress password must differ from the master password. See `SECURITY.md`.
+
 ## Failure handling
 
 - Wrong backup password, wrong master password, checksum failure, archive

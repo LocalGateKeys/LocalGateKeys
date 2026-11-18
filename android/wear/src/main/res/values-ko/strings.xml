@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">고정된 코드</string>
+    <string name="tile_description">휴대전화의 LocalGateKeys에서 고정한 2단계 인증 코드입니다.</string>
+    <string name="tile_no_data">휴대전화에서 LocalGateKeys를 여세요</string>
+    <string name="tile_locked">코드를 보려면 휴대전화에서 LocalGateKeys 잠금을 해제하세요</string>
+    <string name="tile_locked_immediately">여기에서 코드를 보려면 휴대전화의 자동 잠금을 1분 이상으로 설정하세요</string>
+    <string name="tile_empty">LocalGateKeys에서 코드를 고정하세요</string>
+    <string name="tile_watch_locked">코드를 보려면 시계 잠금을 해제하세요</string>
+    <string name="tile_updated_now">방금 업데이트됨</string>
+    <string name="tile_updated_minutes">%1$d분 전 업데이트됨</string>
+    <string name="tile_updated_hours">%1$d시간 전 업데이트됨</string>
+    <string name="tile_updated_days">%1$d일 전 업데이트됨</string>
+</resources>

@@ -99,6 +99,36 @@ final class VaultExporterTests: XCTestCase {
         XCTAssertEqual(config.digits, 8)
     }
 
+    func testCXFHoldsOnlyTheChosenItems() throws {
+        let store = try populatedStore()
+        let e = exporter(store)
+        let choices = try e.cxfChoices()
+        XCTAssertEqual(choices.map(\.title), ["Alpha, Inc", "Bravo", "example.com"])
+        XCTAssertEqual(choices.map(\.kind), [.login, .login, .passkey])
+        XCTAssertFalse(choices.contains { $0.id == "gone-1" })
+        let chosen = choices.filter { $0.title != "Bravo" }.map(\.id)
+        let file = try e.cxf(ids: chosen)
+        cleanup(file.url)
+        XCTAssertEqual(file.url.lastPathComponent, "LocalGateKeys-CXF-2027-01-15.json")
+        XCTAssertEqual(file.diagnostics, [])
+        let data = try Data(contentsOf: file.url)
+        let r = try CXFImport.candidates(fromAccountJSON: data)
+        XCTAssertEqual(r.unsupported, 0)
+        XCTAssertEqual(r.candidates.map(\.title), ["Alpha, Inc", "example.com"])
+        guard case .login(let a) = r.candidates[0].kind, case .passkey(let p) = r.candidates[1].kind else { return XCTFail() }
+        XCTAssertEqual(a.password, "p,w\"1")
+        XCTAssertEqual(a.notes, "one, two\nthree")
+        XCTAssertEqual(p.credentialID, Data(repeating: 7, count: 16))
+        XCTAssertNotNil(PasskeyKey(pkcs8B64URL: base64URLNoPad(Array(p.pkcs8))))
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("pw2"), "Bravo was not chosen")
+    }
+
+    func testCXFNothingChosenRefused() throws {
+        let e = exporter(try populatedStore())
+        XCTAssertThrowsError(try e.cxfCheck(ids: [])) { XCTAssertEqual($0 as? CXFExport.Failure, .chooseItems) }
+        XCTAssertThrowsError(try e.cxf(ids: ["gone-1"])) { XCTAssertEqual($0 as? CXFExport.Failure, .nothingToExport) }
+    }
+
     func testExportCommitsVectorsSoLaterEditsDominate() async throws {
         let store = try populatedStore()
         let url = try await exporter(store).encryptedBackup(password: Self.password, confirmation: Self.password)
@@ -138,7 +168,8 @@ final class VaultExporterTests: XCTestCase {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
-        for n in ["LocalGateKeys-Export-2026-01-01.csv", "LocalGateKeys-Backup-2026-01-01.lgkm", "keep.csv"] {
+        for n in ["LocalGateKeys-Export-2026-01-01.csv", "LocalGateKeys-Backup-2026-01-01.lgkm",
+                  "LocalGateKeys-CXF-2026-01-01.json", "keep.csv"] {
             try Data("x".utf8).write(to: dir.appendingPathComponent(n))
         }
         VaultExporter.removeLeftoverExports(in: dir)

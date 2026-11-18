@@ -1,0 +1,2688 @@
+{
+ "constants": {
+  "grant_ttl": 300.0,
+  "arm_ttl": 60.0,
+  "max_purpose": 300,
+  "max_site": 253,
+  "max_listed": 50,
+  "rate_window": 60.0,
+  "rate_per_client": 3,
+  "rate_total": 10
+ },
+ "start": 1000.0,
+ "clients": {
+  "A": {
+   "client_id": "4242:S1",
+   "name": "Claude Code",
+   "process": "claude"
+  },
+  "B": {
+   "client_id": "4343:S2",
+   "name": "",
+   "process": "node"
+  },
+  "C": {
+   "client_id": "4444:S3",
+   "name": "Bad‮\u0007 agent\nnamexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "process": "p\u0000y"
+  }
+ },
+ "vault": [
+  {
+   "id": "11111111-1111-4111-8111-111111111111",
+   "title": "PayPal",
+   "kind": "web",
+   "record": {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "kind": "web",
+    "label": "PayPal",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://www.paypal.com",
+       "match": "exact_origin"
+      },
+      {
+       "url": "https://paypal.com",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "22222222-2222-4222-8222-222222222222",
+   "title": "Example login",
+   "kind": "web",
+   "record": {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "kind": "web",
+    "label": "Example login",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://login.example.com",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "33333333-3333-4333-8333-333333333333",
+   "title": "Example shop",
+   "kind": "web",
+   "record": {
+    "id": "33333333-3333-4333-8333-333333333333",
+    "kind": "web",
+    "label": "Example shop",
+    "username": "bob",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://shop.example.com",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "44444444-4444-4444-8444-444444444444",
+   "title": "Bank",
+   "kind": "web",
+   "record": {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "kind": "web",
+    "label": "Bank",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://bank.example.org",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    },
+    "policy": {
+     "require_master_password": true
+    }
+   }
+  },
+  {
+   "id": "55555555-5555-4555-8555-555555555555",
+   "title": "Never",
+   "kind": "web",
+   "record": {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "kind": "web",
+    "label": "Never",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://never.example.net",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    },
+    "policy": {
+     "fill": "never"
+    }
+   }
+  },
+  {
+   "id": "66666666-6666-4666-8666-666666666666",
+   "title": "Odd fill",
+   "kind": "web",
+   "record": {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "kind": "web",
+    "label": "Odd fill",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://odd.example.net",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    },
+    "policy": {
+     "fill": 5
+    }
+   }
+  },
+  {
+   "id": "77777777-7777-4777-8777-777777777777",
+   "title": "Not allowed",
+   "kind": "web",
+   "record": {
+    "id": "77777777-7777-4777-8777-777777777777",
+    "kind": "web",
+    "label": "Not allowed",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://private.example.net",
+       "match": "exact_origin"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "88888888-8888-4888-8888-888888888888",
+   "title": "String flag",
+   "kind": "web",
+   "record": {
+    "id": "88888888-8888-4888-8888-888888888888",
+    "kind": "web",
+    "label": "String flag",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://flag.example.net",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": "true"
+    }
+   }
+  },
+  {
+   "id": "99999999-9999-4999-8999-999999999999",
+   "title": "Note kind",
+   "kind": "note",
+   "record": {
+    "id": "99999999-9999-4999-8999-999999999999",
+    "kind": "note",
+    "label": "Note kind",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://note.example.net",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+   "title": "Two sites",
+   "kind": "web",
+   "record": {
+    "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "kind": "web",
+    "label": "Two sites",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://a.twosites.com",
+       "match": "exact_origin"
+      },
+      {
+       "url": "https://b.other.org",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+   "title": "Legacy",
+   "kind": "web",
+   "record": {
+    "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    "kind": "web",
+    "label": "Legacy",
+    "username": "alice",
+    "scope": {
+     "origin": "https://legacy.example.io",
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+   "title": "GitHub",
+   "kind": "web",
+   "record": {
+    "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    "kind": "web",
+    "label": "GitHub",
+    "username": "octo",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://github.com",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+   "title": "PayPal",
+   "kind": "web",
+   "record": {
+    "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    "kind": "web",
+    "label": "PayPal",
+    "username": "second",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://www.paypal.com",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    }
+   }
+  },
+  {
+   "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+   "title": "String yes is strict",
+   "kind": "web",
+   "record": {
+    "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    "kind": "web",
+    "label": "String yes is strict",
+    "username": "alice",
+    "scope": {
+     "urls": [
+      {
+       "url": "https://loose.example.net",
+       "match": "exact_origin"
+      }
+     ],
+     "ai_agents": true
+    },
+    "policy": {
+     "require_master_password": "yes",
+     "fill": "click"
+    }
+   }
+  }
+ ],
+ "passkeys": [
+  {
+   "credential_id": "pk-octo",
+   "rp_id": "github.com",
+   "user_name": "octo"
+  },
+  {
+   "credential_id": "pk-other",
+   "rp_id": "github.com",
+   "user_name": "someone"
+  },
+  {
+   "credential_id": "pk-bob",
+   "rp_id": "shop.example.com",
+   "user_name": "carol"
+  }
+ ],
+ "scenarios": [
+  {
+   "name": "agents_off",
+   "settings": {
+    "agents_enabled": false
+   },
+   "steps": [
+    {
+     "op": "list_sites",
+     "client": "A",
+     "expect": {
+      "result": {
+       "refused": "disabled"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "disabled"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "not a url",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "invalid"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "failed"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "expect": {
+      "result": {
+       "refused": "disabled"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "take_for_origin",
+     "origin": "https://login.example.com",
+     "expect": {
+      "result": {
+       "taken": null
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "not_pro",
+   "pro": false,
+   "steps": [
+    {
+     "op": "list_sites",
+     "client": "A",
+     "expect": {
+      "result": {
+       "refused": "pro"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "pro"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "locked",
+   "locked": true,
+   "steps": [
+    {
+     "op": "list_sites",
+     "client": "A",
+     "expect": {
+      "result": {
+       "refused": "locked"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "locked"
+       ]
+      ],
+      "unlocks": 1
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "locked"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "locked"
+       ]
+      ],
+      "unlocks": 1
+     }
+    }
+   ]
+  },
+  {
+   "name": "listing_once_per_session",
+   "steps": [
+    {
+     "op": "list_sites",
+     "client": "A",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "list",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "",
+        "purpose": "",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.search",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "A",
+     "answer": true,
+     "expect": {
+      "result": {
+       "sites": [
+        {
+         "title": "PayPal",
+         "domain": "paypal.com"
+        },
+        {
+         "title": "Example login",
+         "domain": "example.com"
+        },
+        {
+         "title": "Example shop",
+         "domain": "example.com"
+        },
+        {
+         "title": "Two sites",
+         "domain": "other.org"
+        },
+        {
+         "title": "Two sites",
+         "domain": "twosites.com"
+        },
+        {
+         "title": "Legacy",
+         "domain": "example.io"
+        },
+        {
+         "title": "GitHub",
+         "domain": "github.com"
+        }
+       ]
+      },
+      "prompts": [
+       {
+        "action": "list",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "",
+        "purpose": "",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.search",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "A",
+     "query": "EXAMPLE",
+     "expect": {
+      "result": {
+       "sites": [
+        {
+         "title": "Example login",
+         "domain": "example.com"
+        },
+        {
+         "title": "Example shop",
+         "domain": "example.com"
+        },
+        {
+         "title": "Legacy",
+         "domain": "example.io"
+        }
+       ]
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "A",
+     "query": "  pay\u0007pal  ",
+     "expect": {
+      "result": {
+       "sites": [
+        {
+         "title": "PayPal",
+         "domain": "paypal.com"
+        }
+       ]
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "A",
+     "query": "twosites.com",
+     "expect": {
+      "result": {
+       "sites": [
+        {
+         "title": "Two sites",
+         "domain": "twosites.com"
+        }
+       ]
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "B",
+     "answer": true,
+     "query": "nothing matches",
+     "expect": {
+      "result": {
+       "sites": []
+      },
+      "prompts": [
+       {
+        "action": "list",
+        "agent": "MCP client",
+        "process": "node",
+        "site": "",
+        "purpose": "",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.search",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "C",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "list",
+        "agent": "Bad agent namexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "process": "py",
+        "site": "",
+        "purpose": "",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.search",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "listing_hello",
+   "settings": {
+    "require_hello_for_agents": true
+   },
+   "steps": [
+    {
+     "op": "list_sites",
+     "client": "A",
+     "answer": true,
+     "query": "git",
+     "expect": {
+      "result": {
+       "sites": [
+        {
+         "title": "GitHub",
+         "domain": "github.com"
+        }
+       ]
+      },
+      "prompts": [
+       {
+        "action": "list",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "",
+        "purpose": "",
+        "hello": true,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.search",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "request_hosts",
+   "steps": [
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "Pay the\nbill ‮please",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G1",
+       "domain": "paypal.com",
+       "hosts": [
+        "paypal.com",
+        "www.paypal.com"
+       ],
+       "entry_ids": [
+        "11111111-1111-4111-8111-111111111111",
+        "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "Pay the bill please",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "https://login.example.com/signin",
+     "purpose": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G2",
+       "domain": "example.com",
+       "hosts": [
+        "login.example.com"
+       ],
+       "entry_ids": [
+        "22222222-2222-4222-8222-222222222222"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "login.example.com",
+        "purpose": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "B",
+     "site": "example.com",
+     "purpose": "",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "MCP client",
+        "process": "node",
+        "site": "login.example.com, shop.example.com",
+        "purpose": "",
+        "hello": false,
+        "method": "passkey"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "advance",
+     "seconds": 61,
+     "expect": {
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "files.example.com",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "bank.example.org",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "never.example.net",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "odd.example.net",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "private.example.net",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "flag.example.net",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "note.example.net",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "loose.example.net",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "legacy.example.io",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G3",
+       "domain": "example.io",
+       "hosts": [
+        "legacy.example.io"
+       ],
+       "entry_ids": [
+        "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "legacy.example.io",
+        "purpose": "x",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "C",
+     "site": "b.other.org",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G4",
+       "domain": "other.org",
+       "hosts": [
+        "b.other.org"
+       ],
+       "entry_ids": [
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Bad agent namexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "process": "py",
+        "site": "b.other.org",
+        "purpose": "x",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "localhost",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "not_found"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "not_found"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "",
+     "purpose": "x",
+     "expect": {
+      "result": {
+       "refused": "invalid"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "failed"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "rate_limits",
+   "steps": [
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "0",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "0",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "1",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "1",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "2",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "2",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "4",
+     "expect": {
+      "result": {
+       "refused": "rate_limited"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "A",
+     "expect": {
+      "result": {
+       "refused": "rate_limited"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "B",
+     "site": "paypal.com",
+     "purpose": "0",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "MCP client",
+        "process": "node",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "0",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "B",
+     "site": "paypal.com",
+     "purpose": "1",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "MCP client",
+        "process": "node",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "1",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "B",
+     "site": "paypal.com",
+     "purpose": "2",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "MCP client",
+        "process": "node",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "2",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "C",
+     "site": "paypal.com",
+     "purpose": "0",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Bad agent namexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "process": "py",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "0",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "C",
+     "site": "paypal.com",
+     "purpose": "1",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Bad agent namexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "process": "py",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "1",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "C",
+     "site": "paypal.com",
+     "purpose": "2",
+     "answer": false,
+     "expect": {
+      "result": {
+       "refused": "denied"
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Bad agent namexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "process": "py",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "2",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "advance",
+     "seconds": 30,
+     "expect": {
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "list_sites",
+     "client": "B",
+     "expect": {
+      "result": {
+       "refused": "rate_limited"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.search",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "advance",
+     "seconds": 31,
+     "expect": {
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "again",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G1",
+       "domain": "paypal.com",
+       "hosts": [
+        "paypal.com",
+        "www.paypal.com"
+       ],
+       "entry_ids": [
+        "11111111-1111-4111-8111-111111111111",
+        "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "again",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "password_grant_life",
+   "steps": [
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "login.example.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G1",
+       "domain": "example.com",
+       "hosts": [
+        "login.example.com"
+       ],
+       "entry_ids": [
+        "22222222-2222-4222-8222-222222222222"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "login.example.com",
+        "purpose": "x",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "take_for_origin",
+     "origin": "https://login.example.com",
+     "expect": {
+      "result": {
+       "taken": null
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "B",
+     "grant": "G1",
+     "expect": {
+      "result": {
+       "refused": "not_yours"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "nope",
+     "expect": {
+      "result": {
+       "refused": "expired"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": null,
+     "expect": {
+      "result": {
+       "refused": "invalid"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "during": [
+      {
+       "op": "take_for_origin",
+       "origin": "http://login.example.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://shop.example.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://examp1e.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "refused": "no_tab"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "skipped"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "take_for_origin",
+     "origin": "https://login.example.com",
+     "expect": {
+      "result": {
+       "taken": null
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "during": [
+      {
+       "op": "take_for_origin",
+       "origin": "https://login.example.com:8443",
+       "expect": {
+        "result": {
+         "taken": "G1"
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://login.example.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "finish",
+       "grant": "G1",
+       "outcome": "picker",
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "fill": {
+        "filled": false,
+        "site": "example.com",
+        "method": "password",
+        "note": "The user picks the login on the page."
+       }
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "open"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "expect": {
+      "result": {
+       "refused": "used"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "example.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G2",
+       "domain": "example.com",
+       "hosts": [
+        "login.example.com",
+        "shop.example.com"
+       ],
+       "entry_ids": [
+        "22222222-2222-4222-8222-222222222222",
+        "33333333-3333-4333-8333-333333333333"
+       ],
+       "passkey_ids": [
+        "pk-bob"
+       ],
+       "method": "passkey",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "login.example.com, shop.example.com",
+        "purpose": "x",
+        "hello": false,
+        "method": "passkey"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G2",
+     "during": [
+      {
+       "op": "take_for_origin",
+       "origin": "https://example.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://shop.example.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "finish",
+       "grant": "G2",
+       "outcome": "filled",
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "fill": {
+        "filled": false,
+        "site": "example.com",
+        "method": "passkey",
+        "note": "The passkey sign-in did not complete. Ask again with request_login."
+       }
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "open"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "password_grant_expiry",
+   "steps": [
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G1",
+       "domain": "paypal.com",
+       "hosts": [
+        "paypal.com",
+        "www.paypal.com"
+       ],
+       "entry_ids": [
+        "11111111-1111-4111-8111-111111111111",
+        "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "x",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "during": [
+      {
+       "op": "advance",
+       "seconds": 61,
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://www.paypal.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "refused": "no_tab"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "skipped"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "advance",
+     "seconds": 240,
+     "expect": {
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "expect": {
+      "result": {
+       "refused": "expired"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "paypal.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G2",
+       "domain": "paypal.com",
+       "hosts": [
+        "paypal.com",
+        "www.paypal.com"
+       ],
+       "entry_ids": [
+        "11111111-1111-4111-8111-111111111111",
+        "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "paypal.com, www.paypal.com",
+        "purpose": "x",
+        "hello": false,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G2",
+     "during": [
+      {
+       "op": "set",
+       "settings": {
+        "agents_enabled": false
+       },
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://www.paypal.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "set",
+       "settings": {
+        "agents_enabled": true
+       },
+       "pro": false,
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://www.paypal.com",
+       "expect": {
+        "result": {
+         "taken": null
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "set",
+       "pro": true,
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "take_for_origin",
+       "origin": "https://paypal.com",
+       "expect": {
+        "result": {
+         "taken": "G2"
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "finish",
+       "grant": "G2",
+       "outcome": "none",
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "fill": {
+        "filled": false,
+        "site": "paypal.com",
+        "method": "password",
+        "note": "The user picks the login on the page."
+       }
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "open"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "set",
+     "settings": {
+      "agents_enabled": false
+     },
+     "expect": {
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G2",
+     "expect": {
+      "result": {
+       "refused": "disabled"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "passkey_grant",
+   "steps": [
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "github.com",
+     "purpose": "Open a PR",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G1",
+       "domain": "github.com",
+       "hosts": [
+        "github.com",
+        "www.github.com"
+       ],
+       "entry_ids": [
+        "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+       ],
+       "passkey_ids": [
+        "pk-octo"
+       ],
+       "method": "passkey",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "github.com, www.github.com",
+        "purpose": "Open a PR",
+        "hello": false,
+        "method": "passkey"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "passkey_pending",
+     "origin": "https://github.com",
+     "expect": {
+      "result": {
+       "pending": true
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "passkey_pending",
+     "origin": "https://gist.github.com",
+     "expect": {
+      "result": {
+       "pending": false
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "take_for_origin",
+     "origin": "https://github.com",
+     "expect": {
+      "result": {
+       "taken": null
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "take_passkey_for_origin",
+     "origin": "https://github.com",
+     "credentials": [
+      "pk-other"
+     ],
+     "expect": {
+      "result": {
+       "taken": null
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "expect": {
+      "result": {
+       "refused": "no_passkey"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "skipped"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "during": [
+      {
+       "op": "take_passkey_for_origin",
+       "origin": "https://github.com",
+       "credentials": [
+        "x",
+        "pk-octo"
+       ],
+       "expect": {
+        "result": {
+         "taken": "G1"
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "passkey_pending",
+       "origin": "https://github.com",
+       "expect": {
+        "result": {
+         "pending": false
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "finish",
+       "grant": "G1",
+       "outcome": "passkey",
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "fill": {
+        "filled": true,
+        "site": "github.com",
+        "method": "passkey"
+       }
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G1",
+     "expect": {
+      "result": {
+       "fill": {
+        "filled": true,
+        "site": "github.com",
+        "method": "passkey"
+       }
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "shop.example.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G2",
+       "domain": "example.com",
+       "hosts": [
+        "shop.example.com"
+       ],
+       "entry_ids": [
+        "33333333-3333-4333-8333-333333333333"
+       ],
+       "passkey_ids": [
+        "pk-bob"
+       ],
+       "method": "passkey",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "shop.example.com",
+        "purpose": "x",
+        "hello": false,
+        "method": "passkey"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "A",
+     "site": "github.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G3",
+       "domain": "github.com",
+       "hosts": [
+        "github.com",
+        "www.github.com"
+       ],
+       "entry_ids": [
+        "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+       ],
+       "passkey_ids": [
+        "pk-octo"
+       ],
+       "method": "passkey",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Claude Code",
+        "process": "claude",
+        "site": "github.com, www.github.com",
+        "purpose": "x",
+        "hello": false,
+        "method": "passkey"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G3",
+     "during": [
+      {
+       "op": "take_passkey_for_origin",
+       "origin": "https://github.com",
+       "credentials": [
+        "pk-octo"
+       ],
+       "expect": {
+        "result": {
+         "taken": "G3"
+        },
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      },
+      {
+       "op": "finish",
+       "grant": "G3",
+       "outcome": "none",
+       "expect": {
+        "prompts": [],
+        "log": [],
+        "unlocks": 0
+       }
+      }
+     ],
+     "expect": {
+      "result": {
+       "fill": {
+        "filled": false,
+        "site": "github.com",
+        "method": "passkey",
+        "note": "The passkey sign-in did not complete. Ask again with request_login."
+       }
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "open"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "advance",
+     "seconds": 301,
+     "expect": {
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "passkey_pending",
+     "origin": "https://github.com",
+     "expect": {
+      "result": {
+       "pending": false
+      },
+      "prompts": [],
+      "log": [],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "fill_login",
+     "client": "A",
+     "grant": "G3",
+     "expect": {
+      "result": {
+       "refused": "expired"
+      },
+      "prompts": [],
+      "log": [
+       [
+        "agent.fill",
+        "denied"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "hello_on_sign_in",
+   "settings": {
+    "require_hello_for_agents": true
+   },
+   "steps": [
+    {
+     "op": "request_login",
+     "client": "C",
+     "site": "github.com",
+     "purpose": "\u0000",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G1",
+       "domain": "github.com",
+       "hosts": [
+        "github.com",
+        "www.github.com"
+       ],
+       "entry_ids": [
+        "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+       ],
+       "passkey_ids": [
+        "pk-octo"
+       ],
+       "method": "passkey",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "Bad agent namexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "process": "py",
+        "site": "github.com, www.github.com",
+        "purpose": "",
+        "hello": true,
+        "method": "passkey"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    },
+    {
+     "op": "request_login",
+     "client": "B",
+     "site": "www.paypal.com",
+     "purpose": "x",
+     "answer": true,
+     "expect": {
+      "result": {
+       "grant": "G2",
+       "domain": "paypal.com",
+       "hosts": [
+        "www.paypal.com"
+       ],
+       "entry_ids": [
+        "11111111-1111-4111-8111-111111111111",
+        "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+       ],
+       "passkey_ids": [],
+       "method": "password",
+       "expires_in": 300.0
+      },
+      "prompts": [
+       {
+        "action": "sign_in",
+        "agent": "MCP client",
+        "process": "node",
+        "site": "www.paypal.com",
+        "purpose": "x",
+        "hello": true,
+        "method": "password"
+       }
+      ],
+      "log": [
+       [
+        "agent.request",
+        "ok"
+       ]
+      ],
+      "unlocks": 0
+     }
+    }
+   ]
+  }
+ ]
+}

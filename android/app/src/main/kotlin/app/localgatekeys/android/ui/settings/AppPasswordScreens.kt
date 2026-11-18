@@ -31,11 +31,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import app.localgatekeys.android.settings.AppPasswordSeams
 import app.localgatekeys.android.settings.AppPasswordText
+import app.localgatekeys.android.ui.recovery.EmergencyKitPrint
 import app.localgatekeys.android.ui.theme.LgkTheme
 import app.localgatekeys.android.ui.unlock.AppPasswordField
 import app.localgatekeys.android.unlock.AppLockModel
@@ -52,9 +54,10 @@ private fun failure(e: Exception, t: Txt): String = AppLockModel.message(e, t) ?
  * the fingerprint shortcut and Change app password. [refresh] bumps after the setup page closes.
  */
 @Composable
-internal fun AppPasswordSection(seams: AppPasswordSeams, refresh: Int, onSetup: () -> Unit) {
+internal fun AppPasswordSection(seams: AppPasswordSeams, refresh: Int, onSetup: () -> Unit, onTurnedOff: () -> Unit = {}) {
     val txt = rememberTxt()
     val c = LgkTheme.colors
+    val context = LocalContext.current
     val appPw = AppPasswordText(rememberTxt())
     val scope = rememberCoroutineScope()
     var on by remember { mutableStateOf(false) }
@@ -84,6 +87,8 @@ internal fun AppPasswordSection(seams: AppPasswordSeams, refresh: Int, onSetup: 
                 }
             }
             RowButton(appPw.change, "settings-app-password-change") { dialog = "change" }
+            // The phrase is not kept anywhere after setup, so this kit has blank phrase boxes.
+            RowButton(txt.s(R.string.kit_print_blank), "settings-app-password-kit") { EmergencyKitPrint.print(context, txt, null) }
         }
     }
     when (dialog) {
@@ -95,7 +100,7 @@ internal fun AppPasswordSection(seams: AppPasswordSeams, refresh: Int, onSetup: 
             onDismiss = { dialog = null },
         ) { current, _ ->
             try {
-                seams.turnOff(current); dialog = null; message = null; reload++; null
+                seams.turnOff(current); dialog = null; message = null; reload++; onTurnedOff(); null
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -181,6 +186,7 @@ private fun PasswordDialog(
 internal fun AppPasswordSetup(seams: AppPasswordSeams, onDone: () -> Unit) {
     val c = LgkTheme.colors
     val txt = rememberTxt()
+    val context = LocalContext.current
     val appPw = AppPasswordText(txt)
     val scope = rememberCoroutineScope()
     var step by remember { mutableIntStateOf(0) }
@@ -240,6 +246,11 @@ internal fun AppPasswordSetup(seams: AppPasswordSeams, onDone: () -> Unit) {
                         fontFamily = FontFamily.Monospace,
                         modifier = Modifier.testTag("setup-phrase"),
                     )
+                    // The words go straight to the print job; nothing is stored, and the adapter drops them when it finishes.
+                    TextButton(
+                        onClick = { EmergencyKitPrint.print(context, txt, words) },
+                        modifier = Modifier.fillMaxWidth().testTag("setup-print-kit"),
+                    ) { Text(txt.s(R.string.kit_print_with_phrase), color = c.accentText) }
                     Next(txt.s(R.string.app_password_wrote_down)) { step = 2 }
                 }
                 else -> {

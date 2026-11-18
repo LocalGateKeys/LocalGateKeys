@@ -49,6 +49,9 @@ class SettingsForm(Protocol):
 
     def note(self, text: str) -> None: ...
 
+    def notice(self, title: str, text: str, actions: list[tuple[str, Callable[[], Any]]], *,
+               kind: str = "info") -> None: ...
+
     def link(self, title: str, description: str, label: str, url: str) -> None: ...
 
     def choose_folder(self, key: str, title: str) -> None: ...
@@ -146,9 +149,38 @@ def build_unlocking(form: SettingsForm) -> None:
                     t("settings.btn.manage") if enrolled else t("settings.btn.setUp"), _call(app, "hello_settings_clicked"), refresh=True,
                     primary=not enrolled)
     form.switch("hello_auto_start", t("settings.helloAutoStart.title"), t("settings.helloAutoStart.desc"))
+    if methods is not None and hasattr(methods, "security_key_available"):
+        # Shown even where it cannot work, with the reason; the Unlocking page then offers no setup.
+        if methods.security_key_available:
+            enrolled = methods.security_key_enrolled
+            description = t("settings.securityKey.on") if enrolled else t("settings.securityKey.desc")
+            label = t("settings.btn.manage") if enrolled else t("settings.btn.setUp")
+        else:
+            description = methods.security_key_reason or t("securityKey.status.unsupported")
+            label = t("settings.btn.view")
+        form.button(t("settings.securityKey.title"), description, label, _call(app, "hello_settings_clicked"),
+                    refresh=True)
     face = _status(app, "_settings_face_state") or {}
     form.button(t("settings.camera.title"), t("settings.camera.status", status=str(face.get("status", t("settings.notSetUp")))),
                 str(face.get("label", t("settings.btn.setUp"))), _call(app, "face_settings_clicked"), refresh=True)
+    factors = _status(app, "_settings_factor_state")
+    if factors is not None:
+        # Key file and YubiKey (KeePass-style factors) are managed on the Unlocking page with the shortcuts.
+        keyfile_on, yubikey_slot = bool(factors.get("keyfile")), factors.get("yubikey_slot")
+        form.button(t("factors.keyFile"), t("factors.keyFileOn") if keyfile_on else t("settings.notSetUp"),
+                    t("settings.btn.manage") if keyfile_on else t("settings.btn.setUp"),
+                    _call(app, "hello_settings_clicked"), refresh=True)
+        form.button(t("factors.yubikey"),
+                    t("factors.yubikeyOn", slot=yubikey_slot) if yubikey_slot else t("settings.notSetUp"),
+                    t("settings.btn.manage") if yubikey_slot else t("settings.btn.setUp"),
+                    _call(app, "hello_settings_clicked"), refresh=True)
+    duress_hours = _status(app, "_settings_duress_state")
+    if duress_hours is not None:
+        # Settings › Unlocking › Duress password: managed on the Unlocking page (DuressSection).
+        form.button(t("duress.ui.section"),
+                    t("duress.ui.statusOn", count=duress_hours) if duress_hours else t("settings.notSetUp"),
+                    t("settings.btn.manage") if duress_hours else t("settings.btn.setUp"),
+                    _call(app, "hello_settings_clicked"), refresh=True)
     form.button(t("settings.master.title"), t("settings.master.desc"),
                 t("settings.btn.change"), _call(app, "change_master_clicked"))
     phrase = None if methods is None else methods.recovery_phrase
@@ -175,11 +207,29 @@ def build_autofill(form: SettingsForm) -> None:
     form.switch("browser_enabled", t("settings.browser.title"), t("settings.browser.desc"))
     form.switch("passkeys_enabled", t("settings.passkeys.title"),
                 t("settings.passkeys.desc"))
+    from .. import windows_passkey_provider
+
+    if windows_passkey_provider.available():  # MSIX build on a Windows with the plugin passkey API only
+        form.switch("windows_passkey_provider", t("settings.windowsPasskeys.title"),
+                    t("settings.windowsPasskeys.desc"))
+    import os
+
+    if os.name == "nt":
+        # Quick win 3: one line on whether Windows uses LocalGateKeys for passkeys, and the passkey doctor.
+        from ..app.passkey_doctor import provider_status
+
+        available = windows_passkey_provider.available()
+        on = getattr(getattr(form, "settings", None), "windows_passkey_provider", False) is True
+        form.note(provider_status(available, on, windows_passkey_provider.REGISTRATION.current()
+                                  if available else None)[1])
+        form.button(t("passkeyDoctor.title"), t("passkeyDoctor.desc"), t("passkeyDoctor.open"),
+                    _call(form.app, "passkey_doctor_clicked"))
     form.switch("desktop_overlay_enabled", t("settings.overlay.title"),
                 t("settings.overlay.desc"))
     form.switch("fill_and_sign_in", t("settings.signIn.title"),
                 t("settings.signIn.desc"))
     form.text("quick_access_hotkey", t("settings.quickAccess.title"), t("settings.quickAccess.desc"))
+    form.switch("quick_access_palette", t("settings.quickPalette.title"), t("settings.quickPalette.desc"))
     form.shortcut(t("settings.fillShortcut.title"), t("settings.fillShortcut.desc"), "Ctrl+Shift+Space")
     form.shortcut(t("settings.emergencyShortcut.title"), t("settings.emergencyShortcut.desc"), "Ctrl+Alt+L")
 
@@ -193,8 +243,11 @@ def build_appearance(form: SettingsForm) -> None:
     form.switch("minimize_to_tray", t("settings.tray.title"),
                 t("settings.tray.desc"))
     form.button(t("settings.updates.title"), t("settings.updates.version", version=APP_VERSION), t("settings.updates.button"), _call(form.app, "check_updates_clicked"))
-    from ..app import rating
+    from ..app import rating, store_move
 
+    if store_move.applies():
+        form.button(t("storeMove.settings.title"), t("storeMove.settings.desc"), t("storeMove.open"),
+                    _call(form.app, "store_move_clicked"))
     if rating.available():
         form.button(t("settings.rate.title"), t("settings.rate.desc"), t("settings.rate.button"),
                     _call(form.app, "rate_clicked"))
@@ -205,6 +258,7 @@ def build_backups(form: SettingsForm) -> None:
     form.choice("automatic_backup_count", t("settings.autoBackups.title"),
                 t("settings.autoBackups.desc"))
     form.choose_folder("backup_mirror_dir", t("settings.cloudCopy.title"))
+    form.switch("restore_test_weekly", t("settings.restoreTest.title"), t("settings.restoreTest.desc"))
     form.choice("scheduled_backup_frequency", t("settings.schedule.title"),
                 t("settings.schedule.desc"))
     form.text("scheduled_backup_time", t("settings.scheduleTime.title"), t("settings.scheduleTime.desc"))
@@ -212,18 +266,86 @@ def build_backups(form: SettingsForm) -> None:
     form.choice("scheduled_backup_keep", t("settings.scheduleKeep.title"),
                 t("settings.scheduleKeep.desc"))
     state = _status(app, "_settings_backup_state") or {}
-    has_password = bool(state.get("has_password"))
-    form.button(t("settings.backupPassword.title"),
-                t("settings.backupPassword.set") if has_password
-                else t("settings.backupPassword.notSet"),
-                t("settings.btn.change") if has_password else t("settings.btn.set"),
-                _call(app, "_settings_backup_password_action", None, clear=False), refresh=True,
-                primary=not has_password)
-    if has_password:
-        form.button(t("settings.backupPasswordClear.title"), t("settings.backupPasswordClear.desc"), t("settings.btn.clear"),
-                    _call(app, "_settings_backup_password_action", None, clear=True), refresh=True)
+    _backup_key_rows(form, app, state)
     if state.get("status"):
         form.note(str(state["status"]))
+
+
+def _day(seconds: Any) -> str:
+    from datetime import datetime
+
+    try:
+        return datetime.fromtimestamp(int(seconds)).strftime("%Y-%m-%d")
+    except (TypeError, ValueError, OverflowError, OSError):
+        return ""
+
+
+def _backup_key_rows(form: SettingsForm, app: Any, state: dict[str, Any]) -> None:
+    """The scheduled-backup key (docs/design/backup-public-key-2026-10-31.md sections 2.3, 6, 7, 16)."""
+
+    def action(mode: str) -> Callable[[], Any]:
+        return _call(app, "_settings_backup_password_action", None, mode=mode)
+
+    has_key = bool(state.get("has_key"))
+    damaged = bool(state.get("damaged"))
+    notice = getattr(form, "notice", None)
+    reason = str(state.get("paused_reason") or "")
+    if state.get("paused") and reason in ("rollback", "missing", "damaged"):
+        # Section 16c: only the backup password last seen on this device, or the phrase bound in it, goes on.
+        seen = _day(state.get("seen_set_at"))
+        texts = {"rollback": t("backupKey.pausedRollback", date=_day(state.get("set_at")), seen=seen),
+                 "missing": t("backupKey.pausedMissing", seen=seen), "damaged": t("backupKey.pausedDamaged", seen=seen)}
+        actions = [(t("backupKey.confirmBtn"), action("confirmSeen")), (t("settings.btn.change"), action("change"))]
+        if state.get("can_reset"):
+            actions.append((t("backupKey.resetBtn"), action("reset")))
+        if notice is not None:
+            notice(t("backupKey.pausedTitle"), texts[reason], actions, kind="warning")
+        form.button(t("settings.backupPassword.title"), t("backupKey.status.paused"), t("backupKey.confirmBtn"),
+                    action("confirmSeen"), refresh=True, primary=True)
+        if state.get("can_reset"):
+            form.button(t("backupKey.forgotTitle"), t("backupKey.forgotDesc"), t("backupKey.resetBtn"),
+                        action("reset"), refresh=True)
+        return
+    if notice is not None:
+        if damaged:
+            notice(t("backupKey.damagedTitle"), t("backupKey.damaged"),
+                   [(t("backupKey.setNew"), action("set"))], kind="warning")
+        elif state.get("paused"):
+            notice(t("backupKey.pausedTitle"), t("backupKey.pausedText", date=_day(state.get("set_at")),
+                                                 seen=_day(state.get("seen_set_at"))),
+                   [(t("backupKey.confirmBtn"), action("confirm")), (t("settings.btn.change"), action("change"))],
+                   kind="warning")
+        if has_key and not damaged and state.get("notice"):
+            title = t("backupKey.upgradeTitle") if state["notice"] == "notice" else t("backupKey.reminderTitle")
+            notice(title, t("backupKey.upgradeText"),
+                   [(t("settings.btn.change"), action("change")), (t("backupKey.dismiss"), action("dismiss"))])
+        if has_key and not damaged and state.get("rebind_needed"):
+            notice(t("backupKey.rebindTitle"), t("backupKey.rebindText"), [(t("backupKey.rebindBtn"), action("rebind"))])
+    if damaged:
+        form.button(t("settings.backupPassword.title"), t("backupKey.status.damaged"), t("backupKey.setNew"),
+                    action("set"), refresh=True, primary=True)
+        return
+    if not has_key:
+        form.button(t("settings.backupPassword.title"), t("settings.backupPassword.notSet"), t("settings.btn.set"),
+                    action("set"), refresh=True, primary=True)
+        return
+    set_by = state.get("set_by")
+    if set_by == "migrated":
+        line = t("backupKey.line.migrated")
+    elif set_by == "reset":
+        line = t("backupKey.line.reset", date=_day(state.get("reset_at")))
+    else:
+        line = t("backupKey.line.set", date=_day(state.get("set_at")))
+    form.button(t("settings.backupPassword.title"), line, t("settings.btn.change"), action("change"), refresh=True)
+    if state.get("can_reset"):
+        form.button(t("backupKey.forgotTitle"), t("backupKey.forgotDesc"), t("backupKey.resetBtn"), action("reset"),
+                    refresh=True)
+    elif not state.get("has_authority"):
+        form.note(t("backupKey.cannotReset"))
+    elif not state.get("has_phrase"):
+        form.note(t("backupKey.noPhrase"))
+    form.button(t("backupKey.removeTitle"), t("backupKey.removeDesc"), t("backupKey.removeBtn"), action("remove"),
+                refresh=True)
 
 
 def build_plan(form: SettingsForm) -> None:
@@ -240,6 +362,8 @@ def build_plan(form: SettingsForm) -> None:
     form.button(t("settings.licence.title"), headline, t("settings.btn.open"), _call(app, "licence_clicked"))
     form.button(t("settings.sync.title"), t("settings.sync.desc"), t("settings.btn.open"),
                 _call(app, "sync_clicked"))
+    form.switch("erase_on_sync_removal", t("settings.eraseOnSyncRemoval.title"),
+                t("settings.eraseOnSyncRemoval.desc"))
 
 
 # The website's legal pages (the licence agreement also covers the iPhone app).
@@ -259,10 +383,16 @@ def build_help(form: SettingsForm) -> None:
     form.link(t("settings.eula.title"), t("settings.eula.desc"), t("settings.btn.open"), LICENCE_AGREEMENT_URL)
 
 
+def build_developer(form: SettingsForm) -> None:
+    form.button(t("settings.developer.title"), t("settings.developer.desc"), t("settings.btn.open"),
+                _call(form.app, "developer_clicked"))
+
+
 BUILT_IN_SECTIONS: tuple[SettingsSection, ...] = (
     SettingsSection("locking", "settings.section.locking", build_locking, 0, ("lock", "timeout", "idle", "auto-lock", "sleep")),
     SettingsSection("unlocking", "settings.section.unlocking", build_unlocking, 0,
-                    ("hello", "face", "camera", "biometric", "master", "recovery", "phrase")),
+                    ("hello", "face", "camera", "biometric", "master", "recovery", "phrase",
+                     "security key", "yubikey", "fido", "key file", "keyfile", "keepass")),
     SettingsSection("privacy", "settings.section.privacy", build_privacy, 0,
                     ("clipboard", "breach", "offline", "trash", "documents", "network", "screenshot", "screen sharing", "capture")),
     SettingsSection("autofill", "settings.section.autofill", build_autofill, 1,
@@ -270,7 +400,10 @@ BUILT_IN_SECTIONS: tuple[SettingsSection, ...] = (
     SettingsSection("appearance", "settings.section.appearance", build_appearance, 1,
                     ("theme", "dark", "light", "startup", "tray", "updates", "version")),
     SettingsSection("backups", "settings.section.backups", build_backups, 1, ("backup", "schedule", "folder", "cloud", "mirror")),
-    SettingsSection("plan", "settings.section.plan", build_plan, 1, ("licence", "license", "pro", "upgrade", "sync", "devices")),
+    SettingsSection("plan", "settings.section.plan", build_plan, 1, ("licence", "license", "pro", "upgrade", "sync", "devices",
+                                                                   "erase", "lost", "stolen")),
+    SettingsSection("developer", "settings.section.developer", build_developer, 1,
+                    ("ssh", "agent", "git", "signing", "key", "developer", "terminal", "commit")),
     SettingsSection("help", "settings.section.help", build_help, 1,
                     ("shortcuts", "guide", "diagnostics", "log", "support", "privacy", "terms", "licence",
                      "legal", "eula")),

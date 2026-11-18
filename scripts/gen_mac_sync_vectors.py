@@ -7,7 +7,10 @@ by a fixed byte stream, consumed in the order the Swift ``PairingOffer.create`` 
 2. 32 bytes for the transcript nonce,
 3. 32 bytes for the pairing secret,
 4. 4 bytes at a time for the 8-digit code: a big-endian unsigned integer, resampled while it is
-   >= 4_200_000_000 (the largest multiple of 10**8 below 2**32), then taken modulo 10**8.
+   >= 4_200_000_000 (the largest multiple of 10**8 below 2**32), then taken modulo 10**8,
+5. 32 bytes for the reveal behind the offer's ``commit`` (offer version 2, commit-then-reveal
+   enrollment, docs/formats/LAN_SYNC_V3.md): ``commit`` = SHA-256("localgatekeys|sync|enroll-commit|v3|"
+   + reveal) is in the bundle; the reveal itself never is.
 
 The inviter is device A of ``tests/vectors/sync/identities.json``.
 
@@ -153,6 +156,8 @@ def case(name: str, data: bytes, host: str, port: int, now: int) -> dict:
     qr = offer_qr_payload(offer)
     assert parse_qr_payload(qr) == offer.bundle_dict()
     assert offer.expires_at == now + pairing.PAIRING_TTL_SECONDS
+    assert src.pos == len(data), "every byte of the stream is read"
+    assert offer.commit == pairing.enrollment_commit(bytes.fromhex(src.reads[-1]))
     return {
         "name": name, "now": now, "endpoint": {"host": host, "port": port}, "group_id": GROUP_ID,
         "inviter": "A", "random_reads_hex": src.reads, "offer_bundle": offer.bundle_dict(), "qr_payload": qr,
@@ -162,9 +167,10 @@ def case(name: str, data: bytes, host: str, port: int, now: int) -> dict:
 def main() -> None:
     out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "tests/vectors/sync/mac"
     out.mkdir(parents=True, exist_ok=True)
-    plain = stream("plain", 84)
+    plain = stream("plain", 116)
     # The first code read is 0xffffffff (over the limit), so the code needs a second read.
-    resample = stream("resample", 80) + b"\xff\xff\xff\xff" + stream("resample-code", 4)
+    resample = (stream("resample", 80) + b"\xff\xff\xff\xff" + stream("resample-code", 4)
+                + stream("resample-reveal", 32))
     doc = {
         "description": "Host-side pairing offers made by pairing.create_pairing_offer with fixed "
                        "randomness (see scripts/gen_mac_sync_vectors.py for the read order). "
@@ -174,7 +180,7 @@ def main() -> None:
             case("code_resampled", resample, "10.0.0.5", 47821, 1790000500),
         ],
     }
-    (out / "host_offer.json").write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    (out / "host_offer.json").write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", newline="\n")
     print(out / "host_offer.json")
     (out / "keyring_write.json").write_text(json.dumps(keyring_doc(), indent=2, sort_keys=True,
                                                        ensure_ascii=False) + "\n", encoding="utf-8")

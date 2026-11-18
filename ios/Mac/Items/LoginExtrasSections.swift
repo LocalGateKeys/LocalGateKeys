@@ -40,8 +40,8 @@ struct LoginExtrasSections: View {
                     CopyButton(label: String(localized: "Recovery code")) {
                         let code = codes.wrappedValue.indices.contains(i) ? codes.wrappedValue[i] : ""
                         guard !code.isEmpty else { return }
-                        gate.release(item, action: String(localized: "Copy recovery code")) {
-                            clipboard.copy(code, concealed: true); onCopied(String(localized: "Recovery code"))
+                        gate.releaseCopy(item, action: String(localized: "Copy recovery code")) { limit in
+                            clipboard.copy(code, concealed: true, limit: limit); onCopied(String(localized: "Recovery code"))
                         }
                     }
                     Button { model.codes?.remove(at: i) } label: { Image(systemName: "minus.circle") }
@@ -91,8 +91,11 @@ struct LoginExtrasSections: View {
                     Toggle("Hidden", isOn: $field.hidden).toggleStyle(.checkbox).font(.system(size: 12.5))
                     CopyButton(label: field.name.isEmpty ? String(localized: "Value") : field.name) {
                         let value = field.value, hidden = field.hidden
-                        gate.release(item, action: (field.name.isEmpty ? String(localized: "Copy value") : String(localized: "Copy \(field.name)"))) {
-                            clipboard.copy(value, concealed: hidden); onCopied(field.name)
+                        let action = field.name.isEmpty ? String(localized: "Copy value") : String(localized: "Copy \(field.name)")
+                        if hidden {
+                            gate.releaseCopy(item, action: action) { limit in clipboard.copy(value, concealed: true, limit: limit); onCopied(field.name) }
+                        } else {
+                            gate.release(item, action: action) { clipboard.copy(value, concealed: false); onCopied(field.name) }
                         }
                     }
                     Button { model.removeField(field.id) } label: { Image(systemName: "minus.circle") }
@@ -112,8 +115,13 @@ struct LoginExtrasSections: View {
                     }
                 } actions: {
                     CopyButton(label: field.name) {
-                        let copy = { clipboard.copy(field.value, concealed: field.hidden); onCopied(field.name) }
-                        if field.hidden { gate.releaseRoutine(item, action: String(localized: "Copy \(field.name)"), perform: copy) } else { copy() }
+                        if field.hidden {
+                            gate.releaseCopy(item, action: String(localized: "Copy \(field.name)"), routine: true) { limit in
+                                clipboard.copy(field.value, concealed: true, limit: limit); onCopied(field.name)
+                            }
+                        } else {
+                            clipboard.copy(field.value, concealed: false); onCopied(field.name)
+                        }
                     }
                 }
             }
@@ -162,8 +170,8 @@ struct LoginExtrasSections: View {
                 }
                 .buttonStyle(.plain).foregroundStyle(theme.link)
                 CopyButton(label: String(localized: "Previous password")) {
-                    gate.releaseRoutine(item, action: String(localized: "Copy previous password")) {
-                        clipboard.copy(row.password, concealed: true); onCopied(String(localized: "Previous password"))
+                    gate.releaseCopy(item, action: String(localized: "Copy previous password"), routine: true) { limit in
+                        clipboard.copy(row.password, concealed: true, limit: limit); onCopied(String(localized: "Previous password"))
                     }
                 }
             }

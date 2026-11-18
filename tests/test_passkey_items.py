@@ -64,3 +64,25 @@ def test_passkey_records_filters_by_rp_and_includes_private_key(tmp_path) -> Non
     assert items.passkey_records("missing.test") == []
 
 
+
+
+def test_passkey_metadata_has_no_key_material(tmp_path) -> None:
+    session = _session(tmp_path)
+    items = session.items
+    items.create_passkey("Site", relying_party_id="example.com", credential_id="Q1", user_handle="dQ",
+                         private_key="SECRET-PRIVATE-KEY", algorithm="ES256", user_name="ann",
+                         user_display_name="Ann", rp_name="Example", notes="secret notes")
+    metadata = items.passkey_metadata()
+    assert metadata == [{"credential_id": "Q1", "rp_id": "example.com", "rp_name": "Example", "user_id": "dQ",
+                         "user_name": "ann", "user_display_name": "Ann"}]
+    text = repr(metadata)
+    assert "SECRET-PRIVATE-KEY" not in text and "secret notes" not in text and "ES256" not in text
+
+
+def test_passkey_metadata_skips_trashed(tmp_path) -> None:
+    session = _session(tmp_path)
+    items = session.items
+    items.create_passkey("Keep", relying_party_id="example.com", credential_id="QQ", private_key="k1")
+    gone = items.create_passkey("Gone", relying_party_id="example.com", credential_id="Qg", private_key="k2")
+    assert items.delete_item(gone)
+    assert [entry["credential_id"] for entry in items.passkey_metadata()] == ["QQ"]

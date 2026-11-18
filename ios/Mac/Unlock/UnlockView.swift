@@ -1,8 +1,10 @@
 import SwiftUI
+import LGKCore
 
 /// The lock screen: master password, Unlock, and Touch ID when it is turned on.
 struct UnlockView: View {
     @Bindable var model: MacLockModel
+    @Bindable var session: MacProfileSession
     @Environment(\.macTheme) private var theme
     @State private var password = ""
     @State private var recovering = false
@@ -10,11 +12,14 @@ struct UnlockView: View {
 
     var body: some View {
         LockPanel(title: String(localized: "LocalGateKeys is locked"), subtitle: String(localized: "Enter your master password to open your vault.")) {
+            ProfileHeader(session: session)
             SecureField("Master password", text: $password)
                 .glassField()
                 .focused($focused)
                 .onSubmit(submit)
                 .disabled(model.isBusy)
+            factorRows
+            YubiKeyTouchBanner(prompt: model.yubiKeyPrompt)
             MessageLine(text: model.message)
             Button(action: submit) {
                 if model.isBusy { ProgressView().controlSize(.small).tint(theme.onAccent) } else { Text("Unlock") }
@@ -33,12 +38,37 @@ struct UnlockView: View {
                     .frame(maxWidth: .infinity)
                     .disabled(model.isBusy)
             }
+            LockScreenLinks(session: session)
         }
         .sheet(isPresented: $recovering) {
             RecoverWithPhraseSheet(model: model, onClose: { recovering = false }).macThemed()
         }
         .onAppear { focused = true }
+        .onChange(of: session.active.id) { _, _ in password = ""; focused = true }
         .task { if model.takeLaunchTouchIDPrompt() { await model.unlockWithTouchID() } }
+    }
+
+    /// The key file (picked or remembered, "Remember this key file on this Mac") and the YubiKey this vault also needs.
+    @ViewBuilder private var factorRows: some View {
+        let specs = model.unlockFactorSpecs
+        if specs.contains(where: { $0.kind == .keyFile }) {
+            HStack(spacing: 8) {
+                Image(systemName: "doc").foregroundStyle(theme.textMuted).accessibilityHidden(true)
+                Text(model.keyFileName.map { MacFactors.keyFileChosen($0) } ?? MacFactors.noKeyFileChosen)
+                    .font(.callout).foregroundStyle(theme.text).lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 8)
+                Button(MacFactors.chooseKeyFileButton) { model.chooseKeyFile() }
+                    .buttonStyle(GlassButtonStyle())
+                    .disabled(model.isBusy)
+            }
+            Toggle(MacFactors.rememberOnThisMac, isOn: $model.rememberKeyFile)
+                .toggleStyle(.checkbox).font(.callout)
+                .disabled(model.isBusy)
+        }
+        if let spec = specs.first(where: { $0.kind == .yubiKeyHMAC }), model.yubiKeyPrompt.waitingSlot == nil {
+            Label(MacFactors.yubiKeyNeeded(slot: spec.slot ?? MacFactors.defaultSlot), systemImage: "key")
+                .font(.callout).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func submit() {

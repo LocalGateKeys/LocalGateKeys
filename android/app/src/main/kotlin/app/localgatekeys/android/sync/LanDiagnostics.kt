@@ -88,6 +88,12 @@ object LanDiagnostics {
         return pick?.let { IPv4Subnet.of(it.address, it.netmask) }
     }
 
+    /** The Wi-Fi IPv4 address a phone host listens on: the address of the interface [wifiSubnet] picks, or null. */
+    fun wifiAddress(interfaces: List<IPv4Interface>): String? {
+        val usable = interfaces.filter { it.isUp && !it.isLoopback && isWifiOrEthernet(it.name) }
+        return (usable.firstOrNull { it.name == "wlan0" } ?: usable.firstOrNull())?.address
+    }
+
     /** This device's IPv4 interface addresses (empty when they cannot be read). Needs no permission. */
     fun currentInterfaces(): List<IPv4Interface> = try {
         NetworkInterface.getNetworkInterfaces()?.toList().orEmpty().flatMap { ni ->

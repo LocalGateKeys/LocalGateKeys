@@ -23,6 +23,12 @@
             "value" : "Sincroniza con los dispositivos que emparejaste, mediante tu Wi-Fi doméstica."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisez avec les appareils que vous avez associés, via votre réseau Wi-Fi domestique."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",

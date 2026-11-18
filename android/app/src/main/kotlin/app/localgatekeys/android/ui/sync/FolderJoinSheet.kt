@@ -66,6 +66,9 @@ object FolderJoinText {
     @StringRes val TITLE = R.string.folder_sync_password
     @StringRes val FIELD = R.string.folder_sync_password
     @StringRes val FOOTER = R.string.folder_password_footer
+    @StringRes val NEW_TITLE = R.string.folder_new_password_title
+    @StringRes val CONFIRM_FIELD = R.string.folder_confirm_password
+    @StringRes val NEW_FOOTER = R.string.folder_new_password_footer
 
     /** Spec section 3: Google Drive's Android app offers no folder to other apps; said plainly, with what to do instead. */
     @StringRes val GOOGLE_DRIVE_NOTICE = R.string.folder_google_drive_notice
@@ -81,6 +84,8 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
     val c = LgkTheme.colors
     val monitor = LocalActivityMonitor.current
     val password by form.password.collectAsStateWithLifecycle()
+    val confirm by form.confirm.collectAsStateWithLifecycle()
+    val problem by form.problem.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }
     val fieldLabel = stringResource(FolderJoinText.FIELD)
     BackHandler(onBack = onCancel)
@@ -91,15 +96,15 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
             Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onCancel) { Text(stringResource(R.string.common_cancel), color = c.accentText) }
                 Text(
-                    stringResource(FolderJoinText.TITLE), color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+                    stringResource(if (form.creating) FolderJoinText.NEW_TITLE else FolderJoinText.TITLE), color = c.text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center, modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 Button(
                     onJoin,
-                    enabled = password.isNotEmpty(),
+                    enabled = password.isNotEmpty() && (!form.creating || confirm.isNotEmpty()),
                     colors = ButtonDefaults.buttonColors(containerColor = c.accent, contentColor = Color.White),
                     modifier = Modifier.padding(end = 4.dp).testTag("folder-join"),
-                ) { Text(stringResource(R.string.sync_join), fontWeight = FontWeight.SemiBold) }
+                ) { Text(stringResource(if (form.creating) R.string.sync_create else R.string.sync_join), fontWeight = FontWeight.SemiBold) }
             }
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).navigationBarsPadding().imePadding().padding(16.dp),
@@ -115,7 +120,7 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
                             KeyboardCapitalization.None, autoCorrectEnabled = false, keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done,
+                            imeAction = if (form.creating) ImeAction.Next else ImeAction.Done,
                         ),
                         keyboardActions = KeyboardActions(onDone = { if (form.canJoin) onJoin() }),
                         modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("folder-password-field")
@@ -128,8 +133,37 @@ fun FolderPasswordSheet(form: FolderPasswordForm, onCancel: () -> Unit, onJoin: 
                         },
                     )
                 }
+                if (form.creating) {
+                    val confirmLabel = stringResource(FolderJoinText.CONFIRM_FIELD)
+                    Column(Modifier.fillMaxWidth().lgkGroupSurface().padding(16.dp)) {
+                        BasicTextField(
+                            value = confirm,
+                            onValueChange = { monitor?.textChanged(); form.updateConfirm(it) },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.text),
+                            cursorBrush = SolidColor(c.accent),
+                            singleLine = true,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                KeyboardCapitalization.None, autoCorrectEnabled = false, keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done,
+                            ),
+                            keyboardActions = KeyboardActions(onDone = { if (form.canJoin) onJoin() }),
+                            modifier = Modifier.fillMaxWidth().testTag("folder-password-confirm")
+                                .semantics { contentDescription = confirmLabel },
+                            decorationBox = { inner ->
+                                Box {
+                                    if (confirm.isEmpty()) Text(confirmLabel, color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
+                                    inner()
+                                }
+                            },
+                        )
+                    }
+                    problem?.let {
+                        Text(it, color = c.danger, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 4.dp).testTag("folder-password-problem"))
+                    }
+                }
                 Text(
-                    stringResource(FolderJoinText.FOOTER), color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
+                    stringResource(if (form.creating) FolderJoinText.NEW_FOOTER else FolderJoinText.FOOTER), color = c.secondaryText, style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }

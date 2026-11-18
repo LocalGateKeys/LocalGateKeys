@@ -3,11 +3,12 @@
 LocalGateKeys has two editions (owner decision 2026-10-19).
 
 - **Free** is the password manager (browser fill, desktop app fill, backups,
-  recovery phrase, transfer, unlock options) with up to **4 live items**.
+  recovery phrase, transfer, unlock options) with up to **7 live items**.
 - **Pro** removes the item limit and adds the **Pro features**: device sync
   (Wi-Fi and cloud folder), adding or changing two-factor (TOTP) codes, and
-  adding or replacing attachments (document items). It costs **US$4.99
-  one-time** and includes **lifetime updates**.
+  adding or replacing attachments (document items). It costs **US$29.99
+  one-time**: one payment, every update, forever, free. Buyers of the earlier
+  US$4.99 Pro keep lifetime Pro and every future update, free.
 
 A licence is an Ed25519-signed file checked offline by the app. There is no
 activation server and no account.
@@ -62,10 +63,10 @@ payment). The item-limit model is described below.
     works by key on Windows. Claims are silent; Pro on the phone never depends
     on them.
 
-- **The limit.** `FREE_ITEM_LIMIT = 4`. Live items are web and desktop logins
+- **The limit.** `FREE_ITEM_LIMIT = 7`. Live items are web and desktop logins
   plus every typed kind (notes, cards, identities, documents, passkeys and so
   on). Items in the trash do not count.
-- **Over the limit, nothing is locked.** A free vault with more than 4 items
+- **Over the limit, nothing is locked.** A free vault with more than 7 items
   (for example upgraded from 0.4.0, or items that arrived by sync) keeps every
   item visible, editable, fillable and deletable. Only *adding* is blocked:
   new logins and items, new desktop bindings, templates, restoring
@@ -173,7 +174,9 @@ Summary:
 
 1. Deploy only once the custom domain exists. `workers_dev` is off and
    `wrangler.jsonc` has no routes; add the custom-domain route first.
-2. Create the KV namespace and put its id into `wrangler.jsonc`:
+2. Run `npm ci` in `cloudflare/license-issuer` (installs the pinned wrangler, so
+   `npx wrangler` never fetches an unpinned one). Create the KV namespace and
+   put its id into `wrangler.jsonc`:
    `npx wrangler kv namespace create LICENSES`.
 3. Export the key from the PEM and set the secrets
    (`scripts/export_license_key_for_worker.py` does the export and checks the
@@ -232,7 +235,7 @@ The Worker issues lifetime licences (`updates_until` 9999-12-31).
 empty value hides the Buy buttons.
 
 The licence page also has an **Install in LocalGateKeys** button: a
-`localgatekeys://install-licence/` link that both installers register (and the
+`localgatekeys://install-licence/` link that the Windows app registers (and the
 Mac app handles). The app checks the signature and asks before installing.
 
 ## 6. Manual issue (support)
@@ -294,7 +297,7 @@ python scripts/sign_release_manifest.py revocations --key .\release-signing-key.
 4. Upload it as the R2 object `revocations.json`:
 
 ```powershell
-wrangler r2 object put localgatekeys-releases/revocations.json --file .\revocations.json --content-type application/json --remote
+npx --prefix cloudflare/license-issuer wrangler r2 object put localgatekeys-releases/revocations.json --file .\revocations.json --content-type application/json --remote
 ```
 
 Apps fetch the list after a successful update check and keep the last good copy

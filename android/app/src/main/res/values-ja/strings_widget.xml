@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">固定したコード</string>
+    <string name="widget_codes_description">固定した2要素認証コード。</string>
+    <string name="widget_codes_locked">ロックを解除してコードを表示</string>
+    <string name="widget_codes_empty">LocalGateKeysでコードを固定してください</string>
+    <string name="detail_pin_code">ウィジェットに表示</string>
+    <string name="detail_pin_code_note">LocalGateKeysのロックが解除されている間（自動ロックまで）、ホーム画面のウィジェットにこのコードが表示されます。</string>
+    <string name="detail_pin_full">固定できるコードは%1$d件までです。</string>
+    <string name="widget_codes_locked_immediately">ここにコードを表示するには、自動ロックを1分以上に設定してください</string>
+    <string name="detail_pin_code_note_immediately">自動ロックが「すぐに」に設定されているため、LocalGateKeysを離れるとロックされ、ウィジェットにこのコードを表示できません。ホーム画面に表示するには、設定で自動ロックを1分以上にしてください。</string>
+    <string name="tile_codes_name">コードをコピー</string>
+    <string name="tile_codes_empty">固定したコードはありません</string>
+    <string name="tile_codes_locked">ロックを解除してコピー</string>
+    <string name="tile_codes_locked_subtitle">ロック中</string>
+    <string name="tile_codes_tap_to_copy">タップしてコピー</string>
+    <string name="tile_codes_copied">コピーしました</string>
+    <string name="tile_codes_no_code">コードなし</string>
+</resources>

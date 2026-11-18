@@ -15,3 +15,16 @@ def test_release_build_requires_license_key(monkeypatch):
 def test_release_flag_defaults_off():
     import inspect
     assert inspect.signature(build_check.check).parameters["require_license_keys"].default is False
+
+
+def test_build_check_requires_bcrypt(monkeypatch):
+    real = build_check.importlib.import_module
+
+    def fake(name, *args, **kwargs):
+        if name == "bcrypt":
+            raise ImportError("No module named 'bcrypt'")
+        return real(name, *args, **kwargs)
+
+    monkeypatch.setattr(build_check.importlib, "import_module", fake)
+    with pytest.raises(ImportError, match="bcrypt"):
+        build_check.check()

@@ -58,6 +58,29 @@ class OnboardingTest {
         assertEquals("Finish setting up · 2 of 5", reopened.cardText())
     }
 
+    @Test fun the_autofill_step_is_done_only_once_autofill_is_on() {
+        val o = Onboarding(settings, EnglishTxt())
+        assertFalse("opening Autofill settings is not enough", o.completesOnAction(SetupStep.AUTOFILL))
+        assertTrue(o.completesOnAction(SetupStep.IMPORT))
+        o.autofillStatus(null); o.autofillStatus(false)
+        assertTrue(SetupStep.AUTOFILL in o.remaining)
+        o.autofillStatus(true)
+        assertFalse(SetupStep.AUTOFILL in o.remaining)
+        assertTrue("autofill" in settings.setupDone)
+    }
+
+    @Test fun the_autofill_banner_shows_only_when_known_off_and_not_dismissed() {
+        assertTrue(AutofillBanner.shows(enabled = false, dismissed = false, setupPagesOpen = false))
+        assertFalse("unknown yet", AutofillBanner.shows(null, false, false))
+        assertFalse(AutofillBanner.shows(true, false, false))
+        assertFalse("Not now", AutofillBanner.shows(false, true, false))
+        assertFalse("under the setup pages", AutofillBanner.shows(false, false, true))
+        assertFalse(settings.autofillBannerDismissed)
+        settings.autofillBannerDismissed = true
+        assertTrue(AppSettings(store).autofillBannerDismissed)
+        assertTrue("keyboard suggestions are on by default", settings.autofillInline)
+    }
+
     @Test fun progress_is_local_settings_only() {
         assertTrue(AppSettings.Key.SETUP_DONE in AppSettings.Key.all)
         assertTrue(AppSettings.Key.SETUP_SEEN in AppSettings.Key.all)

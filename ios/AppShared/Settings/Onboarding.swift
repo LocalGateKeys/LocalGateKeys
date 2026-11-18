@@ -67,8 +67,8 @@ public enum SetupStep: String, CaseIterable, Identifiable, Sendable {
 
     public var text: String {
         switch self {
-        case .vault: String(localized: "Everything you save stays encrypted on this iPhone.")
-        case .unlock: String(localized: "LocalGateKeys opens with Face ID, Touch ID or your passcode, the same as your iPhone.")
+        case .vault: DeviceText.isPad ? String(localized: "ipad.onboarding.everythingYouSaveStays", defaultValue: "Everything you save stays encrypted on this iPad.") : String(localized: "Everything you save stays encrypted on this iPhone.")
+        case .unlock: DeviceText.isPad ? String(localized: "ipad.onboarding.localgatekeysOpensWithFace", defaultValue: "LocalGateKeys opens with Face ID, Touch ID or your passcode, the same as your iPad.") : String(localized: "LocalGateKeys opens with Face ID, Touch ID or your passcode, the same as your iPhone.")
         case .importItems: String(localized: "Bring in Apple Passwords, a CSV or an export file from another password manager.")
         case .phrase: String(localized: "An optional app password with a recovery phrase. You confirm three words from the phrase when you set it up.")
         case .autofill: String(localized: "Fill your logins in apps and in Safari. Choose LocalGateKeys as the AutoFill provider.")

@@ -5,11 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>[[title]]</title>
   <meta name="description" content="[[description]]">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="[[referrer]]">
   <link rel="canonical" href="https://{{DOMAIN}}/[[path]]">[[alternates]]
+  <meta property="og:type" content="[[og_type]]">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="[[og_title]]">
+  <meta property="og:description" content="[[description]]">
+  <meta property="og:url" content="https://{{DOMAIN}}/[[path]]">
+  <meta property="og:locale" content="[[og_locale]]">
+  <meta property="og:image" content="https://{{DOMAIN}}/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="[[t:og.image_alt]]">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="[[og_title]]">
+  <meta name="twitter:description" content="[[description]]">
+  <meta name="twitter:image" content="https://{{DOMAIN}}/brand/og-image.png">[[jsonld]]
   <link rel="icon" href="[[root]]brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="[[root]]brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="[[root]]brand/icon-256.png">
@@ -20,15 +33,23 @@
   <header class="site-header">
     <div class="wrap header-row">
       <a class="brand" href="[[home]]index.html">
-        <img src="[[root]]brand/icon.svg" alt="" width="36" height="36">
+        <img src="[[root]]brand/icon.svg" alt="" width="30" height="30">
         <span>[[t:layout.top.2]]</span>
       </a>
-      <nav aria-label="[[t:layout.top.3]]">
+      <nav class="nav-wide" aria-label="[[t:layout.top.3]]">
         <ul class="nav">
           [[nav]]
         </ul>
       </nav>
-    </div>
+      <details class="nav-menu">
+        <summary>[[t:layout.menu]]</summary>
+        <nav aria-label="[[t:layout.top.3]]">
+          <ul class="nav nav-stack">
+            [[nav]]
+          </ul>
+        </nav>
+      </details>
+[[lang_menu]]    </div>
   </header>
 
   <main id="main">
@@ -38,7 +59,7 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">[[t:layout.top.4]]</p>
+        <p class="footer-brand"><img src="[[root]]brand/icon.svg" alt="" width="26" height="26"><span>[[t:layout.top.4]]</span></p>
         <p>[[t:layout.top.5]]</p>
         <p class="quiet">[[t:layout.top.6]]</p>
       </div>
@@ -48,7 +69,11 @@
           <li><a href="[[home]]features.html">[[t:layout.product.2]]</a></li>
           <li><a href="[[home]]pricing.html">[[t:layout.product.3]]</a></li>
           <li><a href="[[home]]download.html">[[t:layout.product.4]]</a></li>
-          <li><a href="[[home]]licence.html">[[t:layout.product.5]]</a></li>
+          <li><a href="[[home]]get-started.html">[[t:nav.get_started]]</a></li>
+          <li><a href="[[home]]switch/index.html">[[t:nav.switch]]</a></li>
+          <!-- if:BUY_URL --><li><a href="[[root]]buy.html">[[t:nav.buy]]</a></li>
+          <!-- /if --><li><a href="[[home]]licence.html">[[t:layout.product.5]]</a></li>
+          <li><a href="https://{{LICENCE_HOST}}/recover">[[t:layout.recover]]</a></li>
         </ul>
       </nav>
       <nav aria-label="[[t:layout.product.6]]">
@@ -70,7 +95,7 @@
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>[[t:layout.legal.6]]</p>
       <p>[[t:layout.legal.7]]</p>[[lang_switch]]
     </div>

@@ -18,9 +18,9 @@ class DemoSeedTest {
     @Test fun every_seeded_item_edits_and_saves_through_the_real_path() {
         val store = MemoryItemStore(StoreSnapshot(DemoSeed.wrapped()))
         val items = VaultItem.items(store.snapshot)
-        assertEquals(12, items.size)
+        assertEquals(16, items.size)
         val editable = items.filter { EditorKind.of(it.kind) != null }
-        assertEquals(11, editable.size)
+        assertEquals(15, editable.size)
         for (item in editable) {
             // Opening and saving changes nothing: the seed is already in normal form.
             val same = EditorModel(store, item, EditorKind.NOTE, { true }, TestClock(1_800_000_000), CountingRandom(), EnglishTxt())

@@ -83,3 +83,25 @@ package after Save or Reject, after three wrong codes, or 24 h after `created_at
 its opened list after a successful open, a Reject, and three wrong codes (so delivering the same package
 again cannot reset the count). A QR package arrives as its text: a phone scans it, Windows takes the
 pasted text or a pasted snip of the QR. The saved item counts toward the free item limit.
+
+
+## v1.1: expiring and one-use shares, revoke notice (2026-11-12)
+
+Same envelope and `version: 1`; only the plaintext loosens, so a v1 package is unchanged byte for byte.
+
+- `expires_at` may be earlier than `created_at + 86400` (`created_at < expires_at <= created_at + 86400`). The
+  receiver enforces `min(expires_at, created_at + 86400)` on its own clock: an embedded expiry wins over the 24 h
+  lifetime only when it is earlier. The share sheet offers 1 h and 1 day (a longer choice would be capped).
+- Optional `"one_use": true`. The receiver records the id in its opened list after the first open, as for every
+  package; `one_use` only tells the UI to say so. A copy that was forwarded before the first open is not stopped.
+- Revoke notice (`share_revoke.py`): `{"format":1,"package_id","signer","issued_at","sig"}`, Ed25519 over
+  `localgatekeys|share|revoke-notice|v1|` + canonical JSON without `sig`, signed with the sender device's member
+  signing key. Paired devices receive it over sync and refuse the package (`revoked`); anyone else sees it only
+  if the sender passes on the notice file before the package is opened. A notice for another package id is refused.
+  Transport (Windows): `LocalGateKeys Sync/revoked/<package id>.lgkrevoke` in the folder-sync folder; a device
+  accepts it only when `signer` is a member of the keyring it trusts and the signature verifies with that
+  member's `signing_public` (`share_revoke.publish` / `collect`). The phone apps do not read `revoked/` yet.
+- All three are best effort: a receiver with a wrong clock or an older app (v1 readers call a shortened or one-use
+  package `malformed`) is not stopped by them.
+
+Vectors: `tests/vectors/share/v1_1.json`.

@@ -27,6 +27,12 @@ _DIGITS = (6, 7, 8)
 _PERIOD_RANGE = (15, 120)
 
 
+def _msg(key: str, default: str) -> str:
+    """A translated message, or the English text while the key is not in the catalog yet."""
+    text = t(key)
+    return default if text == key else text
+
+
 def wipe(buffer: bytearray) -> None:
     """Overwrite a secret buffer with zeros in place.
 
@@ -248,9 +254,9 @@ def _fields(data: bytes):
         elif wire == 5:
             value, pos = data[pos : pos + 4], pos + 4
         else:
-            raise TotpError("Malformed migration data")
+            raise TotpError(_msg("totp.migration.malformed", "Malformed migration data"))
         if pos > len(data):
-            raise TotpError("Malformed migration data")
+            raise TotpError(_msg("totp.migration.malformed", "Malformed migration data"))
         yield number, value
 
 
@@ -273,14 +279,14 @@ def parse_migration_uri(uri: str) -> dict[str, object]:
     except ValueError as exc:
         raise TotpError(t("totp.err.expectedMigration")) from exc
     if not data:
-        raise TotpError("Migration link has no data")
+        raise TotpError(_msg("totp.migration.noData", "Migration link has no data"))
     try:
         # parse_qs turns an unescaped "+" into a space; QR readers vary.
         data = "".join(data.replace(" ", "+").split())
         data = data.replace("-", "+").replace("_", "/")
         raw = base64.b64decode(data + "=" * (-len(data) % 4), validate=True)
     except Exception as exc:  # noqa: BLE001
-        raise TotpError("Migration data is not valid Base64") from exc
+        raise TotpError(_msg("totp.migration.notBase64", "Migration data is not valid Base64")) from exc
     accounts: list[dict[str, str | int]] = []
     skipped: list[dict[str, str]] = []
     batch_index, batch_size = 0, 1
@@ -303,21 +309,21 @@ def parse_migration_uri(uri: str) -> dict[str, object]:
                 name = name[len(issuer) + 1 :]
             label = {"label": name, "issuer": issuer}
             if len(accounts) + len(skipped) >= MAX_MIGRATION_ACCOUNTS:
-                raise TotpError("Migration link contains too many accounts")
+                raise TotpError(_msg("totp.migration.tooManyAccounts", "Migration link contains too many accounts"))
             if not all(isinstance(item[k], int) for k in ("type", "algorithm", "digits")):
-                skipped.append({**label, "reason": "Malformed account entry"})
+                skipped.append({**label, "reason": _msg("totp.migration.malformedAccount", "Malformed account entry")})
                 continue
             if item["type"] not in _MIGRATION_TYPE_TOTP:
-                skipped.append({**label, "reason": "Counter-based (HOTP) codes are not supported"})
+                skipped.append({**label, "reason": _msg("totp.migration.hotpUnsupported", "Counter-based (HOTP) codes are not supported")})
                 continue
             algorithm = _MIGRATION_ALGORITHMS.get(item["algorithm"])
             digits = _MIGRATION_DIGITS.get(item["digits"])
             if algorithm is None or digits is None:
-                skipped.append({**label, "reason": "Unsupported algorithm or digit count"})
+                skipped.append({**label, "reason": _msg("totp.migration.unsupportedAlgorithm", "Unsupported algorithm or digit count")})
                 continue
             secret_bytes = item["secret"] if isinstance(item["secret"], bytes) else b""
             if len(secret_bytes) > MAX_SECRET_BYTES:
-                skipped.append({**label, "reason": "TOTP secret is too long"})
+                skipped.append({**label, "reason": _msg("totp.migration.secretTooLong", "TOTP secret is too long")})
                 continue
             try:
                 secret = normalize_secret(base64.b32encode(secret_bytes).decode("ascii").rstrip("="))
@@ -326,9 +332,9 @@ def parse_migration_uri(uri: str) -> dict[str, object]:
                 continue
             accounts.append({"secret": secret, **label, "digits": digits, "period": 30, "algorithm": algorithm})
     if not accounts and not skipped:
-        raise TotpError("Migration link contains no accounts")
+        raise TotpError(_msg("totp.migration.noAccounts", "Migration link contains no accounts"))
     if not 1 <= batch_size <= MAX_MIGRATION_BATCHES or not 0 <= batch_index < batch_size:
-        raise TotpError("Malformed migration data")
+        raise TotpError(_msg("totp.migration.malformed", "Malformed migration data"))
     return {"accounts": accounts, "skipped": skipped, "batch_index": batch_index, "batch_size": batch_size}
 
 

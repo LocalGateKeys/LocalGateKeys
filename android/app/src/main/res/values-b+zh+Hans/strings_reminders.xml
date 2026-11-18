@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">有提醒到期</string>
+    <string name="reminder_named_body">%1$s 到期</string>
+    <string name="reminder_save_failed">无法在这部手机 上保存该提醒。</string>
+    <string name="reminder_channel_name">提醒</string>
+    <string name="reminder_section">提醒</string>
+    <string name="reminder_due">到期</string>
+    <string name="reminder_remind_me">提醒我</string>
+    <string name="reminder_change">更改提醒</string>
+    <string name="reminder_remove">移除提醒</string>
+    <string name="reminder_add">添加提醒</string>
+    <string name="reminder_suggest_button">在到期前提醒我</string>
+    <string name="reminder_card_expires">此卡片将于 %1$s 到期。</string>
+    <string name="reminder_due_date">到期日期</string>
+    <string name="reminder_on_the_day">当天</string>
+    <string name="reminder_upcoming">即将到来</string>
+    <string name="reminder_nothing_upcoming">未来 30 天内没有即将到来的事项。</string>
+    <string name="reminder_overdue_due">已逾期 · %1$s 到期</string>
+    <string name="reminder_due_on">%1$s 到期</string>
+    <string name="reminder_snooze">稍后提醒</string>
+    <string name="reminder_snooze_day">推迟一天</string>
+    <string name="reminder_notifications_off">LocalGateKeys 的通知已关闭。提醒仍会显示在这里。</string>
+    <string name="reminder_settings_title">提醒</string>
+    <string name="reminder_show_names">在通知中显示项目名称</string>
+    <string name="reminder_settings_footer">从卡片、文档或订阅添加提醒。关闭时：通知只显示“有提醒到期”，因此锁定屏幕上不会显示任何有关该项目的内容。开启时：根据手机的锁定屏幕通知设置，项目名称也可能显示在锁定屏幕上。</string>
+    <string name="reminder_editor_footer">到期当天 9:00 会发出通知。除非“设置 › 提醒”设为显示项目名称，否则通知只显示“有提醒到期”。提醒只保留在这部手机 上，绝不会同步。</string>
+    <plurals name="reminder_days_before">
+        <item quantity="other">%1$d 天前</item>
+    </plurals>
+</resources>

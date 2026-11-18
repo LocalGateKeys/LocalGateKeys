@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import UniformTypeIdentifiers
 import AppShared
 
 struct UnlockView: View {
@@ -52,6 +54,11 @@ struct UnlockView: View {
             }
             Button("Cancel", role: .cancel) { freshStep = 0 }
         }
+        // Once, after this iPhone erased itself because another device removed it from sync.
+        .alert(DeviceRemoval.erasedTitle, isPresented: Binding(get: { model.showsRemovalNotice && freshStep == 0 },
+                                                               set: { if !$0 { model.dismissRemovalNotice() } })) {
+            Button("OK") { model.dismissRemovalNotice() }
+        } message: { Text(DeviceRemoval.erasedMessage) }
     }
 
     private func step(_ n: Int) -> Binding<Bool> {
@@ -69,6 +76,7 @@ struct AppPasswordUnlockPanel: View {
     @State private var newPassword = ""
     @State private var confirm = ""
     @State private var problem: String?
+    @State private var pickingKeyFile = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -76,6 +84,7 @@ struct AppPasswordUnlockPanel: View {
                 SecureField("App password", text: $password)
                     .textContentType(.password).textFieldStyle(.roundedBorder)
                     .submitLabel(.go).onSubmit(submit)
+                factorRows
                 Button(action: submit) {
                     Text("Unlock").frame(maxWidth: .infinity).padding(.vertical, 6)
                 }
@@ -108,6 +117,31 @@ struct AppPasswordUnlockPanel: View {
                 Button("Back") { recovering = false; problem = nil }
             }
         }
+        .sheet(isPresented: $pickingKeyFile) {
+            KeyFilePicker { url in model.chooseKeyFile(url) }.ignoresSafeArea()
+        }
+    }
+
+    /// Task 8: what else the app password needs. The key file (picked now, else the remembered one) and "Don't
+    /// remember"; the YubiKey is read when Unlock is tapped (the NFC sheet asks for the tap).
+    @ViewBuilder private var factorRows: some View {
+        if model.keyFileSpec != nil {
+            let name = model.pickedKeyFile?.lastPathComponent ?? model.rememberedKeyFile?.name
+            HStack {
+                Text(name.map(PhoneFactors.keyFileChosen) ?? PhoneFactors.noKeyFileChosen)
+                    .font(.callout).foregroundStyle(Palette.secondaryText).lineLimit(1).truncationMode(.middle)
+                Spacer()
+                Button(PhoneFactors.chooseKeyFileButton) { pickingKeyFile = true }
+                    .disabled(model.state == .unlocking)
+            }
+            Toggle(PhoneFactors.dontRemember, isOn: Binding(get: { model.dontRememberKeyFile },
+                                                            set: { model.dontRememberKeyFile = $0 }))
+                .font(.callout)
+        }
+        if let spec = model.yubiKeySpec {
+            Text(PhoneFactors.yubiKeyNeeded(slot: spec.slot ?? PhoneFactors.defaultSlot))
+                .font(.callout).foregroundStyle(Palette.secondaryText).multilineTextAlignment(.center)
+        }
     }
 
     private func submit() {
@@ -115,5 +149,31 @@ struct AppPasswordUnlockPanel: View {
         let pw = password
         password = ""
         Task { await model.unlock(password: pw) }
+    }
+}
+
+/// The key-file picker: `UIDocumentPickerViewController` opening the file in place (`asCopy: false`), so the file is
+/// never copied into the app; the URL's security scope is used to read it and, after a successful unlock or change,
+/// to bookmark it.
+struct KeyFilePicker: UIViewControllerRepresentable {
+    let onPick: @MainActor (URL) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.item], asCopy: false)
+        picker.allowsMultipleSelection = false
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ controller: UIDocumentPickerViewController, context: Context) {}
+
+    @MainActor final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: @MainActor (URL) -> Void
+        init(onPick: @escaping @MainActor (URL) -> Void) { self.onPick = onPick }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            if let url = urls.first { onPick(url) }
+        }
     }
 }

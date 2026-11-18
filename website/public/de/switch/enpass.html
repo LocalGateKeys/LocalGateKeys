@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Von Enpass zu LocalGateKeys wechseln</title>
+  <meta name="description" content="So exportieren Sie Ihre Passwörter aus Enpass, importieren sie in LocalGateKeys und sehen, was nicht übertragen wird.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/de/switch/enpass">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/switch/enpass">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/switch/enpass">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/switch/enpass">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/switch/enpass">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/switch/enpass">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/switch/enpass">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/switch/enpass">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/switch/enpass">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/switch/enpass">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/switch/enpass">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/switch/enpass">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/switch/enpass">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Von Enpass zu LocalGateKeys wechseln">
+  <meta property="og:description" content="So exportieren Sie Ihre Passwörter aus Enpass, importieren sie in LocalGateKeys und sehen, was nicht übertragen wird.">
+  <meta property="og:url" content="https://localgatekeys.app/de/switch/enpass">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Das LocalGateKeys-Logo: ein Passwort-Manager für Windows, Mac und iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Von Enpass zu LocalGateKeys wechseln">
+  <meta name="twitter:description" content="So exportieren Sie Ihre Passwörter aus Enpass, importieren sie in LocalGateKeys und sehen, was nicht übertragen wird.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../de/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Hauptnavigation">
+        <ul class="nav">
+          <li><a href="../../de/features">Funktionen</a></li>
+          <li><a href="../../de/get-started">Erste Schritte</a></li>
+          <li><a href="../../de/help">Handbuch</a></li>
+          <li><a href="../../de/security">Sicherheit</a></li>
+          <li><a href="../../de/pricing">Preise</a></li>
+          <li><a href="../../de/support">Support</a></li>
+          <li><a class="nav-cta" href="../../de/download">Download</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menü</summary>
+        <nav aria-label="Hauptnavigation">
+          <ul class="nav nav-stack">
+            <li><a href="../../de/features">Funktionen</a></li>
+          <li><a href="../../de/get-started">Erste Schritte</a></li>
+          <li><a href="../../de/help">Handbuch</a></li>
+          <li><a href="../../de/security">Sicherheit</a></li>
+          <li><a href="../../de/pricing">Preise</a></li>
+          <li><a href="../../de/support">Support</a></li>
+          <li><a class="nav-cta" href="../../de/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Sprache</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../switch/enpass" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/enpass" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/enpass" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/enpass" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/enpass" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/enpass" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/enpass" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="../../pt-br/switch/enpass" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/enpass" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/enpass" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/enpass" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Von Enpass zu LocalGateKeys wechseln</h1>
+  <p class="lead">LocalGateKeys speichert Ihren Tresor auf Ihren eigenen Geräten, ohne Konto und ohne Server. Der Umzug von Enpass dauert wenige Minuten.</p>
+  <p class="price-strip"><strong>Pro kostet einmalig US$29.99.</strong> <span>Kostenlos für bis zu 7 Einträge, ohne Zeitlimit.</span></p>
+  <ul class="trust-row" aria-label="Was anders ist">
+    <li>Kein Konto</li>
+    <li>Kein Server verwahrt Ihren Tresor</li>
+    <li>So ist er geschützt: <a href="../../de/security">Sicherheitsdokumentation</a></li>
+  </ul>
+</div>
+
+<div class="wrap page-body prose">
+  <h2>Warum Nutzer Enpass verlassen</h2>
+  <ul>
+    <li>14. September 2026: Enpass hat seine kostenlose Stufe in Enpass Free umbenannt, begrenzt auf 25 Einträge und einen Tresor auf dem Desktop. <a href="https://www.enpass.io/release-notes/macos/" rel="nofollow noopener">Quelle</a><!-- source: https://www.enpass.io/release-notes/macos/ --></li>
+  </ul>
+  <p class="quiet">Die Fakten auf dieser Seite wurden am 8. November 2026 geprüft; jeder verlinkt seine Quelle.</p>
+
+  <h2>1. Export aus Enpass</h2>
+  <ol>
+    <li>Wählen Sie in Enpass File → Export, den Tresor und CSV.</li>
+    <li>Geben Sie Ihr Master-Passwort ein und speichern Sie die Datei. Ordnen Sie in LocalGateKeys die Spalten einmal in der Importvorschau zu.</li>
+  </ol>
+
+  <h2>2. Import in LocalGateKeys</h2>
+  <p>Wählen Sie in LocalGateKeys „Importieren“, wählen Sie die CSV-Datei und prüfen Sie die Vorschau. LocalGateKeys erkennt das Format und ordnet die Spalten zu; gespeichert wird erst nach Ihrer Bestätigung. Löschen Sie danach die CSV-Datei, denn sie enthält Ihre Passwörter unverschlüsselt.</p>
+  <p class="quiet">LocalGateKeys liest die Datei als: Generic CSV (choose columns)</p>
+  <p class="callout">Passkeys werden in einem CSV-Export nicht übertragen; LocalGateKeys importiert sie aus CXF-Dateien (Apple Passwörter und andere Apps, die CXF exportieren) auf PC, Android, iPhone und Mac.</p>
+
+  <h2>Was nicht übertragen wird</h2>
+  <ul>
+    <li>Passkeys, außer sie werden per CXF übertragen (siehe Hinweis oben).</li>
+    <li>Dateianhänge, denn eine CSV-Datei enthält nur Text. Sichern Sie sie separat, bevor Sie Ihr altes Konto schließen.</li>
+  </ul>
+
+  <h2>Was es kostet</h2>
+  <p>LocalGateKeys Pro kostet einmalig US$29.99. Eine Zahlung. Jedes Update, für immer, kostenlos. Die kostenlose Version fasst bis zu 7 Einträge, ohne Zeitlimit.</p>
+  <p class="actions"><a class="button primary" href="../../de/download">LocalGateKeys herunterladen</a> <a class="button" href="../../de/pricing">Preise ansehen</a></p>
+  <p class="quiet"><a href="../../de/switch/">Alle Wechsel-Anleitungen</a></p>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Ein Passwortmanager für Windows, Mac und iPhone, der Ihren Tresor auf Ihren eigenen Geräten behält.</p>
+        <p class="quiet">Diese Website zählt Seitenaufrufe mit Cloudflare Web Analytics, das ohne Cookies arbeitet. Sie verwendet keine Werbe-Tracker und setzt keine Cookies.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../../de/features">Funktionen</a></li>
+          <li><a href="../../de/pricing">Preise</a></li>
+          <li><a href="../../de/download">Download</a></li>
+          <li><a href="../../de/get-started">Erste Schritte</a></li>
+          <li><a href="../../de/switch/">Wechseln</a></li>
+          <li><a href="../../buy">Pro kaufen</a></li>
+          <li><a href="../../de/licence">Ihre Pro-Lizenz</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Lizenz wiederherstellen</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hilfe">
+        <h2>Hilfe</h2>
+        <ul>
+          <li><a href="../../de/help">Benutzerhandbuch</a></li>
+          <li><a href="../../de/support">Support und FAQ</a></li>
+          <li><a href="../../de/security">Sicherheit</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Sicherheitslücke melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Rechtliches">
+        <h2>Rechtliches</h2>
+        <p class="quiet">Diese Dokumente liegen auf Englisch vor, und es gilt die englische Fassung, die verbindlich ist.</p>
+        <ul>
+          <li><a href="../../legal/eula">Lizenzvereinbarung</a></li>
+          <li><a href="../../legal/privacy">Datenschutzerklärung</a></li>
+          <li><a href="../../legal/terms-of-sale">Verkaufsbedingungen</a></li>
+          <li><a href="../../legal/refunds">Rückerstattungsrichtlinie</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows ist eine Marke der Microsoft-Unternehmensgruppe. Chrome ist eine Marke von Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID und Safari sind Marken von Apple Inc., eingetragen in den USA und anderen Ländern.</p>
+      <nav class="lang-switch" aria-label="Sprache"><ul><li><a href="../../switch/enpass" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/enpass" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/enpass" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/enpass" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/enpass" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/enpass" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/enpass" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="../../pt-br/switch/enpass" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/enpass" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/enpass" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/enpass" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

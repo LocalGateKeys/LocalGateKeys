@@ -95,7 +95,7 @@ final class PhoneReminders {
     nonisolated static let prefix = "lgk.reminder."
     nonisolated static let hour = 9
     nonisolated static var anonymousBody: String { String(localized: "A reminder is due") }
-    nonisolated static var saveFailedText: String { String(localized: "The reminder could not be saved on this iPhone.") }
+    nonisolated static var saveFailedText: String { DeviceText.isPad ? String(localized: "ipad.phoneReminders.reminderCouldNotBe", defaultValue: "The reminder could not be saved on this iPad.") : String(localized: "The reminder could not be saved on this iPhone.") }
     nonisolated static let leadChoices = [0, 1, 7, 14, 30, 60, 90]
 
     enum Failure: Error, Equatable { case locked, notTyped, invalidDate, save }

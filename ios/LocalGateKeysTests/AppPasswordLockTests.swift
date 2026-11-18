@@ -1,4 +1,5 @@
 import XCTest
+import LocalAuthentication
 import AppShared
 @testable import LocalGateKeys
 
@@ -74,10 +75,27 @@ final class AppPasswordLockTests: XCTestCase {
         u.failWith = AppPasswordError.biometricChanged
         await m.unlock(password: "nope")
         XCTAssertEqual(m.errorMessage, AppLockModel.biometricChangedMessage)
+        // Review L1: a shortcut item that is simply missing is not "Face ID changed".
+        u.failWith = AppPasswordError.biometricKeyMissing
+        await m.unlock(password: "nope")
+        XCTAssertEqual(m.errorMessage, AppLockModel.biometricKeyMissingMessage)
+        XCTAssertNotEqual(m.errorMessage, AppLockModel.biometricChangedMessage)
+        XCTAssertTrue(m.needsPassword)
         XCTAssertFalse(m.offersStartFresh)
         u.failWith = nil
         await m.recover(phrase: "words", newPassword: "new password here")
         XCTAssertEqual(m.state, .unlocked)
+    }
+
+    /// Review L3: Reveal, Export, Share and Sync say why the owner check could not run; a cancel says nothing.
+    func test_owner_check_says_why_it_cannot_run() {
+        XCTAssertNil(AppPasswordGate.ownerCheckMessage(LAError(.userCancel)))
+        XCTAssertNil(AppPasswordGate.ownerCheckMessage(LAError(.systemCancel)))
+        XCTAssertEqual(AppPasswordGate.ownerCheckMessage(LAError(.biometryLockout)), AppLockModel.biometryLockoutMessage)
+        XCTAssertEqual(AppPasswordGate.ownerCheckMessage(LAError(.passcodeNotSet)),
+                       "Set a device passcode in Settings to use LocalGateKeys.")
+        XCTAssertEqual(AppPasswordGate.ownerCheckMessage(LAError(.authenticationFailed)), AppPasswordGate.ownerCheckFailedText)
+        XCTAssertEqual(AppPasswordGate.ownerCheckMessage(nil), AppPasswordGate.ownerCheckFailedText)
     }
 
     func test_password_off_keeps_today_s_unlock() async {

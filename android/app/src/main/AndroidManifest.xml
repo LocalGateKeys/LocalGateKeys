@@ -5,9 +5,24 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Finds the Wi-Fi network, so a LAN sync socket is bound to it and never goes over cellular. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Phone Wi-Fi host on API 29-32: the Wi-Fi multicast lock held while JmDNS announces _lgksync._tcp (normal permission). -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Expiry reminders (UX workstream 10): local notifications only. Android 13+ asks when the first reminder is saved. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The reminders' alarms are forgotten by a restart; the boot receiver arms them again (no vault needed). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- WorkManager's, unused here (no foreground work): not merged in. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
+    <!-- Android 12+: other apps' overlay windows are hidden while the app password is typed (a normal permission). -->
+    <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- App password factors (KeePass unlocking Task 9): a YubiKey's challenge-response over NFC or USB. Optional:
+         phones without NFC or USB host still install, and use a key file. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
     <!-- Part C: the autofill service checks these browsers' signing certificates against the privileged list
          (Android 11+ package visibility). Keep in step with FillTarget.BROWSERS. -->
@@ -43,6 +58,9 @@
         android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.LocalGateKeys">
+        <!-- YubiKit's own prompt screens are never used (the app reads the key itself): not merged in. -->
+        <activity android:name="com.yubico.yubikit.android.ui.OtpActivity" tools:node="remove" />
+        <activity android:name="com.yubico.yubikit.android.ui.YubiKeyPromptActivity" tools:node="remove" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -70,6 +88,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="content" />
                 <data android:mimeType="application/vnd.localgatekeys.share" />
+            </intent-filter>
+            <!-- Sub-plan 06: a long press on the Quick Settings tile opens the Vault tab's Codes row (after the unlock). -->
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
         </activity>
 
@@ -144,9 +166,64 @@
                 android:value="true" />
         </service>
 
+        <!-- Expiry reminders: private receivers (the alarm clock and the system start them; no other app can). -->
+        <receiver
+            android:name=".reminders.ReminderAlarmReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".reminders.ReminderBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Sub-plan 06: the pinned-codes home-screen widget. Not exported: the system's widget host still delivers its
+             updates; no other app can send it anything. -->
+        <receiver
+            android:name=".widget.CodesWidgetReceiver"
+            android:exported="false"
+            android:label="@string/widget_codes_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/codes_widget_info" />
+        </receiver>
+
+        <!-- Sub-plan 06: the Quick Settings tile that copies a pinned code. Exported only for the system to bind
+             (BIND_QUICK_SETTINGS_TILE is held by the system UI alone); it reads nothing while the phone or the vault is
+             locked. -->
+        <service
+            android:name=".widget.CopyCodeTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_code"
+            android:label="@string/tile_codes_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Library receivers that would be exported: the app has exactly one exported component, MainActivity. -->
         <receiver
             android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            tools:node="remove" />
+        <!-- Glance and WorkManager extras the widget does not use: the lazy-list adapter service (exported, the widget
+             has no list), WorkManager's diagnostics receiver (exported) and its foreground service. WorkManager's job
+             service stays (exported only to the system, behind BIND_JOB_SERVICE). -->
+        <service
+            android:name="androidx.glance.appwidget.GlanceRemoteViewsService"
+            tools:node="remove" />
+        <receiver
+            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+            tools:node="remove" />
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
             tools:node="remove" />
 
         <!-- EmojiCompat's startup initializer fetches emoji fonts through Google Play services' downloadable fonts (the

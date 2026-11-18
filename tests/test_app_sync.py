@@ -779,3 +779,42 @@ def test_address_follower_keeps_the_value_when_the_probe_fails_or_wifi_is_off():
     unconfirmed = _FollowSettings("192.168.1.10:47821", confirmed="")
     AddressFollower(unconfirmed, probe=_moved_snapshot)()
     assert unconfirmed.sync_lan_endpoint_confirmed == ""  # an unconfirmed suggestion stays unconfirmed
+
+
+def test_lost_device_removes_it_like_remove_device_and_returns_the_checklist(env):
+    env.service._snapshot = _folder_snapshot()
+    result = env.service.lost_device("folder", "d2", STRONG, STRONG)
+    name, args = next(c for c in env.calls if c[0] == "rotate_job")
+    assert args[1] == ("d2",)
+    texts = result["checklist"]
+    assert any("important accounts" in line for line in texts)
+    assert any("master password" in line for line in texts)
+    assert any("cloud account" in line for line in texts)  # a folder group: sign it out of the cloud
+    assert not any("only over Wi-Fi" in line for line in texts)
+
+
+def test_status_with_a_removal_notice_starts_the_erase_check(env):
+    from localvault.sync.runner import SyncIssue
+
+    started = []
+    env.service._on_removal = lambda: started.append(1)
+    status = SimpleNamespace(issues=(SyncIssue("rejoin-required"),), items_changed=0)
+    env.service._status_changed(env.service.service, status)
+    assert started == []
+    status.issues = (SyncIssue("rejoin-required"), SyncIssue("removal-notice", "d2"))
+    env.service._status_changed(env.service.service, status)
+    assert started == [1]
+
+
+def test_a_duress_session_looks_like_sync_was_never_set_up(env, monkeypatch):
+    env.service.stop()
+    monkeypatch.setattr(type(env.controller.session), "decoy", True, raising=False)
+    env.service.start()
+    assert env.service.service is None
+    view = env.service.view()
+    assert view["available"] is True
+    assert all(c["state"] == "off" for c in view["cards"])
+    assert "Unlock" not in str(view)
+    with pytest.raises(ApiError) as refused:
+        env.service.sync_now()
+    assert "unlock" not in refused.value.message.lower()

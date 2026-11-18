@@ -21,12 +21,12 @@ class TxtTest {
     }
 
     @Test
-    fun picker_has_system_plus_ten_languages() {
-        assertEquals(11, LanguageOptions.all.size)
+    fun picker_has_system_plus_eleven_languages() {
+        assertEquals(12, LanguageOptions.all.size)
         assertEquals("", LanguageOptions.all.first().tag)
         assertNull(LanguageOptions.all.first().nativeName)
         assertEquals(
-            listOf("en", "es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl"),
+            listOf("en", "es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl", "fr"),
             LanguageOptions.all.drop(1).map { it.tag },
         )
     }
@@ -36,6 +36,7 @@ class TxtTest {
         assertEquals("", LanguageOptions.currentTag(""))
         assertEquals("pt-BR", LanguageOptions.currentTag("pt-BR"))
         assertEquals("de", LanguageOptions.currentTag("de-AT"))
-        assertEquals("", LanguageOptions.currentTag("fr"))
+        assertEquals("fr", LanguageOptions.currentTag("fr-CA"))
+        assertEquals("", LanguageOptions.currentTag("sv"))
     }
 }

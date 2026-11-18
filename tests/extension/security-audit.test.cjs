@@ -41,7 +41,7 @@ function responder({ choices = null, credential = { username: "alice", password:
 const TWO = [{ entry_id: "e1", username: "alice", label: "Alice" }, { entry_id: "e2", username: "bob", label: "Bob" }];
 async function loaded(options) { const p = createPage(options); p.load(); await p.tick(); return p; }
 const done = p => p.window.dispatchEvent(new p.window.Event("pagehide"));
-const panelButtons = p => { const root = p.shadows.get(p.panelHost()); return root ? Array.from(root.querySelectorAll("button")) : []; };
+const panelButtons = p => { const root = p.panelRoot(); return root ? Array.from(root.querySelectorAll("button")) : []; };
 function clickPanel(p, text) {
   const b = panelButtons(p).find(x => x.textContent.includes(text));
   if (!b) throw new Error(`no panel button "${text}"`);
@@ -209,7 +209,7 @@ test("SEC-E4: DOM XSS via vault/broker strings rendered in the in-page picker", 
     : responder()(r) });
   await p.command("fill_current");
   await p.tick(6);
-  const root = p.shadows.get(p.panelHost());
+  const root = p.panelRoot();
   assert.equal(root.querySelectorAll("img,script,iframe,object,embed").length, 0, "no markup is parsed from broker strings");
   assert.ok(p.panelText().includes("<img src=x"), "rendered as literal text");
   assert.equal(p.window.__pwned, undefined);
@@ -666,9 +666,14 @@ test("SEC-E28: CSP and content-script isolation", () => {
   assert.equal(manifest.sandbox, undefined);
 });
 
-test("SEC-E29: web_accessible_resources expose nothing (no script, page or image) to http(s) pages", () => {
-  assert.equal(manifest.web_accessible_resources, undefined);
-  assert.equal(firefoxManifest(manifest).web_accessible_resources, undefined);
+test("SEC-E29: web_accessible_resources expose only the panel page (no script, image or other page) to http(s) pages", () => {
+  // panel.html is the frame content.js draws its panels in; its scripts load
+  // from the extension page itself and are not web-accessible.
+  for (const m of [manifest, firefoxManifest(manifest)]) {
+    assert.equal(m.web_accessible_resources.length, 1);
+    assert.deepEqual(m.web_accessible_resources[0].resources, ["panel.html"]);
+    assert.deepEqual(m.web_accessible_resources[0].matches, ["http://*/*", "https://*/*"]);
+  }
 });
 
 test("SEC-E30: extension fingerprinting through web_accessible_resources", () => {
@@ -688,7 +693,9 @@ test("SEC-E30: in-page icons are inline SVG in the closed shadow root and refere
     assert.ok(root.querySelector("button > svg"), "inline SVG glyph");
     assert.ok(!/chrome-extension:|moz-extension:|url\((?!#)/.test(root.innerHTML), "no extension or external URL");
   }
-  assert.ok(!/getURL/.test(fs.readFileSync(path.join(EXT, "content.js"), "utf8")));
+  // The only extension URL content.js builds is the panel frame's.
+  const calls = [...fs.readFileSync(path.join(EXT, "content.js"), "utf8").matchAll(/getURL\(([^)]*)\)/g)].map(m => m[1]);
+  assert.deepEqual(calls, ["PANEL_PAGE"]);
 });
 
 test("SEC-E31: no HTML-sink, eval or page-message channel in any extension script; popup has no inline or remote script", () => {
@@ -707,12 +714,14 @@ test("SEC-E31: no HTML-sink, eval or page-message channel in any extension scrip
     assert.match(src, /lgk-passkey-req-\$\{secret\}/, `${f} addresses requests by the secret`);
     assert.match(src, /lgk-passkey-res-\$\{secret\}/, `${f} addresses replies by the secret`);
   }
-  const html = fs.readFileSync(path.join(EXT, "popup.html"), "utf8");
-  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
-  assert.ok(scripts.length > 0);
-  for (const [, attrs, body] of scripts) {
-    assert.equal(body.trim(), "", "no inline script");
-    assert.match(attrs, /src="[a-z-]+\.js"/, "local script only");
+  for (const page of ["popup.html", "panel.html"]) {
+    const html = fs.readFileSync(path.join(EXT, page), "utf8");
+    const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+    assert.ok(scripts.length > 0, page);
+    for (const [, attrs, body] of scripts) {
+      assert.equal(body.trim(), "", `no inline script in ${page}`);
+      assert.match(attrs, /src="[a-z-]+\.js"/, `local script only in ${page}`);
+    }
+    assert.ok(!/\son[a-z]+\s*=/i.test(html), `no inline event handler attributes in ${page}`);
   }
-  assert.ok(!/\son[a-z]+\s*=/i.test(html), "no inline event handler attributes");
 });

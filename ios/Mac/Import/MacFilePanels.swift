@@ -44,4 +44,16 @@ enum MacFilePanels {
         panel.prompt = String(localized: "Export")
         return panel.runModal() == .OK ? panel.url : nil
     }
+
+    /// Where to write a CXF file (`.json`), or nil.
+    static func chooseCXFExport(name: String) -> URL? {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = name
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+        panel.allowedContentTypes = [.json]
+        panel.message = String(localized: "The CXF file is not encrypted. Save it somewhere only you can read, and delete it after importing.")
+        panel.prompt = String(localized: "Export")
+        return panel.runModal() == .OK ? panel.url : nil
+    }
 }

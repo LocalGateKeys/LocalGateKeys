@@ -22,5 +22,6 @@ object VaultGroup {
 /** The pinned Codes row: shown when Settings allow it and some item has a two-factor secret; newest first, like the list. */
 object CodesRow {
     fun items(items: List<VaultItem>, showCodesRow: Boolean, t: Txt): List<VaultItem> =
-        if (showCodesRow) VaultSearch.apply(items, "", VaultFilter.All, t).filter { it.hasTotp } else emptyList()
+        // A login with access rules shows and copies its code from its detail screen only.
+        if (showCodesRow) VaultSearch.apply(items, "", VaultFilter.All, t).filter { it.hasTotp && app.localgatekeys.android.access.AccessGate.mayQuickCopy(it.record) } else emptyList()
 }

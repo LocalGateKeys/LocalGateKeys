@@ -17,8 +17,15 @@ internal object KeyringParse {
     private val memberFieldsV1 = setOf("device_id", "name_ct", "exchange_public", "added_at")
     private val memberFields = memberFieldsV1 + setOf("signing_public", "signing_proof")
 
-    /** Parse strictly (size, UTF-8, duplicate keys, non-finite numbers), then verify the structure. */
-    fun parse(data: ByteArray): JsonValue {
+    /** The top-level fields only a share keyring has (sub-plan 07, desktop `_SHARE_TOP_FIELDS`). */
+    val shareTopFields = setOf("metadata", "owner_sig")
+
+    /**
+     * Parse strictly (size, UTF-8, duplicate keys, non-finite numbers), then verify the structure. [share]: a share
+     * keyring (metadata and owner signature) is accepted; without it one is refused as `share-group` (a device-sync
+     * flow must never adopt a shared collection's keyring, desktop `join_folder_group`).
+     */
+    fun parse(data: ByteArray, share: Boolean = false): JsonValue {
         if (data.size > Keyring.MAX_KEYRING_BYTES) {
             throw KeyringException("too-large", "${data.size} > ${Keyring.MAX_KEYRING_BYTES}")
         }
@@ -28,7 +35,7 @@ internal object KeyringParse {
             throw KeyringException("bad-json", "keyring is not valid JSON")
         }
         if (value !is JsonValue.Obj) throw KeyringException("bad-keyring", "keyring must be an object")
-        verifyStructure(value)
+        verifyStructure(value, share)
         return value
     }
 
@@ -42,11 +49,29 @@ internal object KeyringParse {
         return i >= min && i <= Keyring.MAX_INT
     }
 
-    /** Shape, bounds, KDF parameters and wrap/member sets; no authentication. Same check order as the desktop. */
-    fun verifyStructure(keyring: JsonValue) {
-        val ring = fields(keyring, topFields, "keyring fields")
+    /** Whether [keyring] carries a share field (desktop: `_SHARE_TOP_FIELDS & set(keyring)`). */
+    fun isShare(keyring: JsonValue): Boolean = (keyring as? JsonValue.Obj)?.fields?.keys?.any { it in shareTopFields } == true
+
+    /**
+     * Shape, bounds, KDF parameters and wrap/member sets; no authentication. Same check order as the desktop. A share
+     * keyring ([share] true) also has its `metadata` checked and its `owner_sig` verified (the last step); with [share]
+     * false it is refused as `share-group` before anything else.
+     */
+    fun verifyStructure(keyring: JsonValue, share: Boolean = false) {
+        if (isNewerFormat(keyring)) throw KeyringException("newer-format", "this keyring needs a newer version of the app")
+        val isShare = isShare(keyring)
+        if (isShare && !share) throw KeyringException("share-group", "this keyring belongs to a shared collection")
+        // Share v2 (format 3): a share keyring with the `content` block (desktop `verify_keyring_structure`).
+        val v2 = int((keyring as? JsonValue.Obj)?.fields?.get("format")) == ShareKeyring.SHARE_FORMAT
+        val expected = if (isShare) topFields + shareTopFields else topFields
+        val ring = fields(keyring, if (v2) expected + CONTENT else expected, "keyring fields")
         val format = int(ring["format"])
         if (format == null || format !in Keyring.READ_FORMATS) throw KeyringException("bad-format", "unsupported keyring format")
+        if (v2 && !isShare) throw KeyringException("bad-fields", "a format-3 keyring is a share keyring")
+        if (isShare) {
+            if (format < 2) throw KeyringException("bad-fields", "a format-1 keyring has no share fields")
+            ShareKeyring.checkMetadata(ring["metadata"])
+        }
         val wantMember = if (format >= 2) memberFields else memberFieldsV1
         val gid = str(ring["group_id"])
         if (gid == null || !Identifier.isValid(gid)) throw KeyringException("bad-group-id", "group_id")
@@ -100,6 +125,31 @@ internal object KeyringParse {
             b64(ring["prev_mac"], Keyring.MAC_LEN, "prev_mac")
         }
         b64(ring["mac"], Keyring.MAC_LEN, "mac")
+        if (v2) checkContentShape(ring[CONTENT])
+        if (isShare) ShareKeyring.checkOwnerSig(keyring)
+    }
+
+    private const val CONTENT = "content"
+    private val contentFields = setOf("commit", "wraps")
+
+    /** Whether [keyring]'s `format` is an integer above every format this version reads (desktop `newer-format`). */
+    fun isNewerFormat(keyring: JsonValue): Boolean {
+        val format = int((keyring as? JsonValue.Obj)?.fields?.get("format")) ?: return false
+        return format > Keyring.READ_FORMATS.max()
+    }
+
+    /** Desktop `_check_content_shape`: `{commit, wraps:{device_id:{eph, nonce, ct}}}` with the wrap lengths. */
+    private fun checkContentShape(content: JsonValue?) {
+        val c = fields(content, contentFields, "content fields")
+        b64(c["commit"], 32, "content commit")
+        val wraps = (c["wraps"] as? JsonValue.Obj)?.fields ?: throw KeyringException("bad-content", "content wraps must be an object")
+        for ((deviceId, wrap) in wraps) {
+            if (!Identifier.isValid(deviceId)) throw KeyringException("bad-content", "content wrap device id")
+            val w = fields(wrap, devWrapFields, "content wrap fields")
+            b64(w["eph"], 32, "content wrap eph")
+            b64(w["nonce"], Keyring.NONCE_LEN, "content wrap nonce")
+            b64(w["ct"], Keyring.WRAP_CT_LEN, "content wrap ct")
+        }
     }
 
     /** `_check_member_proof`: `signing_public` and `signing_proof` both null, or a key with its member's valid proof. */

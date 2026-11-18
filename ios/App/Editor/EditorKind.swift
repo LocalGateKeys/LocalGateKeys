@@ -60,19 +60,19 @@ enum EditorKind: String, CaseIterable, Identifiable, Sendable {
     /// The unsaved-draft prompt (`EditorDraftText`), one sentence per kind.
     var leftWhileEditingText: String {
         switch self {
-        case .web: String(localized: "You left the app while editing a website login. Your changes were kept on this iPhone.")
-        case .note: String(localized: "You left the app while editing a note. Your changes were kept on this iPhone.")
-        case .card: String(localized: "You left the app while editing a payment card. Your changes were kept on this iPhone.")
-        case .identity: String(localized: "You left the app while editing a identity. Your changes were kept on this iPhone.")
-        case .bankAccount: String(localized: "You left the app while editing a bank account. Your changes were kept on this iPhone.")
-        case .purchase: String(localized: "You left the app while editing a purchase. Your changes were kept on this iPhone.")
-        case .subscription: String(localized: "You left the app while editing a subscription. Your changes were kept on this iPhone.")
-        case .warranty: String(localized: "You left the app while editing a warranty. Your changes were kept on this iPhone.")
-        case .wifi: String(localized: "You left the app while editing a wi-fi network. Your changes were kept on this iPhone.")
-        case .license: String(localized: "You left the app while editing a license. Your changes were kept on this iPhone.")
-        case .apiKey: String(localized: "You left the app while editing a api key. Your changes were kept on this iPhone.")
-        case .sshKey: String(localized: "You left the app while editing a ssh key. Your changes were kept on this iPhone.")
-        case .bookmark: String(localized: "You left the app while editing a bookmark. Your changes were kept on this iPhone.")
+        case .web: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.web", defaultValue: "You left the app while editing a website login. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a website login. Your changes were kept on this iPhone.")
+        case .note: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.note", defaultValue: "You left the app while editing a note. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a note. Your changes were kept on this iPhone.")
+        case .card: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.card", defaultValue: "You left the app while editing a payment card. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a payment card. Your changes were kept on this iPhone.")
+        case .identity: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.identity", defaultValue: "You left the app while editing a identity. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a identity. Your changes were kept on this iPhone.")
+        case .bankAccount: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.bankAccount", defaultValue: "You left the app while editing a bank account. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a bank account. Your changes were kept on this iPhone.")
+        case .purchase: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.purchase", defaultValue: "You left the app while editing a purchase. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a purchase. Your changes were kept on this iPhone.")
+        case .subscription: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.subscription", defaultValue: "You left the app while editing a subscription. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a subscription. Your changes were kept on this iPhone.")
+        case .warranty: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.warranty", defaultValue: "You left the app while editing a warranty. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a warranty. Your changes were kept on this iPhone.")
+        case .wifi: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.wifi", defaultValue: "You left the app while editing a wi-fi network. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a wi-fi network. Your changes were kept on this iPhone.")
+        case .license: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.license", defaultValue: "You left the app while editing a license. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a license. Your changes were kept on this iPhone.")
+        case .apiKey: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.apiKey", defaultValue: "You left the app while editing a api key. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a api key. Your changes were kept on this iPhone.")
+        case .sshKey: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.sshKey", defaultValue: "You left the app while editing a ssh key. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a ssh key. Your changes were kept on this iPhone.")
+        case .bookmark: DeviceText.isPad ? String(localized: "ipad.editor.leftWhileEditing.bookmark", defaultValue: "You left the app while editing a bookmark. Your changes were kept on this iPad.") : String(localized: "You left the app while editing a bookmark. Your changes were kept on this iPhone.")
         }
     }
     /// A field label inside a sentence ("Clear expiration date", "Copy password"): lower-cased as English writes it,

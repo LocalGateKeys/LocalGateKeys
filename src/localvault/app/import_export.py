@@ -43,6 +43,15 @@ def import_mapping_defaults(source: Any) -> dict[str, str]:
     return {target: guessed.get(target, "") for target in MAPPING_TARGETS}
 
 
+def _log_after_import(exc: BaseException) -> None:
+    try:
+        from ..error_log import log_exception
+
+        log_exception("import-report", exc)
+    except Exception:  # noqa: BLE001, S110 - logging must not fail a finished import
+        pass
+
+
 def import_summary_text(plan: Any, written: int) -> str:
     counts = plan.summary()
     lines = [t("importExport.recordsWritten", count=written),
@@ -105,7 +114,26 @@ def export_summary_text(summary: Any) -> str:
         lines.append(t("importExport.theFileIsPlainText"))
     for warning in getattr(summary, "warnings", ()) or ():
         lines.append(str(warning))
+    lines.extend(coverage_lines(getattr(summary, "left_out", None) or {}, getattr(summary, "partial", None) or {},
+                                done=True))
     return "\n".join(lines)
+
+
+def coverage_lines(left_out: dict[str, int], partial: dict[str, int], done: bool = False) -> list[str]:
+    """One line per item kind the export leaves out or carries only partly (documents: details, no file).
+    ``done`` words them for the result shown after the export; otherwise for the check before it."""
+    from .catalog import kind_label
+
+    left_key, part_key = (("importExport.coverageLeftOutDone", "importExport.coveragePartialDone") if done
+                          else ("importExport.coverageLeftOut", "importExport.coveragePartial"))
+    from ..export import TRAVEL_LEFT_OUT
+
+    lines = [t("travel.exportLeftOut", count=count) if kind == TRAVEL_LEFT_OUT
+             else t(left_key, kind=kind_label(kind), count=count)
+             for kind, count in sorted(left_out.items()) if count > 0]
+    lines += [t(part_key, kind=kind_label(kind), count=count)
+              for kind, count in sorted(partial.items()) if count > 0]
+    return lines
 
 
 # ---------------------------------------------------------------- services
@@ -144,7 +172,11 @@ class ImportService:
         self._bus = bus
         self._pending: dict[str, dict[str, Any]] = {}
         self._lock = _threading.Lock()
+        from ..import_report import UndoStore
+
+        self._undo = UndoStore()  # whole-import undo records: memory only, dropped on lock
         controller.on_lock.append(self._drop_all)
+        controller.on_lock.append(self._undo.clear)
 
     def _drop_all(self) -> None:
         with self._lock:
@@ -314,7 +346,12 @@ class ImportService:
                 raise ApiError("import_cancelled", t("importExport.importCancelledNothingWasWritten"))
             entry["applying"] = True
         self._bus.emit("import.progress", {"handle": handle, "text": t("importExport.importingYouCanCancelUntil")})
+        from ..import_report import build_report, census, landed, prepare_undo, row_facts
+
         try:
+            # Inside the try: a malformed row or a vault read error here must not leave the import "applying".
+            facts = row_facts(plan)
+            before, changed_entries, changed_items = prepare_undo(session, facts)
             plan.review()
             written = plan.apply(session, cancel=lambda: entry["cancel"].is_set()
                                  or not self._controller.guard.valid(lease))
@@ -334,13 +371,64 @@ class ImportService:
         finally:
             entry["applying"] = False
             self._bus.emit("import.progress", {"handle": handle, "text": ""})
-        text = import_summary_text(plan, written)
-        limits = plan.limit_summary()
+        # The records are committed: a failure in the report or undo bookkeeping below must not tell the user
+        # the import failed (live test 2026-11-15: "Import failed" while the record had been saved).
+        status = t("importExport.importedRecords", count=written)
+        try:
+            text = import_summary_text(plan, written)
+            limits = plan.limit_summary()
+            arrived = landed(before, census(session))
+            notes = plan.report_notes() if hasattr(plan, "report_notes") else tuple(plan.diagnostics or ())
+            report = build_report(facts, arrived, written, notes, entry["source"].label,
+                                  plan.summary().get("skipped_rows", 0))
+            undo = self._undo.add(_undo_scope(session), arrived, changed_entries, changed_items,
+                                  written=getattr(plan, "written", None))
+            report["undo"] = undo.token if (arrived or changed_entries or changed_items) else None
+        except Exception as exc:  # noqa: BLE001 - logged; the import itself succeeded
+            _log_after_import(exc)
+            self.close(handle)
+            self._controller.touch()
+            self._bus.emit("items.changed", {})
+            return {"title": t("importExport.importComplete"), "message": status, "status": status}
         self.close(handle)
         self._controller.touch()
         self._bus.emit("items.changed", {})
-        notify_item_limit(self._upgrade, limits)
-        return {"title": t("importExport.importComplete"), "message": text, "status": t("importExport.importedRecords", count=written)}
+        try:
+            notify_item_limit(self._upgrade, limits)
+        except Exception as exc:  # noqa: BLE001
+            _log_after_import(exc)
+        return {"title": t("importExport.importComplete"), "message": text, "status": status, "report": report}
+
+    def undo(self, token: str) -> dict[str, Any]:
+        """Take a whole import back: what it added goes to the Trash, what it changed gets its old values."""
+        from ..import_report import UndoError, undo_import
+        from ..session_guard import StaleSession
+        from ..vault import VaultError
+
+        session, lease = _session_lease(self._controller)
+        try:
+            record = self._undo.take(token, _undo_scope(session))
+        except UndoError as exc:
+            raise ApiError("expired", str(exc)) from None
+        if not self._port.confirm(t("switchReport.undoTitle"), t("switchReport.undoConfirm")):
+            raise ApiError("cancelled", t("error.cancelled"))
+        self._controller.require_lease(lease)
+        try:
+            result = undo_import(session, record)
+        except UndoError as exc:
+            raise ApiError("expired", str(exc)) from None
+        except StaleSession:
+            raise ApiError("session_changed", t("importExport.sessionChangedOrExpiredImport")) from None
+        except (VaultError, OSError, ValueError) as exc:
+            raise ApiError("undo_failed", str(exc) or t("switchReport.undoFailed")) from None
+        finally:
+            self._undo.drop(token)
+        self._controller.touch()
+        self._bus.emit("items.changed", {})
+        message = t("switchReport.undoDone", trashed=result["trashed"], restored=result["restored"])
+        if result["missed"]:
+            message += "\n" + t("switchReport.undoMissed", names=", ".join(result["missed"][:20]))
+        return {"message": message, **result}
 
     def cancel(self, handle: str) -> dict[str, Any]:
         with self._lock:
@@ -367,6 +455,19 @@ class ImportService:
         return {}
 
 
+CXF_KINDS = frozenset({"web", "desktop", "note", "passkey"})
+CXF_RELEASE_INTENT = "user-selected CXF export of passkeys"
+
+
+class PasskeyReleaseDeclined(PermissionError):
+    """The user declined to let passkey private keys leave the vault for a CXF export."""
+
+
+def _undo_scope(session: Any) -> str:
+    """Undo records belong to this unlocked session object (a relock or another profile is a new one)."""
+    return f"{id(session)}:{getattr(session, 'path', '')}"
+
+
 class ExportService:
     def __init__(self, controller: Any, port: Any, dialogs: Any) -> None:
         from .secrets import SecretService
@@ -386,10 +487,48 @@ class ExportService:
                 if fmt in EXPORT_FORMATS else [],
                 "min_password": EXPORT_MIN_PASSWORD}
 
+    def coverage(self) -> dict[str, Any]:
+        """What an export of the whole vault leaves out or carries only partly, per item kind (counts only)."""
+        from ..export import export_coverage
+
+        session, _lease = _session_lease(self._controller)
+        counts = export_coverage(session)
+        return {"left_out": counts["left_out"], "partial": counts["partial"],
+                "lines": coverage_lines(counts["left_out"], counts["partial"])}
+
+    def items(self) -> dict[str, Any]:
+        """The items a CXF export can hold (logins, notes, passkeys): ids, titles and kinds only, no secrets."""
+        from ..travel import hidden_id_set
+        from .catalog import _summary_title, kind_label
+
+        session, _lease = _session_lease(self._controller)
+        hidden = hidden_id_set(session)
+        rows = [{"id": str(summary.id), "title": _summary_title(summary) or t("secrets.thisItem"),
+                 "kind": kind_label(str(summary.kind))}
+                for summary in session.item_service.all_metadata_summaries()
+                if str(summary.kind) in CXF_KINDS and str(summary.id) not in hidden]
+        rows.sort(key=lambda row: row["title"].casefold())
+        return {"items": rows}
+
+    def _passkey_release(self, session: Any, lease: Any) -> Any:
+        """Release passkey private keys for a CXF export through the protected-field path.
+
+        Runs after the master-password re-authentication of :meth:`export`, under the same lease, and asks the
+        user once more because these keys sign in as them; declining raises :class:`PasskeyReleaseDeclined`."""
+        def release(item_ids: list[str]) -> dict[str, str]:
+            self._controller.require_lease(lease)
+            if not self._port.confirm(t("importExport.cxfReleasePasskeys"), t("importExport.cxfReleasePasskeysText")):
+                raise PasskeyReleaseDeclined()
+            self._controller.require_lease(lease)
+            return {item_id: session.item_service.reveal_secret(item_id, "private_key", intent=CXF_RELEASE_INTENT)
+                    for item_id in item_ids}
+        return release
+
     def export(self, fmt: str, include_totp: bool, password: str | SecretText,
-               confirm: str | SecretText) -> dict[str, Any]:
+               confirm: str | SecretText, ids: list[str] | None = None) -> dict[str, Any]:
         """Export the vault. The KDBX password may be a ``SecretText`` (the bridge passes one and wipes it);
-        it becomes a ``str`` only inside the KDBX writer call, which needs one."""
+        it becomes a ``str`` only inside the KDBX writer call, which needs one. A CXF export writes only
+        ``ids`` (the items the user selected)."""
         from ..export import EXPORT_SUFFIXES, ExportError, ExportWarning, export_records
         from ..session_guard import StaleSession
         from ..vault import VaultError
@@ -399,6 +538,14 @@ class ExportService:
             issue = export_request_issue(fmt, password, confirm)
             if issue:
                 raise ApiError("invalid", issue)
+            if fmt == "cxf":
+                # Travel mode: hidden items are never exported, however the ids were chosen (finding W-L8).
+                from ..travel import hidden_id_set
+
+                hidden = hidden_id_set(session)
+                ids = [str(item_id) for item_id in ids or () if str(item_id) not in hidden]
+            if fmt == "cxf" and not ids:
+                raise ApiError("invalid", t("export.cxfChooseItems"))
             # Every format writes every secret (a KDBX password protects the file, not this vault), so the
             # master password is asked each time: no Windows Hello, no routine grace window.
             self._auth.reauthenticate(t("importExport.confirmToExportPasswords"), lease, allow_hello=False)
@@ -411,13 +558,22 @@ class ExportService:
             if path.suffix.lower() != suffix:
                 path = path.with_suffix(suffix)
             warnings = "\n\n".join(ExportWarning.for_format(fmt, include_totp=include_totp))
+            if fmt != "cxf":
+                gaps = self.coverage()["lines"]
+                if gaps:
+                    warnings += "\n\n" + "\n".join(gaps)
             if not self._port.confirm(t("importExport.exportNow"), warnings + "\n\n" + t("importExport.writeFileQuestion", name=path.name)):
                 raise ApiError("cancelled", t("error.cancelled"))
             self._controller.require_lease(lease)
+            extra: dict[str, Any] = {}
+            if fmt == "cxf":
+                extra = {"ids": list(ids or ()), "release_private_keys": self._passkey_release(session, lease)}
             try:
                 summary = export_records(session, path, fmt, include_totp=include_totp,
                                          password=_kdbx_password(password) if fmt == "kdbx" else None,
-                                         overwrite=True)
+                                         overwrite=True, **extra)
+            except PasskeyReleaseDeclined:
+                raise ApiError("cancelled", t("importExport.cxfReleaseDeclined")) from None
             except (ExportError, StaleSession, VaultError, OSError, ValueError) as exc:
                 raise ApiError("export_failed", str(exc) or t("importExport.exportFailed")) from None
         finally:

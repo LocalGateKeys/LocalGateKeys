@@ -143,6 +143,31 @@ def _executable_identity(
     return _cached_executable_identity(exe_path, int(stat.st_mtime_ns), int(stat.st_size))
 
 
+def _inside_nested_document(element_info: Any, hwnd: int, *, max_depth: int = 64) -> bool:
+    """True when the control sits in a web document nested inside another one (an iframe).
+
+    Embedded web content (Discord Activities, ads, third-party widgets) lives in nested ``Document`` elements;
+    a login form of the app itself is in the window's top document. Such fields are never fill candidates and
+    get no field button. When the ancestor chain cannot be read, the field is treated as nested (refused).
+    """
+    documents = 0
+    try:
+        node = element_info.parent
+        for _ in range(max_depth):
+            if node is None:
+                return False
+            if str(getattr(node, "control_type", "") or "") == "Document":
+                documents += 1
+                if documents >= 2:
+                    return True
+            if int(getattr(node, "handle", 0) or 0) == int(hwnd):
+                return False
+            node = node.parent
+    except Exception:  # noqa: BLE001 - UIA providers raise many COM-specific errors
+        return True
+    return True  # deeper than any real window tree: refuse
+
+
 def scan_window(
     hwnd: int,
     *,
@@ -186,8 +211,11 @@ def scan_window(
         try:
             index = len(controls)
             element_info = wrapper.element_info
+            if _inside_nested_document(element_info, hwnd):
+                continue  # third-party iframe content: never offered or filled
             element = element_info.element
-            is_password = bool(getattr(element, "CurrentIsPassword", False))
+            is_password = bool(getattr(element, "CurrentIsPassword", False)) or _discord_masked_password(
+                str(element_info.name or ""), exe_path, str(element_info.framework_id or ""))
             rect = element_info.rectangle
             controls.append(
                 ControlDescriptor(
@@ -426,6 +454,29 @@ def _is_discord_executable(path: str) -> bool:
         and relative.parts[1].casefold() == "discord.exe"
         and re.fullmatch(r"app-\d+(?:\.\d+)*", relative.parts[0], re.IGNORECASE)
         is not None
+    )
+
+
+# Discord's desktop build of Chromium does not set UIA IsPassword on its masked login field (the same page in
+# other Electron apps does). Its accessible name is just the "Password" label, in the user's Discord language.
+_DISCORD_PASSWORD_LABELS = frozenset(label.casefold() for label in (
+    "Password", "Passwort", "Mot de passe", "Contraseña", "Senha", "Wachtwoord", "Hasło",
+    "Heslo", "Jelszó", "Kata Sandi", "Parolă", "Lösenord", "Adgangskode", "Passord", "Salasana", "Şifre", "Пароль",
+    "Κωδικός πρόσβασης", "Парола", "Lozinka", "Slaptažodis", "पासवर्ड", "รหัสผ่าน", "Mật khẩu",
+    "パスワード", "密码", "密碼", "비밀번호",
+))
+
+
+def _discord_masked_password(name: str, exe_path: str, framework_id: str) -> bool:
+    """True for Discord's own login password field, which its Chromium exposes without IsPassword.
+
+    Only a Chromium edit control in the versioned Discord executable whose accessible name is exactly the
+    "Password" label qualifies; the fill path still requires Discord's verified signer before any release.
+    """
+    return (
+        framework_id.casefold() == "chrome"
+        and " ".join(name.split()).casefold() in _DISCORD_PASSWORD_LABELS
+        and _is_discord_executable(exe_path)
     )
 
 

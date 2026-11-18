@@ -1,0 +1,275 @@
+{
+  "cases": [
+    {
+      "current": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "new@example.com"
+      },
+      "expected": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1790000000,
+        "username": "alice@example.com"
+      },
+      "name": "restore username",
+      "now": 1790000000,
+      "path": "username",
+      "snapshot": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      }
+    },
+    {
+      "current": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "current-pass",
+        "password_history": [
+          {
+            "changed_at": 1789913600,
+            "password": "older-1"
+          },
+          {
+            "changed_at": 1789827200,
+            "password": "older-2"
+          },
+          {
+            "changed_at": 1789740800,
+            "password": "older-3"
+          },
+          {
+            "changed_at": 1789654400,
+            "password": "older-4"
+          },
+          {
+            "changed_at": 1789568000,
+            "password": "older-5"
+          }
+        ],
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "restored-pass",
+        "password_history": [
+          {
+            "changed_at": 1790000000,
+            "password": "current-pass"
+          },
+          {
+            "changed_at": 1789913600,
+            "password": "older-1"
+          },
+          {
+            "changed_at": 1789827200,
+            "password": "older-2"
+          },
+          {
+            "changed_at": 1789740800,
+            "password": "older-3"
+          },
+          {
+            "changed_at": 1789654400,
+            "password": "older-4"
+          }
+        ],
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1790000000,
+        "username": "alice@example.com"
+      },
+      "name": "restore password pushes the current one (write cap 5)",
+      "now": 1790000000,
+      "path": "password",
+      "snapshot": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "restored-pass",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      }
+    },
+    {
+      "current": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://example.com"
+            },
+            {
+              "match": "exact_origin",
+              "url": "https://login.example.com"
+            }
+          ]
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://example.com"
+            }
+          ]
+        },
+        "updated_at": 1790000000,
+        "username": "alice@example.com"
+      },
+      "name": "restore the scope.urls list as a whole",
+      "now": 1790000000,
+      "path": "scope.urls",
+      "snapshot": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com",
+          "urls": [
+            {
+              "match": "exact_origin",
+              "url": "https://example.com"
+            }
+          ]
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      }
+    },
+    {
+      "current": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "error": "not_restorable",
+      "name": "created_at is not restorable",
+      "now": 1790000000,
+      "path": "created_at",
+      "snapshot": {
+        "created_at": 1789991000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      }
+    },
+    {
+      "current": {
+        "collection_ids": [],
+        "created_at": 1789999000,
+        "favorite": false,
+        "id": "10000000-0000-4000-8000-000000000200",
+        "kind": "card",
+        "payload": {
+          "billing_address_id": "",
+          "brand": "visa",
+          "cardholder": "A Person",
+          "cvv": "123",
+          "expiry": "12/27",
+          "last4": "1111",
+          "notes": "",
+          "number": "4111111111111111",
+          "pin": "",
+          "template_id": ""
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Visa",
+        "updated_at": 1789999500
+      },
+      "error": "invalid_on_this_device",
+      "name": "a snapshot value this device's normaliser rejects (Luhn)",
+      "now": 1790000000,
+      "path": "payload.number",
+      "snapshot": {
+        "collection_ids": [],
+        "created_at": 1789999000,
+        "favorite": false,
+        "id": "10000000-0000-4000-8000-000000000200",
+        "kind": "card",
+        "payload": {
+          "billing_address_id": "",
+          "brand": "visa",
+          "cardholder": "A Person",
+          "cvv": "123",
+          "expiry": "12/27",
+          "last4": "1112",
+          "notes": "",
+          "number": "4111111111111112",
+          "pin": "",
+          "template_id": ""
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Visa",
+        "updated_at": 1789999500
+      }
+    }
+  ]
+}

@@ -4,12 +4,15 @@
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, openRoute, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
+  import CollectionShare from './CollectionShare.svelte';
 
   let { kind, onclose } = $props();
   let data = $state(null);
   let picked = $state(null);
   let name = $state('');
   let renaming = $state(null);
+  // The Share section of one collection ({id, name}), or {join: true} for "Join a shared collection".
+  let sharing = $state(null);
 
   const LOADERS = { reminders: 'reminders_list', activity: 'activity_list', shortcuts: 'shortcuts_list', collections: 'collections_list' };
   const TITLES = $derived({ reminders: t('workspacePages.reminders'), activity: t('workspacePages.activity'), shortcuts: t('workspacePages.shortcuts'), collections: t('workspacePages.collections') });
@@ -81,7 +84,8 @@
               <Button label={t('common.save')} variant="primary" disabled={!name.trim()} onclick={() => act('collections_rename', c.id, name.trim(), null)} />
               <Button label={t('common.cancel')} onclick={() => (renaming = null)} />
             {:else}
-              <span class="grow">{c.name}</span>
+              <span class="grow">{c.label ?? c.name}</span>
+              <Button label={t('collectionShare.share')} onclick={() => (sharing = { id: c.id, name: c.label ?? c.name })} />
               <Button label={t('workspacePages.rename')} onclick={() => { renaming = c.id; name = c.name; }} />
               <Button label={t('workspacePages.archive')} onclick={() => act('collections_archive', c.id)} />
             {/if}
@@ -92,6 +96,11 @@
         <input aria-label={t('workspacePages.newName')} placeholder={t('workspacePages.newCollection')} bind:value={name} disabled={!!renaming} />
         <Button type="submit" label={t('workspacePages.addCollection')} disabled={!name.trim() || !!renaming} />
       </form>
+      <footer><Button label={t('collectionShare.joinTitle')} onclick={() => (sharing = { join: true })} /></footer>
+      {#if sharing}
+        <CollectionShare collectionId={sharing.join ? null : sharing.id} collectionName={sharing.name ?? ''}
+          onclose={() => (sharing = null)} onchanged={load} />
+      {/if}
     {/if}
   {/if}
 </div>

@@ -58,6 +58,24 @@
             }
           }
         },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld élément d’un type non pris en charge n’a pas été importé."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld éléments d’un type non pris en charge n’ont pas été importés."
+                }
+              }
+            }
+          }
+        },
         "it" : {
           "variations" : {
             "plural" : {
@@ -237,6 +255,24 @@
             }
           }
         },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "... et %lld autre message."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "... et %lld autres messages."
+                }
+              }
+            }
+          }
+        },
         "it" : {
           "variations" : {
             "plural" : {
@@ -374,6 +410,12 @@
             "value" : "Un archivo dentro del zip está comprimido de forma sospechosa y se rechazó"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un fichier de l’archive zip est compressé de façon suspecte et a été refusé"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -431,6 +473,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un archivo dentro del zip está cifrado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un fichier de l’archive zip est chiffré"
           }
         },
         "it" : {
@@ -492,6 +540,12 @@
             "value" : "Un archivo dentro del zip es demasiado grande"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un fichier de l’archive zip est trop volumineux"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -549,6 +603,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un archivo dentro del zip usa un método de compresión no admitido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un fichier de l’archive zip utilise une méthode de compression non prise en charge"
           }
         },
         "it" : {
@@ -610,6 +670,12 @@
             "value" : "Como máximo 5000 registros por importación"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 000 enregistrements au maximum par importation"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -667,6 +733,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se canceló la operación de copia de seguridad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’opération de sauvegarde a été annulée"
           }
         },
         "it" : {
@@ -728,6 +800,12 @@
             "value" : "La contraseña de la copia de seguridad debe tener al menos 12 caracteres"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mot de passe de sauvegarde doit comporter au moins 12 caractères"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -785,6 +863,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No se pudo completar la comprobación de filtraciones; no hay resultado disponible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La vérification des fuites n’a pas pu aboutir ; aucun résultat n’est disponible."
           }
         },
         "it" : {
@@ -846,6 +930,12 @@
             "value" : "Las comprobaciones de filtraciones están desactivadas. Al activarlas, un botón de comprobación enviará a HIBP un prefijo de hash de 5 caracteres. No se comprueba nada automáticamente."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La vérification des fuites est désactivée. L’activer permet à un bouton de vérification d’envoyer un préfixe d’empreinte de 5 caractères à HIBP. Rien n’est vérifié automatiquement."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -903,6 +993,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Expuesta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compromis"
           }
         },
         "it" : {
@@ -964,6 +1060,12 @@
             "value" : "No se pudo leer la copia de seguridad completa"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lire la sauvegarde complète"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1021,6 +1123,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Introduce un secreto Base32 o un enlace otpauth://totp."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez un secret Base32 ou un lien otpauth://totp."
           }
         },
         "it" : {
@@ -1082,6 +1190,12 @@
             "value" : "Introduce las seis palabras del código."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisissez les six mots du code."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1139,6 +1253,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Se esperaba un enlace otpauth-migration://offline"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lien otpauth-migration://offline attendu"
           }
         },
         "it" : {
@@ -1200,6 +1320,12 @@
             "value" : "Aceptable"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moyenne"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1257,6 +1383,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La compresión o el cifrado ZIP de la copia de seguridad completa no se admite"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compression de la sauvegarde complète ou le chiffrement ZIP n’est pas pris en charge"
           }
         },
         "it" : {
@@ -1318,6 +1450,12 @@
             "value" : "La copia de seguridad completa contiene un miembro del archivo que no es seguro"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sauvegarde complète contient un élément d’archive dangereux"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1375,6 +1513,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La copia de seguridad completa tiene demasiados miembros del archivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sauvegarde complète contient trop d’éléments d’archive"
           }
         },
         "it" : {
@@ -1436,6 +1580,12 @@
             "value" : "La copia de seguridad completa es demasiado grande"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sauvegarde complète est trop volumineuse"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1493,6 +1643,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La copia de seguridad completa está truncada o no se puede leer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La sauvegarde complète est tronquée ou illisible"
           }
         },
         "it" : {
@@ -1554,6 +1710,12 @@
             "value" : "Falló la autenticación de un miembro de la copia de seguridad completa"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’authentification d’un élément de la sauvegarde complète a échoué"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1611,6 +1773,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un miembro de la copia de seguridad completa es demasiado grande"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un élément de la sauvegarde complète est trop volumineux"
           }
         },
         "it" : {
@@ -1672,6 +1840,12 @@
             "value" : "Los miembros de la copia de seguridad completa no coinciden con su manifiesto"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les éléments de la sauvegarde complète ne correspondent pas à son manifeste"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1729,6 +1903,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buena"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonne"
           }
         },
         "it" : {
@@ -1790,6 +1970,12 @@
             "value" : "El origen de la importación supera 8 MiB"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La source d’importation dépasse 8 Mio"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1847,6 +2033,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LocalGateKeys en este Mac abre bases de datos de KeePass solo con contraseña; los archivos de clave no se admiten. Si esta base de datos también usa un archivo de clave, quítalo en KeePass (Base de datos > Seguridad de la base de datos) y vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LocalGateKeys sur ce Mac ouvre les bases KeePass avec un mot de passe uniquement ; les fichiers de clé ne sont pas pris en charge. Si cette base utilise aussi un fichier de clé, supprimez-le dans KeePass (Base de données > Sécurité de la base de données) et réessayez."
           }
         },
         "it" : {
@@ -1908,6 +2100,12 @@
             "value" : "Datos de migración mal formados"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Données de migration mal formées"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1965,6 +2163,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Los datos de migración no son Base64 válido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les données de migration ne sont pas du Base64 valide"
           }
         },
         "it" : {
@@ -2026,6 +2230,12 @@
             "value" : "El enlace de migración no contiene cuentas"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien de migration ne contient aucun compte"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2083,6 +2293,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El enlace de migración contiene demasiadas cuentas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien de migration contient trop de comptes"
           }
         },
         "it" : {
@@ -2144,6 +2360,12 @@
             "value" : "El enlace de migración no tiene datos"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien de migration ne contient aucune donnée"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2201,6 +2423,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El enlace de migración es demasiado largo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien de migration est trop long"
           }
         },
         "it" : {
@@ -2262,6 +2490,12 @@
             "value" : "Aún no hay inicios de sesión"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun identifiant pour l’instant"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2319,6 +2553,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo se puede compartir un elemento guardado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seul un élément enregistré peut être partagé."
           }
         },
         "it" : {
@@ -2380,6 +2620,12 @@
             "value" : "Las claves de acceso y los archivos adjuntos no se pueden compartir."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les clés d’accès et les pièces jointes ne peuvent pas être partagées."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2437,6 +2683,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mala"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mauvaise"
           }
         },
         "it" : {
@@ -2498,6 +2750,12 @@
             "value" : "Reutilizadas"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réutilisés"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2555,6 +2813,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El modo estrictamente sin conexión está activado. Desactívalo en los ajustes de Privacidad para hacer una comprobación externa explícita."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le mode hors ligne strict est activé. Désactivez-le dans les paramètres de confidentialité pour lancer une vérification externe explicite."
           }
         },
         "it" : {
@@ -2616,6 +2880,12 @@
             "value" : "Ese código no abre este elemento. Comprueba las seis palabras."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code n’ouvre pas cet élément. Vérifiez les six mots."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2660,6 +2930,70 @@
         }
       }
     },
+    "That is not the current backup password." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das ist nicht das aktuelle Backup-Passwort."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esa no es la contraseña de copia de seguridad actual."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce n’est pas le mot de passe de sauvegarde actuel."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa non è la password del backup attuale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これは現在のバックアップパスワードではありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 백업 비밀번호가 아닙니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dat is niet het huidige back-upwachtwoord."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To nie jest obecne hasło kopii zapasowej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta não é a senha de backup atual."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这不是当前的备份密码。"
+          }
+        }
+      }
+    },
     "The 2FA secret is empty." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2673,6 +3007,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El secreto 2FA está vacío."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le secret 2FA est vide."
           }
         },
         "it" : {
@@ -2734,6 +3074,12 @@
             "value" : "El secreto 2FA no es Base32 válido."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le secret 2FA n’est pas du Base32 valide."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2791,6 +3137,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El secreto 2FA no es válido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le secret 2FA n’est pas valide."
           }
         },
         "it" : {
@@ -2852,6 +3204,12 @@
             "value" : "El secreto 2FA es demasiado largo."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le secret 2FA est trop long."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2911,6 +3269,12 @@
             "value" : "El secreto 2FA es demasiado corto."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le secret 2FA est trop court."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2955,6 +3319,134 @@
         }
       }
     },
+    "The backup key record is damaged: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Datensatz des Backup-Schlüssels ist beschädigt: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El registro de la clave de copia de seguridad está dañado: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’enregistrement de la clé de sauvegarde est endommagé : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il record della chiave del backup è danneggiato: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バックアップキーのレコードが破損しています: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "백업 키 레코드가 손상되었습니다: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het record van de back-upsleutel is beschadigd: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rekord klucza kopii zapasowej jest uszkodzony: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O registro da chave de backup está danificado: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份密钥记录已损坏：%@"
+          }
+        }
+      }
+    },
+    "The backup public key is not usable" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der öffentliche Backup-Schlüssel ist nicht verwendbar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clave pública de copia de seguridad no se puede usar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clé publique de sauvegarde est inutilisable"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La chiave pubblica del backup non è utilizzabile"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バックアップの公開鍵は使用できません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "백업 공개 키를 사용할 수 없습니다"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De openbare back-upsleutel is niet bruikbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klucza publicznego kopii zapasowej nie można użyć"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A chave pública de backup não pode ser usada"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "备份公钥不可用"
+          }
+        }
+      }
+    },
     "The file could not be recognised as a password-manager export; it may be damaged." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2968,6 +3460,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No se pudo reconocer el archivo como una exportación de un gestor de contraseñas; puede estar dañado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier n’a pas pu être reconnu comme un export de gestionnaire de mots de passe ; il est peut-être endommagé."
           }
         },
         "it" : {
@@ -3029,6 +3527,12 @@
             "value" : "El archivo no es una exportación de cuentas de Credential Exchange"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fichier n’est pas un export de compte Credential Exchange"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3086,6 +3590,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El enlace otpauth tiene un parámetro no válido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le lien otpauth contient un paramètre non valide."
           }
         },
         "it" : {
@@ -3147,6 +3657,12 @@
             "value" : "La etiqueta o el emisor del enlace otpauth es demasiado largo."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le libellé ou l’émetteur du lien otpauth est trop long."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3191,6 +3707,135 @@
         }
       }
     },
+    "The reset authority is damaged: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Berechtigung zum Zurücksetzen ist beschädigt: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La autorización de restablecimiento está dañada: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’autorité de réinitialisation est endommagée : %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'autorizzazione al ripristino è danneggiata: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リセット用の認証情報が破損しています: %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "재설정 권한 정보가 손상되었습니다: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De machtiging om opnieuw in te stellen is beschadigd: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uprawnienie do resetu jest uszkodzone: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A autorização de redefinição está danificada: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置授权已损坏：%@"
+          }
+        }
+      }
+    },
+    "The sender revoked this shared item." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Absender hat diesen geteilten Eintrag widerrufen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El remitente revocó este elemento compartido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'expéditeur a révoqué cet élément partagé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il mittente ha revocato questo elemento condiviso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信者がこの共有項目を取り消しました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보낸 사람이 이 공유 항목을 취소했습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De afzender heeft dit gedeelde item ingetrokken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nadawca odwołał ten udostępniony element."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O remetente revogou este item compartilhado."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送者已撤销此共享项目。"
+          }
+        }
+      }
+    },
     "The shared item has a date in the future. Check this device's clock." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3204,6 +3849,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El elemento compartido tiene una fecha futura. Comprueba el reloj de este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’élément partagé porte une date dans le futur. Vérifiez l’horloge de cet appareil."
           }
         },
         "it" : {
@@ -3265,6 +3916,12 @@
             "value" : "El elemento compartido está dañado."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’élément partagé est endommagé."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3322,6 +3979,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La lista de palabras está dañada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La liste de mots est endommagée."
           }
         },
         "it" : {
@@ -3383,6 +4046,12 @@
             "value" : "El zip contiene un nombre de archivo que apunta fuera del archivo comprimido y se rechazó"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’archive zip contient un nom de fichier qui pointe en dehors de l’archive et a été refusée"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3440,6 +4109,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El zip contiene el mismo nombre de archivo dos veces y se rechazó"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’archive zip contient deux fois le même nom de fichier et a été refusée"
           }
         },
         "it" : {
@@ -3501,6 +4176,12 @@
             "value" : "El zip contiene demasiados archivos"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’archive zip contient trop de fichiers"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3558,6 +4239,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El zip está dañado o incompleto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’archive zip est endommagée ou incomplète"
           }
         },
         "it" : {
@@ -3619,6 +4306,12 @@
             "value" : "Esta configuración 2FA usa un algoritmo no admitido."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette configuration 2FA utilise un algorithme non pris en charge."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3676,6 +4369,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Esta configuración 2FA usa un número de dígitos no admitido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette configuration 2FA utilise un nombre de chiffres non pris en charge."
           }
         },
         "it" : {
@@ -3737,6 +4436,12 @@
             "value" : "Esta configuración 2FA usa un periodo no admitido."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette configuration 2FA utilise une période non prise en charge."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3794,6 +4499,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este código QR no es un código para compartir de LocalGateKeys."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code QR n’est pas un code de partage LocalGateKeys."
           }
         },
         "it" : {
@@ -3855,6 +4566,12 @@
             "value" : "Esta exportación está protegida con contraseña"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet export est protégé par un mot de passe"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3912,6 +4629,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este formato de importación aún no está disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce format d’importation n’est pas encore disponible"
           }
         },
         "it" : {
@@ -3973,6 +4696,12 @@
             "value" : "Esto no es un elemento compartido de LocalGateKeys."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce n’est pas un élément LocalGateKeys partagé."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4030,6 +4759,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este elemento es demasiado grande para compartirlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet élément est trop volumineux pour être partagé."
           }
         },
         "it" : {
@@ -4091,6 +4826,12 @@
             "value" : "Este elemento lo compartió una versión más reciente de LocalGateKeys. Actualiza la aplicación."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet élément a été partagé par une version plus récente de LocalGateKeys. Mettez l’application à jour."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4148,6 +4889,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este tipo de elemento no se puede guardar en este dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce type d’élément ne peut pas être enregistré sur cet appareil."
           }
         },
         "it" : {
@@ -4209,6 +4956,12 @@
             "value" : "Este elemento compartido caducó. Pide que lo vuelvan a compartir."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet élément partagé a expiré. Demandez qu’il soit partagé de nouveau."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4266,6 +5019,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este elemento compartido contiene contenido que no se puede compartir."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet élément partagé contient du contenu qui ne peut pas être partagé."
           }
         },
         "it" : {
@@ -4327,6 +5086,12 @@
             "value" : "Este elemento compartido ya se abrió en este dispositivo."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet élément partagé a déjà été ouvert sur cet appareil."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4384,6 +5149,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este zip usa el formato zip64, que no se admite"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette archive zip utilise le format zip64, qui n’est pas pris en charge"
           }
         },
         "it" : {
@@ -4445,6 +5216,12 @@
             "value" : "Parámetros de cifrado de la copia de seguridad no admitidos"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres de chiffrement de sauvegarde non pris en charge"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4502,6 +5279,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Formato de copia de seguridad completa no admitido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format de sauvegarde complète non pris en charge"
           }
         },
         "it" : {
@@ -4563,6 +5346,12 @@
             "value" : "Usa una hora en formato de 24 horas, como 08:30."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisez une heure au format 24 heures, par exemple 08:30."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4620,6 +5409,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Débiles"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faibles"
           }
         },
         "it" : {
@@ -4681,6 +5476,12 @@
             "value" : "Contraseña de la copia de seguridad incorrecta o copia de seguridad completa modificada"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe de sauvegarde incorrect ou sauvegarde complète modifiée"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4740,6 +5541,12 @@
             "value" : "Contraseña incorrecta o exportación dañada (el MAC no coincide)"
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mot de passe incorrect ou export corrompu (MAC non conforme)"
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4780,6 +5587,294 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "密码错误或导出文件已损坏（MAC 不匹配）"
+          }
+        }
+      }
+    },
+    "collection.starter.Emergency" : {
+      "comment" : "A starter collection name, shown translated; the stored name stays English",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notfall"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emergency"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emergencia"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Urgence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emergenza"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "緊急"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "긴급"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noodgeval"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awaryjne"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emergência"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "紧急"
+          }
+        }
+      }
+    },
+    "collection.starter.Personal" : {
+      "comment" : "A starter collection name, shown translated; the stored name stays English",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persönlich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnel"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個人"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "개인"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persoonlijk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Osobiste"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pessoal"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人"
+          }
+        }
+      }
+    },
+    "collection.starter.Travel" : {
+      "comment" : "A starter collection name, shown translated; the stored name stays English",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reisen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viajes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "여행"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reizen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Podróże"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viagens"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅行"
+          }
+        }
+      }
+    },
+    "collection.starter.Work" : {
+      "comment" : "A starter collection name, shown translated; the stored name stays English",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arbeit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabajo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travail"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lavoro"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仕事"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "업무"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Praca"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabalho"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "工作"
           }
         }
       }

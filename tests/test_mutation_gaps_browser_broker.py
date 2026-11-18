@@ -75,8 +75,10 @@ def test_unchanged_stamp_within_90_seconds_runs(session) -> None:
     assert broker.request("begin_gesture_browser", user_gesture=True)["ok"] is True
 
 
+# cancel_identity_browser is the extension's timeout cancel, sent without the protocol fields
+# (test_broker_popup_protocol.py): it releases nothing, so it is accepted.
 @pytest.mark.parametrize("action", ["begin_identity_browser", "approve_identity_browser",
-                                    "release_identity_browser", "cancel_identity_browser"])
+                                    "release_identity_browser"])
 def test_identity_action_without_identity_protocol_is_version_mismatch(session, action) -> None:
     broker = _Broker(session)
     reply = broker.request(action)

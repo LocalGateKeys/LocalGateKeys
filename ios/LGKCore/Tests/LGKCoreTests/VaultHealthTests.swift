@@ -40,7 +40,8 @@ final class VaultHealthTests: XCTestCase {
     func testOldIsNotInScore() {
         let h = VaultHealth.compute([login("a", strong, totp: false, daysOld: 400), login("b", "Tr0ub4dor&3")],
                                     breached: [], now: now)
-        XCTAssertEqual(h.old, ["a"]); XCTAssertEqual(h.noTwoFactor, ["a"])
+        // No site features: nothing is known to offer 2FA (see VaultHealthSiteCasesTests).
+        XCTAssertEqual(h.old, ["a"]); XCTAssertEqual(h.noTwoFactor, [])
         XCTAssertEqual(h.score, 100)
     }
 

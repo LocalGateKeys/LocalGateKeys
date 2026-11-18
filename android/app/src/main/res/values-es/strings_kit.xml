@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Kit de emergencia</string>
+    <string name="kit_intro">Guarda esta página sin conexión y separada de tu teléfono. Explica cómo volver a entrar en LocalGateKeys si olvidas la contraseña de la app.</string>
+    <string name="kit_device">Teléfono</string>
+    <string name="kit_date">Fecha</string>
+    <string name="kit_version">Versión de LocalGateKeys</string>
+    <string name="kit_app_password">Contraseña de la app (escríbela a mano o guárdala aparte de esta página):</string>
+    <string name="kit_phrase_heading">Frase de recuperación (%1$d palabras, en orden)</string>
+    <string name="kit_steps_heading">Cómo volver a entrar</string>
+    <string name="kit_step1">En la pantalla de bloqueo de LocalGateKeys, toca «%1$s».</string>
+    <string name="kit_step2">Escribe las %1$d palabras de arriba, en orden.</string>
+    <string name="kit_step3">Elige una contraseña de la app nueva. Tus contraseñas no cambian.</string>
+    <string name="kit_step4">Si pierdes el teléfono o la bóveda ya no está, instala LocalGateKeys en un teléfono nuevo y restaura tu última copia de seguridad o sincroniza desde tu PC u otro teléfono.</string>
+    <string name="kit_warning">Trata esta página como tu bóveda. Un PDF guardado con la frase de recuperación es tan sensible como la propia bóveda: guarda el papel bajo llave y borra cualquier PDF guardado al terminar.</string>
+    <string name="kit_print_with_phrase">Imprimir kit de emergencia con esta frase</string>
+    <string name="kit_print_blank">Imprimir kit de emergencia (casillas de la frase en blanco)</string>
+</resources>

@@ -56,7 +56,8 @@ class _Broker(RuntimeActions, BrowserBroker):
                              "excluded": excluded})
         return self.answer
 
-    def reauthenticate(self, title, lease, *, allow_hello=False):
+    def reauthenticate(self, title, lease, *, allow_hello=False, fresh=False):
+        assert fresh is True  # P-02: a passkey's UV never comes from the routine grace
         self.reauths.append(title)
         return self.reauth_ok
 
@@ -296,3 +297,230 @@ def test_a_late_approval_does_not_store_a_passkey_the_page_gave_up_on(tmp_path, 
     reply = broker.request("passkey_create_browser", options=_create_options())
     assert reply["error"] == "user_cancelled"
     assert broker.session.items.passkey_records("example.test") == []
+
+
+# -- Windows passkey provider on: the extension steps aside (Task 7) --------------------------------------------------
+def _provider(monkeypatch, broker, *, setting: bool, state: str | None):
+    """Install a fresh registration cache that never starts a process; returns it."""
+    import localvault.windows_passkey_provider as wpp
+
+    refreshes = []
+    registration = wpp.RegistrationState(spawn=lambda work: refreshes.append(work))
+    registration.record(state)
+    monkeypatch.setattr(wpp, "REGISTRATION", registration)
+    broker.settings.windows_passkey_provider = setting
+    return registration, refreshes
+
+
+def test_browser_ops_answer_system_provider_when_active(tmp_path, monkeypatch) -> None:
+    broker = _broker(tmp_path)
+    _provider(monkeypatch, broker, setting=True, state="enabled")
+    for action, options in (("passkey_create_browser", _create_options()), ("passkey_get_browser", _get_options())):
+        assert broker.request(action, options=options) == {"ok": False, "error": "system_provider"}
+    # Before the activation check, the parser and the locked notice: no prompt, no unlock, nothing stored.
+    assert broker.request("passkey_create_browser", options="nope", user_activation=False) == {
+        "ok": False, "error": "system_provider"}
+    broker._session_available = lambda: False
+    assert broker.request("passkey_get_browser", options=_get_options())["error"] == "system_provider"
+    assert broker.prompts == [] and broker.reauths == []
+    assert "_passkey_locked_notice" not in broker.__dict__
+    assert broker.session.items.passkey_records("example.test") == []
+
+
+def test_browser_ops_unchanged_when_setting_on_but_not_registered(tmp_path, monkeypatch) -> None:
+    for setting, state in ((True, None), (True, "not_registered"), (True, "disabled"), (False, "enabled")):
+        broker = _broker(tmp_path / f"{setting}-{state}")
+        _provider(monkeypatch, broker, setting=setting, state=state)
+        _register(broker)  # the extension's own path: dialog, verification, stored passkey
+        assert broker.prompts[-1]["mode"] == "create"
+        broker.request("passkey_get_browser", options=_get_options())
+        assert broker.prompts[-1]["mode"] == "get", (setting, state)  # the extension's dialog offers the passkey
+
+
+def test_logins_unaffected_when_provider_active(tmp_path, monkeypatch) -> None:
+    broker = _broker(tmp_path)
+    _provider(monkeypatch, broker, setting=True, state="enabled")
+    item = broker.session.upsert_web(origin=ORIGIN, username="ada", password="login-pw")
+    start = broker.request("begin_browser", user_gesture=True)
+    assert start["ok"] is True, start
+    assert [row["entry_id"] for row in start["choices"]] == [item]
+    released = broker.request("get_browser", grant=start["grant"], entry_id=item,
+                              gesture_nonce=start["gesture_nonce"])
+    assert released["ok"] is True and released["credential"]["password"] == "login-pw"
+
+
+def test_system_provider_sets_no_cooldown(tmp_path, monkeypatch) -> None:
+    broker = _broker(tmp_path)
+    registration, _ = _provider(monkeypatch, broker, setting=True, state="enabled")
+    restored = []
+    broker._passkey_foreground = lambda: 4242
+    broker._passkey_return_focus = restored.append
+    for _ in range(3):
+        assert broker.request("passkey_get_browser", options=_get_options())["error"] == "system_provider"
+    assert broker._passkey_cooldowns() == {} and restored == []
+    # Turned off: the very next request gets the extension's dialog, with no cooldown left behind.
+    registration.record("not_registered")
+    _register(broker)
+    assert len(broker.prompts) == 1
+
+
+def test_system_provider_comes_from_app_state_not_the_request(tmp_path, monkeypatch) -> None:
+    # Both gates: setting on but not enabled in Windows, and enabled in Windows but the setting off.
+    for setting, state in ((True, "disabled"), (False, "enabled")):
+        broker = _broker(tmp_path / f"{setting}")
+        _provider(monkeypatch, broker, setting=setting, state=state)
+        for extra in ({"system_provider": True}, {"error": "system_provider"}, {"state": "enabled"},
+                      {"windows_passkey_provider": True}):
+            reply = broker.request("passkey_create_browser", options=_create_options(), **extra)
+            assert reply.get("error") != "system_provider", (setting, extra)
+            broker._passkey_cooldowns().clear()
+
+
+def _clocked(monkeypatch, tmp_path, state):
+    import localvault.windows_passkey_provider as wpp
+
+    clock = [1000.0]
+    monkeypatch.setattr(wpp.time, "monotonic", lambda: clock[0])
+    broker = _broker(tmp_path)
+    registration, refreshes = _provider(monkeypatch, broker, setting=True, state=state)
+    return broker, registration, refreshes, clock
+
+
+def test_fresh_enabled_state_answers_system_provider(tmp_path, monkeypatch) -> None:
+    broker, _, _, clock = _clocked(monkeypatch, tmp_path, "enabled")
+    clock[0] += 29.9
+    assert broker.request("passkey_get_browser", options=_get_options())["error"] == "system_provider"
+
+
+def test_stale_enabled_state_keeps_the_extension_path_while_it_refreshes(tmp_path, monkeypatch) -> None:
+    # LocalGateKeys may have been turned off in Windows Settings since: never hand over on an old answer.
+    broker, _, refreshes, clock = _clocked(monkeypatch, tmp_path, "enabled")
+    clock[0] += 30
+    _register(broker)  # the extension's dialog, verification and stored passkey
+    assert broker.prompts[-1]["mode"] == "create"
+    assert len(refreshes) == 1  # a refresh was started off the UI thread (queued by the fake spawn, not run)
+
+
+def test_refresh_failure_keeps_the_extension_path(tmp_path, monkeypatch) -> None:
+    broker, registration, _, clock = _clocked(monkeypatch, tmp_path, "enabled")
+    clock[0] += 30
+    registration._spawn = lambda work: work()
+    registration.refresh_later(run=lambda *_args: {"ok": False, "error": "timeout"}, is_available=lambda: True)
+    assert registration.enabled() is False
+    _register(broker)
+    assert broker.prompts[-1]["mode"] == "create"
+    # A successful refresh hands over again.
+    clock[0] += 10
+    registration.refresh_later(run=lambda *_args: {"ok": True, "state": "enabled"}, is_available=lambda: True)
+    assert broker.request("passkey_get_browser", options=_get_options())["error"] == "system_provider"
+
+
+def test_active_check_refreshes_in_the_background_at_most_every_10s(tmp_path, monkeypatch) -> None:
+    broker, _, refreshes, clock = _clocked(monkeypatch, tmp_path, "disabled")
+    assert broker._system_provider_active() is False
+    assert refreshes == []  # just recorded
+    clock[0] += 10
+    assert broker._system_provider_active() is False
+    assert len(refreshes) == 1  # spawned, not run on the UI thread
+    clock[0] += 10
+    assert broker._system_provider_active() is False
+    assert len(refreshes) == 1  # one at a time
+    broker.settings.windows_passkey_provider = False
+    clock[0] += 60
+    assert broker._system_provider_active() is False
+    assert len(refreshes) == 1  # setting off: no process at all
+
+
+def test_default_refresh_runs_on_a_worker_thread() -> None:
+    import threading
+    import time
+
+    import localvault.windows_passkey_provider as wpp
+
+    registration = wpp.RegistrationState()  # the real threading.Thread spawn
+    threads = []
+
+    def run(*args):
+        threads.append(threading.current_thread().name)
+        return {"ok": True, "state": "enabled"}
+    registration.refresh_later(run=run, is_available=lambda: True)
+    deadline = time.monotonic() + 5
+    while registration._refreshing and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert registration._refreshing is False
+    assert threads == ["lgk-passkey-provider-state"]
+    assert registration.enabled() is True
+
+
+def test_attach_refreshes_on_a_timer_only_while_the_setting_is_on(monkeypatch) -> None:
+    import localvault.windows_passkey_provider as wpp
+
+    ticks = []
+    monkeypatch.setattr(wpp, "_start_ticker", ticks.append)
+    registration = wpp.RegistrationState(spawn=lambda work: work())
+    monkeypatch.setattr(wpp, "REGISTRATION", registration)
+    calls = []
+
+    def run(*args):
+        calls.append(args)
+        return {"ok": True, "state": "enabled"}
+    controller = SimpleNamespace(settings=AppSettings(windows_passkey_provider=False), on_unlock=[],
+                                 is_unlocked=lambda: False)
+    bus = SimpleNamespace(listeners=[], emit=lambda *_a: None)
+    wpp.attach(controller=controller, bus=bus, run_on_ui=lambda fn, timeout=0: fn(), toast=lambda *_a: None,
+               start=lambda _work: None, run=run, is_available=lambda: True)
+    assert len(ticks) == 1
+    ticks[0]()
+    assert calls == []  # setting off: no process
+    controller.settings = AppSettings(windows_passkey_provider=True)
+    ticks[0]()
+    assert calls == [("--state",)] and registration.enabled() is True
+
+
+def test_registration_refresh_records_the_state_windows_reports() -> None:
+    import localvault.windows_passkey_provider as wpp
+
+    def refreshed(answer=None, *, available=True, raises=False):
+        registration = wpp.RegistrationState(spawn=lambda work: work())
+        registration.record("enabled", stale=True)
+        calls = []
+
+        def run(*args):
+            calls.append(args)
+            if raises:
+                raise OSError("boom")
+            return answer
+        registration.refresh_later(run=run, is_available=lambda: available)
+        return registration, calls
+
+    registration, calls = refreshed({"ok": True, "state": "enabled"})
+    assert registration.enabled() is True and calls == [("--state",)]
+    for answer in ({"ok": True, "state": "disabled"}, {"ok": True, "state": "not_registered"},
+                   {"ok": True, "state": "weird"}, {"ok": False, "error": "timeout"}):
+        assert refreshed(answer)[0].enabled() is False, answer
+    registration, calls = refreshed({"ok": True, "state": "enabled"}, available=False)
+    assert registration.enabled() is False and calls == []
+    assert refreshed(raises=True)[0].enabled() is False
+
+
+def test_switch_and_start_up_keep_the_registration_cache_current(monkeypatch) -> None:
+    import localvault.windows_passkey_provider as wpp
+
+    registration = wpp.RegistrationState(spawn=lambda work: None)
+    monkeypatch.setattr(wpp, "REGISTRATION", registration)
+    answers = {"--state": {"ok": True, "state": "enabled"}, "--register": {"ok": True}, "--unregister": {"ok": True}}
+    run = lambda *args: answers[args[0]]  # noqa: E731
+    assert wpp.reconcile(True, run=run, is_available=lambda: True) == "registered"
+    assert registration.enabled() is True
+    assert wpp.disable(run=run)["ok"] is True
+    assert registration.enabled() is False
+    assert wpp.enable(run=run, open_settings=lambda: None)["ok"] is True
+    # Registered, but Windows lists a new provider as off until the user turns it on there: not active yet,
+    # and the next check re-reads the state.
+    assert registration.enabled() is False
+    assert registration._attempted == float("-inf")  # the next check refreshes at once
+    assert wpp.reconcile(False, run=run, is_available=lambda: True) == "unregistered"
+    assert registration.enabled() is False
+    registration.record("enabled")
+    assert wpp.reconcile(True, run=run, is_available=lambda: False, native=lambda: "none") == "none"
+    assert registration.enabled() is False

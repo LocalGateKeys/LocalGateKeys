@@ -4,15 +4,21 @@
 <dict>
 	<key>com.apple.developer.authentication-services.autofill-credential-provider</key>
 	<true/>
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>TAG</string>
+	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>$(LGK_APP_GROUP)</string>
+		<string>$(LGK_SAFARI_APP_GROUP)</string>
 	</array>
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(LGK_KEYCHAIN_GROUP)</string>
 		<string>$(LGK_APP_KEYCHAIN_GROUP)</string>
 		<string>$(LGK_SAFARI_KEYCHAIN_GROUP)</string>
+		<string>$(LGK_CODES_KEYCHAIN_GROUP)</string>
 	</array>
 </dict>
 </plist>

@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
 import app.localgatekeys.core.sync.FolderAccess
 import app.localgatekeys.core.sync.FolderAccessException
 
@@ -13,7 +14,7 @@ import app.localgatekeys.core.sync.FolderAccessException
  * is gone (revoked in system settings, the provider app removed or cleared) does not open: the coordinator reports
  * `folder-missing`, and the Sync tab asks to choose the folder again ([isAvailable] false).
  */
-class SafFolderOpener(context: Context) : FolderOpening {
+class SafFolderOpener(context: Context, private val keepAlso: () -> Set<String> = { emptySet() }) : FolderOpening {
     private val app = context.applicationContext
     private val resolver: ContentResolver = app.contentResolver
 
@@ -42,21 +43,43 @@ class SafFolderOpener(context: Context) : FolderOpening {
         false
     }
 
-    override fun keepOnly(uri: String?) {
-        val keep = uri?.let { Uri.parse(it) }
+    override fun keepOnly(uri: String?) = keepOnlyAll(setOfNotNull(uri))
+
+    /** Releases every persisted folder permission but [uris]' and the emergency access folders' ([keepAlso]). */
+    override fun keepOnlyAll(uris: Set<String>) {
+        val keep = uris.map { Uri.parse(it) }.toSet()
+        val also = try {
+            keepAlso().map { Uri.parse(it) }.toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
         val held = try {
             resolver.persistedUriPermissions
         } catch (e: Exception) {
             return
         }
         for (p in held) {
-            if (p.uri == keep) continue
+            if (p.uri in keep || p.uri in also) continue
             try {
                 resolver.releasePersistableUriPermission(p.uri, FLAGS)
             } catch (e: SecurityException) {
                 // already gone
             }
         }
+    }
+
+    /**
+     * The picked folder's name as the provider shows it (the share sheet's folder row), or null when it cannot be read.
+     * Blocking (a provider query); never throws.
+     */
+    fun displayName(uri: String): String? = try {
+        val tree = Uri.parse(uri)
+        val doc = DocumentsContract.buildDocumentUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+        resolver.query(doc, arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getString(0) else null
+        }
+    } catch (e: Exception) {
+        null
     }
 
     override fun toString(): String = "SafFolderOpener"

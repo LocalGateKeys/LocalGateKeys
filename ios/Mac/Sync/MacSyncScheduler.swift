@@ -101,6 +101,11 @@ final class MacSyncScheduler {
         guard isUnlocked, coordinator == nil, let lock else { return }
         guard let coordinator = makeCoordinator(lock) else { return }
         self.coordinator = coordinator
+        // Shared collections sync and are created or joined only with Pro (as hosting; read at each run).
+        coordinator.isPro = { [weak self] in self?.hostingAllowed() ?? false }
+        // The duress password's second vault never syncs (sub-plan 08): an inert coordinator over a Keychain in memory
+        // (the Sync page shows nothing set up and refuses with the generic line), no Wi-Fi host, no run.
+        guard !lock.isSecondSession else { return }
         host = makeHost(lock, coordinator)
         host?.licenceOnly = !hostingAllowed()
         host?.pairing.onPaired = { [weak self] in self?.syncNow() }   // a device just added: sync with it
@@ -154,7 +159,7 @@ final class MacSyncScheduler {
 
     /// Starts a run now, or one more right after the run in flight.
     private func request(_ trigger: Trigger) {
-        guard isUnlocked, coordinator != nil else { return }
+        guard isUnlocked, coordinator != nil, lock?.isSecondSession != true else { return }
         editAt = nil
         lastRunAt = now()
         if runTask != nil { again = trigger; return }

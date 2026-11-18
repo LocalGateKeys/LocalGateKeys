@@ -22,8 +22,8 @@ import app.localgatekeys.core.primitives.UnixClock
 
 /**
  * The only I/O seam of LAN sync: one TCP connection to the peer. A [LanConnector] opens a new
- * connection for every request; the client calls [exchange] exactly twice on it (its hello, then
- * the sealed request) and drops it. Frames carry their 4-byte length prefix both ways.
+ * connection for every request; the client calls [exchange] exactly twice on it (its sealed hello,
+ * then the encrypted request) and drops it. Frames carry their 4-byte length prefix both ways.
  * Blocking: the app calls it off the main thread.
  */
 interface LanConnection {
@@ -52,7 +52,17 @@ data class LanPublish(val inline: Boolean, val vaultGeneration: Long, val witnes
  * One LAN exchange: the peer's [states], what it published ([observation], null when nothing), and [issue] when its
  * `witness` answer could not be used.
  */
-class LanExchange(val states: List<ItemState>, val observation: Observation? = null, val issue: SyncIssue? = null)
+class LanExchange(
+    val states: List<ItemState>,
+    val observation: Observation? = null,
+    val issue: SyncIssue? = null,
+    /**
+     * The peer's `features` answer when [LanClient.exchange] was asked to send one: true, it reads personal collection
+     * states; false, an older app (`bad-message`); null, nothing learnt (not asked, or any other answer or error: ask
+     * again next time). Record true or false with [LanFeatures.setPeer].
+     */
+    val collections: Boolean? = null,
+)
 
 /**
  * The files fetched after a view exchange (attachment sync, 2026-10-29): [blobs] by blob id, each checked against its
@@ -76,23 +86,29 @@ class LanClient(
     private val sleep: (Long) -> Unit = { Thread.sleep(it) },
 ) {
     /**
-     * One connection: send a hello (fresh 16-byte session id, then a 32-byte hello nonce from
-     * `random`), check the responder's hello (pinned keys, same session id, increasing counter),
-     * send one sealed request and open the one sealed response. A responder that answers the hello
-     * with a version refusal (or a signed hello of another version) stops the request with
-     * [LanSyncException] `peer-update-needed` (it announced an older version) or `lan-update-needed`
-     * (a newer one); there is never a retry with another version. The hello's ephemeral private key
-     * is zeroed when the request ends, used or not.
+     * One connection (protocol version 3, `docs/formats/LAN_SYNC_V3.md` 2.4): send a version-3 hello
+     * (fresh 16-byte session id, then a 32-byte hello nonce and the 32-byte hello ephemeral key from
+     * `random`) sealed to [peer]'s pinned exchange key (one more 32-byte key from `random`), open the
+     * responder's sealed hello and check it (pinned keys, same session id, increasing counter), send one
+     * encrypted request and open the one encrypted response. A clear-text hello is never sent. A
+     * responder that answers with a version refusal stops the request with [LanSyncException]
+     * `peer-update-needed` (it announced an older version) or `lan-update-needed` (a newer one); there
+     * is never a retry with another version. The hello's ephemeral private key and the sealing secret are
+     * zeroed when the request ends, used or not. A request that returns had a sealed session with [peer]
+     * (the caller pins it, spec 2.5).
      */
     fun request(plaintext: ByteArray, peer: PinnedPeer, connection: LanConnection): ByteArray {
         val sessionId = random.bytes(LanTransport.SESSION_ID_BYTES)
-        val localHello = SessionHello.make(identity, groupKey.groupId, sessionId, counters.nextCounter(), random)
+        val localHello = SessionHello.make(identity, groupKey.groupId, sessionId, counters.nextCounter(), random, LanTransport.VERSION)
+        var seal: SealContext? = null
         try {
-            val helloFrame = connection.exchange(LanTransport.encodeFrame(localHello.toBytes()))
+            val (first, context) = SealedHello.sealInitiator(localHello, peer.exchangePublic, random)
+            seal = context
+            val helloFrame = connection.exchange(LanTransport.encodeFrame(first))
             val helloPayload = LanTransport.decodeFrame(helloFrame)
-            val announced = LanTransport.parseVersionRefusal(helloPayload) ?: SessionHello.otherVersion(helloPayload)
+            val announced = LanTransport.parseVersionRefusal(helloPayload)
             if (announced != null) throw versionMismatch(announced)
-            val remoteHello = SessionHello.parse(helloPayload)
+            val remoteHello = SealedHello.openResponder(helloPayload, context)
             if (remoteHello.deviceId != peer.deviceId) {
                 throw LanTransportException(LanTransportException.Kind.AUTHENTICATION, "Session peer is not the expected paired device")
             }
@@ -107,6 +123,7 @@ class LanClient(
             val response = connection.exchange(channel.seal(plaintext))
             return channel.open(response)
         } finally {
+            seal?.wipe()
             localHello.ephemeralSecret?.wipe()
         }
     }
@@ -148,6 +165,10 @@ class LanClient(
      * `witness` answer opened. A peer from before 2026-10-29 answers `bad-message`; that, any other answer, and any
      * error of that one request are silent (the views were exchanged already). A refusal of the view itself throws as
      * in [sync] (the caller counts a `bad-view` refusal of a format-2 view).
+     *
+     * With [askFeatures] (a peer not yet in `SyncGroupState.collectionPeers`), one `features` message goes after the view
+     * exchange and before the witness exchange (desktop `_exchange_features`); its answer is [LanExchange.collections].
+     * The views of this exchange carry collection states only if the peer was listed before it ([localStates]).
      */
     fun exchange(
         peer: PinnedPeer,
@@ -155,6 +176,7 @@ class LanClient(
         ownCounter: Long,
         connector: LanConnector,
         publish: LanPublish?,
+        askFeatures: Boolean = false,
     ): LanExchange {
         val inline = publish?.inline == true
         val raw = try {
@@ -184,9 +206,30 @@ class LanClient(
             reply = call(chunk(seq), peer, connector)
         }
         val (header, states) = receiveView(reply, peer, connector)
+        val learned = if (askFeatures) exchangeFeatures(peer, connector) else null
         val published = Witness.observation(header)
-        if (published != null || publish == null || inline) return LanExchange(states, published)
-        return exchangeWitness(peer, connector, ownCounter, publish, states)
+        if (published != null || publish == null || inline) return LanExchange(states, published, collections = learned)
+        return exchangeWitness(peer, connector, ownCounter, publish, states, learned)
+    }
+
+    /**
+     * Personal collections (desktop `_exchange_features`): tells [peer] what this version reads ([LanFeatures.OURS]).
+     * True: the peer reads collection states; false: an older app (`bad-message`); null: any other answer or error
+     * (nothing learnt, the next exchange asks again). Never throws but for an interrupt.
+     */
+    fun exchangeFeatures(peer: PinnedPeer, connector: LanConnector): Boolean? {
+        val reply = try {
+            call(LanMessage.Features(LanFeatures.OURS), peer, connector)
+        } catch (e: InterruptedException) {
+            throw e
+        } catch (e: Exception) {
+            return null
+        }
+        return when (reply) {
+            is LanMessage.Features -> LanFeatures.readsCollections(reply.features)
+            is LanMessage.Error -> if (reply.reason == "bad-message") false else null
+            else -> null
+        }
     }
 
     /**
@@ -244,6 +287,25 @@ class LanClient(
         return BlobFetch(out, capable, issues)
     }
 
+    /**
+     * After a view exchange, asks a peer not yet known to read the emergency access plan (desktop `_probe_heir`): one
+     * `{"type":"heir-hello"}`. True when it answers `heir-hello` (it gets the plan from now on), false when it refuses
+     * the message (`bad-message`: an older app), null when nothing told (the peer did not answer, anything else).
+     */
+    fun probeHeir(peer: PinnedPeer, connector: LanConnector): Boolean? {
+        val hello = CanonicalJson.encode(JsonValue.Obj(mapOf("type" to JsonValue.Str(HEIR_HELLO))), app.localgatekeys.core.json.Dialect.ASCII)
+        val r = try {
+            blobCall(hello, peer, connector)
+        } catch (e: Exception) {
+            return null
+        }
+        return when {
+            r == "bad-message" -> false
+            r is Map<*, *> && r == mapOf("type" to JsonValue.Str(HEIR_HELLO)) -> true
+            else -> null
+        }
+    }
+
     /** One `blob-get`: the parsed reply object, or the reason String of an `error` reply. */
     private fun blobCall(message: ByteArray, peer: PinnedPeer, connector: LanConnector): Any {
         val raw = try {
@@ -272,6 +334,7 @@ class LanClient(
         ownCounter: Long,
         publish: LanPublish,
         states: List<ItemState>,
+        learned: Boolean?,
     ): LanExchange {
         val reply = try {
             val raw = ViewFile.encode(
@@ -282,12 +345,12 @@ class LanClient(
         } catch (e: InterruptedException) {
             throw e
         } catch (e: Exception) {
-            return LanExchange(states) // an older peer, a lost connection: silent
+            return LanExchange(states, collections = learned) // an older peer, a lost connection: silent
         }
-        if (reply !is LanMessage.Witness) return LanExchange(states)
+        if (reply !is LanMessage.Witness) return LanExchange(states, collections = learned)
         return when (val opened = openWitness(peer.deviceId, reply)) {
-            is Observation -> LanExchange(states, opened)
-            else -> LanExchange(states, issue = opened as SyncIssue)
+            is Observation -> LanExchange(states, opened, collections = learned)
+            else -> LanExchange(states, issue = opened as SyncIssue, collections = learned)
         }
     }
 
@@ -359,6 +422,9 @@ class LanClient(
     companion object {
         /** Desktop `lan_sync.CHUNK_RETRY_DELAY = 0.05` s. */
         const val DEFAULT_RETRY_DELAY_MILLIS: Long = 50
+
+        /** The emergency access feature message (sub-plan 08). */
+        const val HEIR_HELLO = "heir-hello"
 
         /**
          * Desktop `PeerVersionMismatch` as its issue: [announced] below this version means the PEER

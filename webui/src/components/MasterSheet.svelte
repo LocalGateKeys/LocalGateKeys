@@ -1,5 +1,6 @@
 <script>
   /** Change the master password: one form, one call; the vault locks afterwards. */
+  import { dialog } from '../lib/dialog.js';
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
@@ -29,10 +30,11 @@
     if (busy) return;
     if (next !== again) { error = t('masterSheet.mismatch'); return; }
     busy = true; error = '';
-    const result = await call('master_change', current, next, again, needsPhrase ? phrase : null);
-    busy = false;
-    // Never keep passwords in the page after a call, whatever the outcome.
+    const pending = call('master_change', current, next, again, needsPhrase ? phrase : null);
+    // Never keep passwords in the page once the call is sent, whatever the outcome.
     wipe();
+    const result = await pending;
+    busy = false;
     if (result.ok) {
       for (const note of result.notes) toast(note.title, note.text);
       onclose();
@@ -42,7 +44,7 @@
   }
 </script>
 
-<div class="scrim" role="dialog" aria-modal="true" aria-label={t('masterSheet.title')}>
+<div class="scrim" role="dialog" aria-modal="true" use:dialog={{ onescape: () => { wipe(); onclose(); } }} aria-label={t('masterSheet.title')}>
   <form class="sheet glass" onsubmit={submit}>
     <h2>{t('masterSheet.title')}</h2>
     <div class="group">

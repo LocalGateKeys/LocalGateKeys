@@ -2,9 +2,11 @@ extension Keyring {
     /// Authenticate `ring` against the device's trusted `(group_id, epoch, G)` (desktop `accept_keyring`).
     /// Returns the trusted key (same epoch) or the new key (epoch + 1). Reasons in order:
     /// structural, `group-mismatch`, `rollback`, `missed-rotation`, `tampered` (same epoch);
-    /// then `not-member`, `key-mismatch`, `device-wrap`, `tampered` (chain, then MAC).
-    public static func accept(_ ring: JSONValue, trusted: GroupKey, identity: DeviceIdentity) throws -> GroupKey {
-        try verifyStructure(ring)
+    /// then `not-member`, `key-mismatch`, `device-wrap`, `tampered` (chain, then MAC). `share`: see
+    /// `verifyStructure` (a share keyring's owner signature is part of the structure).
+    public static func accept(_ ring: JSONValue, trusted: GroupKey, identity: DeviceIdentity,
+                              share: Bool = false) throws -> GroupKey {
+        try verifyStructure(ring, share: share)
         let o = obj(ring)
         guard str(o["group_id"]) == trusted.groupID else { throw KeyringError("group-mismatch", "keyring belongs to another group") }
         let epoch = int(o["epoch"])!

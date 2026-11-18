@@ -65,6 +65,29 @@ def _records() -> list[ImportedRecord]:
     ]
 
 
+def test_repeated_account_is_not_counted_as_an_unreadable_row(session):
+    """Live check 2026-11-15: a CSV with one repeated account said "1 unreadable row" and
+    "Imported 4 of 5, 1 skipped" after Keep both wrote all four rows."""
+    records = [
+        ImportedRecord(kind="login", title="Dup", username="dave", password="pw-d", urls=["https://dup.test"],
+                       source_row=2),
+        ImportedRecord(kind="login", title="Dup", username="dave", password="pw-d", urls=["https://dup.test"],
+                       source_row=12),
+        ImportedRecord(kind="note", title="Bad", notes="a\x00b", source_row=3),  # dropped: null characters
+    ]
+    plan = plan_records(session, records, diagnostics=["Row 9: empty row; skipped."])
+    assert [row.row for row in plan.rows] == [2, 12]
+    assert plan.rows[1].in_import_duplicate and plan.rows[1].decision == "skip"
+    # Only the null-character row and the parser's empty row never reached the plan.
+    assert plan.summary()["skipped_rows"] == 2
+    assert any(note.startswith("Row 12: same account") for note in plan.report_notes())
+    plan.set_decision(12, "keep_both")
+    # Kept as a copy: the switch report no longer lists it as skipped; the other notices stay.
+    assert not any(note.startswith("Row 12:") for note in plan.report_notes())
+    assert any(note.startswith("Row 9:") for note in plan.report_notes())
+    assert plan.summary()["skipped_rows"] == 2
+
+
 def test_plan_records_classifies_and_applies_every_kind(session):
     plan = plan_records(session, _records())
     assert isinstance(plan, ImportPlan)
@@ -82,8 +105,9 @@ def test_plan_records_classifies_and_applies_every_kind(session):
     assert by_row[8].extra is not None and by_row[9].kind == "note"
     assert plan.preview[0]["password"] == "********"
     assert "pw-alice" not in repr(plan) and "pw-carol" not in repr(plan) and "card-no-4111" not in repr(plan)
+    # Row 3 repeats row 2: it is a plan row (Skip), not a source row the file could not provide.
     assert plan.summary() == {"total": 8, "add": 7, "replace": 0, "merge": 0, "keep_both": 0, "skip": 1,
-                              "limited": 0, "skipped_rows": 1}
+                              "limited": 0, "skipped_rows": 0}
 
     plan.review()
     assert apply_import_plan(session, plan) == 7

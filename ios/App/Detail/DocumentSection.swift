@@ -96,11 +96,9 @@ private struct DocumentFileRow: View {
         }
     }
 
+    /// Face ID, Touch ID or the passcode; with the app password on, `AppPasswordGate` (never the passcode).
     private func confirmOwner(_ reason: String) async -> Bool {
-        let context = LAContext()
-        var error: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else { return false }
-        return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)) ?? false
+        await AppPasswordGate.confirmOwner(reason)
     }
 
     private func copy() -> URL? {

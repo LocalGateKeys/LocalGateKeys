@@ -87,19 +87,19 @@ final class MacEditorFlowTests: XCTestCase {
         XCTAssertEqual(rows.last, before["password_history"]?.arrayValue?.first)
     }
 
-    func testFifthItemOnFreePlanShowsUpgrade() throws {
+    func testSixteenthItemOnFreePlanShowsUpgrade() throws {
         let s = session()
-        for n in 1...4 {
+        for n in 1...ItemLimit.freeItems {
             XCTAssertTrue(s.startNew(.note))
             s.model?.set("title", "Note \(n)")
             XCTAssertEqual(s.save(), .saved)
         }
         XCTAssertEqual(needsPro, 0)
-        XCTAssertFalse(s.startNew(.note), "a fifth item is refused on the free plan")
+        XCTAssertFalse(s.startNew(.note), "a sixteenth item is refused on the free plan")
         XCTAssertNil(s.model)
         XCTAssertEqual(needsPro, 1)
         XCTAssertEqual(reasons, [.itemLimit])
-        XCTAssertEqual(items().count, 4)
+        XCTAssertEqual(items().count, ItemLimit.freeItems)
     }
 
     func testQRImageDecodesOtpauth() throws {
@@ -142,7 +142,7 @@ final class MacEditorFlowTests: XCTestCase {
     }
 
     func testEveryKindSavesAndReopens() throws {
-        let pro = ProModel(purchases: FreePurchases(), purchased: true)   // more than 4 items
+        let pro = ProModel(purchases: FreePurchases(), purchased: true)   // more than the free limit
         let s = MacEditorSession(store: store, pro: pro, onNeedsPro: { [unowned self] in reasons.append($0) })
         for kind in EditorKind.allCases {
             XCTAssertTrue(s.startNew(kind), kind.rawValue)

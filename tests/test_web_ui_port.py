@@ -58,6 +58,23 @@ def test_confirm_returns_page_answer():
     assert box == {"value": True}
 
 
+def test_agent_run_request_shows_the_command_folder_values_and_time_limit():
+    from localvault.agent_gate import AgentRequest
+
+    bus = RecordingBus()
+    port = WebUiPort(bus, timeout=5)
+    request = AgentRequest("run", "Claude Code", "claude.exe", "", "deploy", command='deploy.exe --env "a & b"',
+                           cwd="C:\\work", secrets=(("STRIPE_KEY", "Stripe", "key"),), timeout=120)
+    thread, box = _in_thread(lambda: port.confirm_agent(request))
+    detail = _wait_for(bus, "modal.request")
+    assert detail["action"] == "run" and detail["command"] == 'deploy.exe --env "a & b"'
+    assert detail["cwd"] == "C:\\work" and detail["timeout"] == 120
+    assert detail["secrets"] == [{"variable": "STRIPE_KEY", "item": "Stripe", "field": "key"}]
+    assert port.answer(detail["id"], {"approved": True}) is True
+    thread.join(2)
+    assert box == {"value": True}
+
+
 def test_confirm_times_out_as_timeouterror():
     port = WebUiPort(RecordingBus(), timeout=0.05)
     with pytest.raises(TimeoutError):
@@ -253,3 +270,40 @@ def test_password_answer_is_wiped_if_the_port_fails_after_conversion(monkeypatch
     assert len(created) == 1
     with pytest.raises(ValueError):
         created[0].buffer  # wiped
+
+
+def test_passkey_cancel_event_ends_only_that_prompt():
+    bus = RecordingBus()
+    port = WebUiPort(bus, timeout=5)
+    cancel = threading.Event()
+    thread, box = _in_thread(lambda: port.ask_passkey("create", origin="", rp_id="a.test", profile_name="P",
+                                                      accounts=[], excluded=False, surface="system",
+                                                      caller={"image": "app.exe"}, cancel=cancel))
+    request = _wait_for(bus, "modal.request")
+    assert request["text"]["browser_label"] == "" and "App: app.exe" in request["text"]["body"]
+    cancel.set()
+    thread.join(2)
+    assert box == {"value": ("cancel", None)}
+    assert bus.last("modal.cancel") == {"ids": [request["id"]]}
+    assert port.answer(request["id"], {"choice": "approve"}) is False  # a late click lands nowhere
+
+
+def test_passkey_timeout_answers_cancel():
+    bus = RecordingBus()
+    port = WebUiPort(bus, timeout=5)
+    started = time.monotonic()
+    value = port.ask_passkey("get", origin="", rp_id="a.test", profile_name="P", accounts=[{"id": "i1"}],
+                             excluded=False, surface="system", cancel=threading.Event(), timeout=0.1)
+    assert value == ("cancel", None) and time.monotonic() - started < 2
+    assert bus.last("modal.cancel") == {"ids": [bus.last("modal.request")["id"]]}
+
+
+def test_system_passkey_browser_choice_is_a_cancel():
+    bus = RecordingBus()
+    port = WebUiPort(bus, timeout=5)
+    thread, box = _in_thread(lambda: port.ask_passkey("get", origin="", rp_id="a.test", profile_name="P",
+                                                      accounts=[{"id": "i1"}], excluded=False, surface="system"))
+    request = _wait_for(bus, "modal.request")
+    port.answer(request["id"], {"choice": "browser"})
+    thread.join(2)
+    assert box == {"value": ("cancel", None)}

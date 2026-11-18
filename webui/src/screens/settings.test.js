@@ -92,7 +92,7 @@ describe('SettingsPage', () => {
 
 describe('LicencePage', () => {
   it('installs a pasted key', async () => {
-    const view = { ok: true, headline: 'Free', details: ['Free plan: 3 of 4 items used'], can_remove: false, warning: false,
+    const view = { ok: true, headline: 'Free', details: ['Free plan: 3 of 7 items used'], can_remove: false, warning: false,
       pitch: 'LocalGateKeys Pro: unlimited items', purchase_url: '', upgrade: {}, pro: false };
     const api = fakeApi({ licence_view: vi.fn().mockResolvedValue(view),
       licence_install: vi.fn().mockResolvedValue({ ...view, headline: 'LocalGateKeys Pro', message: 'Licence installed for Ann.' }) });
@@ -128,7 +128,7 @@ describe('App theme and upgrade prompt', () => {
   it('shows the upgrade prompt and answers "enter"', async () => {
     const api = fakeApi({ vault_state: vi.fn().mockResolvedValue(LOCKED) });
     render(App);
-    emit('modal.request', { id: 'u1', kind: 'upgrade', limit: 4, message: 'The free plan holds up to 4 items.' });
+    emit('modal.request', { id: 'u1', kind: 'upgrade', limit: 7, message: 'The free plan holds up to 7 items.' });
     await fireEvent.click(await screen.findByRole('button', { name: 'Enter licence' }));
     expect(api.modal_answer).toHaveBeenCalledWith('u1', 'enter');
   });

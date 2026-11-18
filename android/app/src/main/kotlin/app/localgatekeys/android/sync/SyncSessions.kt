@@ -2,6 +2,7 @@ package app.localgatekeys.android.sync
 
 import app.localgatekeys.android.unlock.UnlockedVault
 import app.localgatekeys.android.unlock.Unlocker
+import app.localgatekeys.core.sync.ItemStore
 
 /**
  * One [SyncCoordinator] per unlock (the iPhone's `UnlockedRoot` keeps one per unlocked store). It outlives
@@ -26,15 +27,39 @@ class SyncSessions(private val factory: (UnlockedVault) -> SyncCoordinator) {
         appOpened = false
         ending = null
         ended = null
-        return factory(vault).also { session = vault to it }
+        // A duress session (sub-plan 08) never syncs: its coordinator is shut down before anything can run.
+        return factory(vault).also {
+            if (vault.decoy) it.shutdown()
+            session = vault to it
+        }
     }
+
+    /**
+     * The store this unlock's features (Recently deleted, backups, the Security check, emergency access, received
+     * shares) read and write through: the coordinator's gated store, so nothing is written after the lock. A duress
+     * session's coordinator is shut down at once (its gate closed), so those features use the second vault's own store
+     * instead, whose write gate the lock closes the same way: everything works there as in a normal vault.
+     */
+    fun featureStore(vault: UnlockedVault): ItemStore = if (vault.decoy) vault.store else forVault(vault).store
 
     /** The unlock's sync (trigger APP_OPEN), once per session: a recreated activity does not run it again. */
     suspend fun appOpen(vault: UnlockedVault) {
         val c = forVault(vault)
+        if (vault.decoy) return
         if (appOpened || session?.second !== c) return // ended: the lock came first
         appOpened = true
         c.sync(SyncCoordinator.Trigger.APP_OPEN)
+    }
+
+    /**
+     * The app came back to the front while this unlock is still open ("Sync automatically"): one more run. Nothing
+     * before the unlock's own run ([appOpen]) and nothing for a duress session.
+     */
+    suspend fun foreground(open: SyncCoordinator?) {
+        val (vault, c) = session ?: return
+        // [open]: the session that was open when the app came back; a lock or a new unlock since then syncs by itself.
+        if (c !== open || vault.decoy || !appOpened) return
+        c.sync(SyncCoordinator.Trigger.FOREGROUND)
     }
 
     /** The coordinator [end] shut down last, until [endAndWait] has waited for it. */

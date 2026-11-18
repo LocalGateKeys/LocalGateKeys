@@ -57,12 +57,13 @@ class SecretClipboard(
     /** True while a copy waits for focus to be checked and cleared. */
     val isDue: Boolean get() = due
 
-    fun copy(text: String) {
+    /** [maxSeconds]: a shorter expiry for this copy (copy-once access rule: 10 s); the setting when it is shorter. */
+    fun copy(text: String, maxSeconds: Long? = null) {
         expiryTimer?.cancel()
         sink.set(text, sensitive = true)
         own = text
         due = false
-        val seconds = expirySeconds
+        val seconds = if (maxSeconds != null) minOf(maxSeconds, expirySeconds) else expirySeconds
         deadline = clock.now + seconds
         expiryTimer = scheduler.schedule(seconds) {
             expiryTimer = null

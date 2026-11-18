@@ -21,7 +21,10 @@
     }
   ],
   // Older installers lack later security fixes: the Worker answers 410 for
-  // them (the objects stay in R2). Raise with each release.
-  "vars": { "MIN_RELEASE": "0.4.7" },
-  "observability": { "enabled": true }
+  // them (the objects stay in R2). Windows ships only through the Microsoft Store
+  // (decided 2026-11-18, no 0.4.12 installer): every installer, 0.4.11 and older,
+  // gets a 410 pointing to the Store, and nothing newer is ever offered.
+  "vars": { "MIN_RELEASE": "0.4.12", "LAST_INSTALLER_RELEASE": "0.4.11" },
+  // No request logs: privacy policy 3.3 says we keep no logs of update and revocation-list requests.
+  "observability": { "enabled": false }
 }

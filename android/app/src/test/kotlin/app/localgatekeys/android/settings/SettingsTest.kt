@@ -21,14 +21,22 @@ class SettingsTest {
     @Test fun acknowledgements_ship_every_licence() {
         val list = Acknowledgement.all { File(assets, it).readText() }
         assertEquals(
-            listOf("argon2kt", "phc-winner-argon2", "Bouncy Castle", "AndroidX and Jetpack Compose", "Kotlin and kotlinx.coroutines", "ZXing"),
+            listOf(
+                "argon2kt", "phc-winner-argon2", "Bouncy Castle", "AndroidX and Jetpack Compose", "Kotlin and kotlinx.coroutines", "ZXing",
+                "YubiKit for Android", "JSpecify", "JmDNS", "SLF4J API", "2FA Directory (site data)",
+            ),
             list.map { it.name },
         )
-        assertEquals(listOf("MIT", "CC0-1.0", "MIT", "Apache-2.0", "Apache-2.0", "Apache-2.0"), list.map { it.licence })
+        assertEquals(
+            listOf("MIT", "CC0-1.0", "MIT", "Apache-2.0", "Apache-2.0", "Apache-2.0", "Apache-2.0", "Apache-2.0", "Apache-2.0", "MIT", "MIT, CC BY 4.0"),
+            list.map { it.licence },
+        )
         assertTrue(list[0].text.contains("MIT License"))
         assertTrue(list[1].text.contains("CC0 1.0"))
         assertTrue(list[2].text.contains("The Legion of the Bouncy Castle"))
-        for (a in list.drop(3)) assertTrue(a.name, a.text.contains("Apache License"))
+        assertTrue(list[9].text.contains("QOS.ch") && list[9].text.contains("Permission is hereby granted"))
+        assertTrue(list[10].text.contains("CC BY 4.0") && list[10].text.contains("2factorauth"))
+        for (a in list.subList(3, 9)) assertTrue(a.name, a.text.contains("Apache License"))
         assertFalse("toString leaves the long text out", list[3].toString().contains("Apache License"))
     }
 
@@ -40,7 +48,7 @@ class SettingsTest {
         assertEquals("0.1.0 (1)", st.version("0.1.0", "1"))
         assertEquals("0.1.0", st.version("0.1.0", ""))
         assertEquals("Pro is active", st.proStatus(true))
-        assertEquals("Free (up to 4 items)", st.proStatus(false))
+        assertEquals("Free (up to 7 items)", st.proStatus(false))
         assertEquals("Erase this phone's vault", st.eraseButton)
         assertEquals("Deletes the vault on this phone only. Your PC and the sync folder are not changed.", st.eraseFooter)
     }

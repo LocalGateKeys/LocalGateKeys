@@ -107,3 +107,19 @@ def test_loading_prunes_history_left_behind_by_an_earlier_purge(vault):
     payload['trash'] = []  # what older builds wrote to disk
     _validate_catalog_payload(payload)
     assert not any(row['item_id'] == item_id for row in payload['history'])
+
+
+def test_forward_clock_jump_does_not_empty_the_trash(tmp_path, monkeypatch):
+    import time as _time
+    path = tmp_path / 'vault.json'
+    session = create_vault(path, MASTER, kdf_overrides=KDF)
+    first = add(session, 'alice')
+    session.delete(first)
+    session.lock()
+    real = _time.time
+    monkeypatch.setattr('localvault.vault.time.time', lambda: real() + 400 * 86400)
+    session = unlock_vault(path, MASTER)
+    add(session, 'bob')
+    add(session, 'carol')  # a second write must not purge either
+    assert [row['id'] for row in session.trash_summaries()] == [first]
+    session.lock()

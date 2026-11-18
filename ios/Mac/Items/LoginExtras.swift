@@ -243,7 +243,7 @@ final class LoginExtrasModel {
         do {
             var snap = try store.load()
             guard case .object(let w)? = snap.records[item.id], case .string(let nsRaw)? = w["ns"],
-                  let ns = Namespace(rawValue: nsRaw), case .object(var record)? = w["record"] else {
+                  let ns = Namespace(rawValue: nsRaw), ns != .heir, case .object(var record)? = w["record"] else {
                 error = String(localized: "This login is no longer available."); return nil
             }
             guard let expected, Self.stamp(record) == expected else { error = Self.changedText; return nil }

@@ -6,6 +6,8 @@ import app.localgatekeys.core.json.CanonicalJson
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.lan.DeviceIdentity
 import app.localgatekeys.core.lan.LanEndpoint
+import app.localgatekeys.core.lan.LanExchange
+import app.localgatekeys.core.lan.LanPublish
 import app.localgatekeys.core.lan.PairingOffer
 import app.localgatekeys.core.lan.PinnedPeer
 import app.localgatekeys.core.primitives.Base64Std
@@ -88,7 +90,13 @@ class MemoryFolder : FolderAccess {
         }
     }
 
-    @Synchronized override fun writeAtomic(path: String, data: ByteArray) { files[path] = data.copyOf() }
+    /** Called before every write; a test throws from it to make the folder refuse that write. */
+    @Volatile var onWrite: ((String) -> Unit)? = null
+
+    override fun writeAtomic(path: String, data: ByteArray) {
+        onWrite?.invoke(path)
+        synchronized(this) { files[path] = data.copyOf() }
+    }
 
     @Synchronized override fun remove(path: String) {
         files.remove(path) ?: throw FolderAccessException(FolderAccessException.Kind.NOT_FOUND, path)
@@ -116,6 +124,13 @@ class FakeFolders(val folder: MemoryFolder) : FolderOpening {
     override fun keepOnly(uri: String?) {
         kept.add(uri)
     }
+
+    /** Every [keepOnlyAll] call (the personal folder and the shared collections' folders kept). */
+    val keptAll: MutableList<Set<String>> = java.util.Collections.synchronizedList(ArrayList())
+
+    override fun keepOnlyAll(uris: Set<String>) {
+        keptAll.add(uris)
+    }
 }
 
 /**
@@ -136,6 +151,26 @@ class FakeLan : LanTransporting {
     private var active = 0
     private var waiters = 0
     val sent = ArrayList<List<ItemState>>()
+
+    /** The peer's `features` answer (sub-plan 07): true reads collections, false older, null no answer (the default). */
+    @Volatile var features: Boolean? = null
+    /** How often a `features` message was sent, and the order of the exchange's steps. */
+    var featureAsks = 0; private set
+
+    override fun exchangeWitnessing(
+        peer: PinnedPeer,
+        identity: DeviceIdentity,
+        groupKey: GroupKey,
+        localStates: List<ItemState>,
+        ownCounter: Long,
+        publish: LanPublish?,
+        askFeatures: Boolean,
+        onMoved: (LanEndpoint) -> Unit,
+    ): LanExchange {
+        val states = exchangeViewsFindingHost(peer, identity, groupKey, localStates, ownCounter, onMoved)
+        val learned = if (askFeatures) synchronized(lock) { featureAsks++; features } else null
+        return LanExchange(states, collections = learned)
+    }
     var gated = false
         set(v) = synchronized(lock) { field = v }
 
@@ -162,10 +197,17 @@ class FakeLan : LanTransporting {
         }
     }
 
-    override fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit): ByteArray {
+    override fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit): ByteArray =
+        enroll(endpoint, request, onConnected) {}
+
+    /** Frames the inviter sends before its reply (LAN sync v3: the reveal); each goes to onInterim in order. */
+    @Volatile var enrollInterims: (ByteArray) -> List<ByteArray> = { emptyList() }
+
+    override fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit, onInterim: (ByteArray) -> Unit): ByteArray {
         synchronized(lock) { enrolls++ }
         if (connectsBeforeHold) onConnected()
         enrollHold?.invoke()
+        enrollInterims(request).forEach(onInterim)
         return enrollReply(request)
     }
 
@@ -224,7 +266,12 @@ class LockedStore(s: StoreSnapshot = StoreSnapshot()) : ItemStore {
 
     @Synchronized override fun commit(change: StoreChange) {
         check(change.baseRevision == snap.revision) { "stale: ${change.baseRevision} != ${snap.revision}" }
-        snap = StoreSnapshot(change.records, change.meta, change.sync, snap.revision + 1)
+        // The share groups and the collections marker are kept unless a commit sets them, as `LocalStore` does (sub-plan 07).
+        val shares = when (val sh = change.shares) {
+            StoreChange.Shares.Keep -> snap.shares
+            is StoreChange.Shares.Replace -> sh.value
+        }
+        snap = StoreSnapshot(change.records, change.meta, change.sync, snap.revision + 1, shares, change.collectionsMigrated ?: snap.collectionsMigrated)
         commits++
     }
 }

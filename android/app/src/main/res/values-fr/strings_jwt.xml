@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">Jeton</string>
+    <string name="jwt_alg">Algorithme</string>
+    <string name="jwt_iss">Émetteur</string>
+    <string name="jwt_sub">Sujet</string>
+    <string name="jwt_aud">Audience</string>
+    <string name="jwt_iat">Émis le</string>
+    <string name="jwt_nbf">Pas avant</string>
+    <string name="jwt_exp">Expire le</string>
+    <string name="jwt_expired">Expiré</string>
+    <string name="jwt_unchecked">Signature non vérifiée</string>
+    <string name="jwt_setExpiry">Utiliser l\'expiration du jeton</string>
+    <string name="jwt_expirySet">Expiration définie au %1$s.</string>
+    <string name="jwt_notSaved">Impossible de définir l\'expiration.</string>
+</resources>

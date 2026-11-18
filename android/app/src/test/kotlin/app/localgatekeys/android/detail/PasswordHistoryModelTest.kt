@@ -1,5 +1,7 @@
 package app.localgatekeys.android.detail
 
+import app.localgatekeys.android.access.AccessGate
+import app.localgatekeys.android.access.CopyOnceLedger
 import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.SaveResult
 import app.localgatekeys.android.settings.AppSettings
@@ -67,9 +69,28 @@ class PasswordHistoryModelTest {
     }
 
     @Test fun copy_goes_through_the_secret_clipboard() {
-        PasswordHistoryModel(item(), clipboard).copy(1)
+        val m = ItemDetailModel(item(), clock, clipboard, EnglishTxt())
+        assertEquals(AccessGate.Need.NOTHING, m.copyNeed())
+        assertTrue(m.copyHistoryPassword(1))
+        assertFalse(m.copyHistoryPassword(5))
         assertEquals(FakeClipboardSink.Write("oldest", true), sink.history.single())
         assertEquals("Password history (2)", PasswordHistoryModel.rowLabel(2, EnglishTxt()))
+    }
+
+    private fun ruled(access: JsonValue): VaultItem {
+        val scope = rec("origin" to s("https://example.com"), "access" to access)
+        return VaultItem.items(snapshot(listOf(rec(*(login.fields + ("scope" to scope)).toList().toTypedArray()))))[0]
+    }
+
+    @Test fun old_passwords_follow_the_access_rules() {
+        // View only on phones: refused, exactly as for the current password (scan A-H2).
+        assertEquals(AccessGate.Need.REFUSED, ItemDetailModel(ruled(rec("phones" to s("view"))), clock, clipboard, EnglishTxt()).copyNeed())
+        // Copy once: an old password's copy uses up the one copy, so the next copy needs the owner.
+        val ledger = CopyOnceLedger()
+        val once = ItemDetailModel(ruled(rec("copy" to s("once"))), clock, clipboard, EnglishTxt(), copyOnce = ledger)
+        assertEquals(AccessGate.Need.NOTHING, once.copyNeed())
+        assertTrue(once.copyHistoryPassword(0))
+        assertEquals(AccessGate.Need.OWNER, once.copyNeed())
     }
 
     @Test fun restore_round_trip_through_the_store() {

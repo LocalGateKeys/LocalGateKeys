@@ -14,10 +14,17 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.layout.positionInRoot
 import app.localgatekeys.android.backup.BackupText
 import app.localgatekeys.android.backup.ExportFlow
 import app.localgatekeys.android.backup.PhoneRestore
@@ -112,7 +119,7 @@ class SettingsScreenTest {
     private class FakeDocuments(var opened: ByteArray? = null) : BackupDocuments {
         var savedName: String? = null
         var savedBytes: ByteArray? = null
-        override fun save(name: String, bytes: ByteArray, done: (Boolean?) -> Unit) {
+        override fun save(name: String, bytes: ByteArray, done: (Boolean?) -> Unit, cancelled: (() -> Unit)?) {
             savedName = name; savedBytes = bytes; done(true)
         }
         override fun open(done: (ByteArray?) -> Unit) = done(opened)
@@ -153,6 +160,8 @@ class SettingsScreenTest {
         onPickerClose = { true },
     )
 
+    private val securityPrefs = app.localgatekeys.android.security.SecurityPrefs(MemoryStore())
+
     private fun show(store: Store = Store()) {
         val model = VaultListModel(store, appTxt())
         val pro = ProModel(FakePurchases(), emptyMap(), txt = txt)
@@ -161,15 +170,39 @@ class SettingsScreenTest {
             LgkTheme {
                 RootScaffold(
                     model, settings, vault, DetailSeams(clipboard, toast), EditorSeams(store, Counting()), pro = pro,
-                    settingsSeams = seams(), backup = backupSeams(store),
+                    settingsSeams = seams(), backup = backupSeams(store), securityPrefs = securityPrefs,
                 )
             }
         }
         rule.waitForIdle()
     }
 
+    /** Which category page holds each section. */
+    private val categoryOf = mapOf(
+        "settings-security" to "lock", "settings-privacy-options" to "privacy", "settings-breach-checks" to "privacy",
+        "settings-autofill" to "autofill", "settings-appearance" to "appearance", "settings-generator" to "generator",
+        "settings-sync" to "sync", "settings-backup" to "sync", "settings-import" to "sync", "settings-erase" to "sync",
+        "settings-about" to "about",
+    )
+
+    /** Opens the category page holding [tag] (from the list or another page), then scrolls to it. */
     private fun scrollTo(tag: String) {
+        val category = categoryOf.getValue(tag)
+        if (rule.onAllNodesWithTag(tag).fetchSemanticsNodes().isEmpty()) {
+            // The Back row is the list's first item; bring it into view after a long scroll.
+            rule.onNodeWithTag("settings-list").performScrollToIndex(0)
+            if (rule.onAllNodesWithTag("settings-category-back").fetchSemanticsNodes().isNotEmpty()) {
+                rule.onNodeWithTag("settings-category-back").performClick()
+            }
+            rule.onNodeWithTag("settings-category-$category").performClick()
+            rule.waitForIdle()
+        }
         rule.onNodeWithTag("settings-list").performScrollToNode(hasTestTag(tag))
+    }
+
+    /** Taps a switch row at its switch end, not in the middle where the info button can sit. */
+    private fun flip(tag: String) {
+        rule.onNodeWithTag(tag).performTouchInput { click(androidx.compose.ui.geometry.Offset(width - 40f, centerY)) }
     }
 
     private fun note(k: Int): Obj = Obj(
@@ -187,11 +220,19 @@ class SettingsScreenTest {
     @Test fun settings_shows_every_section_with_the_iphone_copy() {
         show()
         rule.onNodeWithContentDescription("Settings").performClick()
-        rule.onNodeWithTag("settings").assertIsDisplayed()
-        for (text in listOf("Security", "Auto-lock after leaving the app", "Lock when idle", "Clear clipboard after",
-            "Hide passwords until tapped", "Show 2FA codes in the Codes row", "Lock now")) {
+        rule.onNodeWithTag("settings-list").assertIsDisplayed()
+        // The section titles "Security" and "Settings" are also tab names: checked by tag.
+        scrollTo("settings-security")
+        rule.onNodeWithTag("settings-security").assertIsDisplayed()
+        for (text in listOf("Auto-lock after leaving the app", "Lock when idle", "Clear clipboard after", "Lock now")) {
             rule.onNodeWithText(text).assertIsDisplayed()
         }
+        // An ⓘ explains a setting in a dialog.
+        rule.onNodeWithTag("settings-info-Clear clipboard after").performClick()
+        rule.onNodeWithText(txt.s(app.localgatekeys.android.R.string.settings_info_clipboard)).assertIsDisplayed()
+        rule.onNodeWithText("OK").performClick()
+        scrollTo("settings-privacy-options")
+        rule.onNodeWithText("Hide passwords until tapped").assertIsDisplayed()
         scrollTo("settings-autofill")
         rule.onNodeWithText("Autofill service").assertIsDisplayed()
         rule.onNodeWithText("Off").assertIsDisplayed()
@@ -202,8 +243,10 @@ class SettingsScreenTest {
         rule.onNodeWithText(BackupText(txt).restore).assertExists()
         scrollTo("settings-sync")
         rule.onNodeWithText("Not set up").assertExists()
-        scrollTo("settings-pro")
-        rule.onNodeWithText("Free (up to 4 items)").assertExists()
+        // Pro sits on the main list, above the categories.
+        rule.onNodeWithTag("settings-category-back").performClick()
+        rule.onNodeWithTag("settings-list").performScrollToNode(hasTestTag("settings-pro"))
+        rule.onNodeWithText("Free (up to ${app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS} items)").assertExists()
         rule.onNodeWithText("Upgrade").assertExists()
         rule.onNodeWithText("Restore purchases").assertExists()
         scrollTo("settings-about")
@@ -221,12 +264,14 @@ class SettingsScreenTest {
         rule.onNodeWithText(SettingsText(txt).eraseFooter).assertExists()
     }
 
-    @Test fun choices_are_saved_and_initials_are_stored_on_done() {
+    @Test fun choices_are_saved_and_initials_are_stored_on_done_and_when_the_tab_goes() {
         show()
         rule.onNodeWithContentDescription("Settings").performClick()
+        scrollTo("settings-security")
         rule.onNodeWithContentDescription("Auto-lock after leaving the app: Immediately").performClick()
         rule.onNodeWithText("After 5 minutes").performClick()
         assertEquals(AutoLockDelay.FIVE_MINUTES, settings.autoLockDelay)
+        scrollTo("settings-privacy-options")
         rule.onNodeWithText("Hide passwords until tapped").performClick()
         assertEquals(false, settings.concealSecretsInDetail)
         scrollTo("settings-appearance")
@@ -237,9 +282,51 @@ class SettingsScreenTest {
         assertEquals("nothing stored while typing", "", settings.initials)
         rule.onNodeWithTag("settings-initials").performImeAction()
         assertEquals("JD", settings.initials)
-        rule.onNodeWithTag("settings-done").performClick()
-        rule.onNodeWithText("JD").assertIsDisplayed() // the avatar button
+        // Typed without Done: stored when another tab opens (no Done button in the tab).
+        rule.onNodeWithTag("settings-initials").performTextClearance()
+        rule.onNodeWithTag("settings-initials").performTextInput("Ada Lovelace")
+        assertEquals("JD", settings.initials)
+        rule.onNodeWithContentDescription("Vault").performClick()
+        rule.waitForIdle()
+        assertEquals("AL", settings.initials)
         rule.onNodeWithText("Lock now").assertDoesNotExist()
+    }
+
+    @Test fun breach_checks_are_off_and_blocked_while_strict_offline_mode_is_on() {
+        show()
+        rule.onNodeWithContentDescription("Settings").performClick()
+        scrollTo("settings-breach-checks")
+        rule.onNodeWithText("Breach checks").assertIsDisplayed()
+        rule.onNodeWithTag("settings-allow-breach").assertIsNotEnabled()
+        flip("settings-allow-breach")
+        assertEquals(false, securityPrefs.breachCheckEnabled)
+        flip("settings-strict-offline")
+        assertEquals(false, securityPrefs.strictOfflineMode)
+        rule.onNodeWithTag("settings-allow-breach").assertIsEnabled()
+        flip("settings-allow-breach")
+        assertEquals(true, securityPrefs.breachCheckEnabled)
+    }
+
+    @Test fun settings_opens_on_a_short_list_of_categories() {
+        show()
+        rule.onNodeWithContentDescription("Settings").performClick()
+        val rows = listOf("lock", "privacy", "autofill", "sync", "generator", "appearance", "about").map { "settings-category-$it" }
+        var lastTop = Float.NEGATIVE_INFINITY
+        for (tag in rows) {
+            val top = rule.onNodeWithTag(tag).assertIsDisplayed().fetchSemanticsNode().positionInRoot.y
+            assertTrue("$tag in order", top > lastTop)
+            lastTop = top
+        }
+        // No section shows until its category is opened; Back returns to the list.
+        rule.onNodeWithTag("settings-security").assertDoesNotExist()
+        rule.onNodeWithTag("settings-category-lock").performClick()
+        rule.onNodeWithTag("settings-security").assertIsDisplayed()
+        rule.onNodeWithTag("settings-category-autofill").assertDoesNotExist()
+        rule.onNodeWithTag("settings-category-back").performClick()
+        rule.onNodeWithTag("settings-category-autofill").assertIsDisplayed()
+        // Erase on removal is in the Sync section, as on the iPhone.
+        scrollTo("settings-sync")
+        rule.onNodeWithText(appTxt().s(app.localgatekeys.android.R.string.settings_erase_on_sync_removal_title)).assertIsDisplayed()
     }
 
     @Test fun lock_now_and_erase_after_two_confirmations() {
@@ -254,7 +341,7 @@ class SettingsScreenTest {
         rule.onNodeWithTag("erase-confirm").performClick()
         rule.waitForIdle()
         assertEquals(1, erased)
-        rule.onNodeWithContentDescription("Settings").performClick()
+        scrollTo("settings-security")
         rule.onNodeWithText("Lock now").performClick()
         assertEquals(1, locked)
     }
@@ -265,7 +352,7 @@ class SettingsScreenTest {
         scrollTo("settings-sync")
         rule.onNodeWithTag("settings-sync-row").performClick()
         rule.onNodeWithText("Sync with your PC.").assertIsDisplayed() // the Sync tab (no coordinator in this test)
-        assertTrue(rule.onAllNodesWithTag("settings").fetchSemanticsNodes().isEmpty())
+        assertTrue(rule.onAllNodesWithTag("settings-list").fetchSemanticsNodes().isEmpty())
     }
 
     @Test fun export_asks_for_a_fresh_unlock_first() {
@@ -281,7 +368,7 @@ class SettingsScreenTest {
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("export-backup").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText(BackupText(txt).exportHint).assertIsDisplayed()
         rule.onNodeWithTag("export-backup-close").performClick()
-        rule.onNodeWithTag("settings").assertIsDisplayed()
+        rule.onNodeWithTag("settings-list").assertIsDisplayed()
     }
 
     @Test fun the_empty_vault_offers_restore_from_a_backup() {

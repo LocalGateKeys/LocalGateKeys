@@ -31,8 +31,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import json
-import math
 import os
 import re
 from collections.abc import Iterable, Mapping
@@ -43,6 +41,7 @@ from argon2.low_level import Type, hash_secret_raw
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+from localvault.strict_json import strict_loads
 from localvault.sync.engine import EngineError, ItemState, is_valid_id
 from localvault.sync.vault_bridge import MAX_SYNC_RECORDS
 from localvault.updates import canonical_json
@@ -110,39 +109,8 @@ class PhoneBackup:
     files: Mapping[str, bytes] = field(default_factory=dict)
 
 
-def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, item in pairs:
-        if key in result:
-            raise ValueError("duplicate JSON key")
-        result[key] = item
-    return result
-
-
-def _reject_constant(name: str) -> Any:
-    raise ValueError(f"non-finite number {name}")
-
-
-_MAX_JSON_INT = 2**63 - 1
-
-
-def _parse_int(text: str) -> int:
-    value = int(text)
-    if abs(value) > _MAX_JSON_INT:
-        raise ValueError("integer beyond 64 bits")
-    return value
-
-
-def _parse_float(text: str) -> float:
-    value = float(text)
-    if not math.isfinite(value):  # e.g. 1e400, which float() turns into inf; the phones refuse it
-        raise ValueError("non-finite number")
-    return value
-
-
 def _strict_json(data: bytes) -> Any:
-    return json.loads(data.decode("utf-8"), object_pairs_hook=_no_duplicate_keys,
-                      parse_constant=_reject_constant, parse_int=_parse_int, parse_float=_parse_float)
+    return strict_loads(data)
 
 
 def _is_int(value: object) -> bool:

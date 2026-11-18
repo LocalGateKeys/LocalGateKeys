@@ -23,7 +23,14 @@ describe('Restore phone backup', () => {
   it('menu hides Restore phone backup until a phone app writes backups', () => {
     render(ImportExportMenu, { onpick: vi.fn(), onclose: vi.fn() });
     expect(screen.queryByRole('menuitem', { name: /Restore phone backup…/ })).toBeNull();
-    expect(screen.getAllByRole('menuitem')).toHaveLength(4); // import, export, transfer, incoming shares
+    expect(screen.getAllByRole('menuitem')).toHaveLength(5); // import, export, transfer, incoming shares, scan QR
+  });
+
+  it('menu offers Scan QR code (moved here from the Tools list)', async () => {
+    const onpick = vi.fn();
+    render(ImportExportMenu, { onpick, onclose: vi.fn() });
+    await fireEvent.click(screen.getByRole('menuitem', { name: /Scan QR code/ }));
+    expect(onpick).toHaveBeenCalledWith('scan-qr');
   });
 
   it('menu offers Restore phone backup when enabled', async () => {

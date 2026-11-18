@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- LocalGateKeys app. No tracking and no data collected (App Store privacy label "Data Not Collected"). -->
+<!-- LocalGateKeys app. No tracking. Purchase history only: the App Store licence claim sends the StoreKit transaction to the licence server (App Store label: Purchases > Purchase History, App Functionality, not linked, no tracking). -->
 <plist version="1.0">
 <dict>
 	<key>NSPrivacyTracking</key>
@@ -8,7 +8,20 @@
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
@@ -27,7 +40,18 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<!-- C617.1: modification dates of the app's own cached website icons, to refresh old ones. -->
+				<!-- 3B52.1: modification dates of files in the sync folder the user picked (folder sync). -->
 				<string>C617.1</string>
+				<string>3B52.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<!-- 35F9.1: systemUptime measures time elapsed in the app (wrong-try delay, sync witness timing). -->
+				<string>35F9.1</string>
 			</array>
 		</dict>
 	</array>

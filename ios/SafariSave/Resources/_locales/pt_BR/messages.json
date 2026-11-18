@@ -135,13 +135,17 @@
     "message": "Salvo. Ele aparecerá no LocalGateKeys na próxima vez que você o abrir."
   },
   "bg_timeout": {
-    "message": "A ponte do LocalGateKeys não respondeu. Feche qualquer solicitação de desktop travada e tente novamente."
+    "message": "A aprovação no LocalGateKeys expirou. Feche qualquer aviso aberto do LocalGateKeys e tente novamente."
   },
   "content_autosignin_skipped": {
     "message": "Preenchido. A entrada automática foi ignorada porque este formulário não é compatível ou é ambíguo. Entre manualmente."
   },
   "content_cancel": {
     "message": "Cancelar"
+  },
+  "panel_fill_login": {
+    "message": "Preencher",
+    "description": "Button on the right of a login row in the in-page picker; fills that login."
   },
   "content_card": {
     "message": "Cartão"
@@ -234,6 +238,12 @@
   },
   "content_err_not_found": {
     "message": "Nenhum login salvo para este site."
+  },
+  "content_err_entry_required": {
+    "message": "Escolha qual login salvo recebe esta senha. Uma senha sem nome de usuário nunca é salva como um novo login."
+  },
+  "content_err_entry_not_for_site": {
+    "message": "Esse login não está salvo para este site, então a senha dele não foi alterada."
   },
   "content_err_session_changed": {
     "message": "O cofre ou o perfil mudou. Clique no ícone novamente."
@@ -363,6 +373,9 @@
   "content_signin_question": {
     "message": "Você acabou de entrar?"
   },
+  "content_frame_blocked": {
+    "message": "Esta página bloqueou o painel do LocalGateKeys, então nada foi preenchido. Use o botão do LocalGateKeys na barra de ferramentas do navegador."
+  },
   "content_tampered": {
     "message": "Esta página ocultou, moveu ou cobriu um botão do LocalGateKeys, então o clique foi ignorado."
   },
@@ -454,7 +467,7 @@
     "message": "Preencha e salve logins com o gerenciador de senhas LocalGateKeys para Windows. A extensão se comunica somente com o app no seu próprio PC."
   },
   "ext_description_ios": {
-    "message": "Oferece salvar no LocalGateKeys neste iPhone os logins com que você entra no Safari."
+    "message": "Oferece salvar no LocalGateKeys neste dispositivo os logins com que você entra no Safari."
   },
   "ext_description_macos": {
     "message": "Oferece salvar no LocalGateKeys neste Mac os logins com que você entra no Safari."
@@ -491,9 +504,6 @@
   },
   "popup_auto_update_failed": {
     "message": "Não foi possível atualizar o salvamento automático deste site. Tente novamente."
-  },
-  "popup_checking_connection": {
-    "message": "Verificando a conexão…"
   },
   "popup_checking_connection_desc": {
     "message": "Contatando o LocalGateKeys sem desbloquear o seu cofre."
@@ -554,9 +564,6 @@
       }
     }
   },
-  "popup_current_site": {
-    "message": "Site atual"
-  },
   "popup_diag_agent_offline": {
     "message": "Abra o LocalGateKeys, repare a conexão com o navegador e tente novamente."
   },
@@ -597,7 +604,7 @@
     "message": "Nenhum campo de login atual foi encontrado. Digite um login e tente novamente."
   },
   "popup_fill_card": {
-    "message": "Preencher cartão…"
+    "message": "Preencher cartão"
   },
   "popup_fill_card_desc": {
     "message": "Escolha um cartão, marque os campos e confirme no app"
@@ -629,26 +636,8 @@
   "popup_generate_password_desc": {
     "message": "Crie uma senha para o cadastro"
   },
-  "popup_guidance_checking": {
-    "message": "Verificando o LocalGateKeys antes de ativar as ações desta página."
-  },
-  "popup_guidance_connected": {
-    "message": "Somente a origem deste site é verificada. Nada é preenchido até você escolher uma ação."
-  },
-  "popup_guidance_locked": {
-    "message": "Escolha uma ação para solicitar o desbloqueio; nada é preenchido automaticamente."
-  },
-  "popup_guidance_offline": {
-    "message": "Reconecte o LocalGateKeys para usar as ações deste site."
-  },
-  "popup_guidance_setup": {
-    "message": "Conclua a configuração do LocalGateKeys antes de usar as ações deste site."
-  },
   "popup_integration_disabled": {
     "message": "A integração com o navegador está pausada. Reative-a nas Configurações do LocalGateKeys."
-  },
-  "popup_local_vault": {
-    "message": "COFRE LOCAL"
   },
   "popup_locked_desc": {
     "message": "Escolha uma ação para continuar; o app de desktop perguntará antes de desbloquear."
@@ -660,9 +649,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_manual_by_design": {
-    "message": "MANUAL POR DESIGN"
   },
   "popup_need_login_page": {
     "message": "Abra primeiro uma página http ou https com um formulário de login."
@@ -676,9 +662,6 @@
   "popup_page_unreachable": {
     "message": "Não foi possível acessar esta página. Recarregue a página e tente novamente."
   },
-  "popup_quick_actions": {
-    "message": "Ações rápidas"
-  },
   "popup_ready_version": {
     "message": "O LocalGateKeys está pronto$VERSION$. Nada é desbloqueado até você escolher uma ação.",
     "placeholders": {
@@ -686,9 +669,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_refresh_connection": {
-    "message": "Atualizar o status da conexão"
   },
   "popup_refreshed_locked": {
     "message": "Conexão atualizada. O desbloqueio só acontecerá depois que você escolher uma ação."
@@ -700,16 +680,13 @@
     "message": "Conexão atualizada. Conclua a configuração do LocalGateKeys e atualize."
   },
   "popup_save_login": {
-    "message": "Salvar login"
+    "message": "Salvar este login"
   },
   "popup_save_login_desc": {
     "message": "Salvar estes campos de login"
   },
   "popup_setup_desc": {
     "message": "O LocalGateKeys não informou um perfil de navegador pronto. Conclua a configuração e atualize."
-  },
-  "popup_site_hint": {
-    "message": "As ações ficam nesta página e dependem da sua escolha."
   },
   "popup_started": {
     "message": "$ACTION$ iniciado nesta página.",
@@ -719,9 +696,6 @@
       }
     }
   },
-  "popup_state_connected": {
-    "message": "Conectado"
-  },
   "popup_state_locked": {
     "message": "Bloqueado"
   },
@@ -730,12 +704,6 @@
   },
   "popup_state_setup": {
     "message": "Configuração necessária"
-  },
-  "popup_tagline": {
-    "message": "Suas chaves. Seu controle."
-  },
-  "popup_this_page": {
-    "message": "ESTA PÁGINA"
   },
   "popup_unlock_on_action": {
     "message": "O desbloqueio só é solicitado depois que você escolhe uma ação de campo."
@@ -750,5 +718,295 @@
   },
   "popup_wait_checking": {
     "message": "Ainda verificando o LocalGateKeys. Aguarde o status da conexão e tente novamente."
+  },
+  "content_generate_password": {
+    "message": "Gerar uma senha"
+  },
+  "content_generate_title": {
+    "message": "Gerar uma senha forte"
+  },
+  "content_generate_body": {
+    "message": "Preenche os campos de nova senha deste formulário com uma senha forte."
+  },
+  "gen_title": {
+    "message": "Gerador de senhas"
+  },
+  "gen_mode_password": {
+    "message": "Senha"
+  },
+  "gen_mode_passphrase": {
+    "message": "Frase-senha"
+  },
+  "gen_new": {
+    "message": "Nova"
+  },
+  "gen_length": {
+    "message": "Comprimento"
+  },
+  "gen_avoid_ambiguous": {
+    "message": "Evitar caracteres parecidos (l, 1, O, 0)"
+  },
+  "gen_words": {
+    "message": "Palavras"
+  },
+  "gen_separator": {
+    "message": "Separador"
+  },
+  "gen_sep_space": {
+    "message": "Espaço"
+  },
+  "gen_sep_none": {
+    "message": "Nenhum"
+  },
+  "gen_capitalize": {
+    "message": "Maiúsculas"
+  },
+  "gen_add_number": {
+    "message": "Adicionar um número"
+  },
+  "gen_copy": {
+    "message": "Copiar"
+  },
+  "gen_fill": {
+    "message": "Preencher na página"
+  },
+  "gen_copy_failed": {
+    "message": "Não foi possível copiar. Selecione o texto e copie."
+  },
+  "gen_pick_group": {
+    "message": "Escolha pelo menos um tipo de caractere."
+  },
+  "site_verified": {
+    "message": "Site verificado"
+  },
+  "site_related": {
+    "message": "Site relacionado"
+  },
+  "site_lookalike": {
+    "message": "Site imitador"
+  },
+  "site_new": {
+    "message": "Site novo"
+  },
+  "content_guard_title": {
+    "message": "Este é o site certo?"
+  },
+  "content_guard_body": {
+    "message": "$HOST$ parece $SAVED$, onde seu login está salvo, mas é outro site. Continue somente se tiver certeza.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_guard_body_mixed": {
+    "message": "$HOST$ mistura letras de alfabetos diferentes, um truque comum de phishing. Continue somente se tiver certeza.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_continue": {
+    "message": "Continuar em $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_go_back": {
+    "message": "Voltar"
+  },
+  "content_same_account_title": {
+    "message": "É a mesma conta de $SAVED$?",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_same_account_body": {
+    "message": "$HOST$ tem o mesmo nome de $SAVED$, onde seu login está salvo, mas outra terminação. Continue somente se for a mesma empresa.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_same_account_yes": {
+    "message": "Mesma conta"
+  },
+  "content_new_site_title": {
+    "message": "Site novo para este nome de usuário"
+  },
+  "content_new_site_body": {
+    "message": "Você salvou este nome de usuário para outro site, nunca para $HOST$. Se não esperava que esta página pedisse sua senha, confira o endereço.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_chip_unlocked": {
+    "message": "Desbloqueado"
+  },
+  "popup_chip_checking": {
+    "message": "Verificando"
+  },
+  "popup_logins_heading": {
+    "message": "Logins deste site"
+  },
+  "popup_fill_button": {
+    "message": "Preencher"
+  },
+  "popup_logins_note": {
+    "message": "Seus logins salvos deste site abrem na página, nunca neste pop-up. Pressione Enter para preencher."
+  },
+  "popup_unlock_button": {
+    "message": "Desbloquear no app para desktop"
+  },
+  "popup_unlock_explain": {
+    "message": "Nada é preenchido nem exibido até você desbloquear."
+  },
+  "popup_check_again": {
+    "message": "Verificar novamente"
+  },
+  "popup_auto_label": {
+    "message": "Perguntar se deseja salvar logins neste site"
+  },
+  "cmd_fill_login": {
+    "message": "Preencher o login desta página"
+  },
+  "content_use_toolbar": {
+    "message": "Use o botão do LocalGateKeys na barra de ferramentas do navegador."
+  },
+  "content_username_label": {
+    "message": "Nome de usuário"
+  },
+  "content_update_which": {
+    "message": "Qual login salvo deve ser atualizado?"
+  },
+  "content_update_pw_title": {
+    "message": "Atualizar uma senha salva?"
+  },
+  "content_update_pw_one": {
+    "message": "Este formulário definiu uma nova senha, mas não tem campo de nome de usuário. Você confirma a alteração no aplicativo para computador."
+  },
+  "content_update_pw_many": {
+    "message": "Este formulário definiu uma nova senha, mas não tem campo de nome de usuário. Escolha o login a que ela pertence ou \"Agora não\"."
+  },
+  "content_update_pw_none": {
+    "message": "O LocalGateKeys não tem agora nenhum login salvo que possa atualizar para este site. Nada foi alterado."
+  },
+  "content_update_pw_for": {
+    "message": "Atualizar a senha de $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_update_pw_action": {
+    "message": "Atualizar"
+  },
+  "content_passkey_title": {
+    "message": "Este site aceita chaves de acesso"
+  },
+  "content_passkey_body": {
+    "message": "Você pode adicionar uma chave de acesso nas configurações da conta deste site. O LocalGateKeys também mantém sua senha; nada é criado a menos que você faça isso no site."
+  },
+  "content_passkey_never": {
+    "message": "Não perguntar neste site"
+  },
+  "popup_site_logins_note": {
+    "message": "Escolha um login para preenchê-lo na página. As senhas nunca são mostradas aqui."
+  },
+  "popup_site_logins_empty": {
+    "message": "Ainda não há logins salvos para este site."
+  },
+  "popup_popup_only_label": {
+    "message": "Sempre usar este pop-up neste site"
+  },
+  "popup_popup_only_on_hint": {
+    "message": "Ativado: sem ícones ou menus do LocalGateKeys nas páginas deste site; preencha daqui"
+  },
+  "popup_popup_only_off_hint": {
+    "message": "Desativado: ícones e menus aparecem ao lado dos campos de login deste site"
+  },
+  "popup_why_no_icon": {
+    "message": "Por que não há ícone na página?"
+  },
+  "popup_why_no_icon_text": {
+    "message": "O LocalGateKeys não mostra ícone quando o formulário de login está em um quadro de outro site, envia a senha para outro site, está oculto ou quando os ícones estão desativados para este site. Preencher por este pop-up continua funcionando nos formulários do próprio site."
+  },
+  "popup_frame_origin": {
+    "message": "Esta página tem um quadro de login de $ORIGIN$. O LocalGateKeys não preenche daqui o quadro de outro site.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_clears": {
+    "message": "Copiado. A área de transferência será limpa em $SECONDS$ s se este pop-up continuar aberto.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_cleared": {
+    "message": "Área de transferência limpa."
+  },
+  "safari_popup_fill_title": {
+    "message": "Preencher este login"
+  },
+  "safari_popup_fill_body": {
+    "message": "Clique no campo de e-mail ou senha e escolha seu login do LocalGateKeys na lista que o Safari mostra."
+  },
+  "safari_popup_offer_save": {
+    "message": "Oferecer para salvar logins neste site"
+  },
+  "safari_popup_waiting_one": {
+    "message": "1 login aguardando revisão"
+  },
+  "safari_popup_waiting_many": {
+    "message": "$COUNT$ logins aguardando revisão",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "safari_popup_waiting_when": {
+    "message": "no próximo desbloqueio"
+  },
+  "safari_popup_open_app": {
+    "message": "Abrir o LocalGateKeys"
+  },
+  "safari_popup_open_failed": {
+    "message": "Não foi possível abrir o LocalGateKeys. Abra-o pela pasta Aplicativos."
+  },
+  "safari_popup_footer": {
+    "message": "Suas senhas ficam no app. Este botão nunca as vê."
+  },
+  "safari_popup_no_site": {
+    "message": "Nenhum site nesta aba"
+  },
+  "safari_popup_not_allowed": {
+    "message": "O LocalGateKeys ainda não tem permissão neste site. Permita nos ajustes de extensões do Safari."
+  },
+  "safari_popup_offer_save_full": {
+    "message": "As solicitações para salvar já estão desativadas em 2.000 sites, o máximo que o LocalGateKeys guarda. Primeiro, reative-as em um site que você não usa mais."
+  },
+  "safari_popup_loading": {
+    "message": "Carregando…"
   }
 }

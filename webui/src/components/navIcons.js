@@ -28,6 +28,7 @@ export const ICONS = {
   collection: [p('M3 6.5a1.5 1.5 0 0 1 1.5-1.5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z')],
   view: [p('M3.5 5h17l-6.5 7.5V19l-4 1.5v-8z')],
   security: [p('M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z')],
+  generator: [r(3, 7, 18, 10), c(7.5, 12, 1), c(12, 12, 1), c(16.5, 12, 1)],
   reminders: [p('M6.5 16V11a5.5 5.5 0 0 1 11 0v5l1.5 2H5z'), p('M10 20.5a2.2 2.2 0 0 0 4 0')],
   sync: [p('M19.5 9A8 8 0 0 0 5 7.2'), p('M4.5 3.5v4h4'), p('M4.5 15A8 8 0 0 0 19 16.8'), p('M19.5 20.5v-4h-4'), c(12, 12, 1.2)],
   connections: [r(2.5, 5, 13, 9), p('M5.5 17.5h7'), r(17, 8, 4.5, 11, 1.2), p('M19.2 16.5h.1')],
@@ -44,12 +45,14 @@ export const ICONS = {
 
 const ACTIONS = {
   security_health_clicked: 'security',
+  password_generator_clicked: 'generator',
   reminders_clicked: 'reminders',
   sync_clicked: 'sync',
   connections_clicked: 'connections',
   licence_clicked: 'licence',
   import_export_clicked: 'import_export',
   scan_qr_clicked: 'scan_qr',
+  collections_clicked: 'collection',
   activity_clicked: 'activity',
   trash_clicked: 'trash',
   settings_clicked: 'settings',

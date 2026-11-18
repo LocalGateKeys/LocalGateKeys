@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">Deze kluis heeft ook zijn sleutelbestand nodig.</string>
+    <string name="factors_required_yubikey">Deze kluis heeft ook zijn YubiKey nodig.</string>
+    <string name="factors_required_both">Deze kluis heeft ook zijn sleutelbestand en YubiKey nodig.</string>
+    <string name="factors_keyfile_mismatch">Dit is niet het sleutelbestand van deze kluis.</string>
+    <string name="factors_yubikey_mismatch">Dit is niet de YubiKey van deze kluis.</string>
+    <string name="factors_keyfile_invalid">Dit bestand kan niet als sleutelbestand worden gebruikt.</string>
+    <string name="factors_yubikey_bad_answer">De YubiKey antwoordde niet correct. Controleer of slot %1$d is ingesteld op HMAC-SHA1 challenge-response.</string>
+    <string name="factors_yubikey_removed">Raak je YubiKey opnieuw aan.</string>
+    <string name="factors_yubikey_timeout">Geen aanraking gedetecteerd. Raak je YubiKey aan als hij knippert.</string>
+    <string name="factors_yubikey_slot_not_configured">Slot %1$d van deze YubiKey is niet ingesteld voor challenge-response. Kies in Yubico Authenticator Slots en stel slot %1$d in op Challenge-response (HMAC-SHA1).</string>
+    <string name="factors_keyfile_unreadable">Het sleutelbestand %1$s kon niet worden gelezen. Kies het opnieuw.</string>
+    <string name="factors_keyfile_too_large">Dit bestand is te groot voor een sleutelbestand.</string>
+    <string name="factors_removed_by_phrase">Sleutelbestand / YubiKey verwijderd; voeg ze opnieuw toe.</string>
+    <string name="factors_prompt_no_keyfile">Geen sleutelbestand gekozen</string>
+    <string name="factors_prompt_keyfile">Sleutelbestand: %1$s</string>
+    <string name="factors_prompt_choose">Sleutelbestand kiezen…</string>
+    <string name="factors_touch_title">Raak je YubiKey aan</string>
+    <string name="factors_section">Sleutelbestand en YubiKey</string>
+    <string name="factors_keyfile">Sleutelbestand</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">Sleutelbestand ingesteld</string>
+    <string name="factors_keyfile_none">Geen sleutelbestand</string>
+    <string name="factors_yubikey_set">YubiKey ingesteld (slot %1$d)</string>
+    <string name="factors_yubikey_none">Geen YubiKey</string>
+    <string name="factors_add_keyfile">Sleutelbestand toevoegen…</string>
+    <string name="factors_create_keyfile">Sleutelbestand maken…</string>
+    <string name="factors_add_yubikey">YubiKey toevoegen</string>
+    <string name="factors_slot">Slot</string>
+    <string name="factors_remove_keyfile">Het sleutelbestand verwijderen</string>
+    <string name="factors_remove_yubikey">De YubiKey verwijderen</string>
+    <string name="factors_remove_confirm">Daarna heeft de kluis deze factor niet meer nodig om te ontgrendelen.</string>
+    <string name="factors_keyfile_added">Sleutelbestand %1$s toegevoegd.</string>
+    <string name="factors_keyfile_created">Sleutelbestand %1$s gemaakt en toegevoegd. Bewaar een kopie op een veilige plek.</string>
+    <string name="factors_yubikey_added">YubiKey toegevoegd (slot %1$d).</string>
+    <string name="factors_keyfile_removed">Sleutelbestand verwijderd.</string>
+    <string name="factors_yubikey_removed_done">YubiKey verwijderd.</string>
+    <string name="factors_yubikey_setup">LocalGateKeys programmeert je YubiKey nooit. Stel hem in met Yubico Authenticator: Slots, Challenge-response, HMAC-SHA1, slot 2 (of slot 1). Een back-up-YubiKey heeft hetzelfde geheim nodig.</string>
+    <string name="factors_always_ask">Altijd om het sleutelbestand / de YubiKey vragen</string>
+    <string name="factors_always_ask_needs_factor">Voeg eerst een sleutelbestand of YubiKey toe.</string>
+    <string name="factors_shortcuts_off">Zet eerst ‘Altijd om het sleutelbestand / de YubiKey vragen’ uit.</string>
+    <string name="factors_failed">Het sleutelbestand of de YubiKey kon niet worden gewijzigd.</string>
+    <string name="factors_yubikey_no_transport">Zet NFC aan om je YubiKey tegen de telefoon te houden, of sluit hem aan.</string>
+    <string name="factors_prompt_remember">Dit sleutelbestand onthouden op deze telefoon</string>
+    <string name="factors_prompt_yubikey">Houd je YubiKey tegen de achterkant van de telefoon, of sluit hem aan en raak hem aan (slot %1$d).</string>
+    <string name="factors_sheet_title">Open LocalGateKeys om te ontgrendelen</string>
+    <string name="factors_sheet_text">Het app-wachtwoord heeft zijn sleutelbestand of YubiKey nodig, en alleen de app kan daarom vragen.</string>
+    <string name="factors_sheet_open">LocalGateKeys openen</string>
+    <string name="factors_needs_app_password">Zet het app-wachtwoord aan om een sleutelbestand of YubiKey toe te voegen</string>
+    <string name="factors_footer">Dan is naast het app-wachtwoord een sleutelbestand of YubiKey nodig. De herstelzin ontgrendelt nog steeds zonder.</string>
+    <string name="factors_always_ask_note">Zet ontgrendelen met vingerafdruk of gezicht uit zolang er een sleutelbestand of YubiKey is ingesteld.</string>
+    <string name="factors_remember">De locatie van het sleutelbestand onthouden op deze telefoon</string>
+    <string name="factors_password_text">Voer het app-wachtwoord in. Een sleutelbestand of YubiKey die al is ingesteld, wordt ook gevraagd.</string>
+    <string name="factors_add_confirm">Vanaf nu zijn het app-wachtwoord en deze factor nodig om te ontgrendelen. De herstelzin ontgrendelt nog steeds zonder.</string>
+</resources>

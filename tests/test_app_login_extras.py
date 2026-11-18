@@ -205,6 +205,20 @@ def test_policy_save_and_enable_sign_in_confirm(env):
     assert detail["policy"]["require_master_password"] is True and detail["notes"] == "keep me"
 
 
+def test_ai_agents_opt_in_is_off_by_default_and_saved_in_the_scope(env):
+    extras, controller, _port, _editor, ref = env
+    assert extras.policy(ref)["policy"]["ai_agents"] is False
+    assert extras.policy_save(ref, {"ai_agents": True})["message"]
+    assert extras.policy(ref)["policy"]["ai_agents"] is True
+    entry = next(e for e in controller.session._require_payload()["entries"] if e.get("id") == ref["id"])
+    assert entry["scope"]["ai_agents"] is True and "ai_agents" not in entry["policy"]
+    extras.policy_save(ref, {"ai_agents": False})
+    assert "ai_agents" not in entry["scope"]  # off looks exactly like never opted in
+    with pytest.raises(ApiError):
+        extras.policy_save(ref, {"ai_agents": "yes"})  # malformed is refused, never read as on
+    assert extras.policy(ref)["policy"]["ai_agents"] is False
+
+
 def _migration_uri(secret: bytes, name: str, issuer: str) -> str:
     def field(number, payload):
         return bytes([(number << 3) | 2, len(payload)]) + payload

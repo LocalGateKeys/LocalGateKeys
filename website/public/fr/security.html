@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sécurité de LocalGateKeys : Argon2id et AES-256-GCM</title>
+  <meta name="description" content="Comment LocalGateKeys protège votre coffre avec Argon2id et AES-256-GCM, pourquoi il n’y a ni compte ni serveur, et ce que la conception ne couvre pas.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/fr/security">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/security">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/security">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/security">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/security">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/security">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/security">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Sécurité de LocalGateKeys : Argon2id et AES-256-GCM">
+  <meta property="og:description" content="Comment LocalGateKeys protège votre coffre avec Argon2id et AES-256-GCM, pourquoi il n’y a ni compte ni serveur, et ce que la conception ne couvre pas.">
+  <meta property="og:url" content="https://localgatekeys.app/fr/security">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Le logo de LocalGateKeys : un gestionnaire de mots de passe pour Windows, Mac et iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sécurité de LocalGateKeys : Argon2id et AES-256-GCM">
+  <meta name="twitter:description" content="Comment LocalGateKeys protège votre coffre avec Argon2id et AES-256-GCM, pourquoi il n’y a ni compte ni serveur, et ce que la conception ne couvre pas.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Aller au contenu</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../fr/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../fr/features">Fonctionnalités</a></li>
+          <li><a href="../fr/get-started">Démarrer</a></li>
+          <li><a href="../fr/help">Guide</a></li>
+          <li><a href="../fr/security" aria-current="page">Sécurité</a></li>
+          <li><a href="../fr/pricing">Tarifs</a></li>
+          <li><a href="../fr/support">Assistance</a></li>
+          <li><a class="nav-cta" href="../fr/download">Télécharger</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../fr/features">Fonctionnalités</a></li>
+          <li><a href="../fr/get-started">Démarrer</a></li>
+          <li><a href="../fr/help">Guide</a></li>
+          <li><a href="../fr/security" aria-current="page">Sécurité</a></li>
+          <li><a href="../fr/pricing">Tarifs</a></li>
+          <li><a href="../fr/support">Assistance</a></li>
+          <li><a class="nav-cta" href="../fr/download">Télécharger</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Langue</span></summary>
+        <ul class="lang-menu-list"><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr" aria-current="true">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Le modèle de sécurité, en termes simples</h1>
+  <p class="lead">Ce que LocalGateKeys est conçu pour protéger, et ce qu’il ne peut pas protéger.</p>
+</div>
+
+<div class="wrap page-body">
+  <div class="prose">
+    <h2>Comment votre coffre-fort est chiffré</h2>
+    <p>Une clé aléatoire de 256 bits chiffre le coffre-fort. Cette clé n’est jamais stockée telle quelle ; elle est enveloppée (chiffrée) séparément par chaque moyen de déverrouillage, de sorte que changer de mot de passe n’oblige pas à tout rechiffrer, et qu’une enveloppe copiée depuis un autre coffre-fort est rejetée.</p>
+  </div>
+  <dl class="spec">
+    <dt>Chiffrement du coffre-fort</dt><dd>AES-256-GCM avec un nonce aléatoire neuf à chaque enregistrement</dd>
+    <dt>Mot de passe principal</dt><dd>Argon2id, 3 passes, parallélisme 4, sel aléatoire par enveloppe ; 256 Mio de mémoire dans l’app Windows (64 Mio sur un PC qui a moins de 4 Go de mémoire) et 64 Mio dans les apps Mac, iPhone et Android</dd>
+    <dt>Phrase de récupération</dt><dd>Phrase BIP39 facultative de 24 mots (256 bits), étendue avec HKDF-SHA256</dd>
+    <dt>Windows Hello, Touch ID, Face ID et empreinte digitale</dt><dd>Libèrent la clé du coffre-fort depuis un stockage que l’appareil protège ; le mot de passe principal n’est jamais enregistré</dd>
+    <dt>Sauvegardes et transferts</dt><dd>Argon2id et AES-256-GCM, avec les paramètres stockés dans l’en-tête authentifié</dd>
+    <dt>Synchronisation des appareils</dt><dd>Une clé de groupe aléatoire, transmise à chaque appareil avec X25519 et HKDF-SHA256 et, pour un dossier cloud, également enveloppée par votre mot de passe de synchronisation avec Argon2id ; chaque enregistrement scellé avec AES-256-GCM et lié à son élément, sa version et son époque de clé ; chaque fichier d’appareil lié à l’appareil qui l’a écrit</dd>
+    <dt>Clés d’accès</dt><dd>Clés ES256 (P-256) conservées dans le coffre-fort chiffré ; l’app construit les données signées à partir de l’origine signalée par le navigateur, jamais à partir de la page. L’app du Microsoft Store peut aussi être le fournisseur de clés d’accès de Windows 11 (désactivé par défaut) ; Windows garde alors dans sa propre liste les noms de vos sites et comptes à clé d’accès, jamais les clés</dd>
+    <dt>Écritures sur le disque</dt><dd>Fichier temporaire, vidage, puis remplacement atomique, de sorte qu’un plantage ne peut pas laisser un coffre-fort à moitié écrit</dd>
+    <dt>Agents d’IA</dt><dd>Désactivé par défaut (Pro). Un agent n’atteint l’app que par lgk mcp sur votre propre appareil et ne voit que les identifiants et éléments que vous avez autorisés. Vous approuvez chaque demande ; l’app remplit elle-même la connexion, et aucune réponse à l’agent ne contient de mot de passe. Chaque demande est inscrite dans un journal d’accès dont les entrées sont chaînées par des hachages SHA-256, et la vérification de sécurité indique si cette chaîne est intacte</dd>
+  </dl>
+
+  <div class="ledger">
+    <section aria-labelledby="protects">
+      <h2 id="protects">Conçu pour protéger contre</h2>
+      <ul>
+        <li>Une personne qui copie votre fichier de coffre-fort ou une sauvegarde sans connaître votre mot de passe principal</li>
+        <li>Un site web qui obtient des identifiants ou des clés d’accès enregistrés pour un autre site web</li>
+        <li>Un autre programme de votre PC qui communique avec LocalGateKeys sans le secret de session qu’il remet à son propre assistant de navigateur</li>
+        <li>Le remplissage d’une app de bureau qui a été remplacée, mise à jour ou modifiée depuis son association</li>
+        <li>Des mots de passe laissés non chiffrés sur le disque</li>
+        <li>Des formulaires envoyés sans vous</li>
+        <li>Votre fournisseur cloud qui lit les données synchronisées : il ne stocke que du texte chiffré</li>
+        <li>Une page web qui lirait les comptes que LocalGateKeys vous propose : dans Chrome, Edge et Firefox, la liste est dessinée dans un cadre distinct de l’extension que la page ne peut pas lire</li>
+        <li>Un agent d’IA qui obtiendrait un mot de passe de LocalGateKeys : aucune réponse à l’agent n’en contient, et il ne voit que les identifiants que vous avez autorisés</li>
+      </ul>
+    </section>
+    <section class="not" aria-labelledby="not-protects">
+      <h2 id="not-protects">Ne peut pas protéger contre</h2>
+      <ul>
+        <li>Un logiciel malveillant, ou toute personne disposant d’un contrôle administrateur, déjà présent sur votre PC</li>
+        <li>Un navigateur, une installation de Windows ou une dépendance compromis</li>
+        <li>Un site web dans lequel vous saisissez volontairement un mot de passe</li>
+        <li>Une personne qui utilise votre PC pendant que le coffre-fort est déverrouillé</li>
+        <li>L’hameçonnage dans une app authentique qui affiche un contenu contrôlé par un attaquant</li>
+        <li>La perte de votre coffre-fort, de vos sauvegardes et de votre mot de passe principal sans phrase de récupération : personne, nous compris, ne peut l’ouvrir</li>
+        <li>Un agent d’IA qui pilote votre navigateur et lit un mot de passe une fois que LocalGateKeys l’a rempli dans la page, ou une commande que vous avez approuvée et qui transmet les secrets qu’elle a reçus</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="prose">
+    <h2>Ce que LocalGateKeys ne fait jamais</h2>
+    <p>Certaines façons de remplir des mots de passe sont impossibles à distinguer d’un logiciel espion ; elles sont donc exclues dès la conception. LocalGateKeys ne contient aucun de ces éléments :</p>
+    <ul>
+      <li>crochets clavier ou enregistrement des frappes</li>
+      <li>surveillance du presse-papiers</li>
+      <li>lecture de l’écran ou OCR pour trouver des identifiants</li>
+      <li>analyse de la mémoire d’autres programmes</li>
+      <li>déchiffrement de la base de mots de passe enregistrés de votre navigateur</li>
+      <li>injection de code dans d’autres programmes ou jeux</li>
+      <li>envoi d’une connexion que vous n’avez pas lancée</li>
+    </ul>
+
+    <h2 id="network">Le réseau, en toute franchise</h2>
+    <p>Il n’y a ni compte LocalGateKeys ni serveur qui détienne des coffres-forts. L’app se connecte à Internet uniquement dans les cas suivants :</p>
+    <ul>
+      <li><strong>Mises à jour.</strong> Le Microsoft Store met à jour l’app Windows et l’App Store les apps Mac et iPhone ; LocalGateKeys ne télécharge ni n’exécute jamais d’installateur elle-même. Les anciennes versions Windows avec installateur (jusqu’à la 0.4.12, la dernière) téléchargent un petit fichier depuis notre serveur quand vous choisissez Rechercher des mises à jour et vérifient sa signature avec une clé intégrée à l’app.</li>
+      <li><strong>Liste de révocation des licences.</strong> À chaque vérification des mises à jour dans les versions avec installateur, et quand vous choisissez Rechercher des mises à jour dans l’app du Microsoft Store avec le mode hors ligne strict désactivé, l’app télécharge une liste signée des licences remboursées et y compare votre licence sur votre PC. Elle n’envoie rien sur votre licence.</li>
+      <li><strong>Icônes de sites.</strong> Pour afficher l’icône d’un site, l’app la télécharge depuis l’adresse propre à ce site. Aucun nom d’utilisateur, mot de passe ou donnée du coffre-fort n’est envoyé, mais chaque téléchargement indique à ce site, et à quiconque observe le réseau, que votre coffre-fort contient un compte chez lui. Cette option est désactivée par défaut et n’a lieu que si vous activez « Afficher les icônes des sites » dans les Paramètres ; le mode hors ligne strict la bloque.</li>
+      <li><strong>Vérifications des fuites, si vous les activez.</strong> Quand vous lancez une vérification, l’app envoie à Have I Been Pwned les cinq premiers caractères de l’empreinte SHA-1 de chaque mot de passe. Le service voit votre adresse IP, jamais le mot de passe, l’empreinte complète, le nom d’utilisateur ni le site web.</li>
+      <li><strong>Synchronisation, si vous la configurez.</strong> Sur votre réseau domestique, les appareils communiquent directement entre eux. Par un dossier cloud, c’est votre app de stockage cloud qui fait le téléversement.</li>
+      <li><strong>Achat de Pro dans l’app Mac, iPhone ou Android.</strong> L’app envoie le justificatif d’achat signé de la boutique à notre serveur de licences, qui répond avec votre clé de licence. Aucune adresse e-mail ni donnée de l’appareil n’est envoyée.</li>
+      <li><strong>Site vérifié.</strong> La détection des adresses trompeuses s'exécute sur votre appareil. Vos sites enregistrés ne quittent jamais l'app et rien n'est envoyé à un serveur.</li>
+    </ul>
+    <p>Dans l’app Windows, Centre de sécurité › Activité réseau liste chacune de ces connexions avec l’heure, l’hôte et le résultat. Les noms des sites que vous avez enregistrés ne s’affichent que pendant que l’app tourne et ne sont jamais écrits sur le disque, et les appareils de votre propre réseau apparaissent comme « Réseau local ».</p>
+    <p>Le mode hors ligne strict est activé par défaut. Il bloque les requêtes Internet en arrière-plan, les icônes de sites et les vérifications des fuites, et une vérification des mises à jour vous demande d’abord votre accord. La <a href="../legal/privacy">politique de confidentialité</a> liste exactement ce que nos serveurs voient lorsque vous recherchez des mises à jour.</p>
+
+    <h2>Limites connues</h2>
+    <ul>
+      <li>Le mot de passe principal est placé dans un tampon effaçable dès qu’il arrive dans l’app et est effacé lorsque l’opération qui en avait besoin se termine. La page dans laquelle vous le saisissez s’exécute dans Microsoft Edge WebView2. La page vide son champ et l’app libère la copie faite lors du transfert avant que votre clé ne soit calculée, mais aucune de ces deux copies ne peut être écrasée en mémoire, des traces peuvent donc y rester pendant un court moment.</li>
+      <li>Le déverrouillage par caméra demande un mouvement de tête aléatoire, de sorte qu’une photo tenue à plat devant la caméra ou une image fixe sur un écran ne passe pas. Cela reste une vérification de commodité, pas une protection certifiée : une photo pliée ou courbée, une vidéo qui suit les consignes ou un masque peuvent passer. Windows Hello est le choix le plus sûr.</li>
+      <li>Le remplissage des apps Windows ne fonctionne pas avec les programmes exécutés en tant qu’administrateur, les interfaces de jeux dessinées sur mesure ou les vues web intégrées qu’il ne peut pas vérifier.</li>
+      <li>Le coffre-fort détecte qu’il a été ramené à une copie plus ancienne. Si vous utilisez la synchronisation, vos autres appareils se souviennent de l’état le plus récent de votre coffre-fort, de sorte qu’une copie plus ancienne remise sur un appareil est signalée à la prochaine synchronisation, dans chaque app. Sans synchronisation, un PC Windows conserve un second enregistrement en dehors du dossier du coffre-fort, de sorte qu’un ancien coffre-fort remis en place avec son fichier d’ancrage est refusé ; une personne qui peut modifier les paramètres de votre compte Windows peut aussi supprimer cet enregistrement. Les apps iPhone, Mac et Android gardent leurs fichiers fermés aux autres apps, mais sans synchronisation elles ne remarquent pas une copie plus ancienne mise à leur place.</li>
+      <li>Les clés d’accès fonctionnent dans Chrome, Edge et Firefox. La connexion avec une clé d’accès dans le cadre d’un autre site fonctionne dans Chrome et Edge lorsque le site qui l’entoure l’autorise ; dans Firefox, et lorsque vous créez une clé d’accès dans le cadre d’un autre site, la boîte de dialogue des clés d’accès du navigateur est utilisée. Si un site annule l’opération après que vous avez approuvé une nouvelle clé d’accès, l’app la supprime de nouveau ; lorsque l’app ne peut pas savoir si le site l’a conservée, la clé d’accès reste dans votre coffre-fort et vous pouvez la supprimer dans l’app.</li>
+      <li>L'avertissement d'adresse trompeuse est un indice, pas un mur : le script propre d'une page peut le contourner, par exemple en envoyant un mot de passe sans soumettre de formulaire. Vérifiez l'adresse vous-même.</li>
+      <li>L'accès d'urgence n'a pas de serveur : seules les apps imposent le délai et votre veto. Quiconque détient assez de fragments peut récupérer votre sauvegarde aussitôt, sans attendre. Choisissez des détenteurs qui n'agiraient pas ensemble et gardez les fragments séparés.</li>
+      <li>Le mot de passe de contrainte protège contre l'obligation de déverrouiller l'app. Il ne protège pas contre quelqu'un qui examine les fichiers de votre disque, et une personne attentive peut découvrir qu'un second coffre existe. Il existe sur Windows, Mac, iPhone et Android.</li>
+    </ul>
+
+    <h2>Signaler une vulnérabilité</h2>
+    <p>Écrivez à <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. La <a href="../legal/vulnerability-disclosure">politique de divulgation des vulnérabilités</a> explique ce qui est dans le périmètre, dans quel délai nous répondons et comment nous citons les chercheurs.</p>
+  </div>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestionnaire de mots de passe pour Windows, Mac et iPhone qui garde votre coffre-fort sur vos propres appareils.</p>
+        <p class="quiet">Ce site compte les visites avec Cloudflare Web Analytics, qui n’utilise pas de cookies. Il n’utilise aucun traceur publicitaire et ne dépose aucun cookie.</p>
+      </div>
+      <nav aria-label="Produit">
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="../fr/features">Fonctionnalités</a></li>
+          <li><a href="../fr/pricing">Tarifs</a></li>
+          <li><a href="../fr/download">Télécharger</a></li>
+          <li><a href="../fr/get-started">Démarrer</a></li>
+          <li><a href="../fr/switch/">Changer</a></li>
+          <li><a href="../buy">Acheter Pro</a></li>
+          <li><a href="../fr/licence">Votre licence Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Récupérer votre licence</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Aide">
+        <h2>Aide</h2>
+        <ul>
+          <li><a href="../fr/help">Guide d’utilisation</a></li>
+          <li><a href="../fr/support">Assistance et FAQ</a></li>
+          <li><a href="../fr/security">Sécurité</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Signaler une vulnérabilité</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Mentions légales">
+        <h2>Mentions légales</h2>
+        <p class="quiet">Ces documents sont en anglais, et la version anglaise fait foi.</p>
+        <ul>
+          <li><a href="../legal/eula">Contrat de licence</a></li>
+          <li><a href="../legal/privacy">Politique de confidentialité</a></li>
+          <li><a href="../legal/terms-of-sale">Conditions de vente</a></li>
+          <li><a href="../legal/refunds">Politique de remboursement</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact : <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows est une marque du groupe de sociétés Microsoft. Chrome est une marque de Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID et Safari sont des marques d’Apple Inc., déposées aux États-Unis et dans d’autres pays.</p>
+      <nav class="lang-switch" aria-label="Langue"><ul><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr" aria-current="true">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

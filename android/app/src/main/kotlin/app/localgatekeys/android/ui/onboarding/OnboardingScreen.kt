@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +47,8 @@ import app.localgatekeys.android.ui.theme.lgkGroupSurface
 
 /**
  * The setup pages (workstream 4): one page per open step, Skip on each, Skip setup on the first. A step whose action
- * opens another screen (Import, Settings, Autofill settings) counts as done and closes the pages; the steps left go to
+ * opens another screen (Import, Settings) counts as done and closes the pages (Autofill counts once the system reports
+ * it on, checked when the app comes back); the steps left go to
  * the vault's "Finish setting up" card. [onAction] runs that step's action (the pages are already closed).
  */
 @Composable
@@ -84,7 +86,8 @@ fun OnboardingScreen(onboarding: Onboarding, onAction: (SetupStep) -> Unit) {
             }
             Button(
                 {
-                    onboarding.complete(step)
+                    // Autofill is checked on return instead (Onboarding.autofillStatus).
+                    if (onboarding.completesOnAction(step)) onboarding.complete(step)
                     when (step) {
                         SetupStep.CREATE, SetupStep.UNLOCK -> advance()
                         else -> {
@@ -118,5 +121,23 @@ fun SetupCard(text: String, onOpen: () -> Unit, onHide: () -> Unit) {
             Text(text, color = c.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.fillMaxWidth())
         }
         TextButton(onHide, Modifier.heightIn(min = 48.dp).testTag("setup-card-hide")) { Text(stringResource(R.string.home_hide), color = c.secondaryText) }
+    }
+}
+
+/** The iPhone's compact form of [SetupCard]: a chip on the vault's status line, with a small Hide (✕). */
+@Composable
+fun SetupChip(text: String, onOpen: () -> Unit, onHide: () -> Unit) {
+    val c = LgkTheme.colors
+    val hide = stringResource(R.string.home_hide)
+    Row(
+        Modifier.lgkGroupSurface().testTag("setup-card"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onOpen, Modifier.heightIn(min = 40.dp).testTag("setup-card-open")) {
+            Text(text, color = c.text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
+        TextButton(onHide, Modifier.heightIn(min = 40.dp).testTag("setup-card-hide")) {
+            Text("✕", color = c.secondaryText, modifier = Modifier.semantics { contentDescription = hide })
+        }
     }
 }

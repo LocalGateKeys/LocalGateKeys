@@ -34,7 +34,8 @@ class VaultEraseFailure(val steps: List<String>) : Exception() {
  * erasing again is safe. The next unlock is a first run. Never touches the desktop or the sync folder.
  *
  * Steps (failure names): "store files" (a directory that cannot be deleted is set aside instead, so the next unlock
- * starts empty), "local-key" (`vault-key.bin`), "secrets" ([slotsFile]), "vault-key" (the Keystore key), "settings" (a preference not removed durably).
+ * starts empty), "local-key" (`vault-key.bin`), "secrets" ([slotsFile]), "vault-key" (the Keystore key), "settings" (a preference not removed durably),
+ * "sync-watch" (the removal watch file).
  * Last, best effort (never a failure): every persisted folder permission is released ([folders] `keepOnly(null)`).
  */
 class VaultEraser(
@@ -50,6 +51,16 @@ class VaultEraser(
     private val appPassword: AppPasswordLock? = null,
     /** Part C: the sealed fill index (titles, usernames, app pairings) and its key; false = not gone. Failure name "fill-index". */
     private val fillIndex: (() -> Boolean)? = null,
+    /**
+     * The removal watch file (`Vault.sync-watch.json`, device removal); failure name "sync-watch". It must go with the
+     * vault: left behind, a later check could find the old notice and erase a vault set up afresh.
+     */
+    private val watchFile: File? = null,
+    /**
+     * Further named steps (each true when its data is gone), for this phone's never-synced extras kept outside the vault
+     * folder: the reminders' alarms and alarm book ("reminders") and the Security check's settings ("security-settings").
+     */
+    private val extraSteps: List<Pair<String, () -> Boolean>> = emptyList(),
 ) : VaultErasing {
     /** Deletes the store directory; true when it is gone (a seam: tests make it fail). */
     internal var removeDirectory: (File) -> Boolean = { it.deleteRecursively() }
@@ -80,6 +91,10 @@ class VaultEraser(
         }
         if (appPassword != null && !appPassword.deleteAll()) failed += "app-password"
         if (fillIndex != null && !(try { fillIndex.invoke() } catch (e: Exception) { false })) failed += "fill-index"
+        if (watchFile != null && !removeFile(watchFile)) failed += "sync-watch"
+        for ((name, step) in extraSteps) {
+            if (!(try { step() } catch (e: Exception) { false })) failed += name
+        }
         try {
             vaultKey.delete()
         } catch (e: Exception) {

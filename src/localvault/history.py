@@ -129,7 +129,18 @@ def _protected_field(kind: str, field: str) -> bool:
         return name in {"license_value", "notes"}
     if kind in {"purchase", "warranty", "subscription"}:
         return name in {"notes"}
-    return False
+    # Feature pack 2026-11-15, section 1.5 (masking only).
+    return name in _MORE_PROTECTED.get(kind, ())
+
+
+_MORE_PROTECTED = {
+    "card": {"number", "cvv", "pin"},
+    "bank_account": {"account_number", "pin"},
+    "ssh_key": {"private_key", "passphrase"},
+    "api_key": {"key", "secret"},
+    "wifi": {"password"},
+    "passkey": {"private_key", "user_handle"},
+}
 
 
 def _mask(value: Any) -> str:
@@ -374,6 +385,9 @@ class HistoryService:
         proposed = validate_item(proposed, known_collection_ids={
             value["id"] for value in payload.get("collections", []) if isinstance(value, dict) and "id" in value
         })
+        from .item_service import check_writable
+
+        check_writable(self.session, current, proposed)
         # The current revision itself is retained as an immutable history row
         # before it is replaced.  Any validation/quota failure occurs before
         # the item is changed.

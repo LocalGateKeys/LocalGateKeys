@@ -70,20 +70,55 @@ final class CredentialExchangeModel {
     /// Test seam and activity-free entry point.
     func received(token: UUID) { pendingToken = token }
 
-    /// Starts the pending import unless one is already running. Returns the task (for tests).
+    /// What the exported data would change, shown before anything is written (scan A10-L1): `confirm` imports it,
+    /// `discard` drops it.
+    struct Review: Identifiable {
+        let id = UUID()
+        let candidates: [ImportCandidate]
+        let unsupported: Int
+        /// The importer's dry run against the vault when the data arrived.
+        let counts: ImportResult
+    }
+
+    private(set) var review: Review?
+
+    /// Drops a pending token without reading it and without any notice (a duress session: the exported data
+    /// belongs to the real vault, and nothing on screen may differ from a plain unlock).
+    func dropPending() { pendingToken = nil }
+
+    /// Reads the pending export into a review unless one is running or waiting. Returns the task (for tests).
     @discardableResult
     func start(importer: VaultImporter) -> Task<Void, Never>? {
-        guard !isRunning, let token = pendingToken else { return nil }
+        guard !isRunning, review == nil, let token = pendingToken else { return nil }
         isRunning = true
         return Task { await run(token, importer: importer) }
     }
+
+    /// Imports the reviewed data (the user said Import).
+    func confirm(importer: VaultImporter) {
+        guard let r = review else { return }
+        review = nil
+        do {
+            let result = try importer.importCandidates(r.candidates, unsupported: r.unsupported)
+            message = result.notice.isEmpty ? String(localized: "Nothing to import.") : result.notice
+        } catch {
+            message = String(localized: "The passwords could not be saved.")
+        }
+    }
+
+    /// Drops the reviewed data: nothing is written.
+    func discard() { review = nil }
 
     private func run(_ token: UUID, importer: VaultImporter) async {
         defer { isRunning = false }
         do {
             let r = try await fetch(token)
-            let result = try importer.importCandidates(r.candidates, unsupported: r.unsupported)
-            message = result.notice.isEmpty ? String(localized: "Nothing to import.") : result.notice
+            let counts = try importer.preview(r.candidates, unsupported: r.unsupported)
+            if counts.added == 0 && counts.updated == 0 {
+                message = counts.notice.isEmpty ? String(localized: "Nothing to import.") : counts.notice
+            } else {
+                review = Review(candidates: r.candidates, unsupported: r.unsupported, counts: counts)
+            }
         } catch is CancellationError {
             return   // keep the token: the next start retries it
         } catch FetchError.unreadable {

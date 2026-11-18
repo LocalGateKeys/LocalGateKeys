@@ -131,6 +131,38 @@ def _web(dev: Dev, label: str) -> str:
 # --- happy paths ---------------------------------------------------------------------------
 
 
+def test_heartbeat_shows_a_folder_sync_that_changed_nothing(tmp_path: Path, root: Path) -> None:
+    from localvault.sync import seen
+
+    a, b, _c = _group(tmp_path, root)
+    _round([a, b], NOW + 10)
+    seen.clear()
+    _round([b], NOW + 2000)  # nothing new: B writes no view, only its heartbeat
+    _round([a], NOW + 2010)
+    assert seen.times(a.state.group_id).get(b.device_id) == NOW + 2000
+    hb = root / ft.SYNC_DIR_NAME / seen.SEEN_DIR_NAME / f"{b.device_id}.lgksync"
+    stamp = hb.read_bytes()
+    _round([b], NOW + 2100)  # within the heartbeat interval: not rewritten
+    assert hb.read_bytes() == stamp
+    assert not any(k == "ignored-file" for k in kinds(a.sync(NOW + 2200)))
+
+
+def test_heartbeat_signed_by_another_key_is_ignored(tmp_path: Path, root: Path) -> None:
+    from localvault.sync import seen
+
+    a, b, _c = _group(tmp_path, root)
+    _round([a, b], NOW + 10)
+    seen.clear()
+    folder = root / ft.SYNC_DIR_NAME
+    forged = DeviceIdentity.generate()
+    hb = folder / seen.SEEN_DIR_NAME / f"{b.device_id}.lgksync"
+    raw = encode_view(b.gk(), b.device_id, 0, (), NOW + 5000)
+    hb.write_bytes(raw)
+    hb.with_suffix(".lgksig").write_bytes(ft.sign_view(raw, forged.signing_key))
+    a.sync(NOW + 5010)
+    assert seen.times(a.state.group_id).get(b.device_id) != NOW + 5000
+
+
 def test_peer_synced_at_is_set_when_a_newer_peer_view_is_accepted(tmp_path: Path, root: Path) -> None:
     a, b, _c = _group(tmp_path, root)
     _round([a, b], NOW + 10)
@@ -217,6 +249,20 @@ def test_delete_propagates(tmp_path: Path, root: Path) -> None:
 
 
 # --- hostile or broken folder content --------------------------------------------------------
+
+
+def test_read_peers_skips_emergency_access_files_silently(tmp_path: Path, root: Path) -> None:
+    """Sub-plan 08: heir requests, denies, grants and backups never count as peer (or ignored) files."""
+    a, b, _c = _group(tmp_path, root)
+    _web(b, "shared")
+    b.sync()
+    devices = b.own_file.parent
+    (devices / "LocalGateKeys Emergency").mkdir()
+    for name in ("request-1.lgkheirreq", "deny-1.lgkheirdeny", "grant-1.lgkheirgrant", "x.lgkheir",
+                 "backup-20270101-120000-0a1b2c3d.lgk", "backup-20270101-120000-0a1b2c3d.lgkheirbackup"):
+        (devices / name).write_bytes(b"{}")
+    assert kinds(a.sync()) == []
+    assert a.labels() == ["shared"]
 
 
 def test_provider_duplicates_and_unknown_files_ignored(tmp_path: Path, root: Path) -> None:
@@ -410,7 +456,7 @@ def test_removed_device_cannot_read_after_rotation(tmp_path: Path, root: Path) -
     _web(a, "after-rotation")
     a.sync()
     report = c.sync()
-    assert kinds(report) == ["rejoin-required"]
+    assert kinds(report) == ["rejoin-required", "removal-notice"]  # A signed the removal (WP-A)
     assert c.labels() == []
     with pytest.raises(Exception) as info:
         decode_view(c_gk, a.own_file.read_bytes())
@@ -789,7 +835,7 @@ def test_join_racing_rotation_is_undone_by_restore(tmp_path: Path, root: Path, m
     _web(a, "after")
     a.sync()
     assert kinds(j.sync()) == ["rejoin-required"]
-    assert kinds(c.sync()) == ["rejoin-required"]
+    assert kinds(c.sync()) == ["rejoin-required", "removal-notice"]
     b.sync()
     assert b.state.epoch == 2 and b.labels() == ["after"]
 
@@ -1400,12 +1446,20 @@ def _snapshot(dev: Dev) -> bytes:
 
 
 def _restore(dev: Dev, snap: bytes) -> None:
-    """Put an old copy of the vault back and delete its anchor (the attack Part B detects)."""
+    """Put an old copy of the vault back and delete its anchor and its marks outside the folder (the attack
+    Part B detects).  With the marks left in place the unlock itself refuses the old copy on Windows
+    (tests/test_vault_rollback_mark.py); the peers' witness is what remains once those are gone too, and on the
+    platforms that keep no mark."""
+    from localvault import outside_marks
     from localvault.vault import unlock_vault
     path = Path(dev.session.path)
     dev.session.lock()
     path.write_bytes(snap)
     path.with_name(path.stem + ".generation.json").unlink(missing_ok=True)
+    store = outside_marks.backend()
+    assert isinstance(store, outside_marks.MemoryBackend)
+    for name in [n for n in store.values if n.startswith("rollback-mark")]:
+        del store.values[name]
     dev.session = unlock_vault(path, MASTER)
 
 

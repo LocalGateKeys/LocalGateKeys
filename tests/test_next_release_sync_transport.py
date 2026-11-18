@@ -75,6 +75,49 @@ def test_two_paired_states_exchange_one_authenticated_request_response():
         server.stop()
 
 
+def _wait_until(check, seconds: float = 3.0) -> bool:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if check():
+            return True
+        time.sleep(0.02)
+    return check()
+
+
+def test_replayed_hello_without_valid_encrypted_frame_does_not_verify_address():
+    """F-01: a signed hello alone (replayable from a capture) never marks the address as verified."""
+    client, server = _paired_transports()
+    endpoint, = _free_endpoints()
+    server.set_request_handler(lambda payload: payload)
+    server.start(endpoint)
+    try:
+        hello = client._local_hello(b"\x07" * 16)
+        try:
+            frame = tr.encode_frame(hello.to_bytes())
+        finally:
+            hello.ephemeral_secret.wipe()
+        with socket.create_connection((endpoint.host, endpoint.port), timeout=2) as raw:
+            raw.sendall(frame)
+            raw.settimeout(2)
+            assert raw.recv(4)  # the server answered with its own hello
+            raw.sendall(tr.encode_frame(b"not an encrypted frame"))
+            try:
+                while raw.recv(4096):
+                    pass
+            except OSError:
+                pass
+        assert _wait_until(lambda: not server._inbound)
+        assert server._verified == {}
+        # A real exchange (the first encrypted frame opens) does mark the address.
+        client_endpoint, = _free_endpoints()
+        client.start(client_endpoint)
+        assert client.connect(endpoint, b"ok", peer_id="transport-b") == b"ok"
+        assert _wait_until(lambda: "127.0.0.1" in server._verified)
+    finally:
+        client.stop()
+        server.stop()
+
+
 def test_oversized_socket_frame_is_rejected_without_killing_listener():
     _client, server = _paired_transports()
     endpoint, = _free_endpoints()

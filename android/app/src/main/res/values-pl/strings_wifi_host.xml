@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">Pokaż kod QR</string>
+    <string name="sync_host_copy_code">Kopiuj tekst kodu</string>
+    <string name="sync_host_code">Kod: %1$s</string>
+    <string name="sync_host_expires_in">Wygasa za %1$s</string>
+    <string name="sync_host_expired">Wygasło</string>
+    <string name="sync_host_accept_hint">Wybierz Akceptuj tylko wtedy, gdy drugie urządzenie pokazuje ten sam kod.</string>
+    <string name="sync_host_decline_hint">W przeciwnym razie wybierz Odrzuć.</string>
+    <string name="sync_host_undo_hint">Jeśli go nie rozpoznajesz, wybierz Cofnij.</string>
+    <string name="sync_host_other_pc_hint">Na innym komputerze użyj opcji Dołącz za pomocą kodu i wklej tekst kodu.</string>
+    <string name="sync_host_copied">Tekst kodu skopiowano.</string>
+    <string name="sync_host_closed">Ten kod parowania został zamknięty.</string>
+    <string name="sync_host_not_waiting">To żądanie już nie czeka. Pokaż nowy kod, aby spróbować ponownie.</string>
+    <string name="sync_host_declined">Odrzucono. Urządzenie nie zostało dodane. Pokaż nowy kod, aby spróbować ponownie.</string>
+    <string name="sync_host_not_listening">Najpierw włącz synchronizację Wi-Fi.</string>
+    <string name="sync_host_confirm">%1$s chce dołączyć. Wybierz Akceptuj tylko wtedy, gdy pokazuje kod %2$s.</string>
+    <string name="sync_host_adding">Dodawanie: %1$s…</string>
+    <string name="sync_host_adding_button">Dodawanie…</string>
+    <string name="sync_host_paired_key">Sparowano: %1$s (klucz %2$s). %3$s</string>
+    <string name="sync_host_paired_plain">Sparowano: %1$s. %2$s</string>
+    <string name="sync_host_paired_title">Sparowano: %1$s</string>
+    <string name="sync_host_declines_in">Odrzuci się samo za %1$d s.</string>
+    <string name="sync_host_stopped">Synchronizacja Wi-Fi zatrzymała się. Sprawdź sieć i włącz ją ponownie.</string>
+    <string name="sync_host_accept">Akceptuj</string>
+    <string name="sync_host_decline">Odrzuć</string>
+    <string name="sync_host_undo">Cofnij</string>
+    <string name="sync_host_keep">Zachowaj</string>
+    <string name="sync_host_followed">Teraz nasłuchuje pod adresem %1$s (adres się zmienił).</string>
+    <string name="sync_host_scan_title">Zeskanuj ten kod w LocalGateKeys na drugim urządzeniu</string>
+    <string name="sync_host_qr_description">Kod QR parowania</string>
+    <string name="sync_host_add_named">Dodać %1$s?</string>
+    <string name="sync_host_add_device">Dodać to urządzenie?</string>
+    <string name="sync_host_fingerprint">Odcisk klucza: %1$s</string>
+    <string name="sync_host_paired_heading">Sparowane urządzenia</string>
+    <string name="sync_host_no_peers">Jeszcze nie sparowano żadnych urządzeń.</string>
+    <string name="sync_host_remove">Usuń…</string>
+    <string name="sync_host_toggle">Hostuj synchronizację Wi-Fi na tym telefonie</string>
+    <string name="sync_host_intro">Inne urządzenia w tej samej sieci Wi-Fi mogą sparować się z tym telefonem i synchronizować z nim, gdy LocalGateKeys jest tu otwarty i odblokowany.</string>
+    <string name="sync_host_listens">Ten telefon nasłuchuje na %1$s.</string>
+    <string name="sync_host_free">W planie darmowym ten telefon nasłuchuje tylko podczas wyświetlania kodu parowania i przez 2 minuty po Synchronizuj teraz.</string>
+    <string name="sync_host_no_wifi">Połącz ten telefon z Wi-Fi, aby hostować synchronizację Wi-Fi.</string>
+    <string name="sync_host_pair_hint">Oba urządzenia muszą być w tej samej sieci Wi-Fi.</string>
+    <string name="sync_host_this_phone">Ten telefon</string>
+    <string name="sync_host_remove_confirm">Usunąć %1$s z synchronizacji Wi-Fi? Przestanie synchronizować się z tym telefonem, ale zachowa to, co już ma.</string>
+    <string name="sync_host_could_not_listen">Nie udało się uruchomić synchronizacji Wi-Fi na tym telefonie. Sprawdź sieć i spróbuj ponownie.</string>
+</resources>

@@ -7,9 +7,11 @@
     { value: 'title_asc', label: 'sortMenu.titleAsc' }, { value: 'title_desc', label: 'sortMenu.titleDesc' },
     { value: 'modified_desc', label: 'sortMenu.modified' }, { value: 'created_desc', label: 'sortMenu.created' },
   ];
-  // Python's options carry their own label; the fallback labels are catalog keys.
-  const options = $derived(sort?.options ?? FALLBACK);
-  const optionLabel = (o) => (sort?.options ? o.label : t(o.label));
+  // Python's options carry their own label; the fallback labels are catalog keys. An empty list
+  // (`[]` is not nullish) must fall back too, or the select renders with no options and no value.
+  const sent = $derived(Array.isArray(sort?.options) && sort.options.length ? sort.options : null);
+  const options = $derived(sent ?? FALLBACK);
+  const optionLabel = (o) => (sent ? o.label : t(o.label));
   const option = $derived(sort?.option ?? 'title_asc');
   const favoritesFirst = $derived(sort?.favorites_first ?? true);
 </script>
@@ -32,7 +34,7 @@
 </div>
 
 <style>
-  .sort { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-muted); }
+  .sort { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; max-width: 100%; font-size: 12.5px; color: var(--text-muted); }
   label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
   .label { color: var(--text-faint); }
   select {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The shell (UX workstream 1, Android parity Task 5): search screen, `>` actions, Settings › Breach checks. -->
+<resources>
+    <string name="search_recent_searches">Ostatnie wyszukiwania</string>
+    <string name="search_recent_items">Ostatnie elementy</string>
+    <string name="search_again_hint">Wyszukuje ponownie</string>
+    <string name="cmd_security_check">Kontrola bezpieczeństwa</string>
+    <string name="cmd_sync_settings">Ustawienia synchronizacji</string>
+    <string name="settings_breach_title">Sprawdzanie wycieków</string>
+    <string name="settings_strict_offline">Ścisły tryb offline</string>
+    <string name="settings_allow_breach">Zezwól na sprawdzanie wycieków</string>
+    <string name="settings_breach_footer">%1$s Nic nie jest sprawdzane automatycznie; karta Bezpieczeństwo pyta za każdym razem.</string>
+</resources>

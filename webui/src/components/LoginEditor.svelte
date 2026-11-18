@@ -1,11 +1,14 @@
 <script>
   /** Website and desktop login editor. The draft lives in Python; every change is sent with login_update. */
+  import { dialog } from '../lib/dialog.js';
   import { call } from '../lib/api.js';
   import { formatNumber, t } from '../lib/i18n.svelte.js';
-  import { okOrToast } from '../lib/toast.js';
+  import { okOrToast, toast } from '../lib/toast.js';
   import { readPicture } from '../lib/picture.js';
   import Button from './Button.svelte';
   import QrCameraView from './QrCameraView.svelte';
+  import AgentExposureNotice from './AgentExposureNotice.svelte';
+  import Generator from './Generator.svelte';
 
   // draft: an editor the Scan sheet already opened in Python (with a scanned 2FA key applied).
   let { ref = null, draft = null, newPassword = false, onclose, onbinding = undefined } = $props();
@@ -16,6 +19,15 @@
   let totp = $state('');
   let changingPassword = $state(false);
   let banner = $state('');
+  // Change-password assistant: offer to copy the new password; it is copied only when the person clicks.
+  let offerCopy = $state(false);
+  // The full generator, opened from the password field; "Use this password" puts its value in the draft.
+  let generatorOpen = $state(false);
+  async function useGenerated(value) {
+    await change({ password: value });
+    changingPassword = false;
+    password = '';
+  }
 
   $effect(() => {
     (async () => {
@@ -26,6 +38,7 @@
         // From Password health: a new password is ready; the user still changes it on the website.
         await regenerate('Random');
         banner = t('loginEditor.newPasswordReady');
+        offerCopy = true;
       }
     })();
   });
@@ -51,6 +64,20 @@
   async function regenerate(chip) {
     const result = await call('login_regenerate', view.draft_id, chip);
     if (result.ok) { view = result; changingPassword = false; password = ''; }
+  }
+
+  // "Exposed to an AI agent" offers the change-password assistant, as Password health does.
+  async function changeExposed(id) {
+    const page = await call('change_password_open', id);
+    if (page.ok && page.note) toast(page.note);
+    await regenerate('Random');
+    banner = t('loginEditor.newPasswordReady');
+    offerCopy = true;
+  }
+
+  async function copyNew() {
+    const result = await call('login_copy_password', view.draft_id);
+    if (okOrToast(result)) { toast(result.message); offerCopy = false; }
   }
 
   async function save() {
@@ -184,12 +211,14 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label={heading} tabindex="-1" onkeydown={keys} onpaste={pasted} ondragover={dragover} ondrop={dropped}>
+<div class="sheet glass" role="dialog" aria-modal="true" use:dialog aria-label={heading} tabindex="-1" onkeydown={keys} onpaste={pasted} ondragover={dragover} ondrop={dropped}>
   {#if view}
     <header>
       <h2>{heading}</h2>
       <span class="state">{banner || (view.dirty ? t('loginEditor.unsaved') : t('loginEditor.notSaved'))}</span>
+      {#if offerCopy && view.password_set}<Button label={t('changePassword.copyNew')} onclick={copyNew} />{/if}
     </header>
+    {#if ref?.id && !view.is_new}<AgentExposureNotice id={ref.id} onchangepassword={changeExposed} />{/if}
     <div class="group">
       <label class="field"><span class="k">{t('loginEditor.title')}</span>
         <input value={view.label} placeholder={view.label_hint} oninput={(e) => change({ label: e.currentTarget.value })} />
@@ -223,6 +252,7 @@
         {#each [['Passphrase', 'loginEditor.chipPassphrase'], ['Random', 'loginEditor.chipRandom'], ['PIN', 'loginEditor.chipPin']] as [chip, chipLabel] (chip)}
           <button class="chip" onclick={() => regenerate(chip)}>{t(chipLabel)}</button>
         {/each}
+        <button class="chip" onclick={() => (generatorOpen = true)}>{t('loginEditor.openGenerator')}</button>
         {#if view.strength}<span class="strength">{view.strength.label} · {view.strength.reuse_text}</span>{/if}
       </div>
       {#if shownErrors && errorFor('password')}<p class="error">{errorFor('password')}</p>{/if}
@@ -271,12 +301,14 @@
     </div>
 
     <footer>
+      <span class="keys" aria-hidden="true">{t('loginEditor.keysHint')}</span>
       <Button label={t('common.cancel')} onclick={cancel} />
       <Button label={t('loginEditor.save')} variant="primary" busy={busy} busyLabel={t('loginEditor.saving')} onclick={save} />
     </footer>
   {/if}
 </div>
 {#if scanning === 'camera'}<QrCameraView />{/if}
+{#if generatorOpen}<Generator onclose={() => (generatorOpen = false)} onuse={useGenerated} />{/if}
 
 <style>
   .sheet {
@@ -310,5 +342,6 @@
   .error { margin: 0; padding: 0 14px 8px; color: var(--danger); font-size: 12.5px; }
   .hint { margin: 0; padding: 4px 14px 8px; color: var(--text-muted); font-size: 12px; }
   select { background: var(--group); border: 1px solid var(--glass-border); border-radius: 6px; padding: 3px 6px; flex: 1; }
-  footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  footer { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px; }
+  .keys { margin-right: auto; color: var(--text-muted); font-size: 12px; }
 </style>

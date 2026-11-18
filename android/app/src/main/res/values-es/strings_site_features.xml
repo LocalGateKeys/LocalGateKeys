@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">No es HTTPS</string>
+    <string name="security_expl_http">Estos inicios de sesión usan una dirección sin cifrar. Revísala y cambia a https:// si el sitio lo admite.</string>
+    <string name="security_cat_passkey">Clave de acceso disponible</string>
+    <string name="security_expl_passkey">Estos sitios admiten claves de acceso, una forma más segura de iniciar sesión. Guarda una para cada uno.</string>
+</resources>

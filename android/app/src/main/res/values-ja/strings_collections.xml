@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">コレクション</string>
+    <string name="collections_none">コレクションはまだありません。</string>
+    <string name="collections_footer">メモ、カード、その他の種類の項目はコレクションに追加できます。ログイン情報は追加できません。</string>
+    <string name="collections_add_starters">初期コレクションを追加</string>
+    <string name="collections_new">新しいコレクション</string>
+    <string name="collections_name">名前</string>
+    <string name="collections_create">作成</string>
+    <string name="collections_delete_title">コレクションを削除しますか?</string>
+    <string name="collections_delete_message">中の項目は保持されます。</string>
+    <string name="collections_view_only">閲覧のみ</string>
+    <string name="collections_shared">共有中</string>
+    <string name="collections_picker_footer">1 つの項目は最大 20 個のコレクションに入れられます。</string>
+    <string name="collections_all_items">すべての項目</string>
+    <string name="collections_manage">コレクションを管理</string>
+    <string name="collections_filter">コレクション: %1$s</string>
+    <string name="collections_filter_clear">すべての項目を表示</string>
+    <string name="collections_filter_empty">このコレクションには項目がありません。</string>
+    <string name="collections_read_only_item">この項目は閲覧のみで共有されたコレクションにあるため、このデバイスでは変更できません。</string>
+    <string name="collections_read_only">このコレクションは閲覧のみで共有されているため、このデバイスでは変更できません。</string>
+    <string name="collections_shared_delete">共有コレクションは削除できません。先に共有を停止するか、コレクションから退出してください。</string>
+    <string name="collections_limit">コレクションは最大 500 個までです。</string>
+    <string name="collections_not_member">ログイン情報と書類はコレクションに追加できません。</string>
+    <string name="collections_bad_name">この名前は使用できません。</string>
+    <string name="collections_gone">そのコレクションはもう存在しません。</string>
+    <string name="collections_failed">コレクションを変更できませんでした。</string>
+    <string name="collections_empty_name">コレクションの名前を入力してください。</string>
+    <string name="collections_long_name">コレクション名は100文字までです。</string>
+    <string name="collections_duplicate">この名前のコレクションはすでにあります。</string>
+    <string name="collections_too_many">1つの項目を入れられるコレクションは最大20個です。</string>
+    <string name="collections_read_failed">保管庫をこのデバイスで読み取れませんでした。</string>
+    <string name="collection_starter_personal">個人</string>
+    <string name="collection_starter_work">仕事</string>
+    <string name="collection_starter_travel">旅行</string>
+    <string name="collection_starter_emergency">緊急</string>
+</resources>

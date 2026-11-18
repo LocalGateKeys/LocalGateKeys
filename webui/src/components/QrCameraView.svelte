@@ -1,6 +1,7 @@
 <script>
   /** Live camera preview while a 2FA QR code is read, driven by qr.status / qr.frame events.
    *  Frames exist only in this page's memory; nothing is saved. */
+  import { dialog } from '../lib/dialog.js';
   import { t } from '../lib/i18n.svelte.js';
   import { call, on } from '../lib/api.js';
   import Button from './Button.svelte';
@@ -20,7 +21,7 @@
 </script>
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={t('cameraView.qrTitle')}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog={{ onescape: () => call('qr_cancel') }} aria-label={t('cameraView.qrTitle')}>
     <h2>{t('cameraView.qrTitle')}</h2>
     <div class="preview">
       {#if image}<img src={image} alt="" />{/if}

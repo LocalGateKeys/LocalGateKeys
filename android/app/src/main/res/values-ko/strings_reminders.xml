@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">알림 시점입니다</string>
+    <string name="reminder_named_body">%1$s 알림 시점입니다</string>
+    <string name="reminder_save_failed">이 휴대폰에 미리 알림을 저장할 수 없었습니다.</string>
+    <string name="reminder_channel_name">알림</string>
+    <string name="reminder_section">미리 알림</string>
+    <string name="reminder_due">기한</string>
+    <string name="reminder_remind_me">알림 받기</string>
+    <string name="reminder_change">미리 알림 변경</string>
+    <string name="reminder_remove">미리 알림 제거</string>
+    <string name="reminder_add">미리 알림 추가</string>
+    <string name="reminder_suggest_button">만료 전에 알림</string>
+    <string name="reminder_card_expires">이 카드는 %1$s에 만료됩니다.</string>
+    <string name="reminder_due_date">기한 날짜</string>
+    <string name="reminder_on_the_day">당일</string>
+    <string name="reminder_upcoming">예정</string>
+    <string name="reminder_nothing_upcoming">앞으로 30일 동안 예정된 항목이 없습니다.</string>
+    <string name="reminder_overdue_due">기한 지남 · 기한 %1$s</string>
+    <string name="reminder_due_on">%1$s까지</string>
+    <string name="reminder_snooze">다시 알림</string>
+    <string name="reminder_snooze_day">하루 뒤에 다시 알림</string>
+    <string name="reminder_notifications_off">LocalGateKeys의 알림이 꺼져 있습니다. 미리 알림은 여기에 계속 표시됩니다.</string>
+    <string name="reminder_settings_title">알림</string>
+    <string name="reminder_show_names">알림에 항목 이름 표시</string>
+    <string name="reminder_settings_footer">카드, 문서 또는 구독에 대한 미리 알림을 추가합니다. 끄면 알림에 “알림 시점입니다”라고만 표시되어 항목에 관한 내용이 잠금 화면에 나타나지 않습니다. 켜면 휴대전화의 잠금 화면 알림 설정에 따라 항목 이름이 잠금 화면에도 표시될 수 있습니다.</string>
+    <string name="reminder_editor_footer">해당 날짜 오전 9:00에 알림이 옵니다. 설정 › 미리 알림에서 항목 이름을 표시하도록 하지 않으면 “알림 시점입니다”라고만 표시됩니다. 미리 알림은 이 휴대폰에만 남으며 동기화되지 않습니다.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="other">%1$d일 전</item>
+    </plurals>
+</resources>

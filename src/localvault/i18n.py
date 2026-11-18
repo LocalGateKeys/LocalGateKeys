@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-SUPPORTED: tuple[str, ...] = ("en", "es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl")
+SUPPORTED: tuple[str, ...] = ("en", "es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl", "fr")
 PSEUDO = "en-XA"
 CATALOG_DIR = Path(__file__).parent / "assets" / "i18n"
 
@@ -99,7 +99,7 @@ def plural_category(code: str, n: int) -> str:
         if n % 10 in (2, 3, 4) and n % 100 not in (12, 13, 14):
             return "few"
         return "many"
-    if code == "pt-BR":
+    if code in ("pt-BR", "fr"):
         return "one" if n in (0, 1) else "other"
     return "one" if n == 1 else "other"
 

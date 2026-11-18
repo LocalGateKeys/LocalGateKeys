@@ -135,13 +135,17 @@
     "message": "저장되었습니다. 다음에 LocalGateKeys를 열면 표시됩니다."
   },
   "bg_timeout": {
-    "message": "LocalGateKeys 브리지가 응답하지 않았습니다. 오래된 데스크톱 프롬프트를 닫고 다시 시도하세요."
+    "message": "LocalGateKeys에서 승인 시간이 초과되었습니다. 열려 있는 LocalGateKeys 확인 창을 닫고 다시 시도하세요."
   },
   "content_autosignin_skipped": {
     "message": "채웠습니다. 이 양식이 지원되지 않거나 모호하여 자동 로그인을 건너뛰었습니다. 직접 로그인하세요."
   },
   "content_cancel": {
     "message": "취소"
+  },
+  "panel_fill_login": {
+    "message": "채우기",
+    "description": "Button on the right of a login row in the in-page picker; fills that login."
   },
   "content_card": {
     "message": "카드"
@@ -234,6 +238,12 @@
   },
   "content_err_not_found": {
     "message": "이 사이트에 저장된 로그인이 없습니다."
+  },
+  "content_err_entry_required": {
+    "message": "이 비밀번호를 적용할 저장된 로그인을 선택하세요. 사용자 이름이 없는 비밀번호는 새 로그인으로 저장되지 않습니다."
+  },
+  "content_err_entry_not_for_site": {
+    "message": "그 로그인은 이 사이트용으로 저장되어 있지 않아 비밀번호가 변경되지 않았습니다."
   },
   "content_err_session_changed": {
     "message": "보관함/프로필이 변경되었습니다. 아이콘을 다시 클릭하세요."
@@ -363,6 +373,9 @@
   "content_signin_question": {
     "message": "방금 로그인하셨나요?"
   },
+  "content_frame_blocked": {
+    "message": "이 페이지가 LocalGateKeys 패널을 차단해서 아무것도 입력되지 않았습니다. 대신 브라우저 도구 모음의 LocalGateKeys 버튼을 사용하세요."
+  },
   "content_tampered": {
     "message": "이 페이지가 LocalGateKeys 버튼을 숨기거나 옮기거나 가려서 클릭이 무시되었습니다."
   },
@@ -454,7 +467,7 @@
     "message": "Windows용 비밀번호 관리자 LocalGateKeys로 로그인을 채우고 저장합니다. 확장 프로그램은 사용자의 PC에 있는 앱과만 통신합니다."
   },
   "ext_description_ios": {
-    "message": "Safari에서 로그인한 로그인을 이 iPhone의 LocalGateKeys에 저장하도록 제안합니다."
+    "message": "Safari에서 로그인한 로그인을 이 기기의 LocalGateKeys에 저장하도록 제안합니다."
   },
   "ext_description_macos": {
     "message": "Safari에서 로그인한 로그인을 이 Mac의 LocalGateKeys에 저장하도록 제안합니다."
@@ -491,9 +504,6 @@
   },
   "popup_auto_update_failed": {
     "message": "이 사이트의 자동 저장을 업데이트할 수 없습니다. 다시 시도하세요."
-  },
-  "popup_checking_connection": {
-    "message": "연결 확인 중…"
   },
   "popup_checking_connection_desc": {
     "message": "보관함을 잠금 해제하지 않고 LocalGateKeys에 연결하는 중입니다."
@@ -554,9 +564,6 @@
       }
     }
   },
-  "popup_current_site": {
-    "message": "현재 사이트"
-  },
   "popup_diag_agent_offline": {
     "message": "LocalGateKeys를 열고 브라우저 연결을 복구한 다음 다시 시도하세요."
   },
@@ -597,7 +604,7 @@
     "message": "현재 로그인 필드를 찾을 수 없습니다. 로그인 정보를 입력한 다음 다시 시도하세요."
   },
   "popup_fill_card": {
-    "message": "카드 채우기…"
+    "message": "카드 채우기"
   },
   "popup_fill_card_desc": {
     "message": "카드를 선택하고 필드를 체크한 다음 앱에서 확인"
@@ -629,26 +636,8 @@
   "popup_generate_password_desc": {
     "message": "가입용 비밀번호 만들기"
   },
-  "popup_guidance_checking": {
-    "message": "이 페이지의 작업을 사용하기 전에 LocalGateKeys를 확인하는 중입니다."
-  },
-  "popup_guidance_connected": {
-    "message": "이 사이트의 출처만 확인합니다. 작업을 선택하기 전에는 아무것도 채워지지 않습니다."
-  },
-  "popup_guidance_locked": {
-    "message": "작업을 선택하면 잠금 해제를 요청합니다. 자동으로 채워지는 것은 없습니다."
-  },
-  "popup_guidance_offline": {
-    "message": "이 사이트의 작업을 사용하려면 LocalGateKeys에 다시 연결하세요."
-  },
-  "popup_guidance_setup": {
-    "message": "이 사이트의 작업을 사용하기 전에 LocalGateKeys 설정을 마치세요."
-  },
   "popup_integration_disabled": {
     "message": "브라우저 통합이 일시 중지되었습니다. LocalGateKeys 설정에서 다시 켜세요."
-  },
-  "popup_local_vault": {
-    "message": "로컬 보관함"
   },
   "popup_locked_desc": {
     "message": "계속하려면 작업을 선택하세요. 데스크톱 앱이 잠금 해제 전에 확인합니다."
@@ -660,9 +649,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_manual_by_design": {
-    "message": "설계상 수동"
   },
   "popup_need_login_page": {
     "message": "먼저 로그인 양식이 있는 http 또는 https 페이지를 여세요."
@@ -676,9 +662,6 @@
   "popup_page_unreachable": {
     "message": "이 페이지에 연결할 수 없습니다. 페이지를 새로 고치고 다시 시도하세요."
   },
-  "popup_quick_actions": {
-    "message": "빠른 작업"
-  },
   "popup_ready_version": {
     "message": "LocalGateKeys가 준비되었습니다$VERSION$. 작업을 선택하기 전에는 아무것도 잠금 해제되지 않습니다.",
     "placeholders": {
@@ -686,9 +669,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_refresh_connection": {
-    "message": "연결 상태 새로 고침"
   },
   "popup_refreshed_locked": {
     "message": "연결을 새로 고쳤습니다. 작업을 선택한 후에만 잠금 해제됩니다."
@@ -700,16 +680,13 @@
     "message": "연결을 새로 고쳤습니다. LocalGateKeys 설정을 마친 다음 새로 고치세요."
   },
   "popup_save_login": {
-    "message": "로그인 저장"
+    "message": "이 로그인 저장"
   },
   "popup_save_login_desc": {
     "message": "이 로그인 필드 저장"
   },
   "popup_setup_desc": {
     "message": "LocalGateKeys가 준비된 브라우저 프로필을 보고하지 않았습니다. 설정을 마친 다음 새로 고치세요."
-  },
-  "popup_site_hint": {
-    "message": "작업은 이 페이지에서만 이루어지며 사용자의 선택이 필요합니다."
   },
   "popup_started": {
     "message": "$ACTION$이(가) 이 페이지에서 시작되었습니다.",
@@ -719,9 +696,6 @@
       }
     }
   },
-  "popup_state_connected": {
-    "message": "연결됨"
-  },
   "popup_state_locked": {
     "message": "잠금됨"
   },
@@ -730,12 +704,6 @@
   },
   "popup_state_setup": {
     "message": "설정 필요"
-  },
-  "popup_tagline": {
-    "message": "당신의 키, 당신의 통제."
-  },
-  "popup_this_page": {
-    "message": "이 페이지"
   },
   "popup_unlock_on_action": {
     "message": "잠금 해제는 필드 작업을 선택한 후에만 요청됩니다."
@@ -750,5 +718,295 @@
   },
   "popup_wait_checking": {
     "message": "LocalGateKeys를 아직 확인하는 중입니다. 연결 상태를 기다린 다음 다시 시도하세요."
+  },
+  "content_generate_password": {
+    "message": "비밀번호 생성"
+  },
+  "content_generate_title": {
+    "message": "강력한 비밀번호 생성"
+  },
+  "content_generate_body": {
+    "message": "이 양식의 새 비밀번호 필드에 강력한 비밀번호를 입력합니다."
+  },
+  "gen_title": {
+    "message": "비밀번호 생성기"
+  },
+  "gen_mode_password": {
+    "message": "비밀번호"
+  },
+  "gen_mode_passphrase": {
+    "message": "패스프레이즈"
+  },
+  "gen_new": {
+    "message": "새로 만들기"
+  },
+  "gen_length": {
+    "message": "길이"
+  },
+  "gen_avoid_ambiguous": {
+    "message": "헷갈리는 문자 제외 (l, 1, O, 0)"
+  },
+  "gen_words": {
+    "message": "단어 수"
+  },
+  "gen_separator": {
+    "message": "구분자"
+  },
+  "gen_sep_space": {
+    "message": "공백"
+  },
+  "gen_sep_none": {
+    "message": "없음"
+  },
+  "gen_capitalize": {
+    "message": "첫 글자 대문자"
+  },
+  "gen_add_number": {
+    "message": "숫자 추가"
+  },
+  "gen_copy": {
+    "message": "복사"
+  },
+  "gen_fill": {
+    "message": "페이지에 채우기"
+  },
+  "gen_copy_failed": {
+    "message": "복사하지 못했습니다. 텍스트를 선택해 복사하세요."
+  },
+  "gen_pick_group": {
+    "message": "문자 종류를 하나 이상 선택하세요."
+  },
+  "site_verified": {
+    "message": "확인된 사이트"
+  },
+  "site_related": {
+    "message": "관련 사이트"
+  },
+  "site_lookalike": {
+    "message": "유사 사이트"
+  },
+  "site_new": {
+    "message": "새 사이트"
+  },
+  "content_guard_title": {
+    "message": "올바른 사이트인가요?"
+  },
+  "content_guard_body": {
+    "message": "$HOST$은(는) 로그인이 저장된 $SAVED$과(와) 비슷하지만 다른 사이트입니다. 확실한 경우에만 계속하세요.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_guard_body_mixed": {
+    "message": "$HOST$은(는) 서로 다른 문자 체계의 글자를 섞어 쓰며, 이는 흔한 피싱 수법입니다. 확실한 경우에만 계속하세요.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_continue": {
+    "message": "$HOST$에서 계속",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_go_back": {
+    "message": "뒤로 가기"
+  },
+  "content_same_account_title": {
+    "message": "$SAVED$과(와) 같은 계정인가요?",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_same_account_body": {
+    "message": "$HOST$은(는) 로그인이 저장된 $SAVED$과(와) 이름은 같지만 끝부분이 다릅니다. 같은 회사인 경우에만 계속하세요.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_same_account_yes": {
+    "message": "같은 계정"
+  },
+  "content_new_site_title": {
+    "message": "이 사용자 이름으로는 새 사이트입니다"
+  },
+  "content_new_site_body": {
+    "message": "이 사용자 이름은 다른 사이트용으로 저장했으며 $HOST$용으로는 저장한 적이 없습니다. 이 페이지가 비밀번호를 요청할 줄 몰랐다면 주소를 확인하세요.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_chip_unlocked": {
+    "message": "잠금 해제됨"
+  },
+  "popup_chip_checking": {
+    "message": "확인 중"
+  },
+  "popup_logins_heading": {
+    "message": "이 사이트의 로그인"
+  },
+  "popup_fill_button": {
+    "message": "채우기"
+  },
+  "popup_logins_note": {
+    "message": "이 사이트에 저장된 로그인은 이 팝업이 아니라 페이지에서 열립니다. Enter 키를 누르면 채웁니다."
+  },
+  "popup_unlock_button": {
+    "message": "데스크톱 앱에서 잠금 해제"
+  },
+  "popup_unlock_explain": {
+    "message": "잠금을 해제하기 전에는 아무것도 채우거나 표시하지 않습니다."
+  },
+  "popup_check_again": {
+    "message": "다시 확인"
+  },
+  "popup_auto_label": {
+    "message": "이 사이트에서 로그인 저장 여부 묻기"
+  },
+  "cmd_fill_login": {
+    "message": "이 페이지의 로그인 정보 채우기"
+  },
+  "content_use_toolbar": {
+    "message": "대신 브라우저 도구 모음의 LocalGateKeys 버튼을 사용하세요."
+  },
+  "content_username_label": {
+    "message": "사용자 이름"
+  },
+  "content_update_which": {
+    "message": "어떤 저장된 로그인을 업데이트할까요?"
+  },
+  "content_update_pw_title": {
+    "message": "저장된 비밀번호를 업데이트할까요?"
+  },
+  "content_update_pw_one": {
+    "message": "이 양식은 새 비밀번호를 설정했지만 사용자 이름 필드가 없습니다. 변경 내용은 데스크톱 앱에서 확인합니다."
+  },
+  "content_update_pw_many": {
+    "message": "이 양식은 새 비밀번호를 설정했지만 사용자 이름 필드가 없습니다. 해당하는 로그인을 선택하거나 '나중에'를 선택하세요."
+  },
+  "content_update_pw_none": {
+    "message": "LocalGateKeys에 지금 이 사이트에서 업데이트할 수 있는 저장된 로그인이 없습니다. 변경된 내용은 없습니다."
+  },
+  "content_update_pw_for": {
+    "message": "$NAME$의 비밀번호 업데이트",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_update_pw_action": {
+    "message": "업데이트"
+  },
+  "content_passkey_title": {
+    "message": "이 사이트는 패스키를 지원합니다"
+  },
+  "content_passkey_body": {
+    "message": "이 사이트의 계정 설정에서 패스키를 추가할 수 있습니다. LocalGateKeys는 비밀번호도 그대로 보관합니다. 사이트에서 직접 하지 않으면 아무것도 만들어지지 않습니다."
+  },
+  "content_passkey_never": {
+    "message": "이 사이트에서는 묻지 않기"
+  },
+  "popup_site_logins_note": {
+    "message": "로그인을 선택하면 페이지에 입력됩니다. 비밀번호는 여기에 표시되지 않습니다."
+  },
+  "popup_site_logins_empty": {
+    "message": "이 사이트에 저장된 로그인이 아직 없습니다."
+  },
+  "popup_popup_only_label": {
+    "message": "이 사이트에서는 항상 이 팝업 사용"
+  },
+  "popup_popup_only_on_hint": {
+    "message": "켜짐: 이 사이트 페이지에 LocalGateKeys 아이콘이나 메뉴가 없으며 여기서 입력합니다"
+  },
+  "popup_popup_only_off_hint": {
+    "message": "꺼짐: 이 사이트의 로그인 필드 옆에 아이콘과 메뉴가 표시됩니다"
+  },
+  "popup_why_no_icon": {
+    "message": "페이지에 아이콘이 없는 이유는 무엇인가요?"
+  },
+  "popup_why_no_icon_text": {
+    "message": "로그인 양식이 다른 사이트의 프레임 안에 있거나, 비밀번호를 다른 사이트로 보내거나, 숨겨져 있거나, 이 사이트에서 아이콘이 꺼져 있으면 LocalGateKeys는 아이콘을 표시하지 않습니다. 이 사이트 자체 양식에서는 이 팝업으로 입력할 수 있습니다."
+  },
+  "popup_frame_origin": {
+    "message": "이 페이지에 $ORIGIN$의 로그인 프레임이 있습니다. LocalGateKeys는 여기서 다른 사이트의 프레임을 채우지 않습니다.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_clears": {
+    "message": "복사했습니다. 이 팝업을 열어 두면 $SECONDS$초 후 클립보드가 지워집니다.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_cleared": {
+    "message": "클립보드를 지웠습니다."
+  },
+  "safari_popup_fill_title": {
+    "message": "이 로그인 채우기"
+  },
+  "safari_popup_fill_body": {
+    "message": "이메일 또는 암호 입력란을 클릭한 다음 Safari가 보여 주는 목록에서 LocalGateKeys의 로그인을 선택하세요."
+  },
+  "safari_popup_offer_save": {
+    "message": "이 사이트에서 로그인 저장 제안"
+  },
+  "safari_popup_waiting_one": {
+    "message": "검토 대기 중인 로그인 1개"
+  },
+  "safari_popup_waiting_many": {
+    "message": "검토 대기 중인 로그인 $COUNT$개",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "safari_popup_waiting_when": {
+    "message": "다음 잠금 해제 시"
+  },
+  "safari_popup_open_app": {
+    "message": "LocalGateKeys 열기"
+  },
+  "safari_popup_open_failed": {
+    "message": "LocalGateKeys를 열 수 없습니다. 응용 프로그램 폴더에서 여세요."
+  },
+  "safari_popup_footer": {
+    "message": "암호는 앱 안에 머뭅니다. 이 버튼은 암호를 볼 수 없습니다."
+  },
+  "safari_popup_no_site": {
+    "message": "이 탭에 웹사이트가 없습니다"
+  },
+  "safari_popup_not_allowed": {
+    "message": "이 사이트에서는 아직 LocalGateKeys가 허용되지 않았습니다. Safari의 확장 프로그램 설정에서 허용하세요."
+  },
+  "safari_popup_offer_save_full": {
+    "message": "저장 요청이 이미 2,000개 사이트에서 꺼져 있으며, 이는 LocalGateKeys가 보관하는 최대치입니다. 먼저 더 이상 사용하지 않는 사이트에서 다시 켜세요."
+  },
+  "safari_popup_loading": {
+    "message": "불러오는 중…"
   }
 }

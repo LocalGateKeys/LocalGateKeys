@@ -42,9 +42,15 @@ final class ActivityRecorder {
         case reminderCreate = "reminder.create", reminderUpdate = "reminder.update", reminderComplete = "reminder.complete"
         case reminderSnooze = "reminder.snooze", reminderDelete = "reminder.delete"
         case collectionCreate = "collection.create", collectionUpdate = "collection.update", collectionDelete = "collection.delete"
+        /// AI agents (`lgk mcp`, Windows `agent_gate.py`): listing, a sign-in request, a fill.
+        case agentSearch = "agent.search", agentRequest = "agent.request", agentFill = "agent.fill"
     }
 
-    enum Result: String, Sendable { case ok, deleted, failed, cancelled }
+    enum Result: String, Sendable {
+        case ok, deleted, failed, cancelled
+        /// Agent events: refused, locked, no such login, the browser never took it, the user picks on the page.
+        case denied, locked, notFound = "not_found", skipped, open
+    }
 
     private weak var host: (any LocalDataHosting)?
     private let clock: () -> Date
@@ -60,7 +66,9 @@ final class ActivityRecorder {
         guard let host, var data = host.localData else { return }
         let now = Int64(clock().timeIntervalSince1970)
         let item = itemID.flatMap { UUID(uuidString: $0) != nil ? $0.lowercased() : nil }
-        data.events.append(LocalData.ActivityEvent(id: newID(), eventType: event.rawValue, timestamp: now, itemID: item,
+        // Trim first, so the new event links to what is kept (or to the checkpoint pruning just left).
+        data.trimEvents(now: now)
+        data.appendChained(LocalData.ActivityEvent(id: newID(), eventType: event.rawValue, timestamp: now, itemID: item,
                                                    result: result.rawValue, count: Int64(max(0, min(count, Int(Int32.max))))))
         data.trimEvents(now: now)
         try? host.commitLocalData(data)

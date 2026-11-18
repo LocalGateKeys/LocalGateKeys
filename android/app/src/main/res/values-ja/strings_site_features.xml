@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">HTTPSではありません</string>
+    <string name="security_expl_http">これらのログインは暗号化されていないアドレスを使っています。確認し、サイトが対応していればhttps://に切り替えてください。</string>
+    <string name="security_cat_passkey">パスキーが利用可能</string>
+    <string name="security_expl_passkey">これらのサイトはより安全なサインイン方法であるパスキーに対応しています。それぞれ保存してください。</string>
+</resources>

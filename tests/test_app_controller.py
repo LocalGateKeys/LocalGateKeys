@@ -100,14 +100,14 @@ def test_concurrent_unlock_second_is_busy(env, monkeypatch):
     controller.create(PASSWORD, PASSWORD)
     controller.lock()
     release, entered = threading.Event(), threading.Event()
-    real_unlock = __import__("localvault.app.controller", fromlist=["unlock_vault"]).unlock_vault
+    real_unlock = __import__("localvault.duress", fromlist=["unlock_vault"]).unlock_vault
 
     def slow_unlock(*args, **kwargs):
         entered.set()
         release.wait(5)
         return real_unlock(*args, **kwargs)
 
-    monkeypatch.setattr("localvault.app.controller.unlock_vault", slow_unlock)
+    monkeypatch.setattr("localvault.duress.unlock_vault", slow_unlock)
     first = threading.Thread(target=lambda: controller.unlock(PASSWORD))
     first.start()
     assert entered.wait(5)
@@ -221,7 +221,7 @@ def test_unlock_warns_when_rollback_protection_was_reset(env, monkeypatch):
     profiles.ensure_profile()
     controller.create(PASSWORD, PASSWORD)
     controller.lock()
-    import localvault.app.controller as controller_module
+    import localvault.duress as controller_module  # the unlock screen's call (sub-plan 08)
     real = controller_module.unlock_vault
 
     def unlock_without_anchor(*args, **kwargs):

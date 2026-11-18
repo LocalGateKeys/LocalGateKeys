@@ -15,7 +15,14 @@ class EnglishTxt(stringsXml: File = defaultFile()) : Txt {
     private val plurals = HashMap<String, Map<String, String>>()
 
     init {
-        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(stringsXml)
+        // strings.xml and the per-feature strings_<feature>.xml files beside it.
+        val files = listOf(stringsXml) + (stringsXml.parentFile.listFiles { f -> f != stringsXml && f.name.startsWith("strings_") && f.name.endsWith(".xml") } ?: emptyArray())
+            .sortedBy { it.name }
+        for (file in files) load(file)
+    }
+
+    private fun load(file: File) {
+        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
         val root = doc.documentElement.childNodes
         for (i in 0 until root.length) {
             val e = root.item(i) as? Element ?: continue

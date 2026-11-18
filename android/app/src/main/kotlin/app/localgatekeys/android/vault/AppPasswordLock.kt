@@ -6,6 +6,7 @@ import app.localgatekeys.core.crypto.AppPasswordException
 import app.localgatekeys.core.crypto.AppPasswordRecord
 import app.localgatekeys.core.crypto.Argon2
 import app.localgatekeys.core.crypto.Argon2id
+import app.localgatekeys.core.crypto.FactorSpec
 import app.localgatekeys.core.crypto.RecoveryPhraseException
 import app.localgatekeys.core.primitives.Hex
 import app.localgatekeys.core.primitives.RandomSource
@@ -117,8 +118,30 @@ class AppPasswordLock(
         )
     }
 
-    /** The local key (caller zeroes it). Counts a wrong password; refuses during the delay. */
-    fun unwrapPassword(password: ByteArray): ByteArray = counted { record().unwrapWithPassword(password, argon()) }
+    /**
+     * The key file / YubiKey the app password needs (empty: none, or no readable password file). Public data: read for
+     * the unlock screen and Settings.
+     */
+    fun factors(): List<FactorSpec> {
+        val file = files.record
+        if (!file.exists()) return emptyList()
+        // Asked on the main thread (the unlock screen, the sheets): decoded once per change of the file.
+        val stamp = file.lastModified() to file.length()
+        factorCache?.let { (s, list) -> if (s == stamp) return list }
+        val list = try { record().factors } catch (e: Exception) { emptyList() }
+        factorCache = stamp to list
+        return list
+    }
+
+    /** [factors] for the file stamp (modified time, length) it was read at; cleared by every write here. */
+    @Volatile private var factorCache: Pair<Pair<Long, Long>, List<FactorSpec>>? = null
+
+    /**
+     * The local key (caller zeroes it). Counts a wrong password; refuses during the delay. With factors, [secrets] holds
+     * their secrets in list order; a missing or wrong factor is thrown before Argon2id and never counted.
+     */
+    fun unwrapPassword(password: ByteArray, secrets: List<ByteArray> = emptyList()): ByteArray =
+        counted { record().unwrapWithPassword(password, argon(), secrets) }
 
     /** The local key from the recovery phrase (caller zeroes it); a wrong phrase counts like a wrong password. */
     fun unwrapPhrase(phrase: String): ByteArray = counted { record().unwrapWithPhrase(phrase) }
@@ -139,6 +162,30 @@ class AppPasswordLock(
         }
     }
 
+    /**
+     * Duress password (sub-plan 08): a wrong try that did not go through [unwrapPassword] or [unwrapPhrase] (the real
+     * vault is held, so a right password is refused as wrong and counted).
+     */
+    fun noteWrongTry() = noteFailure()
+
+    /** The wrong-try count now (read before a counted try whose success must not reset it: the held vault). */
+    fun failureCount(): Int = attempts.failures
+
+    /**
+     * Held vault (sub-plan 08, iPhone review I1): a right password or phrase was refused as wrong after its counted try
+     * reset the count; the count goes back to [previous] and this try is added, so the delay grows exactly as for a
+     * wrong guess.
+     */
+    fun noteWrongTryAfter(previous: Int) {
+        attempts.failures = previous
+        noteFailure()
+    }
+
+    /** Duress password: an unlock of the second vault resets the count like any success (no tell-tale back-off). */
+    fun clearFailures() {
+        if (attempts.failures != 0) attempts.failures = 0
+    }
+
     private fun noteFailure() {
         attempts.lastFailureAt = clock.now
         attempts.lastFailureElapsed = bootClock.elapsed
@@ -146,7 +193,11 @@ class AppPasswordLock(
         attempts.failures = attempts.failures + 1
     }
 
-    fun write(record: AppPasswordRecord) = writeFileAtomically(files.record, record.encode(), random)
+    fun write(record: AppPasswordRecord) {
+        factorCache = null
+        writeFileAtomically(files.record, record.encode(), random)
+        factorCache = null
+    }
 
     /** Biometric shortcut, step 1: a fresh biometric-only key and the cipher the prompt must authorise. */
     fun prepareBiometric(): Cipher {
@@ -175,6 +226,7 @@ class AppPasswordLock(
 
     /** Erase and turn-off: the shortcut, then the record. True when everything is gone. */
     fun deleteAll(): Boolean {
+        factorCache = null
         var ok = true
         try { removeBiometric() } catch (e: Exception) { ok = false }
         if (files.bioWrapped.exists()) ok = false

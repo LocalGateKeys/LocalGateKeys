@@ -16,7 +16,8 @@ import pytest
 from localvault.session_guard import StaleSession
 from localvault.sync import folder_transport as ft
 from localvault.sync import lan_sync as lan
-from localvault.sync import pairing
+from localvault.sync import pairing, seen
+from localvault.sync import transport as tr
 from localvault.sync.group import GroupKey, encode_view
 from localvault.sync.state import SyncState
 from localvault.sync.transport import (
@@ -310,6 +311,19 @@ def test_peer_synced_at_is_set_only_when_a_lan_merge_changed_records(devs) -> No
     assert set(b.state.peer_synced_at) == {a_id}
 
 
+def test_a_lan_sync_that_changed_nothing_still_counts_as_seen(devs) -> None:
+    a = devs("a", group=True)
+    _web(a, "mail")
+    b = devs("b")
+    _pair(a, b)
+    assert kinds(a.sync_with(b)) == []
+    seen.clear()
+    before = dict(b.state.peer_synced_at)
+    assert kinds(b.sync_with(a)) == []  # nothing new on either side
+    assert b.state.peer_synced_at == before, "the saved time is not rewritten"
+    assert a.state.device_id in seen.times(b.state.group_id)
+
+
 def test_phone_without_endpoint_always_initiates(devs) -> None:
     a = devs("a", group=True)
     phone = devs("phone")
@@ -370,7 +384,7 @@ def test_forged_or_missing_mac_is_rejected_and_counted(devs) -> None:
     ident = pairing.DeviceIdentity.generate()
     transcript = pairing.enrollment_transcript(offer, ident.device_id, ident.signing_public_key,
                                                ident.exchange_public_key, None, "Test PC")
-    body = {"version": 2, "offer_id": offer.offer_id, "device_id": ident.device_id,
+    body = {"version": pairing.enroll_version(offer), "offer_id": offer.offer_id, "device_id": ident.device_id,
             "signing_public": pairing._b64e(ident.signing_public_key),
             "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None, "name": "Test PC",
             "signature": pairing._b64e(ident.sign(pairing._SIG_LABEL + transcript))}
@@ -442,13 +456,15 @@ def test_reply_must_pin_this_device(devs) -> None:
                                            pairing.build_enrollment_request(offer, other, now=NOW), now=NOW)
     st = a.state
     reply = pairing.seal_enrollment_reply(st.identity(), offer, req, st.group_id, st.epoch, st.key)
-    assert pairing.open_enrollment_reply(offer, other, reply)[2] == st.key
+    assert pairing.open_enrollment_reply(offer, other, reply, reveal=offer.reveal)[2] == st.key
+    with pytest.raises(pairing.PairingAuthenticationError):  # no reveal (a version-2 offer): refused
+        pairing.open_enrollment_reply(offer, other, reply)
     with pytest.raises(pairing.PairingError):
-        pairing.open_enrollment_reply(offer, me, reply)
+        pairing.open_enrollment_reply(offer, me, reply, reveal=offer.reveal)
     forged = pairing.seal_enrollment_reply(pairing.DeviceIdentity.generate(), offer, req, st.group_id,
                                            st.epoch, st.key)
     with pytest.raises(pairing.PairingAuthenticationError):  # not signed by the QR-pinned inviter
-        pairing.open_enrollment_reply(offer, other, forged)
+        pairing.open_enrollment_reply(offer, other, forged, reveal=offer.reveal)
 
 
 # --- refusals -------------------------------------------------------------------------------
@@ -502,10 +518,14 @@ def test_removed_lan_peer_is_refused(devs) -> None:
     a.sync_with(b)
     record = _peer_record(b, a)
     assert lan.remove_lan_peer(a.session, a.lease, b.device_id, install_id=a.install, transport=a.transport)
-    assert lan.peer_entry(a.state, b.device_id) is None
+    # The entry stays listed as revoked (its id stays reserved), as on the iPhone, Mac and Android.
+    assert lan.peer_entry(a.state, b.device_id)["revoked"] is True
     assert kinds(b.sync_with(a)) == ["unreachable"]
-    assert _serve(a, record, _view_msg(b, b.device_id)) == {"type": "error", "reason": "unknown-peer"}
-    assert kinds(a.sync_with(b)) == ["unknown-peer"]
+    assert _serve(a, record, _view_msg(b, b.device_id)) == {"type": "error", "reason": "revoked"}
+    assert kinds(a.sync_with(b)) == ["peer-revoked"]
+    a.relisten()  # a restart: the revocation is read back from the vault
+    assert b.device_id in a.transport.state.revoked_devices
+    assert kinds(b.sync_with(a)) == ["unreachable"]
 
 
 def test_rotated_out_peer_is_dropped_and_never_gets_the_new_key(devs, tmp_path: Path) -> None:
@@ -791,7 +811,7 @@ def test_enrollment_cannot_take_over_an_existing_device_id(devs) -> None:
 def _body(offer: pairing.PairingOffer, ident: pairing.DeviceIdentity, name: str = "Test PC") -> dict:
     transcript = pairing.enrollment_transcript(offer, ident.device_id, ident.signing_public_key,
                                                ident.exchange_public_key, None, name)
-    return {"version": 2, "offer_id": offer.offer_id, "device_id": ident.device_id,
+    return {"version": pairing.enroll_version(offer), "offer_id": offer.offer_id, "device_id": ident.device_id,
             "signing_public": pairing._b64e(ident.signing_public_key),
             "exchange_public": pairing._b64e(ident.exchange_public_key), "endpoint": None, "name": name,
             "signature": pairing._b64e(ident.sign(pairing._SIG_LABEL + transcript)),
@@ -1090,7 +1110,7 @@ def test_an_old_version_peer_gets_update_needed_and_never_a_session(devs) -> Non
         while len(body) < int.from_bytes(header, "big"):
             body += sock.recv(4096)
     # A plain refusal naming the version this device speaks; no hello, no counter, no key.
-    assert body == tr.version_refusal() == b'{"refused":"version","version":2}'
+    assert body == tr.version_refusal() == b'{"refused":"version","version":3}'
     assert tr.parse_version_refusal(body) is None  # our own version is not a mismatch
     assert a.transport.take_outdated_peers() == [b.device_id]  # B's v1 signature verified: B needs the update
     assert a.transport.take_outdated_peers() == []
@@ -1129,8 +1149,8 @@ def test_a_peer_announcing_another_version_gives_an_update_issue(devs, monkeypat
     report = a.sync_with(b)
     assert kinds(report) == ["peer-update-needed"]
     assert "older LocalGateKeys" in report.issues[0].detail
-    # A newer peer (version 3) means this device needs the update.
-    monkeypatch.setattr(tr, "version_refusal", lambda: b'{"refused":"version","version":3}')
+    # A newer peer (version 4) means this device needs the update.
+    monkeypatch.setattr(tr, "version_refusal", lambda: b'{"refused":"version","version":4}')
     assert kinds(a.sync_with(b)) == ["lan-update-needed"]
 
 
@@ -1231,18 +1251,181 @@ def test_enrollment_names_are_checked() -> None:
     assert len(pairing.verification_code(b"y")) == 6
 
 
+# --- commit-then-reveal pairing (F-03) and the sealed-hello pin (F-02) ------------------------------
+
+
+def test_the_qr_commits_to_a_reveal_it_does_not_contain() -> None:
+    offer = _offer()
+    assert offer.version == pairing.OFFER_COMMIT_VERSION and offer.reveal is not None
+    assert offer.commit == pairing.enrollment_commit(offer.reveal)
+    scanned = pairing.PairingOffer.from_bundle_dict(pairing.parse_qr_payload(pairing.offer_qr_payload(offer)))
+    assert scanned.commit == offer.commit and scanned.reveal is None
+    assert "reveal" not in offer.bundle_dict() and offer.reveal.hex() not in repr(offer)
+    with pytest.raises(pairing.PairingError):
+        pairing.enrollment_reveal(scanned)  # only the inviting device can reveal
+    # a version-2 offer must carry a commitment, and a reveal must match it
+    with pytest.raises(pairing.PairingError):
+        dataclasses.replace(offer, commit=None, reveal=None)
+    with pytest.raises(pairing.PairingError):
+        dataclasses.replace(offer, reveal=os.urandom(32))
+
+
+def test_grinding_the_code_fails_because_the_reveal_comes_after_the_request(devs) -> None:
+    """F-03: whoever holds the QR fixes its request before it learns the reveal, and gets it only once."""
+    a = devs("a", group=True)
+    offer, text = _offer_for(a)
+    scanned = pairing.PairingOffer.from_bundle_dict(pairing.parse_qr_payload(text))
+    ident = pairing.DeviceIdentity.generate()
+    transcript = pairing.enrollment_transcript(scanned, ident.device_id, ident.signing_public_key,
+                                               ident.exchange_public_key, None, "Test PC")
+    # The code depends on the reveal, which the QR holder does not have: offline it can only guess.
+    real = pairing.verification_code(transcript, offer.reveal)
+    assert real == pairing.verification_code(transcript, offer.reveal)
+    guesses = [pairing.verification_code(transcript, os.urandom(32)) for _ in range(64)]
+    assert len(set(guesses)) > 50  # each guessed reveal gives another code
+    # A wrong reveal is refused (it must match the commitment in the QR).
+    fake = pairing.ENROLL_REVEAL_MAGIC + pairing._canonical({"reveal": pairing._b64e(os.urandom(32))})
+    with pytest.raises(pairing.PairingAuthenticationError):
+        pairing.open_enrollment_reveal(scanned, fake)
+    # A request that does not verify gets no reveal.
+    interims: list[bytes] = []
+    sender = SyncTransport()
+    forged = dataclasses.replace(scanned, pairing_secret=os.urandom(32))
+    reply = sender.enroll(a.endpoint, pairing.build_enrollment_request(forged, ident, now=NOW),
+                          on_interim=interims.append)
+    assert reply.startswith(pairing.ENROLL_REFUSED_MAGIC) and interims == []
+    # The first request that verifies consumes the offer and gets the reveal once, before the reply.
+    a.accept = False
+    reply = sender.enroll(a.endpoint, pairing.build_enrollment_request(scanned, ident, now=NOW),
+                          on_interim=interims.append)
+    assert reply == pairing.enrollment_refusal("declined")
+    assert len(interims) == 1 and pairing.open_enrollment_reveal(scanned, interims[0]) == offer.reveal
+    # Every later request (another identity, so another code) gets no reveal.
+    other = pairing.DeviceIdentity.generate()
+    reply = sender.enroll(a.endpoint, pairing.build_enrollment_request(scanned, other, now=NOW),
+                          on_interim=interims.append)
+    assert reply == pairing.enrollment_refusal("used-or-expired") and len(interims) == 1
+
+
+def test_a_reply_without_the_reveal_is_refused() -> None:
+    inviter, invitee = pairing.DeviceIdentity.generate(), pairing.DeviceIdentity.generate()
+    offer = pairing.create_pairing_offer(inviter, "0f8b8c1e-4c1e-4a57-9d43-5b0b2d1f0a11", "192.168.1.2", 9, now=NOW)
+    scanned = pairing.PairingOffer.from_bundle_dict(offer.bundle_dict())
+    raw = pairing.build_enrollment_request(scanned, invitee, now=NOW)
+    _peer, request = pairing.PairingSession(offer).accept_enrollment(inviter, raw, now=NOW)
+    reply = pairing.seal_enrollment_reply(inviter, offer, request, offer.group_id, 1, os.urandom(32))
+    with pytest.raises(pairing.PairingAuthenticationError):
+        pairing.open_enrollment_reply(scanned, invitee, reply)
+    with pytest.raises(pairing.PairingError):
+        pairing.open_enrollment_reply(scanned, invitee, reply, reveal=os.urandom(32))
+    assert pairing.open_enrollment_reply(scanned, invitee, reply, reveal=offer.reveal)[0] == offer.group_id
+    assert request.code == pairing.verification_code(request.transcript, offer.reveal)
+
+
+def test_honest_pairing_shows_one_code_on_both_screens_and_pins_the_sealed_hello(devs) -> None:
+    a = devs("a", group=True)
+    b = devs("b")
+    shown: list[str] = []
+
+    def on_pending(pending) -> None:
+        shown.append(pending.code)
+        pending.decide(True)
+
+    a.responder.on_pending = on_pending
+    _offer, text = _offer_for(a)
+    codes: list[str] = []
+    lan.enroll_from_qr(text, b.session, b.lease, install_id=b.install, endpoint=b.endpoint, now=NOW,
+                       on_code=codes.append)
+    assert codes == shown and len(codes[0]) == 6
+    # Both sides pin each other to the sealed hello, in the vault and in the running transport.
+    assert lan.peer_entry(a.state, b.device_id)["hello"] == 3
+    assert lan.peer_entry(b.state, a.device_id)["hello"] == 3
+    assert a.transport.state.is_sealed(b.device_id)
+    b.relisten()
+    assert b.transport.state.is_sealed(a.device_id)
+    _web(b, "sealed")
+    assert kinds(b.sync_with(a)) == [] and "sealed" in a.labels()
+    # A clear-text (version-2) hello from B is now refused by A.
+    hello = b.transport._local_hello(b"\x09" * 16)
+    try:
+        with socket.create_connection((a.endpoint.host, a.endpoint.port), timeout=5) as sock:
+            sock.sendall(tr.encode_frame(hello.to_bytes()))
+            sock.settimeout(5)
+            assert sock.recv(64)[4:] == tr.version_refusal()
+    finally:
+        hello.ephemeral_secret.wipe()
+
+
+def test_a_pin_learned_by_syncing_is_saved_in_the_vault(devs) -> None:
+    a, b = _group_ab(devs)
+    for dev, other in ((a, b), (b, a)):  # an entry written by an older build: no pin yet
+        entry = dict(lan.peer_entry(dev.state, other.device_id))
+        entry.pop("hello", None)
+        save_sync_state(dev.session, lan._with_peer(dev.state, entry))
+        dev.relisten()
+        assert not dev.transport.state.is_sealed(other.device_id)
+    assert kinds(b.sync_with(a)) == []
+    assert lan.peer_entry(b.state, a.device_id)["hello"] == 3
+    assert lan.peer_entry(a.state, b.device_id)["hello"] == 3
+    a.relisten()
+    assert a.transport.state.is_sealed(b.device_id)
+
+
+def test_an_older_body_on_a_new_offer_gets_update_needed_and_no_reveal(devs, monkeypatch) -> None:
+    a = devs("a", group=True)
+    offer, text = _offer_for(a)
+    scanned = pairing.PairingOffer.from_bundle_dict(pairing.parse_qr_payload(text))
+    # what a released build sends for this QR: body and transcript version 2 (it ignores "commit")
+    monkeypatch.setattr(pairing, "enroll_version", lambda _offer: pairing.LEGACY_ENROLL_VERSION)
+    raw = pairing.build_enrollment_request(scanned, pairing.DeviceIdentity.generate(), now=NOW)
+    monkeypatch.undo()
+    interims: list[bytes] = []
+    reply = SyncTransport().enroll(a.endpoint, raw, on_interim=interims.append)
+    assert reply == pairing.enrollment_refusal("update-needed") and interims == []
+    assert a.state.lan_peers == ()
+
+
+def test_a_new_device_joins_through_an_older_inviters_offer(devs) -> None:
+    """A version-1 offer (a released inviting device): the version-2 body, the old code, no pin yet."""
+    a = devs("a", group=True)
+    b = devs("b")
+    offer = lan.begin_pairing(a.session, a.lease, a.endpoint.host, a.endpoint.port, install_id=a.install, now=NOW)
+    old = dataclasses.replace(offer, version=1, commit=None, reveal=None)
+    shown: list[str] = []
+
+    def on_pending(pending) -> None:
+        shown.append(pending.code)
+        pending.decide(True)
+
+    a.responder.on_pending = on_pending
+    a.responder.start_enrollment(old, a.transport)
+    codes: list[str] = []
+    lan.enroll_from_qr(pairing.offer_qr_payload(old), b.session, b.lease, install_id=b.install,
+                       endpoint=b.endpoint, now=NOW, on_code=codes.append)
+    assert codes == shown
+    assert "hello" not in lan.peer_entry(a.state, b.device_id)
+    assert "hello" not in lan.peer_entry(b.state, a.device_id)
+
+
 # --- rollback witnesses (Part B, 2026-10-29) ------------------------------------------------------
 
 _ROLLBACK = {"vault-rollback", "peer-vault-rollback"}
 
 
 def _restore(dev: Dev, snap: bytes) -> None:
-    """Put an old copy of the vault back, delete its anchor and start the app again."""
+    """Put an old copy of the vault back, delete its anchor and its marks outside the folder, and start the app
+    again.  With the marks left in place the unlock itself refuses the old copy
+    (tests/test_vault_rollback_mark.py)."""
+    from localvault import outside_marks
     from localvault.vault import unlock_vault
     path = Path(dev.session.path)
     dev.session.lock()
     path.write_bytes(snap)
     path.with_name(path.stem + ".generation.json").unlink(missing_ok=True)
+    store = outside_marks.backend()
+    assert isinstance(store, outside_marks.MemoryBackend)
+    for name in [n for n in store.values if n.startswith("rollback-mark")]:
+        del store.values[name]
     dev.session = unlock_vault(path, MASTER)
     dev.relisten()
 
@@ -1272,8 +1455,10 @@ def test_lan_sync_learns_support_then_uses_format2(devs) -> None:
     a, b = _group_ab(devs)
     rec = _Recorder(a)
     assert kinds(b.sync_with(a)) == []
-    # The first exchange also probes attachment support once (blob-get of the probe id).
-    assert rec.types == ["view", "blob-get", "witness"] and rec.formats == [1]
+    # The first exchange also probes attachment support once (blob-get of the probe id), the emergency
+    # access feature once (heir-hello, sub-plan 08) and the collections feature (features, sub-plan 07).
+    assert rec.types == ["view", "blob-get", "heir-hello", "features", "witness"] and rec.formats == [1]
+    assert b.device_id in a.state.heir_peers and a.device_id in b.state.heir_peers
     assert b.device_id in a.state.attachment_peers and a.device_id in b.state.attachment_peers
     assert b.device_id in a.state.witness_peers and a.device_id in b.state.witness_peers
     assert kinds(b.sync_with(a)) == []

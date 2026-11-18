@@ -143,7 +143,7 @@ final class MacLicenceOnlySyncTests: XCTestCase {
         XCTAssertFalse(fields.contains { $0.lowercased().contains("key") }, "\(fields)")
         XCTAssertFalse(LicencePage.intro.contains("licence key"))
         XCTAssertFalse(LicencePage.intro.contains(LicenceText.pastePrefix))
-        XCTAssertEqual(LicencePage.status(purchased: false, license: nil), "Free plan: up to 4 items. Upgrade to Pro to add more.")
+        XCTAssertEqual(LicencePage.status(purchased: false, license: nil), "Free plan: up to 7 items. Upgrade to Pro to add more.")
         XCTAssertEqual(LicencePage.status(purchased: true, license: nil), "Pro, bought on the App Store. Everything is unlocked on this Mac.")
         XCTAssertEqual(LicencePage.syncedText, "Pro from your synced devices")
         XCTAssertEqual(LicencePage.alsoUnlocksWindows, "Also unlocks Windows: pair your PC")

@@ -1,8 +1,10 @@
 package app.localgatekeys.android.unlock
 
+import app.localgatekeys.android.duress.DuressVault
 import app.localgatekeys.android.settings.AppSettings
 import app.localgatekeys.android.vault.AppPasswordLock
 import app.localgatekeys.android.vault.AppPasswordRequiredException
+import app.localgatekeys.android.vault.AppPasswordWaitException
 import app.localgatekeys.android.vault.BiometricChangedException
 import app.localgatekeys.android.vault.VaultKeyException
 import app.localgatekeys.android.vault.LocalStore
@@ -10,6 +12,7 @@ import app.localgatekeys.android.vault.LocalStoreException
 import app.localgatekeys.android.vault.SecretSlots
 import app.localgatekeys.android.vault.VaultKey
 import app.localgatekeys.android.vault.syncDirectory
+import app.localgatekeys.core.crypto.AppPasswordException
 import app.localgatekeys.core.primitives.Hex
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.sync.ItemStore
@@ -32,7 +35,16 @@ import kotlinx.coroutines.withContext
  * (no copy or component functions). The unlocker that opened it shuts it on lock: [beginClose] at once (no read or
  * write starts or finishes after it, and this key copy is zeroed), then [close] off the main thread.
  */
-class UnlockedVault(val store: ItemStore, val slots: SecretSlots, val localKey: ByteArray) {
+class UnlockedVault(
+    val store: ItemStore,
+    val slots: SecretSlots,
+    val localKey: ByteArray,
+    /**
+     * Opened with the duress password (sub-plan 08): the second vault. The app starts no sync and offers no autofill
+     * or passkey service for it, and keeps its files in its own folder. Nothing on screen names it.
+     */
+    val decoy: Boolean = false,
+) {
     /** Non-blocking: shuts the write gates of the store and the slots and zeroes this key copy. */
     fun beginClose() {
         (store as? LocalStore)?.beginClose()
@@ -82,10 +94,11 @@ data class VaultDirs(val vault: File, val wrappedKey: File, val secrets: File) {
  */
 sealed class UnlockCredential {
     object System : UnlockCredential()
-    class Password(val bytes: ByteArray) : UnlockCredential() {
+    /** [factors]: the key file and YubiKey when the app password needs them (Task 9). */
+    class Password(val bytes: ByteArray, val factors: FactorInput? = null) : UnlockCredential() {
         override fun toString() = "Password"
     }
-    /** The 24 words and the new app password to set. */
+    /** The 24 words and the new app password to set. The phrase needs no factors, and the new password has none. */
     class Recovery(val phrase: String, val newPassword: ByteArray) : UnlockCredential() {
         override fun toString() = "Recovery"
     }
@@ -135,6 +148,13 @@ class VaultOpener(
     private val cryptoBound: Boolean,
     /** Task 7: the optional app password. Null or off: today's unlock, unchanged. */
     private val appPassword: AppPasswordLock? = null,
+    /**
+     * Task 9: "Always ask for the key file / YubiKey" is on. With factors set, the biometric shortcut (which holds the
+     * local key without them) is then deleted rather than used.
+     */
+    private val alwaysAskFactors: () -> Boolean = { false },
+    /** Sub-plan 08: the duress password (a second app password); null or not set up: today's unlock. */
+    private val duress: DuressVault? = null,
 ) {
     suspend fun open(
         authenticate: suspend (Cipher?) -> Cipher?,
@@ -177,9 +197,42 @@ class VaultOpener(
         authenticateBiometric: suspend (Cipher) -> Cipher?,
     ): UnlockedVault {
         val localKey: ByteArray = when (credential) {
-            is UnlockCredential.Password -> withContext(Dispatchers.IO) { lock.unwrapPassword(credential.bytes) }
+            is UnlockCredential.Password -> {
+                if (duress != null && withContext(Dispatchers.IO) { duress.configured() }) {
+                    return openWithDuress(lock, duress, credential)
+                }
+                val specs = withContext(Dispatchers.IO) { lock.record().factors }
+                if (specs.isEmpty()) {
+                    withContext(Dispatchers.IO) { lock.unwrapPassword(credential.bytes) }
+                } else {
+                    // No touch or file read while the wrong-try delay runs; a wrong factor fails before Argon2id.
+                    val wait = withContext(Dispatchers.IO) { lock.waitSeconds() }
+                    if (wait > 0) throw AppPasswordWaitException(wait)
+                    val secrets = FactorSecrets.collect(specs, credential.factors)
+                    try {
+                        withContext(Dispatchers.IO) { lock.unwrapPassword(credential.bytes, secrets) }
+                    } finally {
+                        secrets.forEach { it.fill(0) }
+                    }
+                }
+            }
             is UnlockCredential.Recovery -> withContext(Dispatchers.IO) {
+                val previous = lock.failureCount()
                 val k = lock.unwrapPhrase(credential.phrase)
+                if (duress?.held() == true) {
+                    // Held after a duress unlock: the same work, then refused as a wrong phrase and counted on top of
+                    // the earlier count (the counted try reset it), so the delay grows as for a wrong phrase.
+                    k.fill(0)
+                    lock.noteWrongTryAfter(previous)
+                    throw AppPasswordException(AppPasswordException.Kind.WRONG_PHRASE, "This recovery phrase does not belong to this vault")
+                }
+                try {
+                    // Sub-plan 08: the new app password must not be the duress password or one edit from it.
+                    duress?.checkNewPassword(k, credential.newPassword, decoySession = false)
+                } catch (e: Exception) {
+                    k.fill(0)
+                    throw e
+                }
                 try {
                     lock.write(lock.record().withNewPassword(k, credential.newPassword, random))
                 } catch (e: Exception) {
@@ -189,7 +242,15 @@ class VaultOpener(
                 k
             }
             UnlockCredential.System -> {
-                if (!withContext(Dispatchers.IO) { lock.biometricOn() }) throw AppPasswordRequiredException()
+                // Held after a duress unlock: the fingerprint shortcut is not offered; type the app password.
+                if (duress != null && withContext(Dispatchers.IO) { duress.held() }) throw AppPasswordRequiredException()
+                val shortcutRemoved = withContext(Dispatchers.IO) {
+                    if (lock.biometricOn() && alwaysAskFactors() && lock.factors().isNotEmpty()) {
+                        lock.removeBiometric()
+                        true
+                    } else false
+                }
+                if (shortcutRemoved || !withContext(Dispatchers.IO) { lock.biometricOn() }) throw AppPasswordRequiredException()
                 val (wrapped, cipher) = withContext(Dispatchers.IO) { biometric(lock) { lock.bioCipherForUnwrap() } }
                 val authorised = authenticateBiometric(cipher) ?: cipher
                 withContext(Dispatchers.IO) { biometric(lock) { lock.bioKey.unwrap(wrapped, authorised) } }
@@ -208,6 +269,89 @@ class VaultOpener(
         } finally {
             localKey.fill(0)
         }
+    }
+
+    /**
+     * The app password with a duress password set up (desktop `duress.open_vault`): the real vault first, then the second
+     * vault, both Argon2id runs every time so the time taken tells nothing. The real password while the real vault is
+     * held is refused as wrong (and counted); the duress password opens the second vault, resets the wrong-try count and
+     * holds the real vault for its hours. Anything else is the real vault's own refusal.
+     */
+    private suspend fun openWithDuress(lock: AppPasswordLock, duress: DuressVault, credential: UnlockCredential.Password): UnlockedVault {
+        val wait = withContext(Dispatchers.IO) { lock.waitSeconds() }
+        if (wait > 0) throw AppPasswordWaitException(wait)
+        val specs = withContext(Dispatchers.IO) { lock.record().factors }
+        var failure: Exception? = null
+        var realKey: ByteArray? = null
+        val secrets = try {
+            FactorSecrets.collect(specs, credential.factors)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            failure = e
+            null
+        }
+        // Read before the counted try: a right password refused while held must not reset the count (review I1).
+        val previous = withContext(Dispatchers.IO) { lock.failureCount() }
+        if (secrets != null) {
+            try {
+                realKey = withContext(Dispatchers.IO) { lock.unwrapPassword(credential.bytes, secrets) }
+            } catch (e: AppPasswordException) {
+                failure = e
+            } finally {
+                secrets.forEach { it.fill(0) }
+            }
+        }
+        val decoyKey = withContext(Dispatchers.IO) { duress.tryOpen(credential.bytes) }
+        if (realKey != null) {
+            decoyKey?.fill(0)
+            val held = withContext(Dispatchers.IO) { duress.held() }
+            if (held) {
+                realKey.fill(0)
+                withContext(Dispatchers.IO) { lock.noteWrongTryAfter(previous) }
+                throw AppPasswordException(AppPasswordException.Kind.WRONG_PASSWORD, "That app password is not right")
+            }
+            try {
+                return withContext(Dispatchers.IO) {
+                    duress.release()
+                    try {
+                        if (dirs.wrappedKey.exists()) dirs.wrappedKey.delete()
+                        if (vaultKey.exists()) vaultKey.delete()
+                    } catch (e: Exception) {
+                        // retried at the next unlock; the password file decides the mode
+                    }
+                    openWith(realKey)
+                }
+            } finally {
+                realKey.fill(0)
+            }
+        }
+        if (decoyKey != null) {
+            try {
+                return withContext(Dispatchers.IO) {
+                    lock.clearFailures()
+                    duress.trip(decoyKey)
+                    openDecoy(duress, decoyKey)
+                }
+            } finally {
+                decoyKey.fill(0)
+            }
+        }
+        throw failure ?: AppPasswordException(AppPasswordException.Kind.WRONG_PASSWORD, "That app password is not right")
+    }
+
+    /** The second vault's store and slots (its own folder); copies [localKey]. */
+    private fun openDecoy(duress: DuressVault, localKey: ByteArray): UnlockedVault {
+        val d = duress.files.vaultDirs
+        val store = LocalStore.open(d.vault, localKey, random, null)
+        val slots = try {
+            SecretSlots(d.secrets, localKey, random)
+        } catch (e: Exception) {
+            store.close()
+            throw e
+        }
+        duress.sessionOpen = true
+        return UnlockedVault(store, slots, localKey.copyOf(), decoy = true)
     }
 
     /** An invalidated biometric key (new fingerprint or face): remove the shortcut and ask for the password. */
@@ -278,6 +422,7 @@ class VaultOpener(
 
     /** Copies [localKey]: the caller zeroes its own array. */
     private fun openWith(localKey: ByteArray): UnlockedVault {
+        duress?.sessionOpen = false
         val store = LocalStore.open(dirs.vault, localKey, random, settings)
         val slots = try {
             SecretSlots(dirs.secrets, localKey, random)

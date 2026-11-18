@@ -1,0 +1,568 @@
+{
+  "cases": [
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000502",
+            "10000000-0000-4000-8000-000000000501"
+          ],
+          "type": "same_login"
+        }
+      ],
+      "name": "same login: usernames differ only in case and spaces (newest first)",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000501",
+          "kind": "web",
+          "label": "Login 1",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://example.com"
+          },
+          "updated_at": 1789999950,
+          "username": "Alice@Example.com"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000502",
+          "kind": "web",
+          "label": "Login 2",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://example.com"
+          },
+          "updated_at": 1789999990,
+          "username": " alice@example.com"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000503",
+            "10000000-0000-4000-8000-000000000504"
+          ],
+          "type": "same_account_other_password"
+        }
+      ],
+      "name": "same account, different passwords",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000503",
+          "kind": "web",
+          "label": "Login 3",
+          "password": "pw-a",
+          "scope": {
+            "origin": "https://example.com"
+          },
+          "updated_at": 1789999900,
+          "username": "bob"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000504",
+          "kind": "web",
+          "label": "Login 4",
+          "password": "pw-b",
+          "scope": {
+            "origin": "https://example.com"
+          },
+          "updated_at": 1789999900,
+          "username": "BOB"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000505",
+            "10000000-0000-4000-8000-000000000506"
+          ],
+          "type": "same_site"
+        }
+      ],
+      "name": "www. and apex are the same site",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000505",
+          "kind": "web",
+          "label": "Login 5",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://www.example.com"
+          },
+          "updated_at": 1789999900,
+          "username": "carol"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000506",
+          "kind": "web",
+          "label": "Login 6",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://example.com"
+          },
+          "updated_at": 1789999900,
+          "username": "carol"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000507",
+            "10000000-0000-4000-8000-000000000508"
+          ],
+          "type": "same_site"
+        }
+      ],
+      "name": "example.co.uk subdomains share a site; other.co.uk does not",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000507",
+          "kind": "web",
+          "label": "Login 7",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://a.example.co.uk"
+          },
+          "updated_at": 1789999900,
+          "username": "dan"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000508",
+          "kind": "web",
+          "label": "Login 8",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://b.example.co.uk"
+          },
+          "updated_at": 1789999900,
+          "username": "dan"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000509",
+          "kind": "web",
+          "label": "Login 9",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://other.co.uk"
+          },
+          "updated_at": 1789999900,
+          "username": "dan"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [],
+      "name": "github.io users are different sites",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000510",
+          "kind": "web",
+          "label": "Login 10",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://alice.github.io"
+          },
+          "updated_at": 1789999900,
+          "username": "erin"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000511",
+          "kind": "web",
+          "label": "Login 11",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://bob.github.io"
+          },
+          "updated_at": 1789999900,
+          "username": "erin"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000512",
+            "10000000-0000-4000-8000-000000000513"
+          ],
+          "type": "same_site"
+        }
+      ],
+      "name": "http and https of one host are the same site",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000512",
+          "kind": "web",
+          "label": "Login 12",
+          "password": "pw-1",
+          "scope": {
+            "origin": "http://example.org"
+          },
+          "updated_at": 1789999900,
+          "username": "fay"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000513",
+          "kind": "web",
+          "label": "Login 13",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://example.org"
+          },
+          "updated_at": 1789999900,
+          "username": "fay"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000515",
+            "10000000-0000-4000-8000-000000000516"
+          ],
+          "type": "same_login"
+        }
+      ],
+      "name": "empty usernames never match as same site (same origin and password still is the same login)",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000514",
+          "kind": "web",
+          "label": "Login 14",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://www.example.net"
+          },
+          "updated_at": 1789999900,
+          "username": ""
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000515",
+          "kind": "web",
+          "label": "Login 15",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://example.net"
+          },
+          "updated_at": 1789999900,
+          "username": ""
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000516",
+          "kind": "web",
+          "label": "Login 16",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://example.net"
+          },
+          "updated_at": 1789999900,
+          "username": ""
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000601",
+            "10000000-0000-4000-8000-000000000602"
+          ],
+          "type": "same_item"
+        }
+      ],
+      "name": "passkeys by relying party (folded) and credential id",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000601",
+          "kind": "passkey",
+          "payload": {
+            "credential_id": "Y3JlZA",
+            "relying_party_id": "Example.com"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Example",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000602",
+          "kind": "passkey",
+          "payload": {
+            "credential_id": "Y3JlZA",
+            "relying_party_id": "example.com"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Example 2",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000603",
+          "kind": "passkey",
+          "payload": {
+            "credential_id": "b3RoZXI",
+            "relying_party_id": "example.com"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Example",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000605",
+            "10000000-0000-4000-8000-000000000604"
+          ],
+          "type": "same_item"
+        }
+      ],
+      "name": "cards by number",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000604",
+          "kind": "card",
+          "payload": {
+            "notes": "a",
+            "number": "4111111111111111"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Visa",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000605",
+          "kind": "card",
+          "payload": {
+            "notes": "b",
+            "number": "4111111111111111"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Old visa",
+          "updated_at": 1789999995
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000606",
+          "kind": "card",
+          "payload": {
+            "number": ""
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Empty",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000607",
+          "kind": "card",
+          "payload": {
+            "number": ""
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Empty 2",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000608",
+            "10000000-0000-4000-8000-000000000609"
+          ],
+          "type": "same_item"
+        }
+      ],
+      "name": "typed item equal except notes and title case",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000608",
+          "kind": "wifi",
+          "payload": {
+            "notes": "router",
+            "password": "pw",
+            "ssid": "home"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Home WiFi",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000609",
+          "kind": "wifi",
+          "payload": {
+            "notes": "",
+            "password": "pw",
+            "ssid": "home"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "home wifi ",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000610",
+          "kind": "wifi",
+          "payload": {
+            "notes": "",
+            "password": "other",
+            "ssid": "home"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Home WiFi",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [],
+      "name": "desktop logins are skipped",
+      "now": 1790000000,
+      "records": [
+        {
+          "id": "10000000-0000-4000-8000-000000000700",
+          "kind": "desktop",
+          "label": "App",
+          "password": "p",
+          "scope": {
+            "exe_path": "C:\\app.exe"
+          },
+          "updated_at": 1695392000,
+          "username": "u"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000701",
+          "kind": "desktop",
+          "label": "App",
+          "password": "p",
+          "scope": {
+            "exe_path": "C:\\app.exe"
+          },
+          "updated_at": 1695392000,
+          "username": "u"
+        }
+      ],
+      "today": "2026-11-15"
+    },
+    {
+      "expected": [
+        {
+          "ids": [
+            "10000000-0000-4000-8000-000000000517"
+          ],
+          "type": "not_changed_2y"
+        }
+      ],
+      "name": "not changed in 2 years: strictly older than 730 days",
+      "now": 1790000000,
+      "records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000517",
+          "kind": "web",
+          "label": "Login 17",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://one.example"
+          },
+          "updated_at": 1726927999,
+          "username": "g"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000518",
+          "kind": "web",
+          "label": "Login 18",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://two.example"
+          },
+          "updated_at": 1726928000,
+          "username": "h"
+        }
+      ],
+      "today": "2026-11-15"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Notfall-Set</string>
+    <string name="kit_intro">Bewahren Sie diese Seite offline und getrennt von Ihrem Handy auf. Sie zeigt, wie Sie wieder in LocalGateKeys kommen, wenn Sie das App-Passwort vergessen.</string>
+    <string name="kit_device">Handy</string>
+    <string name="kit_date">Datum</string>
+    <string name="kit_version">LocalGateKeys-Version</string>
+    <string name="kit_app_password">App-Passwort (von Hand eintragen oder getrennt von dieser Seite aufbewahren):</string>
+    <string name="kit_phrase_heading">Wiederherstellungsphrase (%1$d Wörter, in Reihenfolge)</string>
+    <string name="kit_steps_heading">So kommen Sie wieder hinein</string>
+    <string name="kit_step1">Tippen Sie auf dem LocalGateKeys-Sperrbildschirm auf „%1$s“.</string>
+    <string name="kit_step2">Geben Sie die %1$d Wörter oben in Reihenfolge ein.</string>
+    <string name="kit_step3">Wählen Sie ein neues App-Passwort. Ihre Passwörter bleiben unverändert.</string>
+    <string name="kit_step4">Ist das Handy verloren oder der Tresor weg, installieren Sie LocalGateKeys auf einem neuen Handy und stellen dann Ihre neueste Backup-Datei wieder her oder synchronisieren von Ihrem PC oder einem anderen Handy.</string>
+    <string name="kit_warning">Behandeln Sie diese Seite wie Ihren Tresor. Ein PDF mit der Wiederherstellungsphrase ist so sensibel wie der Tresor selbst: Bewahren Sie das Papier sicher auf und löschen Sie gespeicherte PDFs danach.</string>
+    <string name="kit_print_with_phrase">Notfall-Set mit dieser Phrase drucken</string>
+    <string name="kit_print_blank">Notfall-Set drucken (Phrasenfelder leer)</string>
+</resources>

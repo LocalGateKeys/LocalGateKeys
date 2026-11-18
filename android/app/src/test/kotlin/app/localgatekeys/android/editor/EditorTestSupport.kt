@@ -20,7 +20,7 @@ import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
 import app.localgatekeys.core.sync.SyncGroupState
 
-/** The Swift test `MemoryStore`: applies commits like LocalStore (a stale base is refused) and counts them. */
+/** The Swift test `MemoryStore`: applies commits like LocalStore (a stale base is refused, shares and the marker kept) and counts them. */
 class CountingStore(var snapshot: StoreSnapshot = StoreSnapshot()) : ItemStore {
     var commits = 0
         private set
@@ -29,7 +29,15 @@ class CountingStore(var snapshot: StoreSnapshot = StoreSnapshot()) : ItemStore {
 
     override fun commit(change: StoreChange) {
         check(change.baseRevision == snapshot.revision) { "stale" }
-        snapshot = StoreSnapshot(change.records, change.meta, change.sync, snapshot.revision + 1)
+        // Share groups and the collections migration marker are kept unless the commit sets them (as LocalStore does).
+        val shares = when (val sh = change.shares) {
+            StoreChange.Shares.Keep -> snapshot.shares
+            is StoreChange.Shares.Replace -> sh.value
+        }
+        snapshot = StoreSnapshot(
+            change.records, change.meta, change.sync, snapshot.revision + 1, shares,
+            change.collectionsMigrated ?: snapshot.collectionsMigrated,
+        )
         commits++
     }
 }

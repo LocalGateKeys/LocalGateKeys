@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">リマインダーの期限です</string>
+    <string name="reminder_named_body">%1$sの期限です</string>
+    <string name="reminder_save_failed">リマインダーをこのスマートフォンに保存できませんでした。</string>
+    <string name="reminder_channel_name">リマインダー</string>
+    <string name="reminder_section">リマインダー</string>
+    <string name="reminder_due">期限</string>
+    <string name="reminder_remind_me">リマインダーを設定</string>
+    <string name="reminder_change">リマインダーを変更</string>
+    <string name="reminder_remove">リマインダーを削除</string>
+    <string name="reminder_add">リマインダーを追加</string>
+    <string name="reminder_suggest_button">期限切れの前に通知</string>
+    <string name="reminder_card_expires">このカードの有効期限は%1$sです。</string>
+    <string name="reminder_due_date">期限日</string>
+    <string name="reminder_on_the_day">当日</string>
+    <string name="reminder_upcoming">今後の予定</string>
+    <string name="reminder_nothing_upcoming">今後30日間に予定はありません。</string>
+    <string name="reminder_overdue_due">期限超過 · 期限: %1$s</string>
+    <string name="reminder_due_on">期限: %1$s</string>
+    <string name="reminder_snooze">スヌーズ</string>
+    <string name="reminder_snooze_day">1日スヌーズ</string>
+    <string name="reminder_notifications_off">LocalGateKeysの通知はオフです。リマインダーはここには引き続き表示されます。</string>
+    <string name="reminder_settings_title">リマインダー</string>
+    <string name="reminder_show_names">通知に項目名を表示</string>
+    <string name="reminder_settings_footer">カード、ドキュメント、サブスクリプションからリマインダーを追加します。オフの場合、通知には「リマインダーの期限です」とだけ表示され、項目に関する情報はロック画面に表示されません。オンの場合、スマートフォンのロック画面の通知設定によっては、項目の名前がロック画面にも表示されることがあります。</string>
+    <string name="reminder_editor_footer">当日の9:00に通知が届きます。設定 › リマインダーで項目名を表示しない限り、「リマインダーの期限です」とだけ表示されます。リマインダーはこのスマートフォンにのみ保存され、同期されません。</string>
+    <plurals name="reminder_days_before">
+        <item quantity="other">%1$d日前</item>
+    </plurals>
+</resources>

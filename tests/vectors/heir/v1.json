@@ -1,0 +1,1162 @@
+{
+  "format": "lgk-heir-vectors-v1",
+  "spec": "docs/formats/LGKHEIR_V1.md",
+  "entropy": "a1fd81e5684d4127036947a8bd3db638473ea4360db0bbe4fcca853908766535",
+  "phrase": "peanut ugly junk spatial staff near asset cigar post try horn identify initial faith subway render room child crawl apology mountain depth network resist",
+  "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+  "owner": "Ελένη Π.",
+  "holders": [
+    "Νίκος",
+    "Anna",
+    "Ben"
+  ],
+  "k": 2,
+  "n": 3,
+  "wait_days": 7,
+  "created": 1800000000,
+  "signing_seed": "a508cfb25265cb29d174f2b075249e6e227a9e8dd5fe71268dae600e00cda394",
+  "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+  "check_salt": "c70c35b1bf408a93a50884ef958b6c68",
+  "check": "55898da34e136ce8b882f578bff1cdbddd4103f86273cbb11f761c851c19f1fe",
+  "backup_public": "6ca6c7d8694900e999d6cabc976801f02fe109f4856293edcea9bb0a69ce0379",
+  "coefficients": "dfe95d5df3881be8b8340249093cf3d85e551cd035e6aa5556ae382cf29b3ad6",
+  "shares": [
+    "017e14dcb89bc55acfbb5d45e1b40145e0196bb8e6385611b1aa64bd15faed5fe3",
+    "0204343b5f954677ec6801433aaf454b93fb949c8d6767f44e508df561f75b1182",
+    "03dbdd660266ce6c04d0354173a679b84ba5c1805d52815e1b0623cd4d05c02b54"
+  ],
+  "holder_keys": [
+    "b0a17994e1fafcc08077ae5eb5ce393ecafd63c5650da63341f60de18de06850",
+    "fcd1c39713bfa16ab6edd5fb30dd4d8a2803b2a4ea6c91ee36b7888131c8c498",
+    "7bf78e5e8097a1b4eafd9e92de8e9452fb060252ec0a868301891dcd137aa641"
+  ],
+  "package_ids": [
+    "0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41",
+    "1c9d7a3f-2e5b-4f68-9d4c-0b1a2f3e4d52",
+    "2dae8b40-3f6c-4a79-ae5d-1c2b3a4f5e63"
+  ],
+  "packages": [
+    "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+    "{\"format\":\"localgatekeys-heir\",\"id\":\"1c9d7a3f-2e5b-4f68-9d4c-0b1a2f3e4d52\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6IkFubmEiLCJpbmRleCI6MiwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBZ1EwTzErVlJuZnNhQUZET3E5RlM1UDdsSnlOWjJmMFRsQ045V0gzV3hHQyIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"T5xKykjeSFH48a03TEE8XRsZNgVx8rQg8hY3qynxExNyUmscnfPe9CkRU+pSPLQUT+dSfFDex/53pqlUpjkPCg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+    "{\"format\":\"localgatekeys-heir\",\"id\":\"2dae8b40-3f6c-4a79-ae5d-1c2b3a4f5e63\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6IkJlbiIsImluZGV4IjozLCJrIjoyLCJraW5kIjoiaGVpci1zaGFyZCIsIm4iOjMsInBsYW5faWQiOiI1ZDFmOWEzYy03YjJlLTRjODAtOWQ0MS0yYTZlOGYwYjFjMzciLCJzaGFyZSI6IkE5dmRaZ0ptem13RTBEVkJjNlo1dUV1bHdZQmRVb0ZlR3dZanpVMEZ3Q3RVIiwid2FpdF9kYXlzIjo3fQ==\",\"sender\":\"Ελένη Π.\",\"sig\":\"I/YMURCbtVH0aNck8lmNqNmyeMjiXe30aPrj2E1CIyUvCfQf/LS7l/BN3s3Ey9UpVaedoR2UHpCLKx2XZiUrDA==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}"
+  ],
+  "qr": [
+    "lgkheir:eyJmb3JtYXQiOiJsb2NhbGdhdGVrZXlzLWhlaXIiLCJpZCI6IjBiOGM2ZjJlLTFkNGEtNGU1Ny04YzNiLTlhMGYxZTJkM2M0MSIsInBheWxvYWQiOiJleUpqYUdWamF5STZJbFpaYlU1dk1EUlVZazlwTkdkMlZqUjJMMGhPZG1ReFFrRXZhR2xqT0hWNFNETlpZMmhTZDFvNFpqUTlJaXdpWTJobFkydGZjMkZzZENJNkluaDNkekZ6WWpsQmFYQlBiRU5KVkhac1dYUnpZVUU5UFNJc0ltTnlaV0YwWldRaU9qRTRNREF3TURBd01EQXNJbWh2YkdSbGNpSTZJczZkenEvT3VzNi96NElpTENKcGJtUmxlQ0k2TVN3aWF5STZNaXdpYTJsdVpDSTZJbWhsYVhJdGMyaGhjbVFpTENKdUlqb3pMQ0p3YkdGdVgybGtJam9pTldReFpqbGhNMk10TjJJeVpTMDBZemd3TFRsa05ERXRNbUUyWlRobU1HSXhZek0zSWl3aWMyaGhjbVVpT2lKQldEUlZNMHhwWW5oV2NsQjFNVEZHTkdKUlFsSmxRVnBoTjJwdFQwWlpVbk5oY0d0MlVsZzJOMVl2YWlJc0luZGhhWFJmWkdGNWN5STZOMzA9Iiwic2VuZGVyIjoizpXOu86tzr3OtyDOoC4iLCJzaWciOiIyVzFCMTJTQTlsaW1JRkRnWUFNUUJnSnlBWUtjZHIrQVhlaWxQTHA5dC93QytFQmwzQzJuOEp5dzZrZDVKQktDL1RhdGhNS25qdEV5U0N2OWp3bHpDdz09Iiwic2lnbmVyIjoibURNay9aSVhUU2w1Rk1UaTFFQ1g2Zi91NHc2M2J0bWQwMzB4WDUrS0FZST0iLCJ2ZXJzaW9uIjoxfQ",
+    "lgkheir:eyJmb3JtYXQiOiJsb2NhbGdhdGVrZXlzLWhlaXIiLCJpZCI6IjFjOWQ3YTNmLTJlNWItNGY2OC05ZDRjLTBiMWEyZjNlNGQ1MiIsInBheWxvYWQiOiJleUpqYUdWamF5STZJbFpaYlU1dk1EUlVZazlwTkdkMlZqUjJMMGhPZG1ReFFrRXZhR2xqT0hWNFNETlpZMmhTZDFvNFpqUTlJaXdpWTJobFkydGZjMkZzZENJNkluaDNkekZ6WWpsQmFYQlBiRU5KVkhac1dYUnpZVUU5UFNJc0ltTnlaV0YwWldRaU9qRTRNREF3TURBd01EQXNJbWh2YkdSbGNpSTZJa0Z1Ym1FaUxDSnBibVJsZUNJNk1pd2lheUk2TWl3aWEybHVaQ0k2SW1obGFYSXRjMmhoY21RaUxDSnVJam96TENKd2JHRnVYMmxrSWpvaU5XUXhaamxoTTJNdE4ySXlaUzAwWXpnd0xUbGtOREV0TW1FMlpUaG1NR0l4WXpNM0lpd2ljMmhoY21VaU9pSkJaMUV3VHpFclZsSnVabk5oUVVaRVQzRTVSbE0xVURkc1NubE9XakptTUZSc1EwNDVWMGd6VjNoSFF5SXNJbmRoYVhSZlpHRjVjeUk2TjMwPSIsInNlbmRlciI6Is6VzrvOrc69zrcgzqAuIiwic2lnIjoiVDV4S3lramVTRkg0OGEwM1RFRThYUnNaTmdWeDhyUWc4aFkzcXlueEV4TnlVbXNjbmZQZTlDa1JVK3BTUExRVVQrZFNmRkRleC81M3BxbFVwamtQQ2c9PSIsInNpZ25lciI6Im1ETWsvWklYVFNsNUZNVGkxRUNYNmYvdTR3NjNidG1kMDMweFg1K0tBWUk9IiwidmVyc2lvbiI6MX0",
+    "lgkheir:eyJmb3JtYXQiOiJsb2NhbGdhdGVrZXlzLWhlaXIiLCJpZCI6IjJkYWU4YjQwLTNmNmMtNGE3OS1hZTVkLTFjMmIzYTRmNWU2MyIsInBheWxvYWQiOiJleUpqYUdWamF5STZJbFpaYlU1dk1EUlVZazlwTkdkMlZqUjJMMGhPZG1ReFFrRXZhR2xqT0hWNFNETlpZMmhTZDFvNFpqUTlJaXdpWTJobFkydGZjMkZzZENJNkluaDNkekZ6WWpsQmFYQlBiRU5KVkhac1dYUnpZVUU5UFNJc0ltTnlaV0YwWldRaU9qRTRNREF3TURBd01EQXNJbWh2YkdSbGNpSTZJa0psYmlJc0ltbHVaR1Y0SWpvekxDSnJJam95TENKcmFXNWtJam9pYUdWcGNpMXphR0Z5WkNJc0ltNGlPak1zSW5Cc1lXNWZhV1FpT2lJMVpERm1PV0V6WXkwM1lqSmxMVFJqT0RBdE9XUTBNUzB5WVRabE9HWXdZakZqTXpjaUxDSnphR0Z5WlNJNklrRTVkbVJhWjBwdGVtMTNSVEJFVmtKak5sbzFkVVYxYkhkWlFtUlZiMFpsUjNkWmFucFZNRVozUTNSVklpd2lkMkZwZEY5a1lYbHpJam8zZlE9PSIsInNlbmRlciI6Is6VzrvOrc69zrcgzqAuIiwic2lnIjoiSS9ZTVVSQ2J0VkgwYU5jazhsbU5xTm15ZU1qaVhlMzBhUHJqMkUxQ0l5VXZDZlFmL0xTN2wvQk4zczNFeTlVcFZhZWRvUjJVSHBDTEt4MlhaaVVyREE9PSIsInNpZ25lciI6Im1ETWsvWklYVFNsNUZNVGkxRUNYNmYvdTR3NjNidG1kMDMweFg1K0tBWUk9IiwidmVyc2lvbiI6MX0"
+  ],
+  "shards": [
+    {
+      "index": 1,
+      "holder": "Νίκος",
+      "package_id": "0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41"
+    },
+    {
+      "index": 2,
+      "holder": "Anna",
+      "package_id": "1c9d7a3f-2e5b-4f68-9d4c-0b1a2f3e4d52"
+    },
+    {
+      "index": 3,
+      "holder": "Ben",
+      "package_id": "2dae8b40-3f6c-4a79-ae5d-1c2b3a4f5e63"
+    }
+  ],
+  "requester": {
+    "signing_seed": "3188899fdca08256b9b1b02d2ccb8e163279f035c4604f819f1e537486bd5932",
+    "box_key": "212d0e66c6e141a887dd01aaf906f0be3fa6e7d69fdf4aadb233867ea00f7251",
+    "record": {
+      "version": 1,
+      "signing_key": "MYiJn9yggla5sbAtLMuOFjJ58DXEYE+Bnx5TdIa9WTI=",
+      "box_key": "IS0OZsbhQaiH3QGq+Qbwvj+m59af30qtsjOGfqAPclE="
+    }
+  },
+  "request": {
+    "id": "6e2f0b4d-8c3a-4d91-be52-3b7f9a1c0d48",
+    "created": 1800100000,
+    "holder_index": 2,
+    "file": "request-6e2f0b4d-8c3a-4d91-be52-3b7f9a1c0d48.lgkheirreq",
+    "data": "{\"format\":\"localgatekeys-heir\",\"id\":\"6e2f0b4d-8c3a-4d91-be52-3b7f9a1c0d48\",\"payload\":\"eyJib3hfcHVibGljIjoiaFFkcHB3QU5DQ1RlbUh1TUhNQnZyYzY3MktmZnJIMnpFb0gxREFIQzZIVT0iLCJjcmVhdGVkIjoxODAwMTAwMDAwLCJob2xkZXJfaW5kZXgiOjIsImtpbmQiOiJoZWlyLXJlcXVlc3QiLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3IiwicHJvb2YiOiIrcUJKRlBnR0sxQnB0ZlRwM2hzYk51Y0dINjFZN2hueWI2MkE2NExtYUFZPSJ9\",\"sender\":\"Anna\",\"sig\":\"SPKTC9e3Q3JPwIAa3Yh5ZS3/E/KpcB/5rCmI6x6sqrc6VpMB3LnftGjrarcOwoNdAMJM7wKhy4A1sOjjGomdDg==\",\"signer\":\"iYA/amcXwcGMNTuIU+7sXi9Z7oE9VSe3k4PtAeiOwzI=\",\"version\":1}"
+  },
+  "deny": {
+    "id": "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59",
+    "created": 1800200000,
+    "file": "deny-6e2f0b4d-8c3a-4d91-be52-3b7f9a1c0d48.lgkheirdeny",
+    "data": "{\"format\":\"localgatekeys-heir\",\"id\":\"7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59\",\"payload\":\"eyJjcmVhdGVkIjoxODAwMjAwMDAwLCJraW5kIjoiaGVpci1kZW55IiwicGxhbl9pZCI6IjVkMWY5YTNjLTdiMmUtNGM4MC05ZDQxLTJhNmU4ZjBiMWMzNyIsInJlcXVlc3RfaWQiOiI2ZTJmMGI0ZC04YzNhLTRkOTEtYmU1Mi0zYjdmOWExYzBkNDgifQ==\",\"sender\":\"\",\"sig\":\"J4V+ol5inrX0LZOZKWz33Q0/J+2Q03rm1UToU88KYkE8tZTzlmSCqXdDv0djvO8s4SwMV6iexjmFTGTJdPHVDQ==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}"
+  },
+  "grant": {
+    "id": "8a412d6f-ae5c-4fb3-9074-5d9b1c3e2f6a",
+    "created": 1800300000,
+    "ephemeral": "f484208bc306b017d212af11ba9f96712f8e7331935e7de7799c4011f46d93a7",
+    "file": "grant-6e2f0b4d-8c3a-4d91-be52-3b7f9a1c0d48.lgkheirgrant",
+    "data": "{\"format\":\"localgatekeys-heir\",\"id\":\"8a412d6f-ae5c-4fb3-9074-5d9b1c3e2f6a\",\"payload\":\"eyJib3hfcHVibGljIjoiaFFkcHB3QU5DQ1RlbUh1TUhNQnZyYzY3MktmZnJIMnpFb0gxREFIQzZIVT0iLCJjcmVhdGVkIjoxODAwMzAwMDAwLCJlcGhlbWVyYWwiOiJ1R21BWGwzc3lJQTYzak1LdTZPVkN6dTN0VU5HaDdnb1Vua2I2TkhIcWpZPSIsImtpbmQiOiJoZWlyLWdyYW50IiwicGxhbl9pZCI6IjVkMWY5YTNjLTdiMmUtNGM4MC05ZDQxLTJhNmU4ZjBiMWMzNyIsInJlcXVlc3RfaWQiOiI2ZTJmMGI0ZC04YzNhLTRkOTEtYmU1Mi0zYjdmOWExYzBkNDgiLCJ3cmFwcGVkIjoiL3FVUWlIOUpGQVRDM00vZ2dlcTJ4WTlrZ3BJWkZhcWxWMzh2Q094VXZKZTZQQmpUczhaR1pQYkRpVDExZFFuOSJ9\",\"sender\":\"\",\"sig\":\"/vwcPmchB51NqX+MWSO/YyygmFQ6xPqrjmMc74vdT3jtsNY9mRmPXgizYiMJ45CVHxCiiy+Unjac3GScKkLhAw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}"
+  },
+  "descriptor": {
+    "file": "backup-20270115-080000-0a1b2c3d.lgkheirbackup",
+    "written_at": 1800050000,
+    "data": "{\"format\":\"localgatekeys-heir\",\"id\":\"9b523e70-bf6d-40c4-a185-6eac2d4f3a7b\",\"payload\":\"eyJiYWNrdXBfcHVibGljIjoiYktiSDJHbEpBT21aMXNxOGwyZ0I4Qy9oQ2ZTRllwUHR6cW03Q21uT0Ezaz0iLCJmaWxlIjoiYmFja3VwLTIwMjcwMTE1LTA4MDAwMC0wYTFiMmMzZC5sZ2siLCJraW5kIjoiaGVpci1iYWNrdXAiLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhMjU2IjoiNTRkMDBkODY3NzU4Y2VmODE2YmM0Njg1ZjU4ZTMyN2I5NDk3MTJiMDdlYmQxN2MzNDg1ZjNmZmM5ZTlmNTEzMyIsInNpemUiOjEyMzQ1Niwid3JpdHRlbl9hdCI6MTgwMDA1MDAwMH0=\",\"sender\":\"\",\"sig\":\"32ghH2WhbPk5weHFi99r5udENJw8/foYxosYkuqWcIqmcSVhLwF22jYzdlyLmgK2ld717i/wEl5RU3rmgOydDQ==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}"
+  },
+  "record": {
+    "version": 1,
+    "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+    "k": 2,
+    "n": 3,
+    "holders": [
+      "Νίκος",
+      "Anna",
+      "Ben"
+    ],
+    "wait_days": 7,
+    "folder": "C:\\Shared\\Family",
+    "created": 1800000000,
+    "owner": "Ελένη Π.",
+    "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+    "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+    "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+    "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+    "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+    "holder_keys": [
+      "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+      "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+      "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+    ],
+    "home": true,
+    "denied": [
+      "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+    ]
+  },
+  "synced": {
+    "version": 1,
+    "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+    "k": 2,
+    "n": 3,
+    "holders": [
+      "Νίκος",
+      "Anna",
+      "Ben"
+    ],
+    "wait_days": 7,
+    "created": 1800000000,
+    "owner": "Ελένη Π.",
+    "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+    "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+    "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+    "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+    "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+    "holder_keys": [
+      "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+      "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+      "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+    ],
+    "denied": [
+      "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+    ],
+    "stale": false
+  },
+  "wrapper": {
+    "ns": "heir",
+    "schema": 1,
+    "updated_at": 1800000000,
+    "record": {
+      "version": 1,
+      "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+      "k": 2,
+      "n": 3,
+      "holders": [
+        "Νίκος",
+        "Anna",
+        "Ben"
+      ],
+      "wait_days": 7,
+      "created": 1800000000,
+      "owner": "Ελένη Π.",
+      "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+      "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+      "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+      "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+      "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+      "holder_keys": [
+        "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+        "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+        "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+      ],
+      "denied": [
+        "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+      ],
+      "stale": false
+    }
+  },
+  "refused": [
+    {
+      "name": "bad-signature",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Mallory\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "bad-signature"
+    },
+    {
+      "name": "unsupported-version",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":2}",
+      "reason": "unsupported"
+    },
+    {
+      "name": "wrong-format",
+      "package": "{\"format\":\"localgatekeys-share\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "extra-outer-key",
+      "package": "{\"extra\":1,\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "upper-case-id",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0B8C6F2E-1D4A-4E57-8C3B-9A0F1E2D3C41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "short-signer",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "extra-payload-key",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImV4dHJhIjoxLCJob2xkZXIiOiLOnc6vzrrOv8+CIiwiaW5kZXgiOjEsImsiOjIsImtpbmQiOiJoZWlyLXNoYXJkIiwibiI6MywicGxhbl9pZCI6IjVkMWY5YTNjLTdiMmUtNGM4MC05ZDQxLTJhNmU4ZjBiMWMzNyIsInNoYXJlIjoiQVg0VTNMaWJ4VnJQdTExRjRiUUJSZUFaYTdqbU9GWVJzYXBrdlJYNjdWL2oiLCJ3YWl0X2RheXMiOjd9\",\"sender\":\"Ελένη Π.\",\"sig\":\"2wiPQ1eJVyGB1UK80gzS0Ua6YLYyBmqZE8SDajEtKskmFApqECSMOjG9wDkHXU61uPwPzJFu2SDA24KL53XoAg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "index-mismatch",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MiwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"PDBbqKdKqahuFODcxMBbYtDRmxxmPEOUYR5SeMZK1Kl2KW8NiMcHoRvLB/2c01DVxVvWr9xOoKME4+uculliCg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "k-above-n",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6NCwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"4/uXK8LaPYkuORPFG9Y9rgQv1VoodOd5UVi38J5FOVpdcBiGYEMQo/L9B0fTAr6wOuGPl5p2kBGBMQfEbe0XBg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "float-k",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Mi4wLCJraW5kIjoiaGVpci1zaGFyZCIsIm4iOjMsInBsYW5faWQiOiI1ZDFmOWEzYy03YjJlLTRjODAtOWQ0MS0yYTZlOGYwYjFjMzciLCJzaGFyZSI6IkFYNFUzTGlieFZyUHUxMUY0YlFCUmVBWmE3am1PRllSc2Fwa3ZSWDY3Vi9qIiwid2FpdF9kYXlzIjo3fQ==\",\"sender\":\"Ελένη Π.\",\"sig\":\"WhKt+k7ClOkcVUOPaaip78yD8DqJ2dNvQ4D0AhJdnFdeFMHvLT6mer+Q2YzWaoQgApj+2XKu+mPpSoBAER0WAA==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "bool-index",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6dHJ1ZSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"B1j/yJBuuXCgyh4NcPyPPpBV/B9rz3HA6na8kmwY6uxJTXFHy5goUQDhFBqBlfAcANGZc6Kbi1CpPWHt0ibBDw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "wait-31",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6MzF9\",\"sender\":\"Ελένη Π.\",\"sig\":\"VhEYt3W2MuUplmfjZZ3ukITrgzSX6hzM2u9cVf1NMGP6/jWD5ISn/DF0CGMHTdgpEQzuGgLmQHvv4SOXuUZ1BA==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "control-in-holder",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6IkFubuKAiyIsImluZGV4IjoxLCJrIjoyLCJraW5kIjoiaGVpci1zaGFyZCIsIm4iOjMsInBsYW5faWQiOiI1ZDFmOWEzYy03YjJlLTRjODAtOWQ0MS0yYTZlOGYwYjFjMzciLCJzaGFyZSI6IkFYNFUzTGlieFZyUHUxMUY0YlFCUmVBWmE3am1PRllSc2Fwa3ZSWDY3Vi9qIiwid2FpdF9kYXlzIjo3fQ==\",\"sender\":\"Ελένη Π.\",\"sig\":\"IYtEkoNpHEJZW6U8ZVJFWj3sfpaQZtrQnk6DeBw73Cbolal0tfEzqo1qxpOzcFs+JzJOnZkiL20x+T0BDQpVBQ==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "untrimmed-holder",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6IiBBbm4iLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"jqZ8ffMaKyf6XGG5P/z0cyuc8UF5etqxCCgxcyuwImMxrpVwaH5aamoAhEMof+DIMG5Jsdn2wwzID+slYBl2AQ==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "long-holder",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Inh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eCIsImluZGV4IjoxLCJrIjoyLCJraW5kIjoiaGVpci1zaGFyZCIsIm4iOjMsInBsYW5faWQiOiI1ZDFmOWEzYy03YjJlLTRjODAtOWQ0MS0yYTZlOGYwYjFjMzciLCJzaGFyZSI6IkFYNFUzTGlieFZyUHUxMUY0YlFCUmVBWmE3am1PRllSc2Fwa3ZSWDY3Vi9qIiwid2FpdF9kYXlzIjo3fQ==\",\"sender\":\"Ελένη Π.\",\"sig\":\"vXn5I68bArboteXG7Uad8MsRTjfqVvFUHdLHJNoFIZ1KlkZi+6hUJGKpojRVD50AR0fUGuKD9KKeehacsAtTBg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "short-share",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBUUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBPSIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"RAh9bdzIUu6F8dx9YFwSVJVrYQ1F/KSdwPGgCAvUEDDg93B1tundurscAgZPLS6yPEgwKMOuYYUdSEka2gVYDg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "unpadded-base64",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUEiLCJjcmVhdGVkIjoxODAwMDAwMDAwLCJob2xkZXIiOiLOnc6vzrrOv8+CIiwiaW5kZXgiOjEsImsiOjIsImtpbmQiOiJoZWlyLXNoYXJkIiwibiI6MywicGxhbl9pZCI6IjVkMWY5YTNjLTdiMmUtNGM4MC05ZDQxLTJhNmU4ZjBiMWMzNyIsInNoYXJlIjoiQVg0VTNMaWJ4VnJQdTExRjRiUUJSZUFaYTdqbU9GWVJzYXBrdlJYNjdWL2oiLCJ3YWl0X2RheXMiOjd9\",\"sender\":\"Ελένη Π.\",\"sig\":\"JSRKoQdjLUK/f3Ie9O0aKXG+rYKjUDRcHybxCvNGUO/kQwZ7EIK+ZLCkikP7VF8b/Pqm8xJymmFRA/90zZBiCg==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "wrong-kind",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItcmVxdWVzdCIsIm4iOjMsInBsYW5faWQiOiI1ZDFmOWEzYy03YjJlLTRjODAtOWQ0MS0yYTZlOGYwYjFjMzciLCJzaGFyZSI6IkFYNFUzTGlieFZyUHUxMUY0YlFCUmVBWmE3am1PRllSc2Fwa3ZSWDY3Vi9qIiwid2FpdF9kYXlzIjo3fQ==\",\"sender\":\"Ελένη Π.\",\"sig\":\"0+fUk6K8iyJIxhHbHL43CdBRCVMi0mrzXO5+ttscL5Kr85Pe+J2NSK61rau4vT75LOMWo9KofRLoBqCbgi0TDw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1}",
+      "reason": "malformed"
+    },
+    {
+      "name": "not-json",
+      "package": "not json",
+      "reason": "malformed"
+    },
+    {
+      "name": "duplicate-key",
+      "package": "{\"format\":\"localgatekeys-heir\",\"id\":\"0b8c6f2e-1d4a-4e57-8c3b-9a0f1e2d3c41\",\"payload\":\"eyJjaGVjayI6IlZZbU5vMDRUYk9pNGd2VjR2L0hOdmQxQkEvaGljOHV4SDNZY2hSd1o4ZjQ9IiwiY2hlY2tfc2FsdCI6Inh3dzFzYjlBaXBPbENJVHZsWXRzYUE9PSIsImNyZWF0ZWQiOjE4MDAwMDAwMDAsImhvbGRlciI6Is6dzq/Ous6/z4IiLCJpbmRleCI6MSwiayI6Miwia2luZCI6ImhlaXItc2hhcmQiLCJuIjozLCJwbGFuX2lkIjoiNWQxZjlhM2MtN2IyZS00YzgwLTlkNDEtMmE2ZThmMGIxYzM3Iiwic2hhcmUiOiJBWDRVM0xpYnhWclB1MTFGNGJRQlJlQVphN2ptT0ZZUnNhcGt2Ulg2N1YvaiIsIndhaXRfZGF5cyI6N30=\",\"sender\":\"Ελένη Π.\",\"sig\":\"2W1B12SA9limIFDgYAMQBgJyAYKcdr+AXeilPLp9t/wC+EBl3C2n8Jyw6kd5JBKC/TathMKnjtEySCv9jwlzCw==\",\"signer\":\"mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=\",\"version\":1,\"sig\":\"x\"}",
+      "reason": "malformed"
+    }
+  ],
+  "merges": [
+    {
+      "name": "denies-union",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "0a1b2c3d-4e5f-4061-8293-a4b5c6d7e8f9"
+        ],
+        "stale": false
+      },
+      "stored": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59",
+          "0a1b2c3d-4e5f-4061-8293-a4b5c6d7e8f9"
+        ],
+        "stale": false
+      }
+    },
+    {
+      "name": "same-plan",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "stored": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      }
+    },
+    {
+      "name": "stale-either",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": true
+      },
+      "stored": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": true
+      }
+    },
+    {
+      "name": "nothing-new-keeps-remote-order",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59",
+          "0a1b2c3d-4e5f-4061-8293-a4b5c6d7e8f9"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "0a1b2c3d-4e5f-4061-8293-a4b5c6d7e8f9",
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "stored": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "0a1b2c3d-4e5f-4061-8293-a4b5c6d7e8f9",
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      }
+    },
+    {
+      "name": "first-plan",
+      "local": null,
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "stored": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      }
+    },
+    {
+      "name": "rekeyed-conflict",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "qLyQ1GdHrOu3Injr1OQ+gFaLlj2ODq0i+zATaaqRevA=",
+        "signing_key": "rmkJTQy5UWPkgM1hwnqlC/BKwAU1HHynOs89m9lSJM8=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "reason": "conflict"
+    },
+    {
+      "name": "holders-conflict",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Carl"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "reason": "conflict"
+    },
+    {
+      "name": "another-plan-replaces",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000010,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "stored": {
+        "version": 1,
+        "plan_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000010,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      }
+    },
+    {
+      "name": "folder-is-not-synced",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false,
+        "folder": null
+      },
+      "reason": "malformed"
+    },
+    {
+      "name": "missing-stale",
+      "local": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ]
+      },
+      "reason": "malformed"
+    },
+    {
+      "name": "signer-not-of-key",
+      "local": null,
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "7f301c5e-9d4b-4ea2-8f63-4c8a0b2d1e59"
+        ],
+        "stale": false
+      },
+      "reason": "malformed"
+    },
+    {
+      "name": "too-many-denied",
+      "local": null,
+      "remote": {
+        "version": 1,
+        "plan_id": "5d1f9a3c-7b2e-4c80-9d41-2a6e8f0b1c37",
+        "k": 2,
+        "n": 3,
+        "holders": [
+          "Νίκος",
+          "Anna",
+          "Ben"
+        ],
+        "wait_days": 7,
+        "created": 1800000000,
+        "owner": "Ελένη Π.",
+        "signer": "mDMk/ZIXTSl5FMTi1ECX6f/u4w63btmd030xX5+KAYI=",
+        "signing_key": "pQjPslJlyynRdPKwdSSebiJ6no3V/nEmja5gDgDNo5Q=",
+        "check_salt": "xww1sb9AipOlCITvlYtsaA==",
+        "check": "VYmNo04TbOi4gvV4v/HNvd1BA/hic8uxH3YchRwZ8f4=",
+        "backup_public": "bKbH2GlJAOmZ1sq8l2gB8C/hCfSFYpPtzqm7CmnOA3k=",
+        "holder_keys": [
+          "sKF5lOH6/MCAd65etc45Psr9Y8VlDaYzQfYN4Y3gaFA=",
+          "/NHDlxO/oWq27dX7MN1NiigDsqTqbJHuNreIgTHIxJg=",
+          "e/eOXoCXobTq/Z6S3o6UUvsGAlLsCoaDAYkdzRN6pkE="
+        ],
+        "denied": [
+          "00000000-0000-4000-8000-000000000000",
+          "00000001-0000-4000-8000-000000000000",
+          "00000002-0000-4000-8000-000000000000",
+          "00000003-0000-4000-8000-000000000000",
+          "00000004-0000-4000-8000-000000000000",
+          "00000005-0000-4000-8000-000000000000",
+          "00000006-0000-4000-8000-000000000000",
+          "00000007-0000-4000-8000-000000000000",
+          "00000008-0000-4000-8000-000000000000",
+          "00000009-0000-4000-8000-000000000000",
+          "0000000a-0000-4000-8000-000000000000",
+          "0000000b-0000-4000-8000-000000000000",
+          "0000000c-0000-4000-8000-000000000000",
+          "0000000d-0000-4000-8000-000000000000",
+          "0000000e-0000-4000-8000-000000000000",
+          "0000000f-0000-4000-8000-000000000000",
+          "00000010-0000-4000-8000-000000000000",
+          "00000011-0000-4000-8000-000000000000",
+          "00000012-0000-4000-8000-000000000000",
+          "00000013-0000-4000-8000-000000000000",
+          "00000014-0000-4000-8000-000000000000",
+          "00000015-0000-4000-8000-000000000000",
+          "00000016-0000-4000-8000-000000000000",
+          "00000017-0000-4000-8000-000000000000",
+          "00000018-0000-4000-8000-000000000000",
+          "00000019-0000-4000-8000-000000000000",
+          "0000001a-0000-4000-8000-000000000000",
+          "0000001b-0000-4000-8000-000000000000",
+          "0000001c-0000-4000-8000-000000000000",
+          "0000001d-0000-4000-8000-000000000000",
+          "0000001e-0000-4000-8000-000000000000",
+          "0000001f-0000-4000-8000-000000000000",
+          "00000020-0000-4000-8000-000000000000",
+          "00000021-0000-4000-8000-000000000000",
+          "00000022-0000-4000-8000-000000000000",
+          "00000023-0000-4000-8000-000000000000",
+          "00000024-0000-4000-8000-000000000000",
+          "00000025-0000-4000-8000-000000000000",
+          "00000026-0000-4000-8000-000000000000",
+          "00000027-0000-4000-8000-000000000000",
+          "00000028-0000-4000-8000-000000000000",
+          "00000029-0000-4000-8000-000000000000",
+          "0000002a-0000-4000-8000-000000000000",
+          "0000002b-0000-4000-8000-000000000000",
+          "0000002c-0000-4000-8000-000000000000",
+          "0000002d-0000-4000-8000-000000000000",
+          "0000002e-0000-4000-8000-000000000000",
+          "0000002f-0000-4000-8000-000000000000",
+          "00000030-0000-4000-8000-000000000000",
+          "00000031-0000-4000-8000-000000000000",
+          "00000032-0000-4000-8000-000000000000",
+          "00000033-0000-4000-8000-000000000000",
+          "00000034-0000-4000-8000-000000000000",
+          "00000035-0000-4000-8000-000000000000",
+          "00000036-0000-4000-8000-000000000000",
+          "00000037-0000-4000-8000-000000000000",
+          "00000038-0000-4000-8000-000000000000",
+          "00000039-0000-4000-8000-000000000000",
+          "0000003a-0000-4000-8000-000000000000",
+          "0000003b-0000-4000-8000-000000000000",
+          "0000003c-0000-4000-8000-000000000000",
+          "0000003d-0000-4000-8000-000000000000",
+          "0000003e-0000-4000-8000-000000000000",
+          "0000003f-0000-4000-8000-000000000000",
+          "00000040-0000-4000-8000-000000000000"
+        ],
+        "stale": false
+      },
+      "reason": "malformed"
+    }
+  ]
+}

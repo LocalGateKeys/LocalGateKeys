@@ -1,6 +1,7 @@
 package app.localgatekeys.android.vault
 
 import app.localgatekeys.android.R
+import app.localgatekeys.android.access.AccessGate
 import app.localgatekeys.android.i18n.Txt
 import androidx.annotation.StringRes
 import app.localgatekeys.android.pro.ItemLimit
@@ -13,10 +14,14 @@ data class QuickAction(val kind: Kind, @StringRes val label: Int, @StringRes val
 
 object QuickActions {
     /** Copy what the item holds without opening it, and open its website. */
-    fun forItem(item: VaultItem): List<QuickAction> = buildList {
-        if (item.username.isNotEmpty()) add(QuickAction(QuickAction.Kind.COPY_USERNAME, R.string.detail_pane_copy_username, R.string.quick_username_copied))
-        if (item.copyablePassword != null) add(QuickAction(QuickAction.Kind.COPY_PASSWORD, R.string.detail_pane_copy_password, R.string.quick_password_copied))
-        if (item.hasTotp) add(QuickAction(QuickAction.Kind.COPY_CODE, R.string.detail_pane_copy_code, R.string.quick_code_copied))
+    fun forItem(item: VaultItem, today: String = AccessGate.today()): List<QuickAction> = buildList {
+        // Secrets of a login with access rules are copied from its detail screen only (owner check, copy once).
+        val secrets = AccessGate.mayQuickCopy(item.record, today)
+        // View only on phones: nothing is copied from it, the username neither (as the detail screen and the iPhone).
+        val viewOnly = item.isLogin && AccessGate.effective(item.record, today).phoneView
+        if (item.username.isNotEmpty() && !viewOnly) add(QuickAction(QuickAction.Kind.COPY_USERNAME, R.string.detail_pane_copy_username, R.string.quick_username_copied))
+        if (secrets && item.copyablePassword != null) add(QuickAction(QuickAction.Kind.COPY_PASSWORD, R.string.detail_pane_copy_password, R.string.quick_password_copied))
+        if (secrets && item.hasTotp) add(QuickAction(QuickAction.Kind.COPY_CODE, R.string.detail_pane_copy_code, R.string.quick_code_copied))
         if (item.openableUrl != null) add(QuickAction(QuickAction.Kind.OPEN_WEBSITE, R.string.detail_pane_open_website, null))
     }
 }

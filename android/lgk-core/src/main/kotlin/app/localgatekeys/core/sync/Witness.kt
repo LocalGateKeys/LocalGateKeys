@@ -151,9 +151,12 @@ object Witness {
         return true
     }
 
-    /** Peers whose generations this device keeps and publishes: keyring members and the paired LAN peer. */
+    /**
+     * Peers whose generations this device keeps and publishes: keyring members, the Wi-Fi peers this device hosts
+     * ([SyncGroupState.lanPeers]) and the paired LAN peer.
+     */
     fun witnessIds(state: SyncGroupState, lanPeers: Iterable<String> = emptyList()): Set<String> =
-        (state.members + lanPeers).filter { it != state.deviceId }.toSet()
+        (state.members + state.lanPeers.map { it.deviceId } + lanPeers).filter { it != state.deviceId }.toSet()
 
     /**
      * Check [observations] from a LAN exchange (desktop `lan_sync.apply_witness`) against the session's in-memory

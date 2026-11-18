@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Passa da Microsoft Authenticator a LocalGateKeys</title>
+  <meta name="description" content="Come esportare le password da Microsoft Authenticator, importarle in LocalGateKeys e cosa non viene trasferito.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/it/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/switch/microsoft-authenticator">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/switch/microsoft-authenticator">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Passa da Microsoft Authenticator a LocalGateKeys">
+  <meta property="og:description" content="Come esportare le password da Microsoft Authenticator, importarle in LocalGateKeys e cosa non viene trasferito.">
+  <meta property="og:url" content="https://localgatekeys.app/it/switch/microsoft-authenticator">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Il logo di LocalGateKeys: un password manager per Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Passa da Microsoft Authenticator a LocalGateKeys">
+  <meta name="twitter:description" content="Come esportare le password da Microsoft Authenticator, importarle in LocalGateKeys e cosa non viene trasferito.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Vai al contenuto</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../it/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principale">
+        <ul class="nav">
+          <li><a href="../../it/features">Funzionalità</a></li>
+          <li><a href="../../it/get-started">Per iniziare</a></li>
+          <li><a href="../../it/help">Guida</a></li>
+          <li><a href="../../it/security">Sicurezza</a></li>
+          <li><a href="../../it/pricing">Prezzi</a></li>
+          <li><a href="../../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../../it/download">Download</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principale">
+          <ul class="nav nav-stack">
+            <li><a href="../../it/features">Funzionalità</a></li>
+          <li><a href="../../it/get-started">Per iniziare</a></li>
+          <li><a href="../../it/help">Guida</a></li>
+          <li><a href="../../it/security">Sicurezza</a></li>
+          <li><a href="../../it/pricing">Prezzi</a></li>
+          <li><a href="../../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../../it/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Lingua</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../switch/microsoft-authenticator" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/microsoft-authenticator" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/microsoft-authenticator" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../../pl/switch/microsoft-authenticator" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/microsoft-authenticator" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/microsoft-authenticator" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/microsoft-authenticator" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/microsoft-authenticator" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/microsoft-authenticator" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/microsoft-authenticator" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/microsoft-authenticator" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Passa da Microsoft Authenticator a LocalGateKeys</h1>
+  <p class="lead">LocalGateKeys tiene la tua cassaforte sui tuoi dispositivi, senza account e senza server. Passare da Microsoft Authenticator richiede pochi minuti.</p>
+  <p class="price-strip"><strong>Pro costa US$29.99 una volta sola.</strong> <span>Gratis fino a 7 elementi, senza limiti di tempo.</span></p>
+  <ul class="trust-row" aria-label="Cosa lo rende diverso">
+    <li>Nessun account</li>
+    <li>Nessun server custodisce la tua cassaforte</li>
+    <li>Come è protetto: <a href="../../it/security">documentazione sulla sicurezza</a></li>
+  </ul>
+</div>
+
+<div class="wrap page-body prose">
+  <h2>Perché le persone lasciano Microsoft Authenticator</h2>
+  <ul>
+    <li>Da giugno ad agosto 2025: Microsoft Authenticator ha smesso di salvare e compilare le password; Microsoft rimanda a Edge. <a href="https://petri.com/microsoft-authenticator-password-autofill/" rel="nofollow noopener">Fonte</a><!-- source: https://petri.com/microsoft-authenticator-password-autofill/ --></li>
+  </ul>
+  <p class="quiet">I fatti di questa pagina sono stati verificati l'8 novembre 2026; ognuno rimanda alla sua fonte.</p>
+
+  <h2>1. Esporta da Microsoft Authenticator</h2>
+  <ol>
+    <li>In Microsoft Authenticator apri Settings → Export passwords, se l'app contiene ancora le tue password.</li>
+    <li>In Microsoft Edge apri Impostazioni → Password → Esporta password e salva il file CSV.</li>
+  </ol>
+
+  <h2>2. Importa in LocalGateKeys</h2>
+  <p>In LocalGateKeys scegli Importa, seleziona il file CSV e controlla l'anteprima. LocalGateKeys riconosce il formato e abbina le colonne; nulla viene salvato finché non confermi. Poi elimina il file CSV, perché contiene le tue password non cifrate.</p>
+  <p class="quiet">LocalGateKeys lo legge come: Chrome / Edge / Brave passwords CSV</p>
+  <p class="callout">Le passkey non vengono trasferite in un'esportazione CSV; LocalGateKeys le importa da file CXF (Password di Apple e altre app che esportano in CXF) su PC, Android, iPhone e Mac.</p>
+
+  <h2>Cosa non viene trasferito</h2>
+  <ul>
+    <li>Le passkey, a meno che non passino con un trasferimento CXF (vedi la nota sopra).</li>
+    <li>Tutto ciò che non è un login: l'esportazione contiene sito, nome utente, password e a volte una nota.</li>
+  </ul>
+
+  <h2>Quanto costa</h2>
+  <p>LocalGateKeys Pro costa US$29.99 una sola volta. Un solo pagamento. Ogni aggiornamento, per sempre, gratis. La versione gratuita contiene fino a 7 elementi, senza limiti di tempo.</p>
+  <p class="actions"><a class="button primary" href="../../it/download">Scarica LocalGateKeys</a> <a class="button" href="../../it/pricing">Vedi i prezzi</a></p>
+  <p class="quiet"><a href="../../it/switch/">Tutte le guide al passaggio</a></p>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestore di password per Windows, Mac e iPhone che tiene la tua cassaforte sui tuoi dispositivi.</p>
+        <p class="quiet">Questo sito conta le visite con Cloudflare Web Analytics, che non usa cookie. Non usa tracker pubblicitari e non imposta cookie.</p>
+      </div>
+      <nav aria-label="Prodotto">
+        <h2>Prodotto</h2>
+        <ul>
+          <li><a href="../../it/features">Funzionalità</a></li>
+          <li><a href="../../it/pricing">Prezzi</a></li>
+          <li><a href="../../it/download">Download</a></li>
+          <li><a href="../../it/get-started">Per iniziare</a></li>
+          <li><a href="../../it/switch/">Cambia</a></li>
+          <li><a href="../../buy">Acquista Pro</a></li>
+          <li><a href="../../it/licence">La tua licenza Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recupera la licenza</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Aiuto">
+        <h2>Aiuto</h2>
+        <ul>
+          <li><a href="../../it/help">Guida utente</a></li>
+          <li><a href="../../it/support">Supporto e FAQ</a></li>
+          <li><a href="../../it/security">Sicurezza</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Segnala una vulnerabilità</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Note legali">
+        <h2>Note legali</h2>
+        <p class="quiet">Questi documenti sono in inglese, e si applica la versione inglese, che è quella vincolante.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contratto di licenza</a></li>
+          <li><a href="../../legal/privacy">Informativa sulla privacy</a></li>
+          <li><a href="../../legal/terms-of-sale">Condizioni di vendita</a></li>
+          <li><a href="../../legal/refunds">Politica di rimborso</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contatto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows è un marchio del gruppo di società Microsoft. Chrome è un marchio di Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari sono marchi di Apple Inc., registrati negli Stati Uniti e in altri paesi.</p>
+      <nav class="lang-switch" aria-label="Lingua"><ul><li><a href="../../switch/microsoft-authenticator" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/microsoft-authenticator" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/microsoft-authenticator" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../../pl/switch/microsoft-authenticator" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/microsoft-authenticator" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/microsoft-authenticator" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/microsoft-authenticator" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/microsoft-authenticator" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/microsoft-authenticator" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/microsoft-authenticator" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/microsoft-authenticator" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

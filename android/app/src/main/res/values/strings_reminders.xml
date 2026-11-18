@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">A reminder is due</string>
+    <string name="reminder_named_body">%1$s is due</string>
+    <string name="reminder_save_failed">The reminder could not be saved on this phone.</string>
+    <string name="reminder_channel_name">Reminders</string>
+    <string name="reminder_section">Reminder</string>
+    <string name="reminder_due">Due</string>
+    <string name="reminder_remind_me">Remind me</string>
+    <string name="reminder_change">Change reminder</string>
+    <string name="reminder_remove">Remove reminder</string>
+    <string name="reminder_add">Add reminder</string>
+    <string name="reminder_suggest_button">Remind me before it expires</string>
+    <string name="reminder_card_expires">This card expires %1$s.</string>
+    <string name="reminder_due_date">Due date</string>
+    <string name="reminder_on_the_day">On the day</string>
+    <string name="reminder_upcoming">Upcoming</string>
+    <string name="reminder_nothing_upcoming">Nothing coming up in the next 30 days.</string>
+    <string name="reminder_overdue_due">Overdue · due %1$s</string>
+    <string name="reminder_due_on">Due %1$s</string>
+    <string name="reminder_snooze">Snooze</string>
+    <string name="reminder_snooze_day">Snooze one day</string>
+    <string name="reminder_notifications_off">Notifications are off for LocalGateKeys. Reminders still show here.</string>
+    <string name="reminder_settings_title">Reminders</string>
+    <string name="reminder_show_names">Show item names in notifications</string>
+    <string name="reminder_settings_footer">Add a reminder from a card, document or subscription. Off: notifications say only “A reminder is due”, so nothing about the item shows on the lock screen. On: the item’s name can also show on the lock screen, depending on your phone’s lock-screen notification setting.</string>
+    <string name="reminder_editor_footer">A notification comes at 9:00 on the day. It says only “A reminder is due” unless Settings › Reminders shows item names. Reminders stay on this phone and never sync.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d day before</item>
+        <item quantity="other">%1$d days before</item>
+    </plurals>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Onlangs verwijderd</string>
+    <string name="trash_empty">Onlangs verwijderd is leeg.</string>
+    <string name="trash_save_failed">Onlangs verwijderd kon niet op deze telefoon worden bewaard.</string>
+    <string name="trash_reset">Onlangs verwijderd op deze telefoon kon niet worden gelezen en is gereset.</string>
+    <string name="trash_moved">Naar Onlangs verwijderd verplaatst</string>
+    <string name="trash_item_restored">Item hersteld</string>
+    <string name="trash_restore_needs_pro">Upgrade naar Pro om meer items te herstellen</string>
+    <string name="trash_gone">Het staat niet meer in Onlangs verwijderd.</string>
+    <string name="trash_cannot_restore">Dit onderdeel kan niet worden hersteld.</string>
+    <string name="trash_vault_unreadable">De kluis kon niet worden gelezen.</string>
+    <string name="trash_same_id">Er bestaat al een item met dezelfde ID.</string>
+    <string name="trash_restore_save_failed">Het item kon niet op dit apparaat worden bewaard.</string>
+    <string name="trash_delete_forever">Definitief verwijderen</string>
+    <string name="trash_keep_for">Verwijderde items bewaren gedurende</string>
+    <string name="trash_empty_all">Onlangs verwijderd legen</string>
+    <string name="trash_footer">Verwijderde items blijven versleuteld op deze telefoon staan en worden na deze tijd definitief verwijderd. Ze tellen niet mee voor de items van het gratis abonnement. Oudere back-ups kunnen ze nog bevatten.</string>
+    <string name="trash_empty_all_title">Onlangs verwijderd legen?</string>
+    <string name="trash_empty_all_message">Elk item hier wordt definitief verwijderd. Dit kan niet ongedaan worden gemaakt.</string>
+    <string name="trash_delete_forever_title">Definitief verwijderen?</string>
+    <string name="trash_delete_forever_message">‘%1$s’ wordt definitief verwijderd. Dit kan niet ongedaan worden gemaakt.</string>
+    <string name="trash_removed_soon">wordt binnenkort verwijderd</string>
+    <string name="trash_undo">Ongedaan maken</string>
+    <string name="trash_undo_hint">Herstelt het verwijderde item</string>
+    <string name="trash_undo_announcement">%1$s. Ongedaan maken is mogelijk.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d dag resterend</item>
+        <item quantity="other">%1$d dagen resterend</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d dag</item>
+        <item quantity="other">%1$d dagen</item>
+    </plurals>
+</resources>

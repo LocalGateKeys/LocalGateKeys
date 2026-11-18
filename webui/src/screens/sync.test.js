@@ -37,6 +37,13 @@ describe('SyncPage', () => {
     await waitFor(() => expect(screen.queryByText("Can't find your PC on this network")).toBeNull());
   });
 
+  it('shows the This device line only when there is one', async () => {
+    const v = { ...VIEW, own_id: 'This device: Desk PC · Device 1a2b3c4d' };
+    api({ sync_view: vi.fn().mockResolvedValue(v), sync_refresh: vi.fn().mockResolvedValue(v) });
+    render(SyncPage, { onclose: vi.fn() });
+    expect(await screen.findByText('This device: Desk PC · Device 1a2b3c4d')).toBeInTheDocument();
+  });
+
   it('creates a group with a folder from Python and clears the passwords', async () => {
     const a = api({
       sync_choose_folder: vi.fn().mockResolvedValue({ ok: true, token: 't1', path: 'C:\\Cloud' }),
@@ -52,6 +59,28 @@ describe('SyncPage', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => expect(a.sync_create).toHaveBeenCalledWith('t1', 'violet-orbit-cactus-91', 'violet-orbit-cactus-91'));
     await waitFor(() => expect(screen.queryByLabelText('Sync password')).not.toBeInTheDocument());
+  });
+
+  it('I lost a device: removes the picked device with a new password, then shows the checklist', async () => {
+    const joined = { ...VIEW, cards: [VIEW.cards[0], card('folder', 'Cloud folder', [{ id: 'lost-device', label: 'I lost a device…', primary: false }])] };
+    const a = api({
+      sync_view: vi.fn().mockResolvedValue(joined), sync_refresh: vi.fn().mockResolvedValue(joined),
+      sync_remove_info: vi.fn().mockResolvedValue({ ok: true, needs_password: true, devices: [{ id: 'd2', name: 'Laptop', detail: '' }] }),
+      sync_password_check: vi.fn().mockResolvedValue({ ok: true, label: 'Strong', message: 'Good.' }),
+      sync_lost_device: vi.fn().mockResolvedValue({ ...joined, message: 'Laptop was removed.', checklist: ['Change passwords.', 'Sign it out.'] }),
+    });
+    render(SyncPage, { onclose: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'I lost a device…' }));
+    expect(await screen.findByText(/Pick the lost device/)).toBeInTheDocument();
+    await fireEvent.click(screen.getByLabelText(/Laptop/));
+    await fireEvent.input(screen.getByLabelText('Sync password'), { target: { value: 'violet-orbit-cactus-91' } });
+    await fireEvent.input(screen.getByLabelText('Enter it again'), { target: { value: 'violet-orbit-cactus-91' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(a.sync_lost_device).toHaveBeenCalledWith('folder', 'd2', 'violet-orbit-cactus-91', 'violet-orbit-cactus-91'));
+    const sheet = await screen.findByRole('dialog', { name: 'What to do now' });
+    expect(within(sheet).getByText('Change passwords.')).toBeInTheDocument();
+    await fireEvent.click(within(sheet).getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'What to do now' })).toBeNull());
   });
 
   it('on the free plan shows the Pro card instead of the setup cards', async () => {

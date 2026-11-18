@@ -358,9 +358,10 @@ class LanSessionTest {
     // ---- client ----
 
     /**
-     * A test-side responder holding B's identity (what the Swift test's live responder does): checks the
-     * client's hello, answers with a hello of [counter] (and the recorded nonce when given), opens the
-     * request and seals `answer(request)`. `exchange` is synchronous, so no threads are needed.
+     * A test-side responder holding B's identity (what the Swift test's live responder does): opens the
+     * client's sealed hello (protocol version 3), answers with a sealed hello of [counter] (and the recorded
+     * nonce when given), opens the request and seals `answer(request)`. `exchange` is synchronous, so no
+     * threads are needed.
      */
     private inner class FakeConnection(
         val b: DeviceIdentity,
@@ -377,16 +378,18 @@ class LanSessionTest {
         override fun exchange(frame: ByteArray): ByteArray {
             val ch = channel
             if (ch == null) {
-                val h = SessionHello.parse(LanTransport.decodeFrame(frame))
+                val (h, seal) = SealedHello.openInitiator(LanTransport.decodeFrame(frame), b)
                 SessionHello.verify(h, pinnedA, groupId)
                 val rnd = SystemRandomSource()
                 val mine = SessionHello.make(
                     b, groupId, h.sessionId, counter, QueueRandom(listOf(nonce ?: rnd.bytes(32), ephemeral ?: rnd.bytes(32))),
+                    LanTransport.VERSION,
                 )
                 clientHello = h
                 localHello = mine
+                val answer = SealedHello.sealResponder(mine, seal)
                 channel = SecureChannel(b, pinnedA, groupId, h.sessionId, SecureChannel.Role.RESPONDER, mine, h)
-                return LanTransport.encodeFrame(mine.toBytes())
+                return LanTransport.encodeFrame(answer)
             }
             val request = ch.open(frame)
             return ch.seal(answer(request))
@@ -405,45 +408,59 @@ class LanSessionTest {
 
     @Test
     fun client_against_recorded_exchange() {
-        // Each messages.json connection through the client's per-connection step with a fresh counter
-        // store (the recorded hellos all carry counter 1). Where Swift compares "except signature", the
-        // deterministic Ed25519 here lets both hellos be compared byte for byte.
-        val m = vec("messages.json")
-        val a = identity("A")
-        val b = identity("B")
-        for (c in arr(m["connections"]).map { obj(it) }) {
-            val key = checkConnection(c)
-            val request = messagePlain(c, "request", key)
-            val response = messagePlain(c, "response", key)
+        // Each lan/v3/session.json connection: the client (random reads: session id, hello nonce, hello
+        // ephemeral key, sealing key) against the core responder (hello nonce, hello ephemeral key), both with
+        // a fresh counter store (the recorded hellos carry counter 1). Every frame on the wire is compared byte
+        // for byte with the vectors.
+        val v3 = vec("v3/session.json")
+        for (c in arr(v3["sessions"]).map { obj(it) }) {
             val hello = obj(c["hello"])
+            val ini = obj(hello["initiator"])
+            val res = obj(hello["responder"])
+            val sealed = obj(c["sealed_hello"])
+            val initiator = identity(str(ini["device"]))
+            val responder = identity(str(res["device"]))
             val client = LanClient(
-                a, groupKey(), HelloCounterSource(MemoryCounterStore(), FixedClock(0)),
+                initiator, groupKey(), HelloCounterSource(MemoryCounterStore(), FixedClock(0)),
                 QueueRandom(
                     listOf(
-                        Vectors.hex(str(c["session_id"])), Vectors.hex(str(obj(hello["initiator"])["nonce_hex"])),
-                        Vectors.hex(str(obj(hello["initiator"])["ephemeral_private_hex"])),
+                        Vectors.hex(str(c["session_id"])), Vectors.hex(str(ini["nonce_hex"])),
+                        Vectors.hex(str(ini["ephemeral_private_hex"])), Vectors.hex(str(sealed["ephemeral_private_hex"])),
                     ),
                 ),
                 FixedClock(0),
             )
+            val request = bytes(str(obj(c["request"])["plaintext"]))
+            val response = bytes(str(obj(c["response"])["plaintext"]))
             var seen = ByteArray(0)
-            val conn = FakeConnection(
-                b, pinned("A"), 1, Vectors.hex(str(obj(hello["responder"])["nonce_hex"])),
-                Vectors.hex(str(obj(hello["responder"])["ephemeral_private_hex"])),
-            ) {
-                seen = it
+            val pins = SealedPeers()
+            val host = LanResponder(
+                responder, groupId, { id -> if (id == initiator.deviceId) pinned(str(ini["device"])) else null },
+                HelloCounterSource(MemoryCounterStore(), FixedClock(0)),
+                QueueRandom(listOf(Vectors.hex(str(res["nonce_hex"])), Vectors.hex(str(res["ephemeral_private_hex"])))),
+                pins,
+            ) { _, plain ->
+                seen = plain
                 response
             }
-            val got = client.request(request, pinned("B"), conn)
+            val wire = ArrayList<ByteArray>()
+            val inner = host.connection()
+            val conn = object : LanConnection {
+                override fun exchange(frame: ByteArray): ByteArray {
+                    wire.add(frame)
+                    return inner.exchange(frame).also { wire.add(it) }
+                }
+            }
+            val got = client.request(request, pinned(str(res["device"])), conn)
             assertContentEquals(response, got)
             assertContentEquals(request, seen)
-            val recorded = SessionHello.parse(bytes(str(obj(hello["initiator"])["text"])))
-            assertEquals(recorded.unsignedJson, conn.clientHello?.unsignedJson)
-            assertEquals(recorded, conn.clientHello)
-            // B's recorded hello recreated (same session id, nonce and counter).
-            val recordedB = SessionHello.parse(bytes(str(obj(hello["responder"])["text"])))
-            assertEquals(recordedB, conn.localHello)
-            assertContentEquals(bytes(str(obj(hello["responder"])["text"])), conn.localHello!!.toBytes())
+            assertEquals(4, wire.size)
+            assertContentEquals(LanTransport.encodeFrame(bytes(str(sealed["initiator_frame"]))), wire[0])
+            assertContentEquals(LanTransport.encodeFrame(bytes(str(sealed["responder_frame"]))), wire[1])
+            assertContentEquals(Vectors.hex(str(obj(c["request"])["frame_hex"])), wire[2])
+            assertContentEquals(Vectors.hex(str(obj(c["response"])["frame_hex"])), wire[3])
+            // The responder pinned the initiator once the encrypted request opened.
+            assertTrue(initiator.deviceId in pins)
         }
     }
 
@@ -517,12 +534,34 @@ class LanSessionTest {
         assertEquals(3L, store.inbound[b.deviceId])
     }
 
-    /** Fails like a dropped hello: records the client's hello, then throws [LanPeerNotAnswering]. */
-    private class DroppingConnection : LanConnection {
+    @Test
+    fun heir_hello_probe_reads_the_peers_answer() {
+        val a = identity("A")
+        val b = identity("B")
+        val asked = ArrayList<String>()
+        fun answerWith(reply: ByteArray): Boolean? {
+            val connector = FakeConnector { n ->
+                FakeConnection(b, pinned("A"), (n + 1).toLong(), null) { req ->
+                    asked.add(String(req, Charsets.UTF_8))
+                    reply
+                }
+            }
+            val client = LanClient(a, groupKey(), HelloCounterSource(MemoryCounterStore(), FixedClock(1790000900)), SystemRandomSource(), FixedClock(1790000900))
+            return client.probeHeir(pinned("B"), connector)
+        }
+        assertEquals(true, answerWith(bytes("{\"type\":\"heir-hello\"}")))
+        assertEquals(false, answerWith(LanMessages.encode(LanMessage.Error("bad-message"))))
+        assertEquals(null, answerWith(LanMessages.encode(LanMessage.Error("not-joined"))))
+        assertEquals(null, answerWith(bytes("{\"type\":\"heir-hello\",\"x\":1}")))
+        assertEquals(List(4) { "{\"type\":\"heir-hello\"}" }, asked)
+    }
+
+    /** Fails like a dropped hello: records the client's (sealed, opened by B) hello, then throws [LanPeerNotAnswering]. */
+    private inner class DroppingConnection : LanConnection {
         var hello: SessionHello? = null
 
         override fun exchange(frame: ByteArray): ByteArray {
-            hello = SessionHello.parse(LanTransport.decodeFrame(frame))
+            hello = SealedHello.openInitiator(LanTransport.decodeFrame(frame), identity("B")).first
             throw LanPeerNotAnswering("reply lost")
         }
     }
@@ -776,10 +815,12 @@ class LanSessionTest {
     @Test
     fun version_refusal_and_legacy_hello() {
         val session = vec("session.json")
-        assertContentEquals(bytes(str(session["version_refusal"])), LanTransport.versionRefusal())
+        // lan/session.json's refusal is what a released version-2 responder sends; ours is version 3.
+        assertEquals(2L, LanTransport.parseVersionRefusal(bytes(str(session["version_refusal"]))))
+        assertContentEquals(bytes(str(vec("v3/session.json")["version_refusal"])), LanTransport.versionRefusal())
         assertEquals(null, LanTransport.parseVersionRefusal(LanTransport.versionRefusal())) // our own version
         assertEquals(1L, LanTransport.parseVersionRefusal(bytes("{\"refused\":\"version\",\"version\":1}")))
-        assertEquals(3L, LanTransport.parseVersionRefusal(bytes("{\"refused\":\"version\",\"version\":3}")))
+        assertEquals(4L, LanTransport.parseVersionRefusal(bytes("{\"refused\":\"version\",\"version\":4}")))
         for (bad in listOf(
             "{\"refused\":\"version\",\"version\":0}", "{\"refused\":\"version\",\"version\":1.0}",
             "{\"refused\":\"other\",\"version\":1}", "{\"refused\":\"version\",\"version\":1,\"x\":1}",
@@ -797,25 +838,25 @@ class LanSessionTest {
         assertEquals(null, SessionHello.otherVersion(bytes("{\"version\":1}"))) // unsigned: not a hello
     }
 
-    /** Answers the client's hello with one fixed plain frame payload. */
-    private class AnswerConnection(val payload: ByteArray) : LanConnection {
+    /** Answers the client's (sealed) hello with one fixed plain frame payload. */
+    private inner class AnswerConnection(val payload: ByteArray) : LanConnection {
         var hello: SessionHello? = null
         var calls = 0
 
         override fun exchange(frame: ByteArray): ByteArray {
             calls++
-            hello = SessionHello.parse(LanTransport.decodeFrame(frame))
+            hello = SealedHello.openInitiator(LanTransport.decodeFrame(frame), identity("B")).first
             return LanTransport.encodeFrame(payload)
         }
     }
 
     @Test
     fun client_stops_with_update_needed_and_never_falls_back() {
-        val legacy = bytes(str(obj(vec("session.json")["legacy_hello"])["text"]))
         val cases = listOf(
             bytes("{\"refused\":\"version\",\"version\":1}") to "peer-update-needed",
-            bytes("{\"refused\":\"version\",\"version\":3}") to "lan-update-needed",
-            legacy to "peer-update-needed",
+            // A released version-2 build answers the sealed frame with its refusal (spec 2.4).
+            bytes(str(vec("session.json")["version_refusal"])) to "peer-update-needed",
+            bytes("{\"refused\":\"version\",\"version\":4}") to "lan-update-needed",
         )
         for ((payload, want) in cases) {
             val client = LanClient(
@@ -826,13 +867,25 @@ class LanSessionTest {
             val e = assertFailsWith<LanSyncException> { client.sync(pinned("B"), emptyList(), 0, connector) }
             assertEquals(want, e.reason)
             assertTrue(e.detail.startsWith("update needed: "), e.detail)
-            // One connection, one version-2 hello: no retry, no other version.
+            // One connection, one sealed version-3 hello: no retry, no clear-text hello.
             assertEquals(1, conns.size)
             assertEquals(1, conns[0].calls)
+            assertEquals(LanTransport.VERSION, conns[0].hello?.version)
             assertEquals(1, connector.opened.size)
         }
+        // A clear-text (legacy) hello as the answer is no refusal: the request fails, still without a fallback.
+        val legacy = bytes(str(obj(vec("session.json")["legacy_hello"])["text"]))
+        val conns = ArrayList<AnswerConnection>()
+        val client = LanClient(
+            identity("A"), groupKey(), HelloCounterSource(MemoryCounterStore(), FixedClock(0)), SystemRandomSource(), FixedClock(0),
+        )
+        assertFailsWith<LanTransportException> {
+            client.sync(pinned("B"), emptyList(), 0, ScriptConnector { AnswerConnection(legacy).also { conns.add(it) } })
+        }
+        assertEquals(1, conns.size)
         assertTrue(LanClient.versionMismatch(1).detail.contains("the other device runs an older LocalGateKeys"))
-        assertTrue(LanClient.versionMismatch(3).detail.contains("this device runs an older LocalGateKeys"))
+        assertTrue(LanClient.versionMismatch(2).detail.contains("the other device runs an older LocalGateKeys"))
+        assertTrue(LanClient.versionMismatch(4).detail.contains("this device runs an older LocalGateKeys"))
     }
 
     // ---- rollback witnesses (2026-10-29, desktop test_sync_lan witness cases) ----

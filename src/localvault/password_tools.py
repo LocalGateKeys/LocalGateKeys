@@ -15,7 +15,7 @@ import secrets
 import string
 import time
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from functools import lru_cache
 from math import comb
 from pathlib import Path
@@ -144,6 +144,7 @@ class GeneratorOptions:
     separator: str = "-"
     capitalize: bool = False
     append_number: bool = False
+    answer_words: int = 3
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -164,7 +165,7 @@ def normalize_generator_options(raw: Any) -> GeneratorOptions:
     if not isinstance(raw, dict):
         return defaults
     values: dict[str, Any] = {}
-    values["mode"] = raw.get("mode") if raw.get("mode") in ("password", "passphrase") else defaults.mode
+    values["mode"] = raw.get("mode") if raw.get("mode") in ("password", "passphrase", "answer") else defaults.mode
     values["length"] = _bounded_int(raw.get("length", defaults.length), 8, 256, defaults.length)
     for key in ("lowercase", "uppercase", "digits", "symbols", "avoid_ambiguous", "capitalize", "append_number"):
         value = raw.get(key, getattr(defaults, key))
@@ -178,6 +179,7 @@ def normalize_generator_options(raw: Any) -> GeneratorOptions:
     values["min_digits"] = _bounded_int(raw.get("min_digits", defaults.min_digits), 0, 10, defaults.min_digits)
     values["min_symbols"] = _bounded_int(raw.get("min_symbols", defaults.min_symbols), 0, 10, defaults.min_symbols)
     values["words"] = _bounded_int(raw.get("words", defaults.words), 3, 16, defaults.words)
+    values["answer_words"] = _bounded_int(raw.get("answer_words", defaults.answer_words), 2, 6, defaults.answer_words)
     separator = raw.get("separator", defaults.separator)
     if separator in SEPARATORS:
         separator = SEPARATORS[separator]
@@ -254,6 +256,13 @@ def generate_passphrase(
     return phrase
 
 
+def generate_answer(words: int = 3) -> str:
+    """Security-question answer: lowercase EFF words joined by spaces (2-6), easy to read over the phone."""
+    count = max(2, min(int(words), 6))
+    source = load_wordlist()
+    return " ".join(secrets.choice(source) for _ in range(count))
+
+
 _DOMAIN_RE = re.compile(r"^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$")
 _PREFIX_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,62}$")
 
@@ -280,6 +289,8 @@ def generate_username(style: str = "word", *, domain: str | None = None, prefix:
 
 
 def generate_from_options(options: GeneratorOptions) -> str:
+    if options.mode == "answer":
+        return generate_answer(options.answer_words)
     if options.mode == "passphrase":
         return generate_passphrase(
             options.words, options.separator, capitalize=options.capitalize, append_number=options.append_number,
@@ -293,7 +304,11 @@ def generate_from_options(options: GeneratorOptions) -> str:
 
 def generate_from_preferences(raw: Any) -> str:
     """Generate using saved (possibly partial or malformed) preferences."""
-    return generate_from_options(normalize_generator_options(raw))
+    options = normalize_generator_options(raw)
+    if options.mode == "answer":
+        # A remembered Answer tab choice must never become a new login's password.
+        options = replace(options, mode="password")
+    return generate_from_options(options)
 
 
 # --------------------------------------------------------------------------- strength estimation
@@ -838,6 +853,8 @@ HEALTH_CATEGORY_LABELS = {
     "reused": "Reused",
     "no_2fa": "No 2FA",
     "old": "Old (>1 year)",
+    "http": "Not HTTPS",
+    "passkey": "Passkey available",
 }
 
 
@@ -851,8 +868,33 @@ def needs_password(entry: dict[str, Any]) -> bool:
     return isinstance(tags, (list, tuple)) and NEEDS_PASSWORD_TAG in tags
 
 
-def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, now: int | None = None) -> dict[str, Any]:
-    """Categorize every entry once without retaining any password text."""
+def _web_hosts(entry: dict[str, Any]) -> tuple[list[str], bool]:
+    """The hosts of a login's saved URLs, and whether any is plain HTTP on a non-loopback host."""
+    from .origin import OriginError, _is_loopback, _split_url, entry_urls
+
+    hosts: list[str] = []
+    insecure = False
+    for row in entry_urls(entry):
+        try:
+            scheme, host, _port, _path, _query = _split_url(row["url"])
+        except OriginError:
+            continue
+        hosts.append(host)
+        if scheme == "http" and not _is_loopback(host):
+            insecure = True
+    return hosts, insecure
+
+
+def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, now: int | None = None,
+                 features: Any = None, passkey_domains: frozenset[str] = frozenset()) -> dict[str, Any]:
+    """Categorize every entry once without retaining any password text.
+
+    ``features`` (a ``site_features.SiteFeatures``) lets ``no_2fa`` mean "the site offers TOTP and this login has
+    none" and enables ``passkey`` ("the site offers passkeys and none is saved for its domain"); without it both
+    stay empty. ``http`` needs no data.
+    """
+    from .origin import OriginError, base_domain
+
     current = int(time.time()) if now is None else int(now)
     password_to_ids: dict[str, list[str]] = {}
     rows: list[dict[str, Any]] = []
@@ -865,6 +907,16 @@ def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, no
             password_to_ids.setdefault(digest, []).append(entry_id)
         score = estimate_strength(password).score if password else 0
         updated = int(entry.get("updated_at", 0) or 0)
+        hosts, insecure = _web_hosts(entry)
+        domains: set[str] = set()
+        for host in hosts:
+            try:
+                domains.add(base_domain(host))
+            except OriginError:
+                continue
+        offers_totp = features is not None and any(features.supports(d, "totp") for d in domains)
+        offers_passkey = (features is not None
+                          and any(features.supports(d, "passkey") and d not in passkey_domains for d in domains))
         rows.append({
             "id": entry_id,
             "label": str(entry.get("label", "")),
@@ -875,11 +927,16 @@ def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, no
             "has_2fa": bool(entry.get("totp")),
             "updated_at": updated,
             "old": bool(updated) and current - updated > old_after_days * 86400,
+            "http": insecure,
+            "offers_totp": offers_totp,
+            "offers_passkey": offers_passkey,
         })
     reused_ids = {entry_id for ids in password_to_ids.values() if len(ids) > 1 for entry_id in ids}
     weak: list[str] = []
     old: list[str] = []
     no_2fa: list[str] = []
+    http: list[str] = []
+    passkey: list[str] = []
     for row in rows:
         categories: list[str] = []
         if row["score"] <= 1:
@@ -887,14 +944,21 @@ def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, no
             weak.append(row["id"])
         if row["id"] in reused_ids:
             categories.append("reused")
-        if not row["has_2fa"]:
+        if row["offers_totp"] and not row["has_2fa"]:
             categories.append("no_2fa")
             no_2fa.append(row["id"])
         if row["old"]:
             categories.append("old")
             old.append(row["id"])
+        if row["http"]:
+            categories.append("http")
+            http.append(row["id"])
+        if row["offers_passkey"]:
+            categories.append("passkey")
+            passkey.append(row["id"])
         row["categories"] = tuple(categories)
-        row.pop("digest", None)
+        for key in ("digest", "http", "offers_totp", "offers_passkey"):
+            row.pop(key, None)
     reused = sorted(reused_ids)
     return {
         "total": len(entries),
@@ -903,10 +967,14 @@ def vault_health(entries: list[dict[str, Any]], *, old_after_days: int = 365, no
         "reused_ids": reused,
         "old_ids": sorted(set(old)),
         "no_2fa_ids": sorted(set(no_2fa)),
+        "http_ids": sorted(set(http)),
+        "passkey_ids": sorted(set(passkey)),
         "weak_count": len(set(weak)),
         "reused_count": len(reused),
         "old_count": len(set(old)),
         "no_2fa_count": len(set(no_2fa)),
+        "http_count": len(set(http)),
+        "passkey_count": len(set(passkey)),
         "age_is_risk": False,
         "advice": "Prioritize reused, guessable, or exposed logins first. Age alone is not a reason to rotate.",
     }

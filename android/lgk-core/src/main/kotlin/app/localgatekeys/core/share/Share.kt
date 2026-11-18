@@ -59,7 +59,8 @@ object Share {
     private val HEADER_KEYS = setOf("format", "version", "id", "sender", "kdf", "nonce", "ciphertext")
     private val PAYLOAD_KEYS = setOf("version", "created_at", "expires_at", "item")
     private val KDF_KEYS = setOf("name", "time_cost", "memory_cost_kib", "parallelism", "salt")
-    private val SPLIT = Regex("(?U)[\\s·.,\\-]+")
+    // Unicode spaces spelled out: Android's ICU regex rejects the (?U) flag (it crashed opening any item).
+    private val SPLIT = Regex("[\\s\\p{Z}\\u0085·.,\\-]+")
     private val UUID_RE = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
     private const val NOT_A_SHARE = "This is not a shared LocalGateKeys item."
@@ -169,7 +170,15 @@ object Share {
         packageId: String? = null,
         salt: ByteArray? = null,
         nonce: ByteArray? = null,
+        expires: Long? = null,
+        oneUse: Boolean = false,
     ): ByteArray {
+        // v1.1: [expires] (unix seconds) only shortens the lifetime; [oneUse] adds "one_use": true.
+        var expiresAt = now + LIFETIME
+        if (expires != null) {
+            if (expires <= now) throw ShareException("malformed", "The expiry must be in the future.", "bad-expiry")
+            expiresAt = minOf(expiresAt, expires)
+        }
         val name = truncateCodePoints(pyStrip(sender), SENDER_LIMIT).ifEmpty { DEFAULT_SENDER }
         val s = salt ?: random.bytes(16)
         val n = nonce ?: random.bytes(12)
@@ -181,14 +190,14 @@ object Share {
             "kdf" to kdf(s),
             "nonce" to JsonValue.Str(Base64Std.encode(n)),
         )
-        val payload = JsonValue.Obj(
-            mapOf(
-                "version" to JsonValue.Int(VERSION),
-                "created_at" to JsonValue.Int(now),
-                "expires_at" to JsonValue.Int(now + LIFETIME),
-                "item" to cleanItem(item),
-            ),
+        val fields = linkedMapOf<String, JsonValue>(
+            "version" to JsonValue.Int(VERSION),
+            "created_at" to JsonValue.Int(now),
+            "expires_at" to JsonValue.Int(expiresAt),
+            "item" to cleanItem(item),
         )
+        if (oneUse) fields["one_use"] = JsonValue.Bool(true)
+        val payload = JsonValue.Obj(fields)
         val k = key(code, s)
         val plain = canonical(payload)
         val ciphertext = try {
@@ -244,10 +253,11 @@ object Share {
     }
 
     /** Decrypts and checks one package. [opened]: the package ids this device already opened. */
-    fun open(data: ByteArray, code: String, now: Long, opened: Set<String> = emptySet()): OpenedShare =
-        open(readHeader(data), code, now, opened)
+    fun open(data: ByteArray, code: String, now: Long, opened: Set<String> = emptySet(), revoked: Set<String> = emptySet()): OpenedShare =
+        open(readHeader(data), code, now, opened, revoked)
 
-    fun open(header: ShareHeader, code: String, now: Long, opened: Set<String> = emptySet()): OpenedShare {
+    /** [revoked]: package ids of verified revoke notices ([ShareRevoke]); checked last, like Python. */
+    fun open(header: ShareHeader, code: String, now: Long, opened: Set<String> = emptySet(), revoked: Set<String> = emptySet()): OpenedShare {
         val envelope = header.envelope
         if (header.id in opened) throw ShareException("already-opened", "This shared item was already opened on this device.")
         val salt = b64((envelope["kdf"] as JsonValue.Obj).fields["salt"], 16)
@@ -267,10 +277,13 @@ object Share {
             plain.fill(0)
         }
         val p = (payload as? JsonValue.Obj)?.fields ?: throw ShareException("malformed", DAMAGED, "damaged")
-        if (!isInt(p["version"], VERSION) || p.keys != PAYLOAD_KEYS) throw ShareException("malformed", DAMAGED, "damaged")
+        // v1.1 (LGKSHARE_V1.md): an optional "one_use": true, and an embedded expiry that may only be earlier.
+        val oneUseOk = p.keys == PAYLOAD_KEYS + "one_use" && p["one_use"] == JsonValue.Bool(true)
+        if (!isInt(p["version"], VERSION) || (p.keys != PAYLOAD_KEYS && !oneUseOk)) throw ShareException("malformed", DAMAGED, "damaged")
         val created = (p["created_at"] as? JsonValue.Int)?.v ?: throw ShareException("malformed", DAMAGED, "damaged")
-        val expires = (p["expires_at"] as? JsonValue.Int)?.v ?: throw ShareException("malformed", DAMAGED, "damaged")
-        if (expires != created + LIFETIME) throw ShareException("malformed", DAMAGED, "damaged")
+        val embedded = (p["expires_at"] as? JsonValue.Int)?.v ?: throw ShareException("malformed", DAMAGED, "damaged")
+        if (embedded <= created || embedded > created + LIFETIME) throw ShareException("malformed", DAMAGED, "damaged")
+        val expires = minOf(embedded, created + LIFETIME)
         if (created > now + CLOCK_SKEW) {
             throw ShareException("malformed", "The shared item has a date in the future. Check this device's clock.", "future-date")
         }
@@ -278,6 +291,7 @@ object Share {
         val raw = p["item"] as? JsonValue.Obj ?: throw ShareException("not-shareable", "This shared item holds content that cannot be shared.", "content-not-shareable")
         val item = cleanItem(raw) // Python: a missing kind is malformed, a passkey or attachment not-shareable
         if (item != raw) throw ShareException("not-shareable", "This shared item holds content that cannot be shared.", "content-not-shareable")
+        if (header.id in revoked) throw ShareException("revoked", "The sender took this shared item back.")
         return OpenedShare(header.id, header.sender, created, expires, item)
     }
 

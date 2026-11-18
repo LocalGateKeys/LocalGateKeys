@@ -2,8 +2,11 @@ import base64
 import hashlib
 import importlib.util
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 from PIL import Image, ImageChops
 
 from localvault.config import EXTENSION_ID
@@ -49,6 +52,37 @@ def test_content_script_runs_in_all_same_origin_frames_in_isolated_world() -> No
     assert script["js"] == ["api.js", "heuristics.js", "login-safety.js", "content.js"]
 
 
+def _passkey_scripts(manifest: dict) -> dict[str, dict]:
+    return {cs["world"]: cs for cs in manifest["content_scripts"] if any(f.startswith("webauthn-") for f in cs["js"])}
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_firefox_manifest_keeps_the_passkey_scripts_in_their_worlds() -> None:
+    # Passkeys in Firefox (known limitations plan, item 3): the MAIN-world
+    # wrapper and its ISOLATED bridge ship in the Firefox build too, at
+    # document_start in every frame, as on Chromium.
+    script = (
+        "const b=require(process.argv[1]);"
+        "const m=require(process.argv[2]);"
+        "process.stdout.write(JSON.stringify(b.firefoxManifest(m)));"
+    )
+    ext = ROOT / "browser-extension"
+    out = subprocess.run(["node", "-e", script, str(ext / "build-firefox-manifest.cjs"), str(ext / "manifest.json")],
+                         check=True, capture_output=True, text=True).stdout
+    firefox = json.loads(out)
+    for manifest in (MANIFEST, firefox):
+        scripts = _passkey_scripts(manifest)
+        assert set(scripts) == {"MAIN", "ISOLATED"}
+        assert scripts["MAIN"]["js"] == ["webauthn-page.js"]
+        assert scripts["ISOLATED"]["js"] == ["api.js", "webauthn-bridge.js"]
+        for cs in scripts.values():
+            assert cs["run_at"] == "document_start"
+            assert cs["all_frames"] is True
+            assert set(cs["matches"]) == {"http://*/*", "https://*/*"}
+    # world: "MAIN" content scripts need Firefox 128.
+    assert int(firefox["browser_specific_settings"]["gecko"]["strict_min_version"].split(".")[0]) >= 128
+
+
 def test_extension_pages_have_a_strict_csp_and_a_stable_firefox_id() -> None:
     assert MANIFEST["content_security_policy"]["extension_pages"] == "script-src 'self'; object-src 'self'"
     gecko = MANIFEST["browser_specific_settings"]["gecko"]
@@ -60,12 +94,14 @@ def test_extension_pages_have_a_strict_csp_and_a_stable_firefox_id() -> None:
     assert not (ROOT / "browser-extension" / "auto-mode.js").exists()
 
 
-def test_no_extension_resource_is_web_accessible() -> None:
-    # The in-page icons are inline SVG inside closed shadow roots, so pages
-    # cannot fingerprint the extension by probing a static extension URL.
-    assert "web_accessible_resources" not in MANIFEST
+def test_only_the_panel_frame_is_web_accessible() -> None:
+    # The in-page icons are inline SVG inside closed shadow roots. The one
+    # web-accessible page is the panel frame (audit 2026-11-10), behind a
+    # per-load dynamic URL so pages cannot probe a static extension URL.
+    assert MANIFEST["web_accessible_resources"] == [
+        {"resources": ["panel.html"], "matches": ["http://*/*", "https://*/*"], "use_dynamic_url": True}]
     content = (ROOT / "browser-extension" / "content.js").read_text(encoding="utf-8")
-    assert "getURL" not in content
+    assert content.count("getURL(") == 1 and "getURL(PANEL_PAGE)" in content
     assert "icons/icon" not in content
     assert "function logoGlyph()" in content
 
@@ -106,7 +142,8 @@ def test_browser_extension_supports_multi_account_selection_and_update_detection
     from localvault.version import APP_VERSION
     assert MANIFEST["version"] == APP_VERSION
     assert "usernameOnly" in content
-    assert 'autocomplete="new-password"' in content
+    safety = (root / "browser-extension" / "login-safety.js").read_text(encoding="utf-8")
+    assert '"new-password"' in safety and "S.newPassword" in content
     assert MANIFEST["content_scripts"][0]["js"] == ["api.js", "heuristics.js", "login-safety.js", "content.js"]
     assert "documentId" in background
     assert "parentFrameId" in background  # same-origin ancestry check for iframes
@@ -114,8 +151,8 @@ def test_browser_extension_supports_multi_account_selection_and_update_detection
     assert "recentFilledCredential" in content
     assert "clear_pending_browser" in content and "clear_pending_browser" in background
     assert 'tr("popup_auto_turn_off")' in (root / "browser-extension" / "popup.js").read_text(encoding="utf-8")
-    # Login, 2FA and identity icons share the inline vault-dial logo.
-    assert content.count("logoGlyph()") == 4
+    # Login, generator, 2FA and identity icons share the inline vault-dial logo (plus its definition).
+    assert content.count("logoGlyph()") == 5
 
 
 def test_browser_extension_uses_broker_gesture_nonces_not_ping_lease_fields() -> None:

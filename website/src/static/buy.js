@@ -48,7 +48,9 @@
   }
 
   // Keep one token per tab, so reopening the checkout after closing it still
-  // leads to the same licence page. Forget it once a purchase completes.
+  // leads to the same licence page. Forget it once a purchase completes: the
+  // next checkout from this tab (a second PC, a gift) gets a fresh token, so it
+  // gets its own licence page instead of the first purchase's (scan F1).
   function claim() {
     var token = null;
     try { token = sessionStorage.getItem(KEY); } catch (e) { token = null; }
@@ -65,6 +67,17 @@
 
   var token = claim();
   var licenceUrl = root.dataset.licenceBase + token;
+  var completedClaim = null;
+
+  function rotateClaim() {
+    token = claim();
+    if (token === completedClaim) {
+      // The stored token could not be forgotten: never reuse a paid one.
+      token = newClaim();
+      try { sessionStorage.setItem(KEY, token); } catch (e) { /* memory only */ }
+    }
+    licenceUrl = root.dataset.licenceBase + token;
+  }
 
   function showLicenceLink() {
     link.href = licenceUrl;
@@ -83,13 +96,18 @@
       if (event.name === "checkout.completed") {
         var data = event.data || {};
         var paidClaim = data.custom_data ? data.custom_data.lgk_claim : (data.customData ? data.customData.lgk_claim : null);
+        // A repeated event for the purchase this page already completed: its link is shown.
+        if (completedClaim !== null && paidClaim === completedClaim) return;
         if (paidClaim !== token) {
           // Not the checkout this page opened: never link to a licence page
           // this browser did not choose.
           setStatus("Payment received, but not for the checkout opened on this page. Find your licence at https://licenses.localgatekeys.app/recover with the order number from your receipt, or email support@localgatekeys.app.");
           return;
         }
+        // The link (and Paddle's success URL) keep this purchase's token; the
+        // next checkout from this tab gets a new one when it opens.
         showLicenceLink();
+        completedClaim = token;
         forgetClaim();
         setStatus("Payment received. Taking you to your licence page...");
       } else if (event.name === "checkout.closed") {
@@ -101,6 +119,7 @@
   });
 
   function openCheckout() {
+    if (token === completedClaim) rotateClaim();
     window.Paddle.Checkout.open({
       items: [{ priceId: root.dataset.priceId, quantity: 1 }],
       customData: { lgk_claim: token },

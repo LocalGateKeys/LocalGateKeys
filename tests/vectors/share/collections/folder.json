@@ -1,0 +1,421 @@
+{
+  "a_share_group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+  "a_states": [
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "4f1fa82cf76e402d9507a2da44bdbfeaec5c1475f045365fb17e4deb67b61ccc",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1799999500,
+          "favorite": true,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "tags": [
+            "home"
+          ],
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "aa78b59b53442a4a6b9e679a3173971471d26debe2d67f6d0f715b9fb8cac2ef",
+      "id": "22222222-2222-4222-8222-222222222222",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1799999500,
+          "favorite": false,
+          "id": "22222222-2222-4222-8222-222222222222",
+          "kind": "license",
+          "payload": {
+            "expiration_date": "",
+            "license_value": "ABCD-EFGH",
+            "notes": "",
+            "product": "Office",
+            "purchase_date": "",
+            "template_id": null,
+            "vendor": "Vendor"
+          },
+          "tags": [],
+          "title": "Family office licence",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "d816da540b3a8c97b876daa0a5384d4337809bb5314f7f7d12268c44de3f0580",
+      "id": "33333333-3333-4333-8333-333333333333",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1799999500,
+          "favorite": false,
+          "id": "33333333-3333-4333-8333-333333333333",
+          "kind": "note",
+          "payload": {
+            "body": "mine",
+            "fields": [],
+            "template_id": null
+          },
+          "tags": [],
+          "title": "Private",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "8ab64d2d07f12133ac0f6d1ae76f2d7dc3176e1729d91caf0a0d364e74e834e2",
+      "id": "88888888-8888-4888-8888-888888888888",
+      "item": {
+        "ns": "item",
+        "record": {
+          "created_at": 1799999500,
+          "favorite": false,
+          "id": "88888888-8888-4888-8888-888888888888",
+          "kind": "note",
+          "payload": {
+            "body": "keys",
+            "fields": [],
+            "template_id": null
+          },
+          "tags": [],
+          "title": "Desk drawer",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "f72bf82c3e5d258600eecc6c10712ccaa4fd6c87549b1edb35becccc28d81f2d",
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "item": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "9762a7a75b0e409b53fa2fb3673a73dde05de719a60c7c886dcbee30cc6cae33",
+      "id": "cm:22222222-2222-4222-8222-222222222222",
+      "item": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "item_id": "22222222-2222-4222-8222-222222222222",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "b3689f2e7d1224a659c67855e33f5aa949c6a67a0a316bf969a9337b6d350e5e",
+      "id": "cm:88888888-8888-4888-8888-888888888888",
+      "item": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          ],
+          "item_id": "88888888-8888-4888-8888-888888888888",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "ed5479f368c273731eddce78807ede5b4dc7124df61c9cbbd5c36f46c1f96e35",
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "item": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family Ünïcode",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "786b0af7a0b66e923cca07559fce91fb9354f890a5780c72b1acf85f159dbd70",
+      "id": "col:9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "item": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+          "created_at": 1799999300,
+          "description": "",
+          "kind": "collection",
+          "name": "Work",
+          "updated_at": 1799999300
+        },
+        "schema": 1,
+        "updated_at": 1799999300
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    },
+    {
+      "deleted": false,
+      "deleted_at": null,
+      "digest": "c95d384c0f4003036b23f3a02c8fa7d31b980c95f8a99e195e6173685e39f782",
+      "id": "csl:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "item": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share-link",
+          "mode": "read",
+          "role": "owner"
+        },
+        "schema": 1,
+        "updated_at": 0
+      },
+      "vv": {
+        "a1111111-0000-4000-8000-00000000000a": 1
+      }
+    }
+  ],
+  "a_vault": {
+    "collections": [
+      {
+        "created_at": 1799999100,
+        "description": "Shared at home",
+        "id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "name": "Family Ünïcode",
+        "revision": 4,
+        "starter": false,
+        "updated_at": 1799999200
+      },
+      {
+        "created_at": 1799999300,
+        "description": "",
+        "id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+        "name": "Work",
+        "revision": 1,
+        "starter": false,
+        "updated_at": 1799999300
+      }
+    ],
+    "items": [
+      {
+        "collection_ids": [
+          "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+        ],
+        "created_at": 1799999500,
+        "favorite": true,
+        "id": "11111111-1111-4111-8111-111111111111",
+        "kind": "note",
+        "payload": {
+          "body": "router in the hall",
+          "fields": [],
+          "template_id": null
+        },
+        "revision": 3,
+        "tags": [
+          "home"
+        ],
+        "title": "Wi-Fi at grandma's",
+        "updated_at": 1799999900
+      },
+      {
+        "collection_ids": [
+          "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+        ],
+        "created_at": 1799999500,
+        "favorite": false,
+        "id": "22222222-2222-4222-8222-222222222222",
+        "kind": "license",
+        "payload": {
+          "expiration_date": "",
+          "license_value": "ABCD-EFGH",
+          "notes": "",
+          "product": "Office",
+          "purchase_date": "",
+          "template_id": null,
+          "vendor": "Vendor"
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Family office licence",
+        "updated_at": 1799999900
+      },
+      {
+        "collection_ids": [],
+        "created_at": 1799999500,
+        "favorite": false,
+        "id": "33333333-3333-4333-8333-333333333333",
+        "kind": "note",
+        "payload": {
+          "body": "mine",
+          "fields": [],
+          "template_id": null
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Private",
+        "updated_at": 1799999900
+      },
+      {
+        "collection_ids": [
+          "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+        ],
+        "created_at": 1799999500,
+        "favorite": false,
+        "id": "88888888-8888-4888-8888-888888888888",
+        "kind": "note",
+        "payload": {
+          "body": "keys",
+          "fields": [],
+          "template_id": null
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Desk drawer",
+        "updated_at": 1799999900
+      }
+    ],
+    "links": {
+      "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6": {
+        "mode": "read",
+        "role": "owner"
+      }
+    }
+  },
+  "argon2": {
+    "harbour lantern quiet 2468 thistle|q1AnaZvdxacyv+HO1HPY7g==": "24d3ce877a34c028ef3e2e1eebebfb46de40c0a8a0f329c3020d5e17300cc87b"
+  },
+  "b_run": {
+    "device_name": "Phone B",
+    "join_at": 1800001060,
+    "rand": "5n|folder-b",
+    "run_at": 1800001120
+  },
+  "description": "Device A's personal sync folder: folder/a holds the files under 'LocalGateKeys Sync' as A's first run writes them (localvault.sync code, fixed randomness): a personal group with A alone, A's signed view (counter 1, format 1) with two collections, three memberships and the share link of Family (A owns that share: keyring.json 'create'), and A's signed .lgkcol and .lgkcap files.  Device B joins with 'password' ('argon2' gives the Argon2id output) and runs; it must then hold 'expected_b' and publish 'a_states' unchanged, so A reads B's view back to the same state.  Kotlin writes its B files to folder/from_android, Swift to folder/from_ios (DetRand(b_run.rand), clocks join_at and run_at); tests/test_share_collection_vectors.py runs the desktop's B and A over each.",
+  "device_a": "a1111111-0000-4000-8000-00000000000a",
+  "device_a_name": "PC A",
+  "epoch": 1,
+  "expected_b": {
+    "catalog": {
+      "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6": {
+        "description": "Shared at home",
+        "name": "Family Ünïcode"
+      },
+      "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d": {
+        "description": "",
+        "name": "Work"
+      }
+    },
+    "items": [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+      "33333333-3333-4333-8333-333333333333",
+      "88888888-8888-4888-8888-888888888888"
+    ],
+    "links": {
+      "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6": {
+        "mode": "read",
+        "role": "owner"
+      }
+    },
+    "memberships": {
+      "11111111-1111-4111-8111-111111111111": [
+        "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+      ],
+      "22222222-2222-4222-8222-222222222222": [
+        "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+      ],
+      "88888888-8888-4888-8888-888888888888": [
+        "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+      ]
+    }
+  },
+  "files": [
+    "attachments/a1111111-0000-4000-8000-00000000000a.lgkcap",
+    "attachments/a1111111-0000-4000-8000-00000000000a.lgkcap.lgksig",
+    "attachments/a1111111-0000-4000-8000-00000000000a.lgkcol",
+    "attachments/a1111111-0000-4000-8000-00000000000a.lgkcol.lgksig",
+    "devices/a1111111-0000-4000-8000-00000000000a.lgksync",
+    "keyring.lgkkeys",
+    "signatures/a1111111-0000-4000-8000-00000000000a.lgksig"
+  ],
+  "group_id": "3f5532de-9cea-4713-b003-aa225d8bdf49",
+  "group_key_hex": "2b7efa567ae39de01fff6d7ee32c9b7fbefc9134c22d0a247dd52942f31d2d1f",
+  "password": "harbour lantern quiet 2468 thistle",
+  "sync_dir": "LocalGateKeys Sync",
+  "written_at": 1800001000
+}

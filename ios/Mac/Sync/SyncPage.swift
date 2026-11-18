@@ -53,9 +53,11 @@ struct SyncPage: View {
             Button("Cancel", role: .cancel) { model.cancelConfirmation() }
         } message: { Text(model.confirmationText) }
         .sheet(isPresented: $model.showingQR) { QRSheet(model: model).macThemed() }
-        .sheet(item: Binding(get: { model.removal.map(RemovalBox.init) }, set: { if $0 == nil { model.removal = nil } })) { box in
-            RemoveMemberSheet(model: model, removal: box.removal).macThemed()
+        .sheet(item: $model.removal, onDismiss: { model.removalSheetClosed() }) { plan in RemoveMemberSheet(model: model, removal: plan).macThemed() }
+        .sheet(item: Binding(get: { model.choosing.map(ChooseBox.init) }, set: { if $0 == nil { model.choosing = nil } })) { box in
+            ChooseDevicesSheet(model: model, lost: box.lost).macThemed()
         }
+        .sheet(isPresented: $model.showChecklist) { LostChecklistSheet(model: model).macThemed() }
         .sheet(item: $model.folderForm) { form in FolderPasswordSheet(model: model, form: form).macThemed() }
     }
 
@@ -65,6 +67,9 @@ struct SyncPage: View {
         card(SyncPageModel.wifiTitle) {
             Text(model.wifiText).font(.system(size: 12.5)).foregroundStyle(theme.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+            if let own = model.ownDeviceLabel {
+                Text(own).font(.system(size: 11.5)).foregroundStyle(theme.textFaint)
+            }
             if model.available {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Address and port").font(.system(size: 12, weight: .medium)).foregroundStyle(theme.textMuted)
@@ -122,6 +127,13 @@ struct SyncPage: View {
                     if !d.isSelf {
                         Button("Remove…") { model.requestRemoveMember(d) }.buttonStyle(PillButtonStyle(primary: false))
                     }
+                }
+                if !model.removable.isEmpty {
+                    HStack(spacing: 8) {
+                        Button(DeviceRemoval.removeLabel) { model.requestChoose(lost: false) }.buttonStyle(PillButtonStyle(primary: false))
+                        Button(DeviceRemoval.lostLabel) { model.requestChoose(lost: true) }.buttonStyle(PillButtonStyle(primary: false))
+                    }
+                    .disabled(!model.available || model.working)
                 }
             }
             if !model.unconfirmed.isEmpty {
@@ -272,9 +284,9 @@ struct SyncPage: View {
     }
 }
 
-private struct RemovalBox: Identifiable {
-    let removal: SyncPageModel.Removal
-    var id: String { removal.id }
+private struct ChooseBox: Identifiable {
+    let lost: Bool
+    var id: Bool { lost }
 }
 
 /// The pairing sheet: the QR code with this Mac's address and the offer code, then (when a device asks)
@@ -302,7 +314,7 @@ struct QRSheet: View {
             Text("Scan this code with LocalGateKeys on the other device").font(.title3.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
             HStack(alignment: .top, spacing: 18) {
-                if let text = model.qrText, let image = SyncPageModel.qrImage(text) {
+                if let text = model.qrText, let image = QRImage.make(text) {
                     Image(nsImage: image).interpolation(.none).resizable().frame(width: 260, height: 260)
                         .accessibilityLabel("Pairing QR code")
                 } else {
@@ -373,14 +385,15 @@ struct QRSheet: View {
 /// "Remove a device…" on the Cloud folder card: a new sync password, entered twice (Windows rotation form).
 struct RemoveMemberSheet: View {
     let model: SyncPageModel
-    let removal: SyncPageModel.Removal
+    let removal: DeviceRemoval.Plan
     @State private var password = ""
     @State private var again = ""
     @Environment(\.macTheme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Remove \(removal.name)").font(.title3.weight(.semibold))
+            Text(removal.names.count == 1 ? String(localized: "Remove \(removal.names[0])") : DeviceRemoval.removeTitle)
+                .font(.title3.weight(.semibold))
             Text(removal.intro).font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
             SecureField("Sync password", text: $password).glassField()
             SecureField("Enter it again", text: $again).glassField()
@@ -396,6 +409,65 @@ struct RemoveMemberSheet: View {
             }
         }
         .padding(24).frame(width: 460).background(WashBackground()).foregroundStyle(theme.text)
+    }
+}
+
+/// "Remove a device…" (several) or "I lost a device…" (one): which cloud-folder devices to remove.
+struct ChooseDevicesSheet: View {
+    let model: SyncPageModel
+    let lost: Bool
+    @State private var chosen: [String] = []
+    @Environment(\.macTheme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(lost ? DeviceRemoval.lostTitle : DeviceRemoval.removeTitle).font(.title3.weight(.semibold))
+            Text(lost ? DeviceRemoval.lostIntro : DeviceRemoval.chooseText).font(.system(size: 12.5)).foregroundStyle(theme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(model.removable) { d in
+                Toggle(isOn: Binding(get: { chosen.contains(d.id) }, set: { on in
+                    if on { chosen = lost ? [d.id] : chosen + [d.id] } else { chosen.removeAll { $0 == d.id } }
+                })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(d.name).font(.system(size: 13))
+                        if !d.detail.isEmpty { Text(d.detail).font(.system(size: 11.5)).foregroundStyle(theme.textMuted) }
+                    }
+                }
+                .toggleStyle(.checkbox)
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { model.choosing = nil }.buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
+                Button("Continue") {
+                    let ids = model.removable.map(\.id).filter { chosen.contains($0) }
+                    model.choosing = nil
+                    // The password sheet opens once this one has closed.
+                    DispatchQueue.main.async { model.choose(ids, lost: lost) }
+                }
+                .buttonStyle(PillButtonStyle(primary: true)).disabled(chosen.isEmpty)
+            }
+        }
+        .padding(24).frame(width: 460).background(WashBackground()).foregroundStyle(theme.text)
+    }
+}
+
+/// After "I lost a device" removed it: what to do next (Windows `lost_device_checklist(folder=True)`).
+struct LostChecklistSheet: View {
+    let model: SyncPageModel
+    @Environment(\.macTheme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(DeviceRemoval.lostTitle).font(.title3.weight(.semibold))
+            ForEach(Array(DeviceRemoval.lostChecklist.enumerated()), id: \.offset) { _, line in
+                Label(line, systemImage: "checkmark.circle").font(.system(size: 12.5)).fixedSize(horizontal: false, vertical: true)
+            }
+            HStack {
+                Spacer()
+                Button("Done") { model.showChecklist = false }.buttonStyle(PillButtonStyle(primary: true)).keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24).frame(width: 500).background(WashBackground()).foregroundStyle(theme.text)
     }
 }
 

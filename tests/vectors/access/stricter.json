@@ -1,0 +1,98 @@
+{
+  "cases": [
+    {
+      "a": {
+        "expires": "2027-03-31"
+      },
+      "b": {
+        "expires": "2026-12-01"
+      },
+      "expected": {
+        "expires": "2026-12-01"
+      },
+      "name": "two expiry dates: the earlier wins"
+    },
+    {
+      "a": null,
+      "b": {
+        "phones": "view"
+      },
+      "expected": {
+        "phones": "view"
+      },
+      "name": "one side absent"
+    },
+    {
+      "a": null,
+      "b": null,
+      "expected": null,
+      "name": "both absent"
+    },
+    {
+      "a": {
+        "copy": "once",
+        "phones": "full"
+      },
+      "b": {
+        "copy": "normal",
+        "phones": "view"
+      },
+      "expected": {
+        "copy": "once",
+        "phones": "view"
+      },
+      "name": "per key the stricter value"
+    },
+    {
+      "a": {
+        "copy": "once"
+      },
+      "b": {
+        "biometric_only": true
+      },
+      "expected": {
+        "biometric_only": true,
+        "copy": "once"
+      },
+      "name": "unknown key kept"
+    },
+    {
+      "a": {
+        "copy": "normal"
+      },
+      "b": {
+        "copy": "twice"
+      },
+      "expected": {
+        "copy": "twice"
+      },
+      "name": "unknown value kept (it reads as the strict one)"
+    },
+    {
+      "a": {
+        "expires": "2026-01-01"
+      },
+      "b": {
+        "expires": "soon"
+      },
+      "expected": {
+        "expires": "soon"
+      },
+      "name": "malformed date wins (it reads as expired)"
+    },
+    {
+      "a": {
+        "copy": "once"
+      },
+      "b": "x",
+      "expected": "x",
+      "name": "access that is not an object wins"
+    },
+    {
+      "a": {},
+      "b": {},
+      "expected": null,
+      "name": "empty objects give nothing"
+    }
+  ]
+}

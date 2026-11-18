@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "localgatekeys"
-version = "0.4.10"
+version = "0.4.12"
 description = "Local-first encrypted credential manager for browsers and desktop applications"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -12,6 +12,8 @@ license = {text = "LicenseRef-PolyForm-Strict-1.0.0"}
 authors = [{name = "LocalGateKeys"}]
 dependencies = [
   "argon2-cffi>=23.1.0",
+  # Decrypts passphrase-protected OpenSSH private keys (ssh_keys.py).
+  "bcrypt>=4.2.0",
   "cryptography>=42.0.0",
   # UTS-46 host canonicalisation matching browsers (origin.py).
   "idna>=3.7",
@@ -31,12 +33,17 @@ dependencies = [
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
+  # Parallel test runs (scripts/ci_local.ps1 and the pre-push hook use -n auto when installed).
+  "pytest-xdist>=3.6",
   # Property-based tests (tests/props); LGK_PROP_EXAMPLES raises the per-property budget.
   "hypothesis>=6.170",
   "ruff>=0.6",
   "mypy>=1.10",
   "pip-tools>=7.4",
   "cyclonedx-bom>=4.0",
+  # Security scanners run by scripts/ci_local.ps1 and the CI security job.
+  "pip-audit>=2.9",
+  "bandit>=1.8",
 ]
 # Frozen-executable build. PyInstaller is pinned to the validated version so a
 # rebuild from the same commit produces the same bootloader and hook set.
@@ -74,6 +81,7 @@ markers = [
   "fuzz: deterministic seeded mutation fuzzing of file/frame parsers (included in the default run; select with -m fuzz)",
   "min_screen(width, height): skip unless the primary screen is at least this many pixels (window-geometry tests)",
   "free_features: run with the real free plan, where sync, two-factor codes and attachments are Pro-only",
+  "kdf_upgrade: let a password unlock upgrade the vault KDF (off elsewhere so fast test vaults stay fast)",
 ]
 
 # --------------------------------------------------------------------------
@@ -133,7 +141,7 @@ known-first-party = ["localvault"]
 python_version = "3.12"
 mypy_path = "src"
 files = ["src/localvault"]
-exclude = ["^tests/", "^scripts/", "^build-personal/", "^localgatekeys_app/"]
+exclude = ["^tests/", "^scripts/", "^build-personal/"]
 # Lenient baseline for the UI-heavy modules; the security boundary modules
 # below are checked strictly.
 ignore_missing_imports = false

@@ -1,0 +1,22 @@
+{
+  "source": "hashicorp/vault shamir/shamir_test.go (TestField_Add, TestField_Mult, TestField_Divide, TestPolynomial_Eval), MPL-2.0; plus FIPS-197 section 4.2 example",
+  "field": "GF(2^8), reduction polynomial 0x11b (AES)",
+  "add": [
+    {"a": 16, "b": 16, "out": 0},
+    {"a": 3, "b": 4, "out": 7}
+  ],
+  "mult": [
+    {"a": 3, "b": 7, "out": 9},
+    {"a": 3, "b": 0, "out": 0},
+    {"a": 0, "b": 3, "out": 0},
+    {"a": 87, "b": 131, "out": 193, "note": "FIPS-197 section 4.2: {57} x {83} = {c1}"}
+  ],
+  "div": [
+    {"a": 0, "b": 7, "out": 0},
+    {"a": 3, "b": 3, "out": 1},
+    {"a": 6, "b": 3, "out": 2}
+  ],
+  "polynomial_eval": [
+    {"intercept": 42, "degree": 1, "x": 0, "out": 42, "note": "constant term is returned at x = 0 for any coefficients"}
+  ]
+}

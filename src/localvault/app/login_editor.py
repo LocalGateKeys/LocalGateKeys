@@ -14,7 +14,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Any
 
-from ..access_policy import normalized_policy
+from ..access_policy import enforced_policy, normalized_policy
 from ..api.result import ApiError
 from ..password_tools import GeneratorOptions, generate_from_options, normalize_generator_options
 from ..shell.login_form import (
@@ -76,6 +76,8 @@ def options_for_chip(chip: str, current: GeneratorOptions) -> GeneratorOptions:
 def chip_for(options: GeneratorOptions) -> str:
     if options.mode == "passphrase":
         return "Passphrase"
+    if options.mode == "answer":
+        return "Random"
     return "PIN" if _is_pin(options) else "Random"
 
 
@@ -138,6 +140,9 @@ class LoginEditorService:
         session = self._session()
         if ref.get("source") != "credential" or ref.get("kind") not in ("web", "desktop"):
             raise ApiError("unsupported", t("loginEditor.thisEditorEditsLogins"))
+        from .secrets import refuse_travel_hidden
+
+        refuse_travel_hidden(session, ref.get("id"))
         lease = self._controller.guard.lease()
         # Read the token with the data it guards, before any prompt: a change made
         # while the prompt is open must make the later save fail with "changed".
@@ -149,7 +154,7 @@ class LoginEditorService:
             # Desktop logins have no URL rows; save_login keeps their app binding.
             urls = session.item_service.web_urls(ref["id"]) if detail.get("kind") == "web" else []
             draft = draft_from_detail(detail, urls)
-            if normalized_policy(detail.get("policy")).get("require_master_password"):
+            if enforced_policy(detail).get("require_master_password"):
                 self._reauth.reauthenticate(t("loginExtras.openSensitiveCredential"), lease, allow_hello=False)
         finally:
             detail.clear()
@@ -213,6 +218,25 @@ class LoginEditorService:
         with self._lock:
             entry.draft.password = generate_from_options(options)
         return self.view(draft_id)
+
+    def copy_password(self, draft_id: str) -> dict[str, Any]:
+        """Copy the draft's new (not yet saved) password through the app clipboard, which auto-clears.
+
+        Used by the change-password assistant after the user confirms; the saved password is never read here.
+        """
+        from .setting_links import clipboard_result
+
+        entry = self._get(draft_id)
+        self._session()
+        with self._lock:
+            password = entry.draft.password
+        if not password:
+            raise ApiError("invalid", t("changePassword.noNewPassword"))
+        self._controller.clipboard.copy(password)
+        touch = getattr(self._controller, "touch", None)
+        if callable(touch):
+            touch()
+        return clipboard_result(t("changePassword.newPasswordCopied"), self._controller.clipboard)
 
     def close(self, draft_id: str) -> None:
         with self._lock:
@@ -285,7 +309,7 @@ class LoginEditorService:
             stored = session.credential_detail(draft.entry_id)
             try:
                 was_strict = stored is not None and bool(
-                    normalized_policy(stored.get("policy")).get("require_master_password"))
+                    enforced_policy(stored).get("require_master_password"))
             finally:
                 if stored is not None:
                     stored.clear()

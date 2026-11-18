@@ -11,7 +11,8 @@ extension Share {
     private static let localTrustScopeKeys = ["sign_in_selector", "embedded_web_fill_approved", "browser_approval",
                                               "browser_approvals", "sync_pairing", "pairing_secret", "pairing_state"]
 
-    /// What only means something in one vault: linked document ids, a card's billing identity, trust approvals.
+    /// What only means something in one vault: linked document ids, a card's billing identity, trust approvals,
+    /// access rules (`scope.access`).
     /// Applied before sealing and again before saving.
     public static func withoutLocalRefs(_ item: [String: JSONValue]) -> [String: JSONValue] {
         var rec = item
@@ -22,6 +23,8 @@ extension Share {
         }
         if case .object(var s)? = rec["scope"] {
             for k in localTrustScopeKeys { s[k] = nil }
+            // Access rules are this vault's own (feature pack §4.3, Python `share.stored_form`): never shared.
+            s[AccessRules.scopeKey] = nil
             rec["scope"] = .object(s)
         }
         return rec

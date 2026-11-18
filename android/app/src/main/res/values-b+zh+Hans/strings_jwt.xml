@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">令牌</string>
+    <string name="jwt_alg">算法</string>
+    <string name="jwt_iss">签发者</string>
+    <string name="jwt_sub">主题</string>
+    <string name="jwt_aud">受众</string>
+    <string name="jwt_iat">签发时间</string>
+    <string name="jwt_nbf">生效时间</string>
+    <string name="jwt_exp">过期时间</string>
+    <string name="jwt_expired">已过期</string>
+    <string name="jwt_unchecked">未验证签名</string>
+    <string name="jwt_setExpiry">根据令牌设置到期日</string>
+    <string name="jwt_expirySet">已将到期日设为 %1$s。</string>
+    <string name="jwt_notSaved">无法设置到期日。</string>
+</resources>

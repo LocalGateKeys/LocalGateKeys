@@ -1,0 +1,45 @@
+{
+  "app": {
+    "platform": "windows",
+    "version": "0.5.0"
+  },
+  "claims": [
+    "connections_listed",
+    "no_item_content_sent"
+  ],
+  "facts": {
+    "breach_checks": false,
+    "devices": 2,
+    "items": 120,
+    "shares": 0,
+    "strict_offline": true,
+    "sync": "folder",
+    "update_check": true
+  },
+  "format": "lgk-privacy-proof",
+  "generated_at": "2026-11-15T10:00:00Z",
+  "network": {
+    "available": true,
+    "counts": {
+      "lan_sync": 30,
+      "website_icon": 14
+    },
+    "entries": [
+      {
+        "at": "2026-11-14T09:30:00Z",
+        "host": "example.invalid",
+        "purpose": "update_check",
+        "result": "ok"
+      }
+    ],
+    "since": "2026-11-01T08:00:00Z"
+  },
+  "note": "added",
+  "signature": {
+    "alg": "Ed25519",
+    "device_id": "a1111111-0000-4000-8000-00000000000a",
+    "public_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+    "value": "OGKqGeMRnxQfJPDpOGvg4O+C9DyCNPbqhmwQ7TvlANFfLNjdWD/uhQB4RMRDxxW3SYXgYahwDCnkmeFpbKqCCQ=="
+  },
+  "version": 2
+}

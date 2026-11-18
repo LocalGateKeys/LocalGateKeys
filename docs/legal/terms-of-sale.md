@@ -18,11 +18,11 @@ Our order process is conducted by our online reseller {{MERCHANT_OF_RECORD}}, wh
 
 ## 2. What you buy
 
-2.1 **Pro licence.** A one-time purchase of a perpetual licence to use LocalGateKeys Pro, which removes the 4-item limit of the free edition and adds device sync, two-factor codes and attachments, as described in the End User Licence Agreement, including all future updates at no extra charge.
+2.1 **Pro licence.** A one-time purchase of a perpetual licence to use LocalGateKeys Pro, which removes the 7-item limit of the free edition and adds device sync, two-factor codes and attachments, as described in the End User Licence Agreement, including all future updates at no extra charge.
 
 2.2 **Not a subscription.** The purchase never renews or charges you again.
 
-2.3 **Free edition.** The free edition holds up to 4 items, without device sync, two-factor codes or attachments, so you can check that LocalGateKeys works on your PC and with your browser and apps before buying.
+2.3 **Free edition.** The free edition holds up to 7 items, without device sync, two-factor codes or attachments, so you can check that LocalGateKeys works on your PC and with your browser and apps before buying.
 
 ## 3. Price and tax
 
@@ -54,7 +54,7 @@ Payment is taken by {{MERCHANT_OF_RECORD}} using the methods it offers at checko
 
 ## 7. Chargebacks and fraud
 
-If a payment is charged back or found to be fraudulent, the Licence File is revoked as described in the End User Licence Agreement. Revocation brings back the 4-item limit; it never deletes or locks your vault, and existing items stay usable.
+If a payment is charged back or found to be fraudulent, the Licence File is revoked as described in the End User Licence Agreement. Revocation brings back the 7-item limit; it never deletes or locks your vault, and existing items stay usable.
 
 ## 8. Business customers
 

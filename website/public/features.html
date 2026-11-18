@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Features | LocalGateKeys</title>
-  <meta name="description" content="What LocalGateKeys does, edition by edition: encrypted vault, browser and desktop fill, passkeys, Windows Hello, two-factor codes, imports, backups and device sync.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Password manager features: autofill, passkeys, 2FA, sync</title>
+  <meta name="description" content="Encrypted vault, browser autofill, passkeys, two-factor codes, secure sharing, imports, backups and device sync on Windows, Mac, iPhone and Apple Watch.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/features">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/features">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Password manager features: autofill, passkeys, 2FA, sync">
+  <meta property="og:description" content="Encrypted vault, browser autofill, passkeys, two-factor codes, secure sharing, imports, backups and device sync on Windows, Mac, iPhone and Apple Watch.">
+  <meta property="og:url" content="https://localgatekeys.app/features">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The LocalGateKeys logo: a password manager for Windows, Mac and iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Password manager features: autofill, passkeys, 2FA, sync">
+  <meta name="twitter:description" content="Encrypted vault, browser autofill, passkeys, two-factor codes, secure sharing, imports, backups and device sync on Windows, Mac, iPhone and Apple Watch.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="brand/icon-256.png">
@@ -30,32 +44,49 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="index.html">
-        <img src="brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="./">
+        <img src="brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Main">
+      <nav class="nav-wide" aria-label="Main">
         <ul class="nav">
-          <li><a href="features.html" aria-current="page">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="get-started.html">Get started</a></li>
-          <li><a href="help.html">Guide</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="support.html">Support</a></li>
-          <li><a href="buy.html">Buy Pro</a></li>
+          <li><a href="features" aria-current="page">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help">Guide</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Main">
+          <ul class="nav nav-stack">
+            <li><a href="features" aria-current="page">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help">Guide</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Language</span></summary>
+        <ul class="lang-menu-list"><li><a href="features" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/features" hreflang="es" lang="es">Español</a></li><li><a href="it/features" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/features" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/features" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/features" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
   <main id="main">
 <div class="wrap page-head">
   <h1>Everything it does, and where it does it</h1>
-  <p class="lead">All of this runs on your own devices. Free holds up to 4 items; <a href="pricing.html">Pro</a> removes the limit and adds sync, two-factor codes and documents.</p>
+  <p class="lead">All of this runs on your own devices: the Windows app, the browser extension and the iPhone app. Free holds up to 7 items; <a href="pricing">Pro</a> removes the limit and adds sync, two-factor codes and documents.</p>
 </div>
 <div class="wrap">
-  <figure class="shot"><picture><source srcset="screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/home-vault-dark.webp" width="2880" height="1800" alt="The LocalGateKeys Home page: password health, upcoming reminders, a one-time codes card with live two-factor codes, and a list of logins with site logos." loading="lazy" decoding="async"></picture><figcaption>Home: password health, reminders, live two-factor codes and your items. Demo vault with made-up accounts.</figcaption></figure>
+  <figure class="shot"><img src="screenshots/home-vault-dark.webp" srcset="screenshots/home-vault-dark-w720.webp 720w, screenshots/home-vault-dark-w1440.webp 1440w, screenshots/home-vault-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="The LocalGateKeys Home page: password health, upcoming reminders, a one-time codes card with live two-factor codes, and a list of logins with site logos." loading="lazy" decoding="async"><figcaption>Home: password health, reminders, live two-factor codes and your items. Demo vault with made-up accounts.</figcaption></figure>
 </div>
 
 <div class="wrap page-body">
@@ -64,28 +95,31 @@
     <dl>
       <div><dt>Encrypted on your disk</dt><dd>Everything you save is encrypted with a key protected by your master password, using Argon2id and AES-256-GCM. Names, usernames and websites are encrypted too, not just passwords.</dd></div>
       <div><dt>More than passwords</dt><dd>Website and desktop app logins, passkeys, payment cards, bank accounts, identities, secure notes, documents, SSH keys, API keys, Wi-Fi networks, bookmarks, software licences, subscriptions, warranties and purchases, each with its own fields.</dd></div>
-      <div><dt>Documents (Pro)</dt><dd>Keep files such as scanned documents in the vault, up to 25 MB each. Each file is encrypted with its own key. You can preview a document, save a copy, or open it in another app.</dd></div>
+      <div><dt>Documents (Pro)</dt><dd>Keep files such as scanned documents in the vault, up to 25 MB each. Each file is encrypted with its own key. Preview a document, save a copy or open it in another app. With sync, files travel to your other devices, still encrypted.</dd></div>
       <div><dt>Two-factor codes (Pro)</dt><dd>Store a site's setup key and LocalGateKeys shows the current code at the top of the login, and on a One-time codes card on the Home page. Codes follow the TOTP standard (RFC 6238): 6 to 8 digits, 15 to 120 seconds, SHA-1, SHA-256 or SHA-512.</dd></div>
-      <div><dt>Add a code from a QR code</dt><dd>Snip the QR code on the site's two-factor setup page with Win+Shift+S and paste it, or hold it up to your webcam. A Google Authenticator export QR code works too. The image is read on your PC and never saved.</dd></div>
+      <div><dt>Codes on Apple Watch (Pro)</dt><dd>Show the two-factor codes you choose on your Apple Watch, up to 10. The watch shows codes only, never passwords, and they keep working without the iPhone nearby.</dd></div>
+      <div><dt>Scan a QR code</dt><dd>Choose Scan QR code and paste a snip of the site's two-factor QR code (Win+Shift+S), drop in an image, or hold it up to your webcam. Google Authenticator export QR codes work too. The image is read on your PC and never saved.</dd></div>
       <div><dt>Password generator</dt><dd>Random passwords of 8 to 256 characters, or passphrases of 3 to 16 words.</dd></div>
       <div><dt>Password health</dt><dd>See which saved passwords are weak, reused, more than a year old or missing a two-factor code. Breach checks against Have I Been Pwned are off until you turn them on, run only when you start them, and send only five characters of a hash, never the password.</dd></div>
       <div><dt>Site logos and kind icons</dt><dd>Each item shows the site's icon, a built-in logo for well-known sites, or an icon for its kind, so you can spot it at a glance.</dd></div>
-      <div><dt>Search and collections</dt><dd>Find items with a command palette (Ctrl+K), filter chips, favourites and your own collections. Arrow keys, Enter and Ctrl+C work in the item list straight from the search box.</dd></div>
+      <div><dt>Search, sort and collections</dt><dd>Find items with a command palette (Ctrl+K), filter chips, favourites and your own collections. Sort the list by title, date modified or date created, with favourites first. Arrow keys, Enter and Ctrl+C work in the list straight from the search box.</dd></div>
       <div><dt>Trash and undo</dt><dd>Deleted items go to the trash, and the message that confirms it has an Undo button. The trash empties itself after 30 days, or keeps everything until you empty it.</dd></div>
-      <div><dt>Password history</dt><dd>When a login's password changes, the last five old passwords are kept in its encrypted history.</dd></div>
+      <div><dt>Password history</dt><dd>When a login's password changes, up to 10 earlier passwords are kept for a year in its encrypted history. Copy one, or restore it.</dd></div>
+      <div><dt>Verified site</dt><dd>The browser extension marks a saved site as a Verified site and warns before you sign in or save on a lookalike address, such as a swapped letter. The check runs on your device and your saved sites never leave the app. Safari keeps a sealed list of site names only. On Android, the autofill save prompt shows the same verdict and asks before saving on a lookalike address.</dd></div>
     </dl>
     <div class="shots">
-      <figure class="shot"><picture><source srcset="screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="A GitHub login open in LocalGateKeys, with its current two-factor code at the top, then username, hidden password, website, notes and recovery codes." loading="lazy" decoding="async"></picture><figcaption>The current two-factor code sits at the top of the login.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/generator-dark.webp" width="2880" height="1800" alt="The password generator with a random 20-character password and options for length, letters, digits and symbols." loading="lazy" decoding="async"></picture><figcaption>The generator makes random passwords or passphrases.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/security-center-dark.webp" width="2880" height="1800" alt="The Security center showing a score of 77 out of 100, with weak, reused, no two-factor and old passwords to review, and unlock and backup checks." loading="lazy" decoding="async"></picture><figcaption>The Security center lists what to fix first.</figcaption></figure>
+      <figure class="shot"><img src="screenshots/item-2fa-code-light.webp" srcset="screenshots/item-2fa-code-light-w720.webp 720w, screenshots/item-2fa-code-light-w1440.webp 1440w, screenshots/item-2fa-code-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="A GitHub login open in LocalGateKeys, with its current two-factor code at the top, then username, hidden password, website, notes and recovery codes." loading="lazy" decoding="async"><figcaption>The current two-factor code sits at the top of the login.</figcaption></figure>
+      <figure class="shot"><img src="screenshots/generator-light.webp" srcset="screenshots/generator-light-w720.webp 720w, screenshots/generator-light-w1440.webp 1440w, screenshots/generator-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="The password generator with a random 20-character password and options for length, letters, digits and symbols." loading="lazy" decoding="async"><figcaption>The generator makes random passwords or passphrases.</figcaption></figure>
+      <figure class="shot"><img src="screenshots/security-center-dark.webp" srcset="screenshots/security-center-dark-w720.webp 720w, screenshots/security-center-dark-w1440.webp 1440w, screenshots/security-center-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="The Security center showing a score of 77 out of 100, with weak, reused, no two-factor and old passwords to review, and unlock and backup checks." loading="lazy" decoding="async"><figcaption>The Security center lists what to fix first.</figcaption></figure>
     </div>
   </section>
 
   <section class="feature-group" aria-labelledby="f-move">
     <h2 id="f-move">Moving in and out</h2>
     <dl>
-      <div><dt>Import from other password managers</dt><dd>Bring in exports from 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass and KeePassXC (including <code>.kdbx</code> files), Chrome, Edge, Brave, Firefox and Safari, or any other CSV file. You review every item before anything is written, and the import never goes online.</dd></div>
+      <div><dt>Import from other password managers</dt><dd>Bring in exports from 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass and KeePassXC (including <code>.kdbx</code> files), Chrome, Edge, Brave, Firefox and Safari, or any other CSV file. You review every item before anything is written, and the import never goes online. On iPhone, bring logins, two-factor codes and passkeys straight over from Apple Passwords (iOS 26 and later), or import a file from many password managers and authenticator apps.</dd></div>
       <div><dt>Export</dt><dd>Export to an encrypted KeePass KDBX 4 file, or to Bitwarden-compatible CSV or JSON, or KeePass XML. Every export asks for your master password first.</dd></div>
+      <div><dt>Share one item securely</dt><dd>Send a login or note as a <code>.lgkshare</code> file or a QR code, locked with a six-word code that you tell the other person another way. It opens once, and three wrong codes destroy it. Passkeys, documents and items with an attached file cannot be shared.</dd></div>
     </dl>
   </section>
 
@@ -120,24 +154,67 @@
       <div><dt>Scheduled encrypted backups</dt><dd>Daily or weekly, at a time you set. Each backup is a full encrypted file, checked after writing, with attachments included.</dd></div>
       <div><dt>Extra copy in a folder you choose</dt><dd>Have each backup copied to a OneDrive, Google Drive, Dropbox or Proton Drive folder, or anywhere else. Only encrypted backup files are copied, never the live vault.</dd></div>
       <div><dt>Encrypted transfer packages</dt><dd>Move selected items to another vault in an encrypted file protected by its own password.</dd></div>
+      <div><dt>Phone backups</dt><dd>The iPhone and Android apps save an encrypted .lgkm backup with a password you choose. Restore it on any iPhone, Android phone, Mac or PC: it merges like sync and never wipes your vault.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-emergency">
+    <h2 id="f-emergency">Emergency access and duress password (Pro)</h2>
+    <dl>
+      <div><dt>Emergency access</dt><dd>Split your recovery phrase into up to five shards for people you trust. Any chosen number of them (two to five) can get back in. Each person gets a signed file, a QR code or a printed sheet. There is no account and no server: you share a folder, such as a cloud folder or a USB stick, with them.</dd></div>
+      <div><dt>Waiting period and veto</dt><dd>A person who needs access asks from their own LocalGateKeys. After the waiting period you chose (1 to 30 days) the app opens a copy of your latest encrypted backup. Until then, any of your devices can say No. You can also grant access at once. Phones end the flow by showing your recovery phrase; open the backup on a computer.</dd></div>
+      <div><dt>The limit</dt><dd>Nothing outside the apps enforces the waiting period or your No. Any group of holders that holds enough shards, working together, can open your backup at once. Choose people who would not act together and keep the shards apart. Replacing your recovery phrase makes old shards useless.</dd></div>
+      <div><dt>Duress password</dt><dd>A second password opens a believable vault with sample items and shows nothing about your real one. While it is open, the real vault stays locked for the hours you choose, and nothing syncs. It hides your vault from someone looking over your shoulder or forcing you to open the app. It does not hide that the feature exists from someone who examines your files. On Windows, Mac, iPhone and Android.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-power">
+    <h2 id="f-power">Power-user tools</h2>
+    <dl>
+      <div><dt>Backup restore test</dt><dd>Once a week, LocalGateKeys restores your newest backup into a scratch folder, checks that it opens, and deletes the copy. It tells you if the backup uses an old password.</dd></div>
+      <div><dt>Password change assistant</dt><dd>Opens the page where you change a site's password: from a curated list, the standard /.well-known/change-password address, or the sign-in page. It never fills in third-party sites.</dd></div>
+      <div><dt>Several vaults (Pro)</dt><dd>Keep separate vaults, such as Work and Personal. The free plan holds one vault. The 7-item free limit counts across all vaults.</dd></div>
+      <div><dt>Printable vault health report</dt><dd>A one-page report you can print. It contains no passwords and no item names.</dd></div>
+      <div><dt>Expiring and revocable shares</dt><dd>Shares can expire after 1 hour or 1 day, work only once, and be revoked. This is best effort.</dd></div>
+      <div><dt>Estate pack template</dt><dd>A template for executors, next to emergency access.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-dev">
+    <h2 id="f-dev">For developers and AI agents</h2>
+    <dl>
+      <div><dt>AI agents sign in, your passwords stay on your PC (Pro)</dt><dd>Claude Code and other MCP agents can ask LocalGateKeys to sign in to a site. You approve each request, the browser extension fills the form, and the agent never sees the password. On Windows: claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp (the Microsoft Store app also runs the lgk command line as LocalGateKeysNativeHost.exe lgk). <a href="news/2026-11-ai-agents">AI agents can sign in, your passwords stay on your PC</a></dd></div>
+      <div><dt>Tamper-evident access log</dt><dd>Each activity entry is linked to the one before it by a hash, so the Security check shows when the log was changed, cut short or emptied.</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-sync">
     <h2 id="f-sync">Sync between your devices (Pro)</h2>
     <dl>
-      <div><dt>Over your home Wi-Fi</dt><dd>Pair a PC once with a one-use QR code (between PCs you paste its text). When both are unlocked on the same network, they exchange changes directly over an authenticated, encrypted connection. Nothing goes through the internet.</dd></div>
-      <div><dt>Through your own cloud folder</dt><dd>If your PCs are rarely on the same network, sync through a OneDrive, Dropbox, Google Drive or iCloud Drive folder you already use, protected by a sync password. The provider only ever stores encrypted files. You can use both routes.</dd></div>
-      <div><dt>What syncs</dt><dd>Website and desktop app logins, and other items such as notes and bookmarks. Collections, documents and attachments do not sync yet. Edits made on two PCs at once keep both versions, and a delete moves the item to the trash on the other PCs.</dd></div>
-      <div><dt>iPhone</dt><dd>The iPhone app syncs with your Windows PC. <a href="https://apps.apple.com/app/id6825488435">Get it on the App Store</a>.</dd></div>
+      <div><dt>Over your home Wi-Fi</dt><dd>Pair a PC or an iPhone once with a one-use QR code (between PCs you paste its text). When both are unlocked on the same network, they exchange changes directly over an authenticated, encrypted connection. Nothing goes through the internet. If a PC's address changes, Find again reconnects, and each device shows when it last synced.</dd></div>
+      <div><dt>Through your own cloud folder</dt><dd>If your devices are rarely on the same network, sync through a cloud folder you already use, such as Dropbox or iCloud Drive, protected by a sync password. The provider only ever stores encrypted files. You can use both routes.</dd></div>
+      <div><dt>What syncs</dt><dd>Logins, notes, cards and your other items, and attached documents with their files. Collections stay on each device. Edits made on two devices at once keep both versions, and a delete moves the item to the trash on the others. If a device brings back an older copy of the vault, the Windows app warns you instead of accepting it.</dd></div>
+      <div><dt>iPhone</dt><dd>The iPhone app syncs with your Windows PC and Mac. A free PC paired with an iPhone that has Pro takes the licence over sync and becomes Pro. <a href="https://apps.apple.com/app/id6825488435">Get it on the App Store</a>.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-iphone">
+    <h2 id="f-iphone">On iPhone</h2>
+    <dl>
+      <div><dt>AutoFill in Safari and apps</dt><dd>Fill logins in Safari and other apps, with suggestions in the QuickType bar, and use LocalGateKeys for passkeys. On iOS 18 and later it also fills cards, addresses and other details in any text field. The Safari extension offers to save a new login after you sign in.</dd></div>
+      <div><dt>Face ID, Touch ID or an app password</dt><dd>The vault opens with Face ID, Touch ID or your iPhone passcode, with no password to create. If others know your passcode, add an optional app password, backed by a 24-word recovery phrase.</dd></div>
+      <div><dt>Security check</dt><dd>The Security tab gives your vault a score and lists weak, reused and old passwords, and logins that could use two-factor codes. Breach checks stay off until you turn them on.</dd></div>
+      <div><dt>Recently deleted, history and reminders</dt><dd>Deleted items wait 30 days in Recently deleted, and Undo brings one straight back. Every login keeps its password history, and you can get a reminder before a card, passport or licence expires.</dd></div>
+      <div><dt>Attached files (Pro)</dt><dd>Attach documents and photos to your vault, stored encrypted and synced with your other devices.</dd></div>
+      <div><dt>Ten languages</dt><dd>The iPhone app speaks English, German, Spanish, Italian, Japanese, Korean, Dutch, Polish, Brazilian Portuguese and Simplified Chinese.</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-privacy">
     <h2 id="f-privacy">Privacy</h2>
     <dl>
-      <div><dt>No account</dt><dd>You never sign up or sign in. A Pro licence is a key you keep, checked on your PC.</dd></div>
-      <div><dt>No telemetry</dt><dd>The app sends no usage data, crash reports or analytics.</dd></div>
+      <div><dt>No account</dt><dd>You never sign up or sign in. A Pro licence is a key you keep, checked on your device. On iPhone, Pro is an App Store purchase, and the app sends only the App Store receipt to our licence server.</dd></div>
+      <div><dt>No vault telemetry</dt><dd>The apps send no usage data, crash reports or analytics.</dd></div>
       <div><dt>Strict offline mode</dt><dd>On by default. It blocks background internet requests and breach checks, and an update check asks you first.</dd></div>
       <div><dt>Website icons, your choice</dt><dd>To show a site's icon, the app downloads it from that site. This tells the site you have an account there, and nothing else. It is off by default: turn on "Show website icons" in Settings (strict offline mode must be off).</dd></div>
       <div><dt>Update checks you start</dt><dd>Checking for updates downloads one small signed file. The app never downloads or installs anything by itself.</dd></div>
@@ -149,42 +226,46 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>A password manager for Windows that keeps your vault on your own devices.</p>
-        <p class="quiet">This site sets no cookies, runs no analytics and loads nothing from other companies.</p>
+        <p class="footer-brand"><img src="brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>A password manager for Windows, Mac and iPhone that keeps your vault on your own devices.</p>
+        <p class="quiet">This website uses Cloudflare Web Analytics, which is cookieless, to count page visits. It uses no advertising trackers and sets no cookies.</p>
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
         <ul>
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="licence.html">Your Pro licence</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="download">Download</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="switch/">Switch</a></li>
+          <li><a href="buy">Buy Pro</a></li>
+          <li><a href="licence">Your Pro licence</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recover your licence</a></li>
         </ul>
       </nav>
       <nav aria-label="Help">
         <h2>Help</h2>
         <ul>
-          <li><a href="help.html">User guide</a></li>
-          <li><a href="support.html">Support and FAQ</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
+          <li><a href="help">User guide</a></li>
+          <li><a href="support">Support and FAQ</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="legal/vulnerability-disclosure">Report a vulnerability</a></li>
         </ul>
       </nav>
       <nav aria-label="Legal">
         <h2>Legal</h2>
         <ul>
-          <li><a href="legal/eula.html">Licence agreement</a></li>
-          <li><a href="legal/privacy.html">Privacy policy</a></li>
-          <li><a href="legal/terms-of-sale.html">Terms of sale</a></li>
-          <li><a href="legal/refunds.html">Refund policy</a></li>
+          <li><a href="legal/eula">Licence agreement</a></li>
+          <li><a href="legal/privacy">Privacy policy</a></li>
+          <li><a href="legal/terms-of-sale">Terms of sale</a></li>
+          <li><a href="legal/refunds">Refund policy</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Language"><a href="features.html" hreflang="en" lang="en" aria-current="true">English</a> · <a href="es/features.html" hreflang="es" lang="es">Español</a> · <a href="it/features.html" hreflang="it" lang="it">Italiano</a> · <a href="pl/features.html" hreflang="pl" lang="pl">Polski</a> · <a href="zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="de/features.html" hreflang="de" lang="de">Deutsch</a> · <a href="pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="nl/features.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID and Safari are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <nav class="lang-switch" aria-label="Language"><ul><li><a href="features" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/features" hreflang="es" lang="es">Español</a></li><li><a href="it/features" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/features" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/features" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/features" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

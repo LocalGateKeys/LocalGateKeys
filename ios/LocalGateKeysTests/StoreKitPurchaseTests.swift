@@ -10,6 +10,9 @@ final class StoreKitPurchaseTests: XCTestCase {
     var session: SKTestSession!
 
     override func setUp() async throws {
+        // The local StoreKit daemon has hung once under heavy load (2026-11-15, a parallel Mac test run): with
+        // `-test-timeouts-enabled YES` such a hang fails this test after a minute instead of stalling the whole run.
+        executionTimeAllowance = 60
         session = try SKTestSession(configurationFileNamed: "LocalGateKeys")
         session.resetToDefaultState()
         session.disableDialogs = true
@@ -43,12 +46,12 @@ final class StoreKitPurchaseTests: XCTestCase {
         let product = try XCTUnwrap(products.first)
         XCTAssertEqual(product.type, .nonConsumable)
         XCTAssertFalse(product.isFamilyShareable)
-        XCTAssertTrue(product.displayPrice.contains("4.99"), product.displayPrice)
+        XCTAssertTrue(product.displayPrice.contains("29.99"), product.displayPrice)
         let posix = Locale(identifier: "en_US_POSIX")
-        let expected = try XCTUnwrap(Decimal(string: "4.99", locale: posix))
-        // The product's own offer price, as a Decimal, must be exactly 4.99. `Product.price` itself reads 4
+        let expected = try XCTUnwrap(Decimal(string: "29.99", locale: posix))
+        // The product's own offer price, as a Decimal, must be exactly 29.99. `Product.price` itself reads 4
         // on hosts whose region uses a decimal comma: the test session's storekitd writes the offer as
-        // "4,99" (host region) and `Product` parses it as en_US. The offer string is the product's data.
+        // "29,99" (host region) and `Product` parses it as en_US. The offer string is the product's data.
         let json = try JSONSerialization.jsonObject(with: product.jsonRepresentation) as? [String: Any]
         guard let attributes = json?["attributes"] as? [String: Any],
               let offer = (attributes["offers"] as? [[String: Any]])?.first,

@@ -1,0 +1,271 @@
+{
+  "cases": [
+    {
+      "after_records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000540",
+          "kind": "web",
+          "label": "Login 40",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://keep.example"
+          },
+          "updated_at": 1789999900,
+          "username": "pre"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000541",
+          "kind": "web",
+          "label": "Login 41",
+          "password": "imported-r1",
+          "scope": {
+            "origin": "https://r1.example"
+          },
+          "updated_at": 1789999940,
+          "username": "r1"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000542",
+          "kind": "web",
+          "label": "Login 42",
+          "password": "imported-r2",
+          "scope": {
+            "origin": "https://r2.example"
+          },
+          "updated_at": 1789999940,
+          "username": "r2"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000543",
+          "kind": "web",
+          "label": "Login 43",
+          "password": "imported-1",
+          "scope": {
+            "origin": "https://c1.example"
+          },
+          "updated_at": 1789999940,
+          "username": "c1"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000544",
+          "kind": "web",
+          "label": "Login 44",
+          "password": "imported-2",
+          "scope": {
+            "origin": "https://c2.example"
+          },
+          "updated_at": 1789999940,
+          "username": "c2"
+        }
+      ],
+      "before_records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000540",
+          "kind": "web",
+          "label": "Login 40",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://keep.example"
+          },
+          "updated_at": 1789999900,
+          "username": "pre"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000541",
+          "kind": "web",
+          "label": "Login 41",
+          "password": "before-1",
+          "scope": {
+            "origin": "https://r1.example"
+          },
+          "updated_at": 1789999100,
+          "username": "r1"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000542",
+          "kind": "web",
+          "label": "Login 42",
+          "password": "before-2",
+          "scope": {
+            "origin": "https://r2.example"
+          },
+          "updated_at": 1789999100,
+          "username": "r2"
+        }
+      ],
+      "current_records": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000540",
+          "kind": "web",
+          "label": "Login 40",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://keep.example"
+          },
+          "updated_at": 1789999900,
+          "username": "pre"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000541",
+          "kind": "web",
+          "label": "Login 41",
+          "password": "imported-r1",
+          "scope": {
+            "origin": "https://r1.example"
+          },
+          "updated_at": 1789999940,
+          "username": "r1"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000542",
+          "kind": "web",
+          "label": "Renamed",
+          "password": "imported-r2",
+          "scope": {
+            "origin": "https://r2.example"
+          },
+          "updated_at": 1789999970,
+          "username": "r2"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000543",
+          "kind": "web",
+          "label": "Login 43",
+          "password": "imported-1",
+          "scope": {
+            "origin": "https://c1.example"
+          },
+          "updated_at": 1789999940,
+          "username": "c1"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000544",
+          "kind": "web",
+          "label": "Login 44",
+          "password": "edited-after-import",
+          "scope": {
+            "origin": "https://c2.example"
+          },
+          "updated_at": 1789999970,
+          "username": "c2"
+        }
+      ],
+      "expected_after_undo": [
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000540",
+          "kind": "web",
+          "label": "Login 40",
+          "password": "pw-1",
+          "scope": {
+            "origin": "https://keep.example"
+          },
+          "updated_at": 1789999900,
+          "username": "pre"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000541",
+          "kind": "web",
+          "label": "Login 41",
+          "password": "before-1",
+          "scope": {
+            "origin": "https://r1.example"
+          },
+          "updated_at": 1790000000,
+          "username": "r1"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000542",
+          "kind": "web",
+          "label": "Renamed",
+          "password": "imported-r2",
+          "scope": {
+            "origin": "https://r2.example"
+          },
+          "updated_at": 1789999970,
+          "username": "r2"
+        },
+        {
+          "created_at": 1789999000,
+          "id": "10000000-0000-4000-8000-000000000544",
+          "kind": "web",
+          "label": "Login 44",
+          "password": "edited-after-import",
+          "scope": {
+            "origin": "https://c2.example"
+          },
+          "updated_at": 1789999970,
+          "username": "c2"
+        }
+      ],
+      "expected_kept_ids": [
+        "10000000-0000-4000-8000-000000000542",
+        "10000000-0000-4000-8000-000000000544"
+      ],
+      "expected_restored_ids": [
+        "10000000-0000-4000-8000-000000000541"
+      ],
+      "expected_trashed_ids": [
+        "10000000-0000-4000-8000-000000000543"
+      ],
+      "journal": {
+        "at": 1789999940,
+        "created": {
+          "10000000-0000-4000-8000-000000000543": "501726fdb9206b6a9613b5859c52676518728cfb2a6b07b7f4ef0762c181f989",
+          "10000000-0000-4000-8000-000000000544": "62d7c8881e9fe6996a38ddb4e2817a059243792c214d6870691da951d168de52"
+        },
+        "import_id": "20000000-0000-4000-8000-000000000001",
+        "replaced": {
+          "10000000-0000-4000-8000-000000000541": {
+            "after": "e942470cc35abf9bd96c92b127e8de3e28465f99da0426c74be6300d9074d28e",
+            "before": {
+              "created_at": 1789999000,
+              "id": "10000000-0000-4000-8000-000000000541",
+              "kind": "web",
+              "label": "Login 41",
+              "password": "before-1",
+              "scope": {
+                "origin": "https://r1.example"
+              },
+              "updated_at": 1789999100,
+              "username": "r1"
+            }
+          },
+          "10000000-0000-4000-8000-000000000542": {
+            "after": "f18ae342fa7a9b221807c70dd12f2d22931de9a93d1e3452e7445e23ed8a93f4",
+            "before": {
+              "created_at": 1789999000,
+              "id": "10000000-0000-4000-8000-000000000542",
+              "kind": "web",
+              "label": "Login 42",
+              "password": "before-2",
+              "scope": {
+                "origin": "https://r2.example"
+              },
+              "updated_at": 1789999100,
+              "username": "r2"
+            }
+          }
+        },
+        "source": "bitwarden"
+      },
+      "name": "created untouched (to Recently deleted), created then edited (kept), replaced untouched (restored), replaced then edited (kept)",
+      "now": 1790000000
+    }
+  ]
+}

@@ -1,10 +1,10 @@
-> **Windows app 0.4.10.** Report vulnerabilities privately (GitHub "Report a vulnerability" on the public repository, or security@localgatekeys.app); see the [disclosure policy](https://localgatekeys.app/legal/vulnerability-disclosure). On Windows and the Mac, master-password unlock remains primary; Windows Hello, camera verification and Touch ID are optional, explicitly configured methods. The iPhone and Android apps unlock with the device's own owner check (see [Mac, iPhone, Apple Watch and Android](#mac-iphone-apple-watch-and-android)).
+> **Windows app 0.4.12.** Report vulnerabilities privately (GitHub "Report a vulnerability" on the public repository, or security@localgatekeys.app); see the [disclosure policy](https://localgatekeys.app/legal/vulnerability-disclosure). On Windows and the Mac, master-password unlock remains primary; Windows Hello, camera verification and Touch ID are optional, explicitly configured methods. The iPhone and Android apps unlock with the device's own owner check (see [Mac, iPhone, Apple Watch and Android](#mac-iphone-apple-watch-and-android)).
 
 # Security notes
 
 ## Status
 
-LocalGateKeys is a released password manager: a Windows app (Microsoft Store and installer), an Edge extension (Edge Add-ons), and an iPhone app on the App Store, with an Apple Watch app inside it from iPhone version 1.1. A Mac app (`ios/Mac`) and an Android app (`android/`) are built and tested but not yet in the Mac App Store or on Google Play. The source is published here so anyone can check how it protects your data. It has been through repeated internal security reviews, and the fixes are listed below. It has not yet had an independent cryptographic review, penetration test, accessibility review, or supply-chain audit. As with any password manager, keep an encrypted backup of your vault and your recovery phrase somewhere safe.
+LocalGateKeys is a released password manager: a Windows app (Microsoft Store only since November 2026; the retired installer build ends at 0.4.12), a browser extension (Edge Add-ons and Firefox Add-ons; the Chrome Web Store listing was in review on 2026-11-14), an iPhone app on the App Store, with an Apple Watch app inside it from iPhone version 1.1, and a Mac app (`ios/Mac`) on the Mac App Store (version 1.3, November 2026). The Android app (`android/`) is built and tested but not yet on Google Play. The source is published here so anyone can check how it protects your data. It has been through repeated internal security reviews, and the fixes are listed below. It has not yet had an independent cryptographic review, penetration test, accessibility review, or supply-chain audit. As with any password manager, keep an encrypted backup of your vault and your recovery phrase somewhere safe.
 
 ## Threat model
 
@@ -28,14 +28,18 @@ It does **not** claim to protect against:
 - physical access while the vault is unlocked
 - phishing on a correctly matched desktop executable that renders attacker-controlled content
 - loss of the only vault file together with a forgotten master password and no recovery phrase
-- rollback by an attacker who can also delete or forge the adjacent local generation anchor
+- rollback by an attacker who can also remove the rollback marks kept outside the vault folder (Windows), or, on
+  the Mac, iPhone and Android, who can put an older copy of the app's files back while no sync peer reports it
+  (those apps keep no local generation anchor; only the sync witnesses below detect a rollback there)
 
 The vault detects older generations while its local generation anchor remains
 intact. The anchor is authenticated with a key derived from the vault's data key,
 so it cannot be rewritten without unlocking the vault (the optional DPAPI seal on
 Windows adds no protection beyond that MAC, because a missing seal is accepted), but it is still a local file: deleting it
-together with the vault file is not detected. It is not an external,
-tamper-proof rollback authority.
+together with the vault file is not detected by the anchor alone. On Windows a
+second record outside the vault folder closes that case (see "Rollback mark"
+below). Neither is an external, tamper-proof rollback authority: someone who can
+edit this Windows user's registry can remove the mark too.
 
 ## Prohibited capture techniques
 
@@ -63,14 +67,15 @@ The extension uses Manifest V3 (Chromium service worker; Firefox variant generat
 - **Document pinning.** On Chromium the request is bound to `sender.documentId` and `documentLifecycle === "active"`. Firefox exposes neither; there the check falls back to the tab id plus the frame's current URL origin, and the native context key uses `frame:<id>` so two frames of one tab never share a context. A `documentId` present on one side only is treated as a mismatch.
 - The service worker derives the authoritative origin from `sender.url` and compares it with the request; page-supplied origins, tab ids, frame ids and document ids are never used.
 - Public HTTP origins are rejected; HTTP is accepted only on loopback for the included demo.
-- Shadow DOM: field discovery walks *open* shadow roots only; closed roots (including the extension's own UI) are unreachable. Hit-testing descends through open hosts so a page overlay still blocks filling; `safeForm` (same-origin `action`/`formaction`, `_self` target) applies unchanged to forms inside shadow trees.
+- Shadow DOM: field discovery walks *open* shadow roots only; closed roots are not walked. Hit-testing descends through open hosts so a page overlay still blocks filling; `safeForm` (same-origin `action`/`formaction`, `_self` target) applies unchanged to forms inside shadow trees.
+- **Panels are drawn in an extension frame.** A closed shadow root keeps page scripts out of the DOM but not out of the rendered text: `window.find()` searches it. So on Chromium and Firefox the pickers, guards and prompts are drawn in `panel.html`, an extension page that the content script frames into a closed shadow root. The page sees only an opaque cross-origin frame and cannot read or search it. The frame gets what to draw from the content script through the service worker (extension messaging only, never `postMessage` or URL parameters). That includes usernames and labels, card brand and last four, identity titles, the profile name and a lookalike's saved host. Each frame gets a fresh random 128-bit token through its window name and clears it once read. The content script answers only that token and binds it to the first frame that presents it, by browser-reported frame id and document. The service worker relays only requests from its own `panel.html` inside a tab frame, type-checks every field, and addresses the content script of the frame's parent. A click in the frame counts only if it is trusted, comes at least 400 ms after the panel was drawn, and, where the browser reports it (IntersectionObserver v2, Chromium), happens while the frame is fully visible. The content script then applies the same host checks as for an in-page click (below). If the frame cannot be used, the panel is drawn in the page as before, with every vault string replaced by a neutral placeholder ("#1", "Card 2", "•••"). That happens in Safari, whose manifest has no web-accessible resources, or when a frame does not report in within 3 s (for example, blocked by the page). A page can still see that a panel host was inserted and how large it is, but every list panel (logins, cards, identities, codes) uses one fixed height, so the size does not reveal how many items match. Safari's in-page fallback is the exception: there the number of rows is visible to the page.
 - **Form destination.** `safeForm` resolves `action` / `formaction` the way the browser does (against `document.baseURI`, so an injected `<base href>` is honoured), refuses a page whose `<base href>` is cross-origin or whose `<base target>` is not `_self`, and refuses the whole form if *any* submitter (buttons, `input type=submit|image`, including ones attached with `form=`) has a cross-origin `formaction` or a non-`_self` `formtarget`. Form properties are read through prototype accessors so controls named `action` or `elements` cannot shadow them.
-- **In-page UI tampering.** The field icon and panel hosts are pinned with `!important` inline styles and, where supported, promoted to the top layer (`popover="manual"`). Every click must be trusted and is refused unless the host is still a direct child of `<html>`, its computed style is untouched (opacity 1, visible, no transform / filter / clip-path / mask / blend), its geometry matches what was placed, `elementFromPoint` at the click resolves to the host, and no page popover, modal dialog or fullscreen element overlaps it. A single matching account still opens the picker, so filling always takes two deliberate clicks. Residual risk: on browsers without popover support (Chromium < 114), a `pointer-events:none` page element stacked above the icon is invisible to `elementFromPoint`.
+- **In-page UI tampering.** The field icon and panel hosts are pinned with `!important` inline styles and, where supported, promoted to the top layer (`popover="manual"`). Every click must be trusted and is refused unless the host is still a direct child of `<html>`, its computed style is untouched (opacity 1, visible, no transform / filter / clip-path / mask / blend), its geometry matches what was placed, `elementFromPoint` at the click resolves to the host, and no page element in the top layer (popover, modal dialog, fullscreen element) overlaps it or paints a `::backdrop`, and no view transition is running. Since 2026-11-12 (`login-safety.js` `topLayerCover`) that search also covers closed shadow roots where the browser lets an extension open them (Firefox `openOrClosedShadowRoot`, Chromium `chrome.dom.openOrClosedShadowRoot`); an unreadable `::backdrop` counts as a cover. This is what stands in for IntersectionObserver v2 on Firefox and Safari: the host is itself in the top layer (Firefox 128+, Safari 17+), so only those can paint above it, `pointer-events:none` or not. Checked in real Firefox 160 (`tests/extension/manual/real-firefox-panels.cjs`: document, closed-root and backdrop covers refused). A single matching account still opens the picker, so filling always takes two deliberate clicks. Residual risk: a top-layer cover inside a closed shadow root on Safari (no extension API opens it there), and, on browsers without popover support (Chromium < 114, Safari < 17), a `pointer-events:none` page element stacked above the icon is invisible to `elementFromPoint`. The page can always tell that a panel opened (a new element under `<html>`, focus moving into the frame); it cannot read the panel's text, and list panels have one fixed height, so the row count does not show (accepted, design decision 2026-11-12).
 - **DOM clobbering.** The content script's re-injection guard is a `Symbol.for` key, and the `browser`, `LGKHeuristics` and `LGKLoginSafety` globals are accepted only after a function-shape check; `LGKHeuristics` is a non-writable, non-configurable property. A page element with a matching `id` cannot disable or replace them.
 - Page heuristics (sign-in / logout / failure labels, `heuristics.js`) are localized but conservative: exact label equality for the single-button sign-in rule, Unicode word-boundary matches otherwise. Automatic submit still requires exactly one visible POST submit button with an exact sign-in label; there is no Enter injection or `form.submit()`.
 - Website icons are off by default, on the desktop and the iPhone (Settings › "Show website icons"), and on the desktop strict offline mode blocks them. Only the site's own address is requested (`https://<host>/…`); no username, password or vault data is sent, but each download tells that site, and anyone watching the network, that this vault holds an account there. Downloads are public HTTPS only (no private, local, site-local, multicast or embedded-IPv4 addresses; the iPhone resolves the name first), size- and time-limited, and the image is decoded within fixed limits and re-encoded. The desktop keeps icons in memory and clears them on lock; the iPhone caches them in its app container and fetches only while unlocked.
 - Site icons come from the browser's favicon cache on Chromium (`favicon` permission, no network request). Firefox has no such API; the Firefox manifest drops the permission and saved entries use the neutral icon.
-- The extension declares no `web_accessible_resources`: in-page icons are inline SVG built inside closed shadow roots, so a page cannot detect the extension by probing `chrome-extension://` URLs. The Firefox manifest builder deletes the key as well.
+- The only web-accessible resource is `panel.html` (the panel frame above); in-page icons are inline SVG built inside closed shadow roots. On Chromium the entry sets `use_dynamic_url`, so a page cannot load or probe the static `chrome-extension://` URL. Firefox has no `use_dynamic_url`, so the Firefox manifest builder drops the key; Its `moz-extension://` host is a random per-install UUID. The content script never puts that URL into DOM the page can reach, because the frame sits in a closed shadow root. Safari ships no web-accessible resources.
 - Released values (passwords, usernames, TOTP codes, card and identity fields) are blanked in the content script on every path, including early returns when the page changes during a native call. `visible()` treats opacity below 0.1, collapsing `clip-path` / `clip`, and zero-size clipping ancestors as hidden.
 - The native-host manifest pins the fixed Chromium extension ID; the Firefox id is `localgatekeys@localgatekeys.app` (`browser_specific_settings.gecko`) and must be added to the host's `allowed_extensions` before Firefox can connect.
 - The native host also checks the browser-supplied caller origin and fails closed when launched without it.
@@ -80,10 +85,13 @@ The extension uses Manifest V3 (Chromium service worker; Firefox variant generat
 - **Save prompts.** Browser save prompts never reveal whether a captured password matches the saved one. For a submitted login the desktop app tells the extension only whether an account with that username is already saved for the origin (`new` or `exists`, the same model as Safari), and the page sees the same prompt either way. The password is compared only inside the desktop app after the user clicks Save or Update. If it is unchanged, the app says "Already saved" in its own window and writes nothing. The extension's `session_id` is compared with the session token in constant time; identity and card approvals require it, and a `session_id` sent with a manual save, even an empty one, must match the current session.
 - **Probe limits.** `check_browser` / `capture_browser` (used to decide whether to offer a save prompt) still reveal whether a username is saved for the origin, so they remain rate-limited. On the desktop, while the vault is unlocked, they answer at most 10 checks per origin, 15 per site (registrable domain) and 60 in total per 60 s; past the total each site keeps 3, up to a hard cap of 240. Safari on iPhone allows 10 per origin and 30 in total per 60 s.
 - **Save prompt after a redirect.** A captured login waits in memory for its tab (90 s, on the desktop and in Safari on iPhone). The next document on the same origin may show it. For 12 s after the capture, a document in the same tab on another origin of the same site may also show it: same scheme and port, and the same registrable domain by the bundled Public Suffix List (`login.paddle.com` → `vendors.paddle.com`). Never across a public suffix such as `github.io`, never for IP addresses, never in another tab. The login is saved for the origin it was typed on, and the panel and the desktop confirmation name that origin. Filling stays exact-origin.
-- **Page URL.** For multi-URL logins the content script sends `location.href` (fragment stripped, never credentials) next to `origin` in `begin_browser` / `get_browser`. The service worker re-derives the sender origin from `sender.url`, forwards the `url` only when its canonical origin is identical, and otherwise drops it so the broker matches the origin alone; the broker independently fails closed (`invalid_request`) on a mismatched `url`. Choices carry the broker's `match` kind and the in-page picker labels anything wider than `exact_origin`.
-- **Card fill** (`card_protocol: 1`) mirrors identity fill: `begin_card_browser` returns metadata only (title, brand, last four, which tokens exist), never a number or CVV. The user ticks fields in the extension's closed-shadow-root panel, defaulting to the tokens present on the page with the security code **unticked**; the desktop app then shows the trusted native review (number as `•••• 1111`, CVV masked) and the single-use approval is bound to the lease, origin, tab/document context, item revision and the selected tokens. `release_card_browser` is gesture-gated like `get_browser`; the page fills only the approved tokens into controls that pass the same `safeForm` / `onTop` checks as logins, never submits, discards a reply that carries any unapproved token, and blanks every released value from memory immediately after the fill. Payment forms are recognised from `autocomplete="cc-*"`; name/id heuristics cover only number, expiry and CVV and only inside a scope that already contains a card-number-like field. The PIN has no token and is never released.
+- **Page URL.** For multi-URL logins the content script sends `location.href` (fragment stripped, never credentials) next to `origin` in `begin_browser` / `get_browser`. The service worker re-derives the sender origin from `sender.url`, forwards the `url` only when its canonical origin is identical, and otherwise drops it so the broker matches the origin alone; the broker independently fails closed (`invalid_request`) on a mismatched `url`. Choices carry the broker's `match` kind and the picker labels anything wider than `exact_origin`.
+- **Card fill** (`card_protocol: 1`) mirrors identity fill: `begin_card_browser` returns metadata only (title, brand, last four, which tokens exist), never a number or CVV. The user ticks fields in the extension's panel frame, defaulting to the tokens present on the page with the security code **unticked**; the desktop app then shows the trusted native review (number as `•••• 1111`, CVV masked) and the single-use approval is bound to the lease, origin, tab/document context, item revision and the selected tokens. `release_card_browser` is gesture-gated like `get_browser`; the page fills only the approved tokens into controls that pass the same `safeForm` / `onTop` checks as logins, never submits, discards a reply that carries any unapproved token, and blanks every released value from memory immediately after the fill. Payment forms are recognised from `autocomplete="cc-*"`; name/id heuristics cover only number, expiry and CVV and only inside a scope that already contains a card-number-like field. The PIN has no token and is never released.
 
-- **Passkeys** (`passkey_protocol: 1`, Chromium only). `webauthn-page.js` runs in the page's own JavaScript world (`"world": "MAIN"`, `document_start`) and wraps `navigator.credentials.create` / `.get` for `publicKey` requests. It holds no secrets and makes no trust decisions: the page can call or replace it, which grants nothing it could not do by calling `navigator.credentials` directly. It talks to `webauthn-bridge.js` (isolated world) over a pair of CustomEvents named after a 128-bit secret handed over in one hello at `document_start`; the bridge takes the first hello only, and no window message is posted. The channel carries only the page's own request and the credential meant for that page. The bridge relays it to the service worker. The service worker applies the same sender-derived origin, `documentId` and same-origin frame-ancestry checks as fill, and requires the active tab. Cross-origin iframes therefore get the browser's own authenticator. The agent (`passkeys.py`, `passkey_broker.py`) builds `clientDataJSON` itself from that origin, so the signed origin is never page-chosen. It accepts an rpId only when it equals the host or is a registrable suffix of it (never a public suffix; Public Suffix List), rejects IP origins and allows HTTP only on `localhost`. Every create, and every get that has a stored candidate, shows a desktop dialog naming the site, page and profile. Unless the site asks for `userVerification: "discouraged"`, it then verifies the user with Windows Hello or the master password (the UV flag reports which). A get with no matching passkey falls back to the browser with no dialog. After any prompt that ends without a credential (Cancel, "Use browser or another device", a cancelled unlock, an existing passkey, failed verification), the same origin falls back silently for 10 s, so a page that forges requests through the MAIN-world channel can raise at most one LocalGateKeys prompt per 10 s. Page-supplied site and account names are flattened to one line with control and bidi characters removed before they reach the dialog. Focus returns to the previously active window when a prompt closes, because the browser rejects WebAuthn calls from an unfocused page. An approval that arrives more than 80 s after the request is discarded, so no passkey is stored after the extension has given up. Keys are ES256 (P-256) PKCS#8 inside the encrypted vault item and never leave the agent; replies carry signatures only. The signature counter is always 0, with the backup-eligible and backed-up flags set (synced-style passkeys), so signing in never rewrites the vault item. Attestation is `none`. Every other failure (app not running, vault locked and unlock cancelled, older bridge, malformed options) hands the original options to the browser's own authenticator. A create the page aborts after approval can still leave a passkey the site never received; the user can delete it in the app. Answers that could reveal vault state (locked, no passkey here, cooldown, cancel, existing passkey) are held to a short jittered minimum delay from the call (never past 2.5 s, skipped in cross-origin frames). The wrapper keeps the native property attributes, name, length and `toString`, but a page can still detect it (a pristine `toString` from a fresh iframe, error stacks), unlike the rest of the extension.
+- **Passkeys** (`passkey_protocol: 1`, Chrome, Edge and Firefox 128+). `webauthn-page.js` runs in the page's own JavaScript world (`"world": "MAIN"`, `document_start`) and wraps `navigator.credentials.create` / `.get` for `publicKey` requests. It holds no secrets and makes no trust decisions: the page can call or replace it, which grants nothing it could not do by calling `navigator.credentials` directly. It talks to `webauthn-bridge.js` (isolated world) over a pair of CustomEvents named after a 128-bit secret handed over in one hello at `document_start`; the bridge takes the first hello only, and no window message is posted. The channel carries only the page's own request and the credential meant for that page: the bridge passes back only the credential fields the wrapper builds the result from and the five error codes it acts on, never messages or other reply fields. The bridge relays the request to the service worker. The service worker applies the same sender-derived origin, `documentId` and same-origin frame-ancestry checks as fill, and requires the active tab. Firefox gives the service worker no `documentId`; there the bridge draws a random per-document key (128 bits, never visible to the page) that stands in for it, as `content.js` does for fill. A frame whose ancestors are not all of its own origin gets the browser's own authenticator, with one exception: a passkey sign-in (`get`). That is handled only when (a) the service worker establishes the top-level origin from the browser's frame tree and the tab's URL, never from the page, (b) the frame holds the `publickey-credentials-get` permission, read by the bridge in the isolated world (a missing or unreadable value, as in Firefox, leaves the request to the browser; the value can only send a request to the browser, never admit one), and (c) the rpId is a registrable suffix of the frame's own origin, as for any page. The signed `clientDataJSON` then carries `"crossOrigin":true` and `"topOrigin"`, the approval context binds the top origin, a reply is dropped if the top site changed meanwhile, and the dialog names both the framed site and the site in the address bar. Creating a passkey inside another site's frame always uses the browser's own WebAuthn. A `Permissions-Policy` that denies `publickey-credentials-get` to a same-origin page is not consulted. The agent (`passkeys.py`, `passkey_broker.py`) builds `clientDataJSON` itself from that origin, so the signed origin is never page-chosen. It accepts an rpId only when it equals the host or is a registrable suffix of it (never a public suffix; Public Suffix List), rejects IP origins and allows HTTP only on `localhost`. Every create, and every get that has a stored candidate, shows a desktop dialog naming the site, page and profile. Unless the site asks for `userVerification: "discouraged"`, it then verifies the user with Windows Hello or the master password (the UV flag reports which). A get with no matching passkey falls back to the browser with no dialog. A new passkey is saved in two steps: the app stores it marked unconfirmed (it shows in the app's item list, but is not offered for sign-in, not in the Windows provider's list and not synced), and the wrapper reports the outcome once the page's `create()` promise settles. A confirm clears the mark; a discard (the page aborted, or the document went away before the credential was handed over) deletes the passkey. With no report within 15 seconds, at lock, or after a crash, the passkey is kept as an ordinary one: the site may have registered it, and deleting it could lock the user out. The outcome messages are bound to the same browser-derived context as the create and can only act on that create's own unconfirmed passkey. After any prompt that ends without a credential (Cancel, "Use browser or another device", a cancelled unlock, an existing passkey, failed verification), the same origin falls back silently for 10 s, so a page that forges requests through the MAIN-world channel can raise at most one LocalGateKeys prompt per 10 s. Page-supplied site and account names are flattened to one line with control and bidi characters removed before they reach the dialog. Focus returns to the previously active window when a prompt closes, because the browser rejects WebAuthn calls from an unfocused page. An approval that arrives more than 80 s after the request is discarded, so no passkey is stored after the extension has given up. Keys are ES256 (P-256) PKCS#8 inside the encrypted vault item and never leave the agent; replies carry signatures only. The signature counter is always 0, with the backup-eligible and backed-up flags set (synced-style passkeys), so signing in never rewrites the vault item. Attestation is `none`. Every other failure (app not running, vault locked and unlock cancelled, older bridge, malformed options) hands the original options to the browser's own authenticator. Only `ItemService.create_passkey` sets the mark: an update never sets it, the user's own edit clears it (a later discard then keeps the passkey), and inbound sync drops it. A confirm or discard whose save fails is tried again a few times; after that the next unlock keeps the passkey. Answers that could reveal vault state (locked, no passkey here, cooldown, cancel, existing passkey) are held to a short jittered minimum delay from the call (never past 2.5 s; skipped only for a create in a cross-origin frame, which goes to the browser without reaching the app). A dismissed dialog cools down that site for 10 s; for a get from another site's frame the cooldown is kept per pair of framed site and top site, and an AI agent's passkey grant is never used there. The wrapper keeps the native property attributes, name, length and `toString`, but a page can still detect it (a pristine `toString` from a fresh iframe, error stacks), unlike the rest of the extension.
+
+- **Phishing shield (Verified site, lookalike guard).** When the user focuses a login field, submits a login, gets a save prompt or opens the popup, the content script asks for `classify_site_browser`. The desktop app classifies the sender origin with `lookalike.classify` against every saved URL row; the saved origins never leave the app. The reply is the verdict (`exact`, `related`, `lookalike`, `unknown`). "Related site" is given only for the same host on another scheme or port, or the same host with or without `www.` (audit 2026-11-10): another host on a saved site's registrable domain gets the neutral `unknown` (reason `same-site`, no badge, no guard), because a domain can host other people's pages without being on the Public Suffix List (`sites.google.com` next to a saved `accounts.google.com`). Filling still follows each saved URL row's own matching rule, not the verdict. Android (`Lookalike.shield`) and the Safari app handler (`Lookalike.shield` in LGKCore) apply the same rule since 2026-11-12; the shared vectors are `crosscheck.json` `shield_pairs` / `shield_lists`. A lookalike reply also names the one saved host it imitates. An `other-suffix` reply carries an opaque pair id: an HMAC with an HKDF subkey of the vault's data key, so a reader of the browser profile cannot test it against popular sites. The "same account" answer stores only that id in extension storage. A locked vault is never unlocked for this. The extension then runs only its own check, which needs no saved origins (a host that mixes scripts). Safari asks its app handler, which classifies against a sealed list of saved registrable domains (see the Safari extensions section). The app drops its cache of parsed saved origins when the vault locks, and the content script asks again after 60 s, so a locked vault's verdict is not kept. On a lookalike, a trusted credential submit is cancelled at the document's capture phase and the save paths ask "Is this the right site?" first. The buttons are "Go back" (the default: blanks the password and goes back, or to `about:blank` in a tab without history) and "Continue on <this host>". **Limits:** this guards against plain form-post phishing kits and keeps LocalGateKeys from saving to a lookalike. It is not a wall against a hostile page. A page listener on `window` runs before the guard, and a page can read the password as it is typed or send it with `form.submit()` or `fetch`, none of which fire a submit event. The guard also needs the verdict before the submit, so a submit made before the verdict arrives goes through. The warning to the user is the defence in those cases. Every browser save (`save_browser`, `save_pending_browser`) is classified again in the app after unlock, so a login captured while the vault was locked, when the page had no verdict, is never saved silently to a lookalike. The app refuses it with the verdict (`lookalike_site`) until the extension has asked the guard question and sends `lookalike_confirmed`. Even then, the desktop confirmation names the site it imitates, and an older extension cannot save there at all.
+- **New site for a saved username (soft note).** On the user's own trusted submit on a site whose verdict is `unknown`, and only for a username the user typed (trusted input events; a value set by script is never sent), the content script sends `new_site_username_browser` once per page. The app answers only yes or no: whether that username is saved for another site, never which one. The answer needs the gesture flag and an unlocked vault, never prompts, and shares the per-site probe budget of `check_browser`. A "yes" shows a note in the panel; the submit is not held. A page cannot message the extension, so it cannot use this as a username oracle. A page that fires the submit itself, or fills the username by script, gets no check.
 
 A web page can imitate an in-page LocalGateKeys banner. The native desktop confirmation is therefore the authoritative save UI. A production build should move more confirmation UI into trusted browser chrome.
 
@@ -120,6 +128,8 @@ binary hash, version directory, title, or complete control layout. Other desktop
 applications retain the strict checks above. When an identical (or same-signer)
 binary shows a changed window title or edit-control layout, the app asks before
 filling or adopting it.
+
+Fields inside embedded web frames (iframes, e.g. Discord Activities) are never offered or filled. Only the app's top document is.
 
 If the app exposed an unprotected field and the user explicitly saved that mapping, LocalGateKeys requires a stronger selector score and displays a fresh confirmation before every fill.
 
@@ -178,6 +188,16 @@ next unlock.
   rotation replaces it: the old phrase stops opening the vault and the new one is
   shown once and must be confirmed. A profile whose camera sidecar exists cannot
   be deleted until camera verification is removed this way.
+- Camera unlock asks for a random head movement (`ActiveChallenge` in
+  `app/face_capture.py`): two of left, right and up, drawn with the system random
+  source for each attempt, each to be held for consecutive frames within six
+  seconds. A photo held flat or a still image on a screen does not pass. Once a
+  move was shown, any new sequence (too slow, wrong move, face out of view, someone
+  else in view, another camera) counts as a failure, and the attempt ends after two
+  failed sequences. The pose is read from 2-D landmarks only, so a bent or folded
+  print may imitate a turn; a replayed or generated video that follows the
+  prompts, or a mask, can also pass: this is not certified presentation-attack
+  detection, and Windows Hello stays the stronger choice.
 - Decrypted catalog JSON and attachment plaintext are built in `bytearray` buffers
   and zeroed after use (AES-GCM `decrypt_into`); individual field strings remain
   ordinary Python strings and are not wiped.
@@ -188,7 +208,10 @@ next unlock.
 
 Parameters:
 
-- KDF: Argon2id; default 64 MiB memory, 3 iterations, parallelism 4, 32-byte output
+- KDF: Argon2id; default 256 MiB memory (since 2026-10-30, was 64 MiB), 3 iterations, parallelism 4, 32-byte
+  output. A PC with less than 4 GiB of physical memory (or an unknown amount) keeps 64 MiB for new vaults and is
+  never upgraded; elsewhere an older vault's password wrapper is re-derived at the higher cost after a successful
+  unlock (`_upgrade_kdf_on_unlock` in `vault.py`)
 - salt: 16 random bytes per wrapper
 - encryption: AES-256-GCM, 12 fresh random nonce bytes per sealed object
 - write behavior: temporary file, flush + `fsync`, atomic replace
@@ -218,6 +241,48 @@ and the verified restore raises `RollbackRequiresConfirmation` when the backup i
 older than the anchor or the anchor belongs to a different key lineage. Only an
 explicit confirmation replaces the anchor with the restored generation.
 
+**Rollback mark (Windows).** Each save also raises a mark outside the vault
+folder (`outside_marks.py`, `HKCU\Software\LocalGateKeys\Marks`): the
+generation, authenticated with HMAC-SHA256 under a key derived from the anchor
+key and bound to the `vault_id`. There are two values per vault, one named after
+a hash of the vault's path and one after a hash of its id, so a copy moved to
+another folder still finds its mark; the by-id value keeps the vault's place
+encrypted (AES-256-GCM, nonce derived by HMAC, no random draw). At unlock, a
+mark that authenticates under this vault's key and is newer than the vault
+refuses the unlock (`vault.err.rollbackMarkOlder`): an older vault file and anchor
+copied back together are caught without sync. A mark that is missing, cannot be
+read, or does not authenticate under this vault's key never blocks, so another
+vault at the same path or a damaged registry value cannot lock the user out;
+a second live copy of the same vault only raises the "protection was reset"
+warning. A verified restore sets the marks of the restored profile only once
+it is in place (a cancelled or failed restore leaves them as they were), and
+"restore as a new profile" marks the new profile's folder, not its staging copy.
+A data-key rotation (each master-password change) keeps a record under each
+retired key, the last eight, and the format-3 upgrade one for the vault it
+replaced (also when that upgrade failed and the vault got its id at its next
+save or password change), so a copy from before those, put back in the same
+folder, is refused too; in another folder such a copy is only flagged or opened,
+like any copy moved elsewhere. Removing the second
+(duress) vault, or erasing a profile after device removal, deletes that vault's
+marks. Limits: the registry value is writable by the same Windows user, so
+malware or a person signed in as that user can delete it; a copy from before
+more than eight master-password changes, or one put back on a PC whose marks
+were cleared, opens as if it had never been marked; a vault folder restored by
+hand from an older copy (for example File History) is refused and must be
+restored through the app's backup restore instead; the Mac, iPhone and Android
+apps have no such mark and no local anchor (see the threat model above).
+
+**Sync witnesses (all apps).** In a sync group every device publishes its vault
+generation and, for each peer, the highest generation it has seen from that peer
+(in format-2 views, witness files in the cloud folder and the LAN `witness`
+message; `src/localvault/sync/witness.py`, LGKCore `Witness.swift`, lgk-core
+`Witness.kt`). A peer whose generation drops is reported (`peer-vault-rollback`);
+a device that sees a peer's witness of it above its own generation reports
+`vault-rollback`, which stays until the user acknowledges it after
+re-authentication. A witness more than 10,000 above the device's own generation
+is ignored. This works on Windows, the Mac, iPhone and Android, but only while
+peers sync; it warns, it does not refuse the unlock.
+
 **Unlock throttling.** Wrong master-password attempts (vault unlock,
 recovery-phrase unlock and in-session reauthentication) are counted per profile
 in `<profile>.unlock-throttle.json`, HMAC-SHA256-protected with a per-profile
@@ -231,26 +296,40 @@ throttle key's id and the vault's location in the v3 header, inside the catalog'
 associated data. At that location a missing, replaced or downgraded throttle key
 fails closed to the maximum wait (never a lock-out). A copy at another path (a
 restore, a verified backup) is not bound, and a vault last saved by an older
-release is bound at its next save. Residual risk: restoring an older counter file
-that is correctly MAC'd under the same key restores its lower count; this needs
-same-user write access. Vaults saved by this release cannot be opened by older
-releases.
+release is bound at its next save. Because every one of these files sits in the
+vault folder, each failure also raises a high-water mark outside it (audit
+2026-11-10; `outside_marks.py`): a value under
+`HKCU\Software\LocalGateKeys\Marks` named by a hash of the vault's path,
+DPAPI-sealed when available, plus (design decision 2026-11-12) a second value
+named by a hash of the vault id, which the catalog AAD authenticates, so a copy
+of the folder opened from another path finds the same count. The count read at
+start is the largest of the folder counter and those marks, and a success clears
+them all, so copying the folder before
+guessing and putting it back (or restoring an older, correctly MAC'd counter) no
+longer resets the wait. A missing or unreadable mark (no registry, access denied,
+DPAPI unavailable) falls back to the folder counter, never lower and never a
+lock-out; a malformed one fails closed to the maximum wait like a forged counter.
+Residual risk (same-user limit): someone who can also edit this Windows user's
+registry can delete the mark and then restore the folder. Vaults saved by this
+release cannot be opened by older releases.
 
 ## Backup, transfer, attachment and sync cryptography
 
 All derived formats reuse AES-256-GCM with 12 fresh random bytes per sealed object and fail closed on any header or authentication mismatch.
 
-- Vault-only backups (`.lgk`, envelope v2) and full profile backups (v2 container) derive their key with Argon2id using the vault defaults for new writes (64 MiB memory, 3 iterations, parallelism 4, 32-byte output). The parameters are stored in the header and are part of the associated data. Readers accept any header inside the vault's bounded range (8-512 MiB, 1-10 iterations, parallelism 1-16) and reject anything outside it before derivation runs; v1 `.lgk` envelopes (constant associated data) and older 32 MiB files remain restorable.
+- Vault-only backups (`.lgk`, envelope v2) and full profile backups (v2 container) derive their key with Argon2id using the vault defaults for new writes (256 MiB memory, or 64 MiB on a low-memory PC, 3 iterations, parallelism 4, 32-byte output). The parameters are stored in the header and are part of the associated data. Readers accept any header inside the vault's bounded range (8-512 MiB, 1-10 iterations, parallelism 1-16) and reject anything outside it before derivation runs; v1 `.lgk` envelopes (constant associated data) and older 32 MiB files remain restorable.
 - Selective transfer packages use the same Argon2id defaults, bounds, and header-in-associated-data rule.
 - Attachment sidecars (v2) carry only identity in the plaintext header (format, version, attachment id, store id). The plaintext size, SHA-256 digest, and per-attachment key live in the encrypted catalog record; integrity is verified after decryption against that record. v1 sidecars, whose header also exposed size and digest, remain readable.
 - LAN sync typed items (v2) are sealed under a pairwise channel key derived with HKDF-SHA256 from the static X25519 shared secret of the two paired devices (salt: sync group id; info: protocol label, both device ids, both exchange public keys). Each record uses a random 96-bit nonce and binds the item id, item revision, sender device id, and protocol counter in the associated data; the receiver re-derives those values from the authenticated envelope and rejects mismatches, records from a sender other than the authenticated peer, and retired v1 records. The channel derivation is static-static because records are sealed before a transport session exists and may be retried across sessions.
-- **LAN session (protocol v2).** Every connection carries those records inside a transport session whose key is derived with HKDF-SHA256 from a fresh per-connection ephemeral X25519 exchange mixed with the static-static exchange of the paired devices (salted with the signed hellos, info bound to the session id). Each ephemeral private key is used once and erased, so a later leak of a device's exchange key does not open recorded traffic (forward secrecy). There is no downgrade: a hello of another version is refused, and an older device must be updated before it can sync over Wi-Fi.
-- **Pairing.** After a QR or copied-code request, both devices show the same 6-digit verification code and the inviting device asks Accept / Decline; nothing is sent and nobody is added before Accept, and no answer within 60 s declines. Undo still removes a device that was accepted by mistake.
+- **LAN session (protocol v3).** Every connection carries those records inside a transport session whose key is derived with HKDF-SHA256 from a fresh per-connection ephemeral X25519 exchange mixed with the static-static exchange of the paired devices (salted with the signed hellos, info bound to the session id). Each ephemeral private key is used once and erased, so a later leak of a device's exchange key does not open recorded traffic (forward secrecy).
+- **Sealed hello (scan 2026-11-12, F-02).** The signed hellos are never sent in clear text: the initiator seals its hello (padded to a fixed 1024 bytes) with AES-256-GCM under a key from X25519(a fresh ephemeral key, the responder's pinned exchange key), and the responder answers sealed under the same secret. A frame that does not open, or whose hello is not from a paired device with a fresh counter, is closed without any answer, so a host on another network that receives a device's dial learns no device id, group id or key, and two connections share no linkable bytes. A device pins each peer to the sealed hello after the first sealed session or a version-2 QR pairing (`"hello":3` in the encrypted vault) and from then on answers that peer's clear-text hello only with a version refusal; an older device can still start a sync until then, but an updated device never sends a clear-text hello. Left: the saved address, port and timing of a dial are visible to the network it is made on; a captured sealed hello that the responder has not seen (or replayed after it restarted) gets a sealed answer only from the intended responder; the responder's sealed hello is not forward-secret against a later leak of its static exchange key (the session key is). Format: `docs/formats/LAN_SYNC_V3.md`.
+- **Pairing.** After a QR or copied-code request, both devices show the same 6-digit verification code and the inviting device asks Accept / Decline; nothing is sent and nobody is added before Accept, and no answer within 60 s declines. Undo still removes a device that was accepted by mistake. Since 2026-11-12 (F-03) the QR code carries only a commitment to 32 random bytes; the inviting device sends those bytes once, after the first request verified and used up the code, and the 6-digit code covers them, so someone who saw the QR code cannot grind a device id or key offline to match the code of the real device. A device of an older version that scans such a QR code is told to update.
 - **Signing keys.** Key file format 2 lists each member's view-signing key with a proof signed by that key, both covered by the key file MAC. Folder sync checks a view's signature against the key in the accepted key file first, else the device's LAN-paired key, else the key pinned on first use; only the key file can change a pinned key, and a change is reported.
 - **LAN listener.** Before a verified hello it holds at most 1 connection per source address and 3 per /24 (IPv4) or /64 (IPv6) network, and keeps one slot for peers that completed a verified hello in the last 15 minutes (at most 4 connections, 2 per address).
 
 Known limitations of sync:
 
+- **A device offline during a removal (personal sync groups).** It accepts the first next-epoch key file that chains from the key it holds, so a removed device that kept the old group key and can still write the cloud folder can race the genuine rotation. Shared collections (share v2, key file format 3) are not affected since audit 2026-11-12 (F-01): the owner's Ed25519 signature covers the approved members' device wraps of the new key, the password wrap with its KDF salt and the chain MAC as well as the roster, metadata and content-key wraps, so only the owner can write a next-epoch key file that a device accepts (format: `src/localvault/sync/keyring.py`, `docs/superpowers/specs/2026-11-12-collections-crypto-gating.md`). Within one epoch any member holds the group key; a share key file may then only grow (a join appends a pending member).
 - **First-use pins for older members.** Members of a format-1 key file (written by older apps) have no signing key in it, so their views are still checked against the first key seen signing for that device. A holder of the group key who writes a signed view for such a device before it does gets their key pinned, and the device's real views are refused as forged until it leaves and joins again with a current app.
 - **The Accept code checks the device, not the person.** Anyone who saw the QR code or copied text can try to pair while it is shown; the user must compare the code on both screens.
 - **Hello replay window after restart.** The last hello counter received from each LAN peer is kept in memory only and starts again when the app restarts, so a recorded hello is not rejected as a replay after a restart; the session key still needs a paired device's private exchange key.
@@ -283,9 +362,13 @@ Residual exposure that this does not remove:
   and `hmac` take their own transient copies that Python cannot scrub.
 - a displayed recovery phrase is a Python string, which is immutable and may
   have copies.
-- the master password is wiped on the app's side (see above), but the WebView2
-  page keeps its own copy of what was typed, and the bridge's JSON-decoded
-  `str` of it lives for the duration of the call; the app cannot erase either.
+- the master password is wiped on the app's side (see above). The page clears
+  its own field and the argument list it sent as soon as the call is made, and
+  the bridge moves the JSON-decoded `str` into a `PageSecret` holder before the
+  call is queued (`hold_page_secrets`), so the app holds no reference to it by
+  the time key derivation starts. Both are immutable strings (JavaScript in
+  WebView2, Python in the bridge): dropping the reference does not overwrite
+  the memory, and neither runtime lets the app do so.
 - the KDBX export password is handed to the KDBX writer library as a Python
   `str`, which cannot be zeroed.
 - garbage collection timing is not deterministic.
@@ -377,13 +460,14 @@ malicious process running as the same user may inspect state or process memory.
   folder named there keeps its own ACL.
 - **Popup fallback.** If the popup's navigation lock cannot be installed, the
   popup is disabled and its prompts are shown in the main window.
-- **Packaging.** The installer installs only into
+- **Packaging.** The Windows app ships as a Microsoft Store (MSIX) package. The
+  retired installer (last release 0.4.12) installs only into
   `%LOCALAPPDATA%\Programs\LocalGateKeys` and refuses any other folder, including
   one given with `/DIR=`. Both executables restrict DLL search
   (`SetDefaultDllDirectories`) and refuse images from remote shares or with a
   low integrity label. The native-host log rotates at 1 MiB (about 2 MiB on disk).
-  The build refuses output folders that other accounts can write. Released
-  binaries are not yet Authenticode-signed.
+  The build refuses output folders that other accounts can write. The Store
+  signs the MSIX; installer binaries were never Authenticode-signed.
 
 - **No search-path executables.** Every helper the app starts runs by absolute
   path under `%SystemRoot%\System32` (`winpaths.system32()`): Authenticode checks
@@ -441,12 +525,17 @@ Known limitations:
   on `127.0.0.1` at a random port, with no Host-header check and no per-launch
   token on file requests. A DNS-rebinding page could therefore read what that
   server serves: the static UI bundle (`localvault/assets/ui`: `index.html`,
-  `popup.html` and their scripts and styles), which holds no vault data. The
+  `popup.html`, `palette.html` and their scripts and styles), which holds no vault data. The
   app's own calls go through the WebView2 bridge, not this server.
 - **Breach checks** (`breach_check.py`) are off by default and run only when the
   user asks, with consent; strict offline mode refuses them. Only the first 5 hex
   characters of the password's SHA-1 go to `api.pwnedpasswords.com/range/` (with
   `Add-Padding`, no redirects, 10 s timeout, size-limited reply); the service still learns that a check was made.
+- **Lookalike check** (`lookalike.py`, `lookalike.js`, Kotlin and Swift ports against shared vectors in
+  `tests/vectors/lookalike/`). It runs on the device against the bundled Public Suffix List and the saved sites.
+  The saved sites never leave the app (see Browser boundary for what the extension receives, and the Safari
+  section for the sealed list of site names). It makes no network call. Its guard has the limits stated under
+  Browser boundary: a page's own script can bypass it, so the warning is a hint for the user, not a barrier.
 - **Licence revocations** are fetched only together with an update check. With
   strict offline mode on, a client sees new revocations only when the user runs a
   manual check and accepts the network request.
@@ -462,8 +551,8 @@ and item id. What differs is how that local key is protected.
 
 **Mac** (`ios/Mac`, `ios/AppShared/MacVault`, `ios/AutoFillMac`, `ios/SafariMac`)
 
-- The local key is sealed under the master password (Argon2id with the
-  desktop's default cost: 3 passes, 64 MiB, 4 lanes) in `master-key.json`, with
+- The local key is sealed under the master password (Argon2id, 3 passes,
+  64 MiB, 4 lanes: the desktop's former default; Windows now uses 256 MiB) in `master-key.json`, with
   an optional recovery-phrase wrapper. It never sits in the Keychain
   unprotected; the app holds it in memory while unlocked.
 - Touch ID is optional: a copy of the local key in a Keychain item that is
@@ -482,6 +571,15 @@ and item id. What differs is how that local key is protected.
   for that one key combination. There is no keyboard monitoring and no
   Accessibility permission. A copy from the menu bar goes through the main
   window's checks, including the master-password prompt for strict items.
+- Opening a document item in another app (`ios/Mac/Items/MacDocumentOpen.swift`, since 2026-11-14) follows the
+  Windows rules: only with "Open documents in other apps" on (the default), only document, image, audio and video
+  types from the Windows allow-list, a one-time warning before the first decrypted copy, each copy in its own random
+  owner-only folder under the temporary folder with the quarantine mark (`.doc`, `.xls` and `.ppt` are refused when
+  the mark cannot be set), and every copy deleted when the vault locks, at quit and at the next launch. The Mac
+  cannot tell when the other app closes the file, so a copy lives until the next lock; the other app may keep its
+  own recent-files list or backups. Anything else goes through Save, a deliberate export.
+- Auto-lock counts either any keyboard or mouse input on the Mac (the default, as before) or only input in
+  LocalGateKeys' own windows (Settings, the Windows `idle_source` setting).
 - Network: Wi-Fi sync (the Mac can host a group and listens for peers; a free
   Mac listens only while pairing and for about 120 s after a sync), the cloud
   folder you choose, the App Store licence claim, and opt-in breach checks and
@@ -520,6 +618,25 @@ and item id. What differs is how that local key is protected.
 - The app asks before importing what is in the inbox at its next unlock;
   unread captures expire after 7 days. Filling in Safari goes through the
   AutoFill extension, not the web extension.
+- Phishing shield (Verified site, lookalike guard): the native handler
+  classifies the page origin against `SafariSave/sites.bin`, a list of the
+  **registrable domains** of the saved web logins (`example.com`), with no
+  paths, no usernames and no full URLs (Ruling T5b). The app writes it after
+  each commit and unlock, sealed (AES-256-GCM) under an HKDF subkey of the
+  device-only Safari index key. It keeps working while the app is locked,
+  when the guard matters most. **Cost:** the extension process can read the
+  list of saved domains whenever the device is unlocked (no master password,
+  no Face ID or Touch ID), and a deleted login's domain stays in it until the
+  next commit or unlock. The list never reaches the extension's JavaScript or
+  the page: the reply is the verdict, the imitated domain and, for the same
+  name on another ending, an opaque pair id (HMAC under another subkey of the
+  index key). Because only domains are kept, a login saved for a subdomain
+  gets no badge in Safari (the neutral `unknown` / `same-site`, design decision
+  2026-11-12): Safari cannot tell that subdomain from another host on the same
+  domain, and "Related site" is kept for the same host or its `www.` twin. A save on a lookalike is
+  refused until the guard question was answered, and the app's import review
+  runs its own check against every saved URL row and marks a lookalike, also
+  for a save the extension could not check (no list yet).
 
 **Apple Watch** (`ios/Watch`)
 
@@ -529,11 +646,31 @@ and item id. What differs is how that local key is protected.
   "forget" deletes everything. The watch never sends secrets back.
 - They are stored in one Keychain item on the watch,
   `WhenUnlockedThisDeviceOnly`, so they are unreadable while the watch is
-  locked, and nothing else is written (no files, defaults or complications).
-  Decoded secrets leave memory when the app is hidden.
+  locked, and nothing else is written (no files and no app group; defaults
+  hold only the order of the last message). The item is in a Keychain group
+  only the watch app and its complication share. Decoded secrets leave memory
+  when the app is hidden.
+- Each message carries a rising send order. The watch ignores a code update
+  that is not newer than the last message it applied, so an update still in
+  transit cannot restore codes after "forget". A forget is always applied,
+  whatever its order, and resets it, so an iPhone whose order starts lower
+  (reinstall, new phone) is never locked out; an implausible stored order is
+  dropped.
+- The complication (sub-plan 06) shows the first pinned code from that same
+  item and never writes. Codes are redacted while the watch is locked, shown
+  as dots wrist down, and VoiceOver then reads only "2FA code". Trade-off: a
+  WidgetKit timeline holds the codes of the next 30 minutes (60 entries,
+  then a reload, about 48 a day). A forget deletes the item and reloads the
+  complication at once, but if WidgetKit throttles that reload, the cached
+  codes can stay on the face for up to 30 minutes. A longer timeline would
+  save reload budget but keep codes longer, so 30 minutes was chosen. Until a
+  forget reaches the watch (phone out of range), the watch keeps its codes,
+  as in the known limit below.
 - Known limit: by default the watch keeps its codes while the iPhone's vault
   is locked or the phone is away; the watch's own passcode is what guards
   them. Turn on "Forget Apple Watch codes on lock" in the iPhone app's settings if you do not want that.
+  A duress-password unlock always empties the watch, whatever this setting says, because the second vault has no
+  pinned codes. The next unlock of the real vault sends its pinned codes again.
 
 **Android** (`android/`)
 
@@ -542,8 +679,8 @@ and item id. What differs is how that local key is protected.
   every use on Android 11+ (a strong biometric or the screen lock; on Android
   10, within 30 s of the prompt). Without a secure lock screen the app cannot
   create a vault.
-- Optional app password: the local key is sealed under it with Argon2id at the
-  desktop's cost, and the screen-lock key is deleted. An optional biometric
+- Optional app password: the local key is sealed under it with Argon2id (3
+  passes, 64 MiB, 4 lanes, the Mac's cost), and the screen-lock key is deleted. An optional biometric
   shortcut uses a strong-biometric-only Keystore key that new enrolments
   invalidate. Repeated wrong tries add a growing wait.
 - App windows use `FLAG_SECURE` (no screenshots or screen recording). Backups
@@ -564,7 +701,16 @@ and item id. What differs is how that local key is protected.
   Any other app is signed for as `android:apk-key-hash:<certificate>`, which
   the site checks against its Digital Asset Links.
 - Copies are marked sensitive and cleared after the chosen delay if the
-  clipboard still holds the app's own copy.
+  clipboard still holds the app's own copy. Known limitation: Android lets the
+  app look at the clipboard only while it has window focus, and the app never
+  clears without that check. A copy whose delay passes while the app is in the
+  background (including every copy from the Quick Settings tile) is checked and
+  cleared the next time the app is opened; Android 13 and later also clear the
+  clipboard by themselves after about an hour.
+- The Quick Settings tile and the home-screen widget read pinned codes only
+  while the app process holds the vault key, before the auto-lock deadline and
+  with the phone unlocked; on the lock screen the tile shows no title and a tap
+  asks for the phone's unlock first.
 - Network: raw TCP Wi-Fi sync to the paired PC's private address (bound to the
   Wi-Fi network, never cellular), Google Play Billing, and the Play licence
   claim. The network security configuration allows no cleartext traffic and
@@ -604,18 +750,325 @@ Play) sends one request to the licence server at `licenses.localgatekeys.app`
 
 See the [privacy policy](docs/legal/privacy-policy.md), section 7.
 
+## Developer pack (SSH agent, command line, secrets scan)
+
+These features are off by default and opened in Settings › Developer. They add local surfaces; none of them
+protects against malware running as the same user with the vault unlocked.
+
+- **SSH agent pipe (Windows).** A per-user named pipe (`\\.\pipe\localgatekeys-ssh-...`) with a DACL for the current
+  user only, created with `FILE_FLAG_FIRST_PIPE_INSTANCE`. The name is fixed (it holds the user's SID), so a process
+  of another account that starts first can create it; `FILE_FLAG_FIRST_PIPE_INSTANCE` only makes the app's own
+  create fail then. On that failure the app checks which account runs the process holding the name: if it is not
+  this user (or cannot be checked), Developer settings show a warning and the app removes the `SSH_AUTH_SOCK` it set,
+  so new `ssh` / `git` processes stop using that pipe; it is set again when the agent next starts properly. Programs
+  already running keep the variable they started with. Every signature needs
+  an approval naming the program; the vault must still be unlocked after the approval. After "remember", any process
+  in that same terminal or IDE session gets the item for 10 minutes: on Windows the remember key is (kind, program
+  image, terminal session, item), all tabs of one Windows Terminal share a session and, for the CLI, the image is
+  always `lgk.exe`, so in practice the scope is that terminal or IDE session (on the Mac it is the program path plus
+  key in any terminal). A same-user process can fake its parent (for example by starting `lgk.exe` under Windows
+  Terminal), which is inside the same-user boundary. Only identities and signing are served. Agent forwarding is
+  refused only when ssh sends session binding (`session-bind@openssh.com`, OpenSSH 8.9 and later); OpenSSH 8.1, built
+  into Windows 10, sends none, so a forwarded request there reaches the normal prompt with no host named and cannot be
+  checked: do not use `ssh -A`. A request has a 95 second deadline and idle connections are closed. Threat note: another process of the
+  same user can connect and ask; the approval prompt is the barrier, so a malicious program that can also click the
+  prompt is not stopped.
+- **`cli` pipe scope.** The `lgk` command line ships only in installer builds up to 0.4.12; the Microsoft Store
+  package does not contain `lgk.exe`, so no client exists for this scope there (the CLI may return later through a
+  Store app execution alias). `lgk.exe` talks to the app over a pipe scope of its own. The app pins the client binary
+  by path: in a frozen build `<install dir>\cli\lgk.exe`, plus the app's Authenticode thumbprint only when the app
+  itself is signed (today it is unsigned, so this is a path pin in a user-writable install folder); in a development
+  build the `cli_path` from `install.json`, with no hash. Any process can run the real `lgk.exe`, so the allow-list
+  plus the approval prompt is the barrier. The app serves only items the user allow-listed, never serves strict logins, never serves a
+  passkey's private key, and asks for approval per use (with the same optional remember). For an allow-listed item the GUI re-authentication
+  becomes one click on the CLI. A title matching only
+  not-allowed items answers "not found". `lgk run` masks served values in the child's output on a best-effort basis;
+  a child process that writes a secret elsewhere is outside the control of the app. Threat note: the allow-list and
+  approval are the barrier against same-user malware, not a sandbox.
+- **Mac agent socket.** `agent.sock` lives in the app's group container with mode 0600. Unsandboxed processes of the
+  same user can reach it, so approvals (Touch ID or password, naming the program through `proc_pidpath`) are the
+  protection. Remembering an approval is explicit, not automatic. The Mac code was built and unit-tested on a Mac on 2026-11-13;
+  its manual checks are listed in `docs/PENDING.md`.
+- **Secrets scan.** Reads files in a folder the user picks (reparse points and template files are skipped), shows
+  results with the secret hidden, and only after confirmation imports a value and rewrites the `.env` line to a
+  reference (a name assigned different values more than once is skipped). It also finds plain SSH keys. "Use
+  references" is Windows-only and adds the item to the CLI allow-list. It never deletes files.
+
+## AI agents (Local Agent Gate, `lgk mcp`)
+
+Pro, off by default (Settings › Developer › "Allow AI agents to use LocalGateKeys", this device only). Details and
+setup in `docs/AGENTS.md`.
+
+- **Surface.** `lgk mcp` is a stdio MCP server inside `lgk.exe` (in the Store package,
+  `LocalGateKeysNativeHost.exe mcp`, which gets the CLI scope only); it forwards five tools (`list_sites`,
+  `request_login`, `fill_login`, `list_secrets`, `run_with_secrets`) over the pinned `cli` pipe scope to
+  `app/agent_gate_service.py`. It has no SDK dependency, stores nothing and opens no network port (stdio only).
+- **What leaves the app.** `list_sites` returns titles and registrable domains only. `request_login` returns an
+  opaque grant id. `fill_login` returns `{"filled": true|false}`; the password goes from the broker to the content
+  script exactly as for a click (`get_browser` with a broker-issued gesture nonce), never through the MCP server.
+  There is no reveal or copy tool. No agent tool reply contains a password, but a sign-in fills the password into
+  the page, where the page and any agent automating that browser can read it. The server also cuts every reply to the keys
+  its tool documents, so a value cannot leak through a reply by mistake.
+  Logins with "require master password" or "never fill" are never listed, approved or filled.
+- **Per-login opt-in.** An agent sees only logins the owner switched to "AI agents may use this login" (login
+  editor › Autofill rules; stored as `scope.ai_agents: true`, off by default, and only the exact value `true` counts,
+  so a missing or malformed flag is off). Every other login does not exist for an agent: `list_sites` omits it and
+  `request_login` answers `not_found` exactly as for a site with no login, without asking the owner. The broker checks
+  the flag again when the page asks, so a login turned off after the approval is not offered. The flag syncs with the
+  scope; export, import and share drop it, so a login from another vault arrives off.
+- **Passkey preference.** When an approved login has a saved passkey whose relying party covers the approved hosts,
+  the grant is a passkey grant: the approval says "sign in with the passkey", no password of that site is filled for
+  the agent (`fill_grant_browser` answers `agent_passkey`, and a password grant also skips a login that got a passkey
+  after the approval), and the agent is told to use the site's passkey sign-in. The grant lets one passkey assertion
+  for those credentials through the normal passkey path within its 5 minutes; it only narrows the passkeys offered.
+  The passkey dialog and the fresh user verification (Windows Hello or the master password, never the routine
+  grace) still run, so the agent's approval replaces neither. The page receives a one-time signature, never a
+  reusable secret. With the Windows system passkey provider active the browser never asks the broker, so such a
+  grant is not used (`fill_login` answers `no_passkey`). Remaining limit: a password filled for an opted-in login
+  without a passkey is readable by an agent that drives the browser.
+- **Approval.** Each request shows the palette window's agent view: the agent's MCP client name, the program that
+  started `lgk mcp` (its parent process, from Windows), the site or item, and the stated purpose as quoted
+  monospace text that is never rendered as markup. "Approve once" is the only yes and is armed after 500 ms; Deny,
+  Escape, closing the palette and the timeout are a no; there is no "always". Optional Windows Hello (or the master
+  password) after the click. Threat note: the purpose text is attacker-controlled (prompt injection); it cannot
+  approve, but a user who approves without reading can still be misled about intent.
+- **Grants.** Random 144-bit id, 5 minutes, one use, bound to the site's registrable domain (Public Suffix List)
+  and to the `lgk mcp` process session (random per process, combined with the client's PID). `fill_login` arms the
+  grant for 60 seconds; the content script asks the broker (`fill_grant_browser`) only when a sign-in field gets
+  focus, never on load. The broker uses an armed grant only on an https page whose registrable domain equals the
+  grant's, and the tab must be active. A lookalike domain never matches.
+- **Flooding.** One approval on screen at a time; at most 3 requests per agent session and 10 in total per
+  minute (`rate_limited`). Turning agents off, or Pro ending, stops an armed grant from being used.
+- **Secrets for commands (`list_secrets`, `run_with_secrets`).** Only API keys, SSH keys and notes the owner switched
+  to "AI agents may use this item" (item editor; the device-only setting `agent_items`, reset on restore, dropped for
+  imported transfer items, never part of a share or sync). Every other item, and every login, answers `not_found`
+  before the owner is asked, exactly as for a missing item; the items are read again when the values are released.
+  `list_secrets` returns ids, titles, kinds and field names under the once-per-session listing approval.
+  `run_with_secrets` takes an argv list (never a shell string), at most 64 arguments and 8000 characters, and up to
+  20 `lgk://` references. Both `lgk mcp` and the gate refuse control, bidi and zero-width characters, the
+  variables `PATH`, `PATHEXT`, `COMSPEC`, `SYSTEMROOT` and `WINDIR`, case-insensitive duplicate names, and a `.bat` /
+  `.cmd` program with cmd.exe metacharacters in its arguments. The program is resolved to a full path before the
+  approval; that path is shown and executed. The approval names the agent, its program, the exact command line, the
+  working folder, each variable with item and field, the time limit and the quoted purpose; "Approve once" only,
+  Windows Hello setting applied, same rate limits. The grant (random 144-bit id) is bound to the `lgk mcp` session
+  and the run id, released once within 60 s in the same pipe request, then dead. `lgk mcp` starts the program
+  without a shell, with `CREATE_NO_WINDOW`, suspended inside a job object with kill-on-close, then resumes it; at the
+  timeout (default 120 s, max 600 s) and after the program exits, the job is terminated, so nothing it started
+  survives. Output is capped at 64 KiB a stream (keeping enough past the cap to mask a value that straddles it) and
+  masked in the verbatim, UTF-16-LE, ANSI code page, base64 (standard, URL-safe, padded or not, all three
+  alignments), hex, URL-encoded and JSON-escaped forms; values shorter than 4 characters are refused. The reply is
+  cut to `exit_code`, `stdout`, `stderr`, `truncated`, `timed_out`; errors never quote a value. **Threat note:**
+  the approved command receives the secrets and can exfiltrate them or print them in a form the masking does not
+  know; masking protects only the reply to the agent. The values live in Python strings in `lgk mcp` for the length
+  of the run and cannot be wiped reliably.
+- **Locked vault.** Tools ask the app to show its unlock prompt and answer `locked` after 30 seconds.
+- **Audit.** Every call writes a content-free `agent.*` event; a run adds `agent.read` and `agent.complete` with the
+  item ids. The command line, folder, purpose, variable and field names and outcome of each run go to
+  `agent-runs.json` in the profile folder, DPAPI-protected (user scope), last 200 entries, only known keys kept
+  (memory only when DPAPI is unavailable); never a value. Activity events are hash-chained
+  (`prev_hash = SHA-256(previous event canonical JSON)`), pruning stores a checkpoint and the catalog a head hash, and
+  the Security check shows "Access log verified" or "Access log altered". The chain lives inside the encrypted vault,
+  so it detects edits made outside the app's own code paths (for example a restored or merged catalog), not an
+  attacker who holds the vault key and recomputes the chain.
+- **Not covered.** Same-user malware that can click the approval; a compromised browser or extension; a site that
+  serves its sign-in form on a subdomain controlled by someone else under the same registrable domain.
+
+## Unlock factors (key file and YubiKey)
+
+Optional; off by default. A vault with no factors is byte-identical to before (Windows vault v3, existing app-password
+files). Adding a factor writes Windows vault v4 / Apple `MasterKeyFile` v2 / Android `AppPasswordWrap` v2.
+
+- **Composite key.** The key that wraps the data key is derived from the master password and each factor
+  (key-file hash, YubiKey HMAC-SHA1 response to a stored random challenge) with a domain-separated KDF; the factor
+  list is bound into the wrapper's authenticated data, so removing or swapping a factor makes the unlock fail closed.
+  Format: `docs/formats/COMPOSITE_KEY_V1.md` (design: `docs/superpowers/specs/2026-11-03-feature-pack-design.md` section 4) and its test vectors.
+  Key files are read with a size limit and a hardened XML parser; secrets are wiped after use on a best-effort basis.
+- **The recovery phrase deliberately opens without factors.** It is the escape hatch for a lost key file or YubiKey.
+  A reset with the phrase sets a new password and drops all factors (the vault is written without them); add them
+  again afterwards. Anyone holding the phrase therefore bypasses the factors: keep it as carefully as the vault.
+- **Device-bound shortcuts.** Windows Hello, security key and camera unlock, Touch ID and Face ID (and the biometric
+  unlock on Android) do not hold the factors. By default they keep working after a factor is added, and a shortcut
+  opens the vault without the key file or YubiKey. Only when the user turns on "Always ask for the key file /
+  YubiKey" are the shortcuts removed (their enrolments deleted) and refused; after a shortcut-opened session,
+  re-checking the password on a vault with factors asks for the factor again.
+- **Older copies are not re-keyed.** Adding a factor does not rotate the data key, so a copy of the vault or a backup
+  made before the factor was added (including the local rolling backups) still opens with the password alone.
+  Change the master password, which does rotate the data key, if the password may have leaked.
+- **Backups.** Windows and Android full backups of a factor vault need the same factors at restore. Mac full and
+  scheduled backups of a vault with factors stay protected by the backup password and master password only: the Mac
+  backup format has no factor field, so a Mac backup is weaker than the live vault (follow-up).
+- **YubiKey.** Challenge-response needs the key's slot 2 secret; the app never writes to the YubiKey. Challenges are
+  a random 32-byte challenge, always sent padded to 64 bytes. A wrong or missing key file or YubiKey is not counted
+  by the unlock throttle (it is checked before Argon2). The Mac reads a YubiKey over USB (`ios/Mac/Unlock/YubiKeyHID.swift`, built 2026-11-13); the iPhone has no YubiKey
+  (NFC) reader.
+
+## Windows passkey provider
+
+The Microsoft Store (MSIX) build can act as a Windows 11 24H2+ passkey provider. It is off by default (a switch in
+Settings, then the user enables LocalGateKeys in Windows Settings › Accounts › Passkeys). The installer build never gets the
+provider (Windows distribution is Store-only from 0.4.12 on). Design and threat notes: `docs/design/WINDOWS_PASSKEY_PROVIDER.md`.
+
+- **What it can do.** Any Windows 11 24H2+ app or browser can ask Windows for a passkey and Windows routes the request
+  to LocalGateKeys. Every request shows the LocalGateKeys approval window (one at a time, 30 s limit). Private keys
+  never leave the app: the provider sees authenticator data, signatures and credential IDs only.
+- **What Windows keeps.** Passkey site names, user names and credential IDs (never keys) are copied into Windows' own
+  list so its account picker can offer them, and they stay there while the vault is locked (accepted by the owner).
+  Turning passkeys off in the app clears the list; turning the switch off unregisters the provider. A duress unlock
+  clears it too (see "Duress vault").
+- **User verification.** A passkey that asks for user verification (browser or Windows) always gets its own Windows
+  Hello or master-password check; the two-minute grace that other actions (reveal, copy) leave does not set the UV
+  flag.
+- **Pipe scope `system_passkey`.** It admits only the same user, the provider exe at the package path, the same signer
+  when signed and the same package family (a peer without that identity is refused), and only the five `*_system`
+  actions. Browser-scope peers cannot send them. The provider checks the app the same way in reverse.
+- **COM server.** It verifies the Windows request signature on every request before touching the pipe, enforces a 30 s
+  limit and refuses a request signature it has already accepted (replay cache).
+- **Diagnostics logs (reason codes only).** The provider appends one line per Windows call (and one per start) to
+  `%LOCALAPPDATA%\LocalGateKeys\logs\passkey-provider.log`, moved to `.1` past 256 KB. A line holds the time, the
+  operation, the first 8 hex digits of Windows' transaction id, an outcome word, the HRESULT, the step that ended it
+  (key fetch, signature check, replay, decode, pipe, reply check, encode), the pipe stage (state file, connect, server
+  pin, send, awaiting reply), a fixed reason word (failed pin sub-check such as `server_package_family`, the app's
+  error code from a fixed list, the signing key's type and length such as `key_ecs1_72`), a webauthn.dll HRESULT and
+  the elapsed milliseconds. Every text field must be a lower-case word from a fixed set, otherwise it is written as
+  `invalid`. The app adds `system_passkey action=... result=...` and `system_passkey_refused check=...` lines (sid,
+  path, package family, signer, install tree, token, setting off) to `native-host.log`. Never logged, by either side:
+  request or response bytes, RP IDs or names, user names, IDs or handles, credential IDs, client data hashes, keys,
+  signatures, the pipe token or name, paths, SIDs, package names or window titles. Tests write every outcome through
+  the real log and check that none of those values appear.
+- **Residual risks.** Same-user code injected into the provider through profiler environment variables (a NativeAOT
+  build is the follow-up); the lock-status query is unsigned and tells a same-user process one bit (locked or app not
+  running, versus unlocked); the MSIX format has no uninstall hook, so removal relies on the switch-off path and a
+  clean-up at start-up; the Windows details listed as unverified in design note section 11 stay open until the
+  owner's device test.
+
+## Duress vault: what it does and does not protect
+
+Pro only; off until set up in Settings › Unlocking › Duress password (Windows, sub-plan 08; Android and
+the iPhone have it as a second app password; the Mac duress password is being built for the next Mac release and
+  is not described here until it is merged, and settings such as reminders
+changed inside the second vault on a phone apply to the whole app). Code: `src/localvault/duress.py`, `app/duress_service.py` and the unlock path in
+`app/controller.py`.
+
+What it is for: **a coerced unlock**. Someone makes you unlock LocalGateKeys in front of them; you type the duress
+password instead of the master password and they see a working vault with only the items you chose (or a few
+plausible sample items). It is not a defence against someone who examines the disk. The hold on the real vault is best effort against someone with access to the Windows account: since audit 2026-11-10 deleting the hold file or moving the system clock forward no longer lifts it (`held_until()` in `duress.py`), but someone who can also edit this user's registry and the data folder can still remove both copies. It slows a coercer down; it does not stop one who has the account and knows where to look.
+
+- **The second vault is a real vault in its own folder.** The duress password opens `.lgk-d/vault.json` inside the
+  profile folder: an ordinary vault with its own random data key, its own Argon2id salt (same cost parameters as the
+  real vault), its own rollback record, and its own `Attachments`, `Backups` and other per-profile files. While it is
+  open, every per-profile path the app uses points into that folder, so its documents, backups (made by hand or kept
+  on each save), open copies and onboarding state never touch the real vault's files, and a backup made in it is a
+  backup of it, opened with the duress password. Nothing the page receives says which vault is open (the session
+  flag never leaves Python, and no page string uses the word). A wrong password gets the real vault's wrong-password
+  text whether or not a duress password exists. (A second vault of the first, unreleased layout, `vault.json.decoy`
+  beside the real one, is deleted when seen.)
+- **The two passwords stay apart.** Setup needs the master password (checked against the vault and counted by the
+  unlock throttle) and refuses a duress password equal to it or one insertion, deletion or substitution away
+  (Levenshtein distance 1, counted in characters). Later, a new real master password (a change, or a reset with the
+  recovery phrase) is refused when it is the duress password or one edit from it: setup keeps, inside the encrypted
+  real vault, keyed HMAC-SHA256 hashes of the duress password and of each of its one-character deletions (with and
+  without position), which decide that exactly; in case the duress password was changed since, the second vault is
+  also tried with the new password (one Argon2id). These hashes are fast to test, but only someone who already holds
+  the real vault's data key can read them. Inside a duress session a password change checks nothing against the
+  real vault: trying candidates there would tell a coercer during the hold whether a guess is the real password, and
+  would fill the real vault's throttle with every ordinary change. So a duress password changed to the real one, or
+  one edit from it, is not refused (refusing variants would also need a fast hash of the real password inside the
+  second vault, which is never kept); the real vault is tried first, so it still wins, and a typo of the real
+  password that happens to be the duress password holds the real vault (no data is exposed). Copied items are
+  copied as they are: anyone who uses the duress password sees them, passwords included.
+- **Timing.** The unlock screen tries the real vault first and the second vault second. When the second vault exists,
+  both Argon2id derivations run on every master-password attempt, whichever matched (or none), so the time taken
+  does not tell which vault opened. Without a second vault one derivation runs: the second vault's existence is
+  visible on disk anyway, so slowing every unlock would hide nothing (a coercer who compares the unlock time with a
+  fresh profile on the same PC can tell that a second vault exists, not which password was typed). Not equalised:
+  the work after a key is found (decrypting the catalog, an occasional key-derivation upgrade of the real vault, the
+  unlock hooks), milliseconds to tens of milliseconds next to Argon2id's hundreds; and the real vault's parameters
+  can be raised later by the automatic upgrade while the second vault keeps those of its setup day.
+- **Throttle.** Every attempt counts against the real vault's unlock throttle only (the second vault has none of its
+  own on the unlock screen). A duress unlock clears it like any successful unlock, so repeated duress unlocks do not
+  build up a back-off that a normal vault would not show. The price: someone who knows the duress password gets a
+  fresh allowance of real-password guesses after each duress unlock, about five more guesses per unlock, still
+  behind Argon2id and, during a hold, never able to open the real vault.
+- **Factors.** If the real vault needs a key file or YubiKey, the unlock screen asks for it before any password is
+  tried, so the duress password also works only with the factor present (as a normal vault would behave).
+- **The hold.** A duress unlock writes `vault.hold.json` (until when) next to the real vault, and a copy of the same
+  record outside the vault folder (`HKCU\Software\LocalGateKeys\Marks`, named by a hash of the vault's path); the
+  vault is held while either copy says so. The record also anchors the hold on the monotonic clock
+  (`GetTickCount64`, which counts sleep and is not moved by setting the date) with the boot it was written in
+  (Windows' `BootId`): the hold ends only once the wall clock has passed "until" and the monotonic clock has
+  counted the whole hold. After a restart only the time since the restart counts (on another boot never more than
+  the wall clock says passed, since Fast Startup can carry the tick count across a shutdown), so a restart can make
+  the hold longer, never shorter. A hold written by an earlier release (no anchor) keeps the wall-clock rule. A
+  missing or unreadable outside copy leaves the decision to the file. For the chosen hours
+  (1 to 168) the real master password is put through the same Argon2id work, then refused with the wrong-password
+  text and counted as a failure; Windows Hello, the camera and the security key are not offered and are refused if
+  started; the recovery phrase is checked and refused with its wrong-phrase text. It survives a restart. Using the
+  duress password again can extend the hold, never shorten it. An unreadable hold file counts as a hold of the
+  maximum length from its last change. The hold is best effort: if the data folder cannot be written, the duress
+  session still opens (refusing it would tell) and only the outside copy is kept (none if the registry cannot be
+  written either). After the hold, the first real unlock removes both copies and says when the duress password was
+  used on this PC.
+- **iPhone.** The iPhone's hold (`PhoneDuress.swift`) uses the monotonic clock the same way: setting the date
+  forward does not end it, and a restart can lengthen it but not shorten it.
+- **No services for a duress session.** It starts no device sync (Wi-Fi or cloud folder), so nothing of it reaches
+  the sync group; it serves no browser extension request (its status check reads "locked"), no Windows passkey
+  provider request (and publishes no passkeys to Windows), no `lgk` command line request and no SSH agent (the
+  agent pipe is stopped until the session ends); it runs no emergency access timer and writes no heir backup and no
+  scheduled backup. Its unlock also empties Windows' passkey account list for this app (the same clear used when
+  passkeys are turned off; retried until it works while the session is open), and the next real unlock fills it
+  again. The remaining window: while the app is merely locked (before a duress unlock, or after the duress session
+  locks), Windows still lists the real vault's passkey sites and account names, as it does for any locked vault.
+  It also leaves the real profile's item count (`item-count.json`) as it was. Unlock shortcuts (Windows Hello, camera, security key, key file, YubiKey) cannot be set up or
+  removed from it: they belong to the PC's profile. Errors logged from it carry neutral tags. Paths the page shows
+  (the emergency kit's vault file and backup folders) read as the profile's own, never the second vault's folder;
+  decrypted copies of its documents opened in other apps are swept from its own folder when it locks, at exit and
+  at the next start.
+- **A marker for the owner's other devices.** If this PC was in a cloud-folder sync group at setup, a new Ed25519
+  marker key is made and endorsed with this device's sync signing key; only the marker key (never the sync key) is
+  kept inside the second vault. A duress unlock writes a signed marker (device id, group id, time) to
+  `LocalGateKeys Sync/alerts/` in that folder. The owner's other devices accept it only if the endorsement verifies
+  against that device's signing key in the last keyring they accepted (or its pinned view key), and show "Duress
+  password used on <device> at <time>" once for markers up to 14 days old (shown markers are remembered in
+  `alerts-seen.json` in the profile folder). Someone who learns the duress password can forge such a marker,
+  nothing else. Without a configured folder nothing is written.
+
+What it does **not** protect against:
+
+- **Disk examination.** Anyone who can read the data folder sees the second vault's folder and, after a duress
+  unlock, the hold file, and can tell what they are. Deleting the hold file or moving the PC clock forward no
+  longer ends the hold (moving it back makes it last longer), and the outside copy is kept both by path and by the
+  real vault's id (design decision 2026-11-12), so moving the folder elsewhere and deleting the hold file does not
+  end it either; but someone who can edit both the data folder and
+  this user's registry can delete every copy (same-user limit). The marker in the cloud folder tells anyone who
+  can read that folder that the duress password was used.
+- **Probing the feature from inside.** The Settings section appears in every session. Inside a duress session it
+  reads "Not set up"; setting one up runs the usual checks (passwords match, the master password is right, not too
+  close) and then ends with the plain "Couldn't save the change. Try again later." and writes nothing. A coercer who
+  knows the feature well can notice that it never saves.
+- **Other ways in.** A backup made in the real session, a synced phone or another PC opens the real vault with its
+  own credentials as usual; the hold is local to this PC.
+- **Sessions already open.** The hold does not lock a real session that is already unlocked elsewhere.
+
 ## Production hardening backlog
 
-Status as of Windows app 0.4.10 (October 2026).
+Status as of Windows app 0.4.12 (November 2026).
 
 Done:
 
 - **Signed updates with rollback protection.** The update feed is signed with the
   release key, and `src/localvault/updates.py` refuses a feed or revocation list
   older than the highest sequence it has already verified. The Microsoft Store
-  build is signed through the Store.
+  build is signed through the Store and updated by it. Installer builds keep
+  verifying the signed feed until their users move to the Store; the feed is
+  frozen at 0.4.12, the final installer release.
 - **Pinned dependencies and an SBOM.** `requirements*.lock.txt` pin every package
   by hash; `scripts/generate_sbom.ps1` produces the SBOM.
+- **Supply-chain scanners on every push.** `scripts/security_scan.py` (run by
+  `scripts/ci_local.ps1` and the CI `security` job) runs pip-audit on the locks,
+  `npm audit` (high and above) for every npm project with a lockfile, and bandit;
+  accepted findings are listed with reasons in `scripts/security_ignore.txt`.
+  The Cloudflare Workers pin wrangler as a devDependency, and Android builds
+  verify dependency checksums (`android/gradle/verification-metadata.xml`).
 - **Fuzzing and property tests** for the vault, backup, sync, frame, origin and
   importer parsers (`tests/fuzz/`, `tests/props/`).
 - **Passkeys**, password generation and credential editing, on the desktop, the
@@ -625,8 +1078,11 @@ Done:
 
 Partly done:
 
-- **Code signing of the direct-download build.** `scripts/build_personal_installer.ps1`
-  supports Authenticode signing, but it needs a code-signing certificate. The
+- **Code signing of the direct-download build.** Resolved by retiring it
+  (2026-11-09): Windows ships only through the Microsoft Store, which signs the
+  package. The installer builds up to 0.4.12 stay unsigned (audit item W-2), so
+  Windows SmartScreen warned on them; their updates are protected separately by
+  the signed feed, and 0.4.12 tells their users to move to the Store. The
   browser extension is signed only once it is published in a browser store.
 - **Clean-install validation** of the native browser host and named pipe. The
   Store package and VM tests have run; there is no written test run on fresh
@@ -634,8 +1090,9 @@ Partly done:
 - **Backup, recovery and transfer rehearsals.** Property tests and
   `docs/DISASTER_RECOVERY_RUNBOOK.md` exist; a full failure rehearsal has not been
   written up.
-- **Anti-phishing.** Fills are bound to the exact web origin, but there is no
-  dedicated warning for lookalike sites in the extension.
+- **Anti-phishing.** Fills are bound to the exact web origin, and the extension
+  warns on lookalike sites (see Browser boundary). The submit guard cannot stop
+  a hostile page that reads the password as it is typed or sends it by script.
 
 Open:
 

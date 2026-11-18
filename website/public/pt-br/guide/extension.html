@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extensão LocalGateKeys: guia do usuário</title>
+  <meta name="description" content="Como instalar a extensão LocalGateKeys para Edge, Chrome e Firefox, conectá-la ao app e preencher e salvar logins.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pt-br/guide/extension">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/extension">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/extension">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/extension">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/extension">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/extension">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/extension">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/extension">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/extension">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/extension">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/extension">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/extension">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/extension">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Extensão LocalGateKeys: guia do usuário">
+  <meta property="og:description" content="Como instalar a extensão LocalGateKeys para Edge, Chrome e Firefox, conectá-la ao app e preencher e salvar logins.">
+  <meta property="og:url" content="https://localgatekeys.app/pt-br/guide/extension">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="O logotipo do LocalGateKeys: um gerenciador de senhas para Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Extensão LocalGateKeys: guia do usuário">
+  <meta name="twitter:description" content="Como instalar a extensão LocalGateKeys para Edge, Chrome e Firefox, conectá-la ao app e preencher e salvar logins.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../pt-br/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/help">Guia</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/support">Suporte</a></li>
+          <li><a class="nav-cta" href="../../pt-br/download">Baixar</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/help">Guia</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/support">Suporte</a></li>
+          <li><a class="nav-cta" href="../../pt-br/download">Baixar</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Idioma</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/extension" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/extension" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/extension" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/extension" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/extension" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/extension" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/extension" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/extension" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li><li><a href="../../ko/guide/extension" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/extension" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/extension" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Extensão do navegador para Edge, Chrome e Firefox</h1>
+  <p class="lead">Ajuda passo a passo para cada tela e recurso neste dispositivo. Cada título é um link que você pode compartilhar.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Plataformas">
+    <ul><li><a class="help-tab" href="../../pt-br/guide/windows">Windows</a></li><li><a class="help-tab" href="../../pt-br/guide/mac">Mac</a></li><li><a class="help-tab" href="../../pt-br/guide/iphone">iPhone e iPad</a></li><li><a class="help-tab" href="../../pt-br/guide/android">Android</a></li><li><a class="help-tab" href="../../pt-br/guide/extension" aria-current="page">Extensão do navegador</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Bom saber em qualquer dispositivo</h2>
+    <ul>
+      <li><strong>Seu cofre fica nos seus dispositivos.</strong> Não há conta nem servidor do LocalGateKeys guardando suas senhas.</li>
+      <li><strong>Ninguém pode redefinir sua senha mestra ou a senha do app.</strong> Configure uma frase de recuperação e guarde-a no papel.</li>
+      <li>O <strong>Free</strong> guarda até 7 itens. O <strong>Pro</strong> (US$29.99, pagamento único) adiciona itens ilimitados, códigos de dois fatores, arquivos e sincronização. Editar, excluir e preencher os itens que você já tem nunca é bloqueado.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="extension" aria-labelledby="extension-title">
+    <h2 class="panel-title" id="extension-title">Tópicos da extensão</h2>
+    <p class="panel-lead">Preenche e salva logins em sites. Ela só conversa com o app LocalGateKeys no mesmo PC, então instale primeiro o app para Windows. Usa o Safari? Não há nada para baixar aqui: os apps para Mac e iPhone preenchem no Safari pelo Preenchimento Automático e incluem uma extensão do Safari. Veja <a href="../../pt-br/guide/mac#mac-autofill">Preenchimento Automático e Safari no Mac</a> ou <a href="../../pt-br/guide/iphone#ios-autofill">no iPhone</a>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Tópicos da extensão">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Nesta aba</summary>
+          <ol>
+            <li><a href="#ext-install">Instalar e conectar</a></li>
+            <li><a href="#ext-popup">A janela da extensão</a></li>
+            <li><a href="#ext-fill">Preencher um login</a></li>
+            <li><a href="#ext-save">Salvar um login</a></li>
+            <li><a href="#ext-2fa">Preencher códigos 2FA</a></li>
+            <li><a href="#ext-cards">Cartões e identidades</a></li>
+            <li><a href="#ext-generate">Senhas novas</a></li>
+            <li><a href="#ext-passkeys">Chaves de acesso</a></li>
+            <li><a href="#ext-trouble">Solução de problemas</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ext-install">
+          <h3><a href="#ext-install">Instalar e conectar</a></h3>
+          <ol>
+            <li>Instale e configure o <a href="../../pt-br/guide/windows">app para Windows</a>.</li>
+            <li>Adicione a extensão: <strong>Edge</strong> pelos <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Complementos do Edge</a> (escolha <strong>Obter</strong>). <strong>Chrome</strong> pela <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Chrome Web Store</a> (escolha <strong>Adicionar ao Chrome</strong>). <strong>Firefox</strong> pelos <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Complementos do Firefox</a> (escolha <strong>Adicionar ao Firefox</strong>).</li>
+            <li>Clique no ícone de peça de quebra-cabeça na barra de ferramentas e fixe o <strong>LocalGateKeys</strong>.</li>
+            <li>Clique no ícone do LocalGateKeys. O cartão de conexão deve dizer <strong>Conectado</strong> ou <strong>Bloqueado</strong>.</li>
+          </ol>
+          <p>Não há nada para parear: a extensão encontra o app sozinha. O guia de configuração do app tem uma etapa <strong>Testar conexão</strong> para conferir.</p>
+        </article>
+
+        <article class="topic" id="ext-popup">
+          <h3><a href="#ext-popup">A janela da extensão</a></h3>
+          <dl class="defs">
+            <dt>Conexão</dt><dd><strong>Conectado</strong> (pronto), <strong>Bloqueado</strong> (o app pede para desbloquear quando você escolhe uma ação), <strong>Configuração necessária</strong> ou <strong>Offline</strong>. <strong>↻</strong> atualiza sem desbloquear nada.</dd>
+            <dt>Site atual</dt><dd>O site em que você está. Só são oferecidos logins salvos para este site exato.</dd>
+            <dt>Ações rápidas</dt><dd><strong>Preencher login</strong>, <strong>Preencher identidade</strong>, <strong>Preencher cartão…</strong>, <strong>Salvar login</strong>, <strong>Gerar senha</strong>.</dd>
+            <dt>Avisos para salvar</dt><dd>Um botão para desligar ou ligar os avisos para salvar neste site.</dd>
+          </dl>
+          <p class="tip"><strong>Por design, nada é preenchido sozinho.</strong> Todo preenchimento começa com um clique seu, e a extensão nunca pede sua senha mestra: o desbloqueio sempre acontece na janela do LocalGateKeys.</p>
+        </article>
+
+        <article class="topic" id="ext-fill">
+          <h3><a href="#ext-fill">Preencher um login</a></h3>
+          <ol>
+            <li>Abra a página de login do site.</li>
+            <li>Clique no ícone do LocalGateKeys dentro da caixa de nome de usuário ou senha (<em>Preencher com o LocalGateKeys</em>), ou abra a extensão e escolha <strong>Preencher login</strong>.</li>
+            <li>Se você tiver várias contas no site, escolha uma em <strong>Escolha uma conta</strong>.</li>
+            <li>Se o cofre estiver bloqueado, desbloqueie-o na janela do LocalGateKeys quando ela aparecer.</li>
+          </ol>
+          <p>Se o login tiver <strong>Entrar após preencher</strong> ativado, o formulário é enviado para você. Em formulários incomuns você verá <em>O login automático foi ignorado</em>: basta clicar no botão de entrar do site.</p>
+        </article>
+
+        <article class="topic" id="ext-save">
+          <h3><a href="#ext-save">Salvar um login novo ou alterado</a></h3>
+          <ol>
+            <li>Entre num site como de costume.</li>
+            <li>A extensão pergunta <em>Salvar este login?</em> (ou oferece atualizar uma senha alterada).</li>
+            <li>Escolha <strong>Salvar no cofre</strong> e confirme na janela do LocalGateKeys. Ou <strong>Agora não</strong>, ou <strong>Nunca neste site</strong>.</li>
+          </ol>
+          <p>Para salvar manualmente, preencha o formulário e escolha <strong>Salvar login</strong> na janela da extensão. Para religar os avisos num site, use o botão na janela da extensão.</p>
+        </article>
+
+        <article class="topic" id="ext-2fa">
+          <h3><a href="#ext-2fa">Preencher códigos 2FA</a></h3>
+          <p>Quando um site pedir um código de 6 dígitos, clique no ícone do LocalGateKeys na caixa do código (<em>Preencher código 2FA com o LocalGateKeys</em>). Só o código atual chega à página, nunca a chave de configuração. Se o código estiver para expirar, a extensão espera um instante por um novo.</p>
+          <p>O login precisa ter uma chave de configuração 2FA salva no app (veja <a href="../../pt-br/guide/windows#win-2fa">Códigos de dois fatores</a>). Se Configurações › Bloqueio › <strong>Perguntar antes de liberar códigos 2FA</strong> estiver ativado, confirme no app a cada vez.</p>
+        </article>
+
+        <article class="topic" id="ext-cards">
+          <h3><a href="#ext-cards">Cartões e identidades</a></h3>
+          <ol>
+            <li>Num formulário de pagamento ou endereço, clique no ícone de um campo ou escolha <strong>Preencher cartão…</strong> / <strong>Preencher identidade</strong>.</li>
+            <li>Escolha o cartão ou a identidade.</li>
+            <li>Marque os campos a preencher. O código de segurança (CVV) vem desmarcado: marque-o só quando necessário.</li>
+            <li>Escolha <strong>Revisar e aprovar</strong> e depois aprove na janela do LocalGateKeys.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ext-generate">
+          <h3><a href="#ext-generate">Criar uma senha numa página de cadastro</a></h3>
+          <p>Num formulário de cadastro ou de troca de senha, escolha <strong>Gerar senha</strong>. A nova senha vai para as caixas de nova senha. <strong>Salve-a</strong> (pelo aviso para salvar ou por <strong>Salvar login</strong>) antes de sair da página.</p>
+        </article>
+
+        <article class="topic" id="ext-passkeys">
+          <h3><a href="#ext-passkeys">Chaves de acesso</a></h3>
+          <p>Quando um site oferece criar ou usar uma chave de acesso, o LocalGateKeys pode cuidar disso e guardá-la no seu cofre. Ligue ou desligue isso no app: Configurações › Preenchimento automático › <strong>Oferecer o LocalGateKeys para chaves de acesso</strong>. Quando ele não puder ajudar, a janela de chaves de acesso do próprio navegador assume.</p>
+        </article>
+
+        <article class="topic" id="ext-trouble">
+          <h3><a href="#ext-trouble">Solução de problemas</a></h3>
+          <table>
+            <thead><tr><th scope="col">Você vê</th><th scope="col">Faça isto</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Offline</strong> / não consegue acessar o app</td><td>Abra o LocalGateKeys. Em <strong>Dispositivos e conexões</strong> escolha <strong>Reparar ponte</strong> e reinicie o navegador.</td></tr>
+              <tr><td><strong>Configuração necessária</strong></td><td>Termine de escolher um perfil no app e pressione ↻.</td></tr>
+              <tr><td>A integração com o navegador está pausada</td><td>Ative de novo o preenchimento no navegador em Configurações › Preenchimento automático do app.</td></tr>
+              <tr><td>Versões incompatíveis</td><td>Atualize a extensão e o app e reinicie os dois.</td></tr>
+              <tr><td>A ponte demorou demais</td><td>Feche qualquer aviso aberto do LocalGateKeys e tente de novo.</td></tr>
+              <tr><td>Nenhum login salvo para este site</td><td>O site do login precisa corresponder a este site. Edite-o no app.</td></tr>
+              <tr><td>O preenchimento está desativado para este login</td><td>No app, edite o login › Regras de preenchimento › Preenchimento.</td></tr>
+              <tr><td>Esta página não está disponível</td><td>Extensões não funcionam em páginas do navegador (configurações, nova guia). Abra uma página http/https comum.</td></tr>
+            </tbody>
+          </table>
+          <p>Ainda com problemas? Dispositivos e conexões › <strong>Exportar relatório</strong> e envie para <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>. Ele não contém senhas.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../pt-br/help">O guia completo em uma página</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Um gerenciador de senhas para Windows, Mac e iPhone que mantém seu cofre nos seus próprios dispositivos.</p>
+        <p class="quiet">Este site conta as visitas com o Cloudflare Web Analytics, que não usa cookies. Não usa rastreadores de anúncios e não define cookies.</p>
+      </div>
+      <nav aria-label="Produto">
+        <h2>Produto</h2>
+        <ul>
+          <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/download">Baixar</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/switch/">Migrar</a></li>
+          <li><a href="../../buy">Comprar o Pro</a></li>
+          <li><a href="../../pt-br/licence">Sua licença Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recuperar sua licença</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Ajuda">
+        <h2>Ajuda</h2>
+        <ul>
+          <li><a href="../../pt-br/help">Guia do usuário</a></li>
+          <li><a href="../../pt-br/support">Suporte e perguntas frequentes</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Relatar uma vulnerabilidade</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Jurídico">
+        <h2>Jurídico</h2>
+        <p class="quiet">Estes documentos estão em inglês, e a versão em inglês é a que se aplica e a vinculante.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contrato de licença</a></li>
+          <li><a href="../../legal/privacy">Política de privacidade</a></li>
+          <li><a href="../../legal/terms-of-sale">Termos de venda</a></li>
+          <li><a href="../../legal/refunds">Política de reembolso</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contato: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows é uma marca registrada do grupo de empresas Microsoft. Chrome é uma marca registrada da Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari são marcas registradas da Apple Inc., registradas nos EUA e em outros países.</p>
+      <nav class="lang-switch" aria-label="Idioma"><ul><li><a href="../../guide/extension" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/extension" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/extension" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/extension" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/extension" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/extension" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/extension" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/extension" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li><li><a href="../../ko/guide/extension" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/extension" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/extension" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

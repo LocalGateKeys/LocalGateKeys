@@ -75,6 +75,25 @@ final class AttachmentFolderTests: XCTestCase {
         XCTAssertFalse(blobs.capable(epoch2, deviceID: a.deviceID, signer: aKey))
     }
 
+    /// Review M1: the heir capability carries its own view counter, so a copy of the documents file is no heir one.
+    func test_a_copied_documents_capability_is_not_an_heir_capability() throws {
+        let folder = MemoryFolder()
+        let blobs = FolderBlobs(access: folder)
+        let gk = try FolderSyncTests.epoch1()
+        let a = try KeyringTests.identity("A")
+        let aKey = Base64.encode(a.signingPublicKey)
+        let clock = FixedClock(now: EngineTests.T0)
+        XCTAssertTrue(try blobs.writeCapability(gk, identity: a, clock: clock, random: DetRand("cap")))
+        XCTAssertFalse(blobs.capable(gk, deviceID: a.deviceID, signer: aKey, heir: true))
+        let dir = FolderBlobs.dir
+        folder.files["\(dir)/\(a.deviceID).lgkheircap"] = folder.files["\(dir)/\(a.deviceID).lgkcap"]
+        folder.files["\(dir)/\(a.deviceID).lgkheircap.lgksig"] = folder.files["\(dir)/\(a.deviceID).lgkcap.lgksig"]
+        XCTAssertFalse(blobs.capable(gk, deviceID: a.deviceID, signer: aKey, heir: true))
+        XCTAssertTrue(try blobs.writeCapability(gk, identity: a, clock: clock, random: DetRand("heircap"), heir: true))
+        XCTAssertTrue(blobs.capable(gk, deviceID: a.deviceID, signer: aKey, heir: true))
+        XCTAssertTrue(blobs.capable(gk, deviceID: a.deviceID, signer: aKey))
+    }
+
     // MARK: blobs in the folder
 
     func test_import_publish_keep_and_sweep() throws {

@@ -1,0 +1,182 @@
+{
+  "de": {
+    "home": "• Eine Übersicht mit Passwortzustand, Backups und Ihren Einmalcodes auf einen Blick",
+    "colH": "SAMMLUNGEN",
+    "col1": "• Ordnen Sie Einträge in Sammlungen wie Persönlich, Reisen oder Notfall",
+    "col2": "• Sammlungen werden zwischen Ihren Geräten synchronisiert, und Sie können eine mit Menschen Ihres Vertrauens teilen",
+    "emerg": "• Notfallzugriff für eine Person Ihres Vertrauens und ein optionales Zwangspasswort",
+    "agents": "• KI-Agenten nutzen nur die Logins, die Sie erlauben, und erst nach Ihrer Bestätigung",
+    "cxf": " oder aus einer Credential-Exchange-Datei (CXF)",
+    "promo": "Neu: Sammlungen zum Synchronisieren und Teilen, eine neue Übersicht und ein neues Mac-Fenster sowie Notfallzugriff. Ihr Tresor bleibt auf Ihrem Mac.",
+    "whatsNew": "• Sammlungen: Einträge nach Ihren Wünschen ordnen, zwischen Ihren Geräten synchronisieren und mit Menschen Ihres Vertrauens teilen\n• Neu gestaltetes Fenster mit Übersicht, Einstellungen in Tabs und neuem Menüleisten-Bereich\n• Notfallzugriff für eine Person Ihres Vertrauens und ein optionales Zwangspasswort\n• Safari kennzeichnet Ihre gespeicherten Websites als bestätigt und warnt vor ähnlich aussehenden Adressen\n• Credential-Exchange-Dateien (CXF) importieren und exportieren\n• KI-Agenten nutzen nur die Logins, die Sie erlauben, nach Ihrer Bestätigung\n• Der Wiederherstellungstest prüft auch ein vollständiges Backup von Windows oder dem Mac\n• Fehlerbehebungen und Verbesserungen",
+    "shots": [
+      ["Lokal &amp; verschlüsselt", "Ihre Passwörter bleiben <em>auf Ihrem Mac</em>", "Kein Konto. Keine Cloud von uns. Mit Touch ID entsperren."],
+      ["Sicherheitszentrale", "Sehen, was <em>zuerst zu tun ist</em>", "Mehrfach verwendete Passwörter, Logins ohne 2FA und Websites mit Passkeys."],
+      ["Für den Mac gemacht", "Alles nur <em>ein ⌘K entfernt</em>", "Einträge, Aktionen und Einstellungen suchen, oder ⌃⌥K in jeder App drücken."],
+      ["Sammlungen", "Einträge so ordnen, <em>wie Sie wollen</em>", "Einträge in Sammlungen gruppieren und eine mit Menschen Ihres Vertrauens teilen."],
+      ["Sync nach Ihren Regeln", "Ihre Geräte, <em>Ihr WLAN</em>", "Verschlüsselter Sync mit iPhone und Windows-PC. Kein Cloud-Konto nötig."]
+    ]
+  },
+  "es": {
+    "home": "• Un resumen con el estado de las contraseñas, las copias de seguridad y tus códigos de un solo uso de un vistazo",
+    "colH": "COLECCIONES",
+    "col1": "• Agrupa elementos en colecciones como Personal, Viajes o Emergencia",
+    "col2": "• Las colecciones se sincronizan entre tus dispositivos y puedes compartir una con las personas en quienes confías",
+    "emerg": "• Acceso de emergencia para alguien de confianza y una contraseña de coacción opcional",
+    "agents": "• Los agentes de IA solo pueden usar los inicios de sesión que permitas, y solo tras tu aprobación",
+    "cxf": " o un archivo Credential Exchange (CXF)",
+    "promo": "Novedad: colecciones que puedes sincronizar y compartir, un nuevo resumen y ventana para Mac, y acceso de emergencia. Tu bóveda sigue en tu Mac.",
+    "whatsNew": "• Colecciones: organiza los elementos a tu manera, sincronízalos entre tus dispositivos y comparte una con personas de confianza\n• Ventana rediseñada con un resumen, ajustes en pestañas y un nuevo panel en la barra de menús\n• Acceso de emergencia para alguien de confianza y una contraseña de coacción opcional\n• Safari marca tus sitios guardados como verificados y avisa de direcciones parecidas\n• Importa y exporta archivos Credential Exchange (CXF)\n• Los agentes de IA solo usan los inicios de sesión que permitas, tras tu aprobación\n• La prueba de restauración también comprueba una copia completa de Windows o del Mac\n• Correcciones y mejoras",
+    "shots": [
+      ["Local y cifrado", "Tus contraseñas se quedan <em>en tu Mac</em>", "Sin cuenta que crear. Sin nube nuestra. Desbloquea con Touch ID."],
+      ["Centro de seguridad", "Mira qué <em>arreglar primero</em>", "Contraseñas reutilizadas, inicios de sesión sin 2FA y sitios que admiten llaves de acceso."],
+      ["Hecho para el Mac", "Todo a <em>un ⌘K de distancia</em>", "Busca elementos, acciones y ajustes, o pulsa ⌃⌥K en cualquier app."],
+      ["Colecciones", "Organiza los elementos <em>a tu manera</em>", "Agrupa elementos en colecciones y comparte una con las personas en quienes confías."],
+      ["Sincroniza a tu manera", "Tus dispositivos, <em>tu Wi-Fi</em>", "Sincronización cifrada con tu iPhone y tu PC con Windows. Sin cuenta en la nube."]
+    ]
+  },
+  "fr": {
+    "home": "• Une vue d’ensemble avec l’état des mots de passe, les sauvegardes et vos codes à usage unique",
+    "colH": "COLLECTIONS",
+    "col1": "• Regroupez vos éléments dans des collections comme Personnel, Voyage ou Urgence",
+    "col2": "• Les collections se synchronisent entre vos appareils, et vous pouvez en partager une avec vos proches de confiance",
+    "emerg": "• Accès d’urgence pour une personne de confiance, et un mot de passe de contrainte facultatif",
+    "agents": "• Les agents IA n’utilisent que les identifiants que vous autorisez, et seulement après votre accord",
+    "cxf": " ou d’un fichier Credential Exchange (CXF)",
+    "promo": "Nouveau : des collections à synchroniser et partager, une nouvelle vue d’ensemble et fenêtre Mac, et l’accès d’urgence. Votre coffre reste sur votre Mac.",
+    "whatsNew": "• Collections : organisez vos éléments, synchronisez-les entre vos appareils et partagez-en une avec des personnes de confiance\n• Fenêtre repensée avec une vue d’ensemble, des réglages en onglets et un nouveau panneau dans la barre des menus\n• Accès d’urgence pour une personne de confiance, et un mot de passe de contrainte facultatif\n• Safari signale vos sites enregistrés comme vérifiés et vous alerte sur les adresses similaires\n• Import et export de fichiers Credential Exchange (CXF)\n• Les agents IA n’utilisent que les identifiants que vous autorisez, après votre accord\n• Le test de restauration vérifie aussi une sauvegarde complète de Windows ou du Mac\n• Corrections et améliorations",
+    "shots": [
+      ["Local et chiffré", "Vos mots de passe restent <em>sur votre Mac</em>", "Aucun compte à créer. Aucun cloud à nous. Déverrouillez avec Touch ID."],
+      ["Centre de sécurité", "Voyez quoi <em>corriger d’abord</em>", "Mots de passe réutilisés, identifiants sans 2FA et sites qui acceptent les clés d’accès."],
+      ["Conçu pour le Mac", "Tout est <em>à un ⌘K</em>", "Cherchez éléments, actions et réglages, ou appuyez sur ⌃⌥K dans n’importe quelle app."],
+      ["Collections", "Organisez <em>à votre façon</em>", "Regroupez vos éléments en collections et partagez-en une avec vos proches."],
+      ["Synchro à vos conditions", "Vos appareils, <em>votre Wi-Fi</em>", "Synchronisation chiffrée avec votre iPhone et votre PC Windows. Sans compte cloud."]
+    ]
+  },
+  "it": {
+    "home": "• Una panoramica con lo stato delle password, i backup e i tuoi codici monouso a colpo d’occhio",
+    "colH": "RACCOLTE",
+    "col1": "• Raggruppa gli elementi in raccolte come Personale, Viaggi o Emergenza",
+    "col2": "• Le raccolte si sincronizzano tra i tuoi dispositivi e puoi condividerne una con le persone di cui ti fidi",
+    "emerg": "• Accesso di emergenza per una persona di fiducia e una password di coercizione facoltativa",
+    "agents": "• Gli agenti IA possono usare solo i login che consenti, e solo dopo la tua approvazione",
+    "cxf": " o da un file Credential Exchange (CXF)",
+    "promo": "Novità: raccolte da sincronizzare e condividere, una nuova panoramica e finestra per Mac e l’accesso di emergenza. La tua cassaforte resta sul tuo Mac.",
+    "whatsNew": "• Raccolte: organizza gli elementi a modo tuo, sincronizzali tra i dispositivi e condividine una con persone di fiducia\n• Finestra ridisegnata con una panoramica, impostazioni a schede e un nuovo pannello nella barra dei menu\n• Accesso di emergenza per una persona di fiducia e una password di coercizione facoltativa\n• Safari segna i siti salvati come verificati e avvisa degli indirizzi simili\n• Importa ed esporta file Credential Exchange (CXF)\n• Gli agenti IA usano solo i login che consenti, dopo la tua approvazione\n• Il test di ripristino controlla anche un backup completo da Windows o dal Mac\n• Correzioni e miglioramenti",
+    "shots": [
+      ["Locale e cifrato", "Le tue password restano <em>sul tuo Mac</em>", "Nessun account da creare. Nessun nostro cloud. Sblocca con Touch ID."],
+      ["Centro sicurezza", "Scopri cosa <em>sistemare prima</em>", "Password riutilizzate, login senza 2FA e siti che accettano le passkey."],
+      ["Fatto per il Mac", "Tutto a <em>un ⌘K di distanza</em>", "Cerca elementi, azioni e impostazioni, o premi ⌃⌥K in qualsiasi app."],
+      ["Raccolte", "Organizza gli elementi <em>a modo tuo</em>", "Raggruppa gli elementi in raccolte e condividine una con chi ti fidi."],
+      ["Sincronizza a modo tuo", "I tuoi dispositivi, <em>il tuo Wi-Fi</em>", "Sincronizzazione cifrata con iPhone e PC Windows. Nessun account cloud."]
+    ]
+  },
+  "ja": {
+    "home": "• パスワードの状態、バックアップ、ワンタイムコードをひと目で確認できるホーム画面",
+    "colH": "コレクション",
+    "col1": "• 個人、旅行、緊急用などのコレクションに項目をまとめられます",
+    "col2": "• コレクションはデバイス間で同期され、信頼できる相手と共有することもできます",
+    "emerg": "• 信頼できる人のための緊急アクセスと、任意の強要時パスワード",
+    "agents": "• AI エージェントが使えるのは、あなたが許可したログインだけ。使うたびに承認が必要です",
+    "cxf": "、または Credential Exchange（CXF）ファイル",
+    "promo": "新機能: 同期・共有できるコレクション、新しいホーム画面と Mac ウインドウ、緊急アクセス。保管庫はこれまでどおり Mac の中に。",
+    "whatsNew": "• コレクション: 項目を自由に整理し、デバイス間で同期して、信頼できる相手と共有できます\n• ホーム画面、タブ式の設定、新しいメニューバーパネルを備えたウインドウに刷新\n• 信頼できる人のための緊急アクセスと、任意の強要時パスワード\n• Safari で保存済みのサイトを確認済みと表示し、よく似たアドレスを警告\n• Credential Exchange（CXF）ファイルの読み込みと書き出し\n• AI エージェントは、あなたが承認した後、許可したログインだけを使用\n• 復元テストで Windows や Mac の完全バックアップも確認\n• 不具合の修正と改善",
+    "shots": [
+      ["ローカルで暗号化", "パスワードは<em>あなたの Mac に</em>", "アカウント不要。私たちのクラウドもなし。Touch ID でロック解除。"],
+      ["セキュリティセンター", "<em>まず直すべき点</em>がわかる", "使い回しのパスワード、2FA のないログイン、パスキー対応のサイト。"],
+      ["Mac のために設計", "すべてが<em> ⌘K ひとつで</em>", "項目、操作、設定を検索。どのアプリからでも ⌃⌥K で呼び出せます。"],
+      ["コレクション", "項目を<em>自分流に整理</em>", "項目をコレクションにまとめ、信頼できる相手と共有できます。"],
+      ["自分で選べる同期", "あなたのデバイス、<em>あなたの Wi-Fi</em>", "iPhone や Windows PC と暗号化して同期。クラウドアカウントは不要です。"]
+    ]
+  },
+  "ko": {
+    "home": "• 비밀번호 상태, 백업, 일회용 코드를 한눈에 보여 주는 홈 화면",
+    "colH": "컬렉션",
+    "col1": "• 개인, 여행, 긴급 등 컬렉션으로 항목을 묶어 관리",
+    "col2": "• 컬렉션은 기기 간에 동기화되며, 신뢰하는 사람과 하나를 공유할 수도 있습니다",
+    "emerg": "• 신뢰하는 사람을 위한 긴급 액세스와 선택 사항인 강요 대비 비밀번호",
+    "agents": "• AI 에이전트는 허용한 로그인만, 승인한 뒤에만 사용할 수 있습니다",
+    "cxf": " 또는 Credential Exchange(CXF) 파일",
+    "promo": "새 기능: 동기화하고 공유할 수 있는 컬렉션, 새 홈 화면과 Mac 창, 긴급 액세스. 보관함은 여전히 Mac에만 있습니다.",
+    "whatsNew": "• 컬렉션: 항목을 원하는 대로 정리하고, 기기 간에 동기화하고, 신뢰하는 사람과 공유하세요\n• 홈 화면, 탭으로 나뉜 설정, 새 메뉴 막대 패널을 갖춘 새 창 디자인\n• 신뢰하는 사람을 위한 긴급 액세스와 선택 사항인 강요 대비 비밀번호\n• Safari가 저장된 사이트를 확인됨으로 표시하고 비슷한 주소를 경고\n• Credential Exchange(CXF) 파일 가져오기 및 내보내기\n• AI 에이전트는 승인 후 허용한 로그인만 사용\n• 복원 테스트가 Windows나 Mac의 전체 백업도 확인\n• 버그 수정 및 개선",
+    "shots": [
+      ["로컬 및 암호화", "비밀번호는 <em>내 Mac에</em>", "계정 생성 없음. 저희 클라우드 없음. Touch ID로 잠금 해제."],
+      ["보안 센터", "<em>먼저 고칠 것</em>을 한눈에", "재사용된 비밀번호, 2FA 없는 로그인, 패스키를 지원하는 사이트."],
+      ["Mac을 위한 설계", "모든 것이 <em>⌘K 한 번이면</em>", "항목, 작업, 설정을 검색하거나 어느 앱에서든 ⌃⌥K를 누르세요."],
+      ["컬렉션", "항목을 <em>내 방식대로</em>", "항목을 컬렉션으로 묶고, 신뢰하는 사람과 하나를 공유하세요."],
+      ["내 방식의 동기화", "내 기기, <em>내 Wi-Fi</em>", "iPhone 및 Windows PC와 암호화 동기화. 클라우드 계정이 필요 없습니다."]
+    ]
+  },
+  "nl": {
+    "home": "• Een overzicht met wachtwoordgezondheid, back-ups en je eenmalige codes in één oogopslag",
+    "colH": "VERZAMELINGEN",
+    "col1": "• Groepeer items in verzamelingen zoals Persoonlijk, Reizen of Nood",
+    "col2": "• Verzamelingen synchroniseren tussen je apparaten, en je kunt er een delen met mensen die je vertrouwt",
+    "emerg": "• Noodtoegang voor iemand die je vertrouwt, en een optioneel dwangwachtwoord",
+    "agents": "• AI-agents gebruiken alleen de logins die je toestaat, en pas na jouw goedkeuring",
+    "cxf": " of een Credential Exchange-bestand (CXF)",
+    "promo": "Nieuw: verzamelingen die je kunt synchroniseren en delen, een nieuw overzicht en Mac-venster, en noodtoegang. Je kluis blijft op je Mac.",
+    "whatsNew": "• Verzamelingen: orden items zoals jij wilt, synchroniseer ze tussen je apparaten en deel er een met mensen die je vertrouwt\n• Vernieuwd venster met een overzicht, instellingen in tabbladen en een nieuw paneel in de menubalk\n• Noodtoegang voor iemand die je vertrouwt, en een optioneel dwangwachtwoord\n• Safari markeert je bewaarde sites als geverifieerd en waarschuwt voor adressen die erop lijken\n• Credential Exchange-bestanden (CXF) importeren en exporteren\n• AI-agents gebruiken alleen de logins die je toestaat, na jouw goedkeuring\n• De hersteltest controleert ook een volledige back-up van Windows of de Mac\n• Oplossingen en verbeteringen",
+    "shots": [
+      ["Lokaal en versleuteld", "Je wachtwoorden blijven <em>op je Mac</em>", "Geen account nodig. Geen cloud van ons. Ontgrendel met Touch ID."],
+      ["Beveiligingscentrum", "Zie wat je <em>eerst oplost</em>", "Hergebruikte wachtwoorden, logins zonder 2FA en sites die passkeys ondersteunen."],
+      ["Gemaakt voor de Mac", "Alles is <em>één ⌘K verwijderd</em>", "Zoek items, acties en instellingen, of druk op ⌃⌥K in elke app."],
+      ["Verzamelingen", "Orden items <em>zoals jij wilt</em>", "Groepeer items in verzamelingen en deel er een met mensen die je vertrouwt."],
+      ["Sync op jouw manier", "Jouw apparaten, <em>jouw wifi</em>", "Versleutelde sync met je iPhone en Windows-pc. Geen cloudaccount nodig."]
+    ]
+  },
+  "pl": {
+    "home": "• Ekran główny ze stanem haseł, kopiami zapasowymi i kodami jednorazowymi w jednym miejscu",
+    "colH": "KOLEKCJE",
+    "col1": "• Grupuj elementy w kolekcje, np. Osobiste, Podróże lub Awaryjne",
+    "col2": "• Kolekcje synchronizują się między urządzeniami, a jedną możesz udostępnić zaufanym osobom",
+    "emerg": "• Dostęp awaryjny dla zaufanej osoby i opcjonalne hasło przymusu",
+    "agents": "• Agenci AI używają tylko loginów, na które pozwolisz, i dopiero po Twojej zgodzie",
+    "cxf": " lub z pliku Credential Exchange (CXF)",
+    "promo": "Nowość: kolekcje do synchronizacji i udostępniania, nowy ekran główny i okno na Maca oraz dostęp awaryjny. Twój sejf zostaje na Twoim Macu.",
+    "whatsNew": "• Kolekcje: porządkuj elementy po swojemu, synchronizuj je między urządzeniami i udostępniaj zaufanym osobom\n• Nowe okno z ekranem głównym, ustawieniami w kartach i nowym panelem na pasku menu\n• Dostęp awaryjny dla zaufanej osoby i opcjonalne hasło przymusu\n• Safari oznacza zapisane witryny jako zweryfikowane i ostrzega przed podobnymi adresami\n• Import i eksport plików Credential Exchange (CXF)\n• Agenci AI używają tylko loginów, na które pozwolisz, po Twojej zgodzie\n• Test przywracania sprawdza też pełną kopię zapasową z Windows lub Maca\n• Poprawki i ulepszenia",
+    "shots": [
+      ["Lokalnie i szyfrowane", "Twoje hasła zostają <em>na Twoim Macu</em>", "Bez zakładania konta. Bez naszej chmury. Odblokuj Touch ID."],
+      ["Centrum bezpieczeństwa", "Zobacz, co <em>naprawić najpierw</em>", "Powtórzone hasła, loginy bez 2FA i witryny obsługujące klucze dostępu."],
+      ["Stworzone dla Maca", "Wszystko <em>o jedno ⌘K</em>", "Szukaj elementów, działań i ustawień albo naciśnij ⌃⌥K w dowolnej aplikacji."],
+      ["Kolekcje", "Porządkuj elementy <em>po swojemu</em>", "Grupuj elementy w kolekcje i udostępnij jedną zaufanym osobom."],
+      ["Synchronizacja na Twoich zasadach", "Twoje urządzenia, <em>Twoje Wi-Fi</em>", "Szyfrowana synchronizacja z iPhone’em i komputerem z Windows. Bez konta w chmurze."]
+    ]
+  },
+  "pt-BR": {
+    "home": "• Uma visão geral com a saúde das senhas, os backups e seus códigos de uso único num relance",
+    "colH": "COLEÇÕES",
+    "col1": "• Agrupe itens em coleções como Pessoal, Viagem ou Emergência",
+    "col2": "• As coleções sincronizam entre seus dispositivos, e você pode compartilhar uma com pessoas de confiança",
+    "emerg": "• Acesso de emergência para alguém de confiança e uma senha de coação opcional",
+    "agents": "• Agentes de IA só usam os logins que você permitir, e só depois da sua aprovação",
+    "cxf": " ou de um arquivo Credential Exchange (CXF)",
+    "promo": "Novo: coleções para sincronizar e compartilhar, uma nova visão geral e janela no Mac, e acesso de emergência. Seu cofre continua no seu Mac.",
+    "whatsNew": "• Coleções: organize itens do seu jeito, sincronize entre seus dispositivos e compartilhe uma com pessoas de confiança\n• Janela redesenhada com visão geral, ajustes em abas e um novo painel na barra de menus\n• Acesso de emergência para alguém de confiança e uma senha de coação opcional\n• O Safari marca seus sites salvos como verificados e avisa sobre endereços parecidos\n• Importe e exporte arquivos Credential Exchange (CXF)\n• Agentes de IA só usam os logins que você permitir, após sua aprovação\n• O teste de restauração também verifica um backup completo do Windows ou do Mac\n• Correções e melhorias",
+    "shots": [
+      ["Local e criptografado", "Suas senhas ficam <em>no seu Mac</em>", "Sem conta para criar. Sem nuvem nossa. Desbloqueie com Touch ID."],
+      ["Central de segurança", "Veja o que <em>corrigir primeiro</em>", "Senhas reutilizadas, logins sem 2FA e sites que aceitam chaves-senha."],
+      ["Feito para o Mac", "Tudo a <em>um ⌘K de distância</em>", "Busque itens, ações e ajustes, ou pressione ⌃⌥K em qualquer app."],
+      ["Coleções", "Organize itens <em>do seu jeito</em>", "Agrupe itens em coleções e compartilhe uma com quem você confia."],
+      ["Sincronize do seu jeito", "Seus dispositivos, <em>seu Wi-Fi</em>", "Sincronização criptografada com seu iPhone e PC com Windows. Sem conta na nuvem."]
+    ]
+  },
+  "zh-Hans": {
+    "home": "• 主页一目了然地显示密码健康状况、备份和一次性验证码",
+    "colH": "集合",
+    "col1": "• 将项目归入“个人”“旅行”“紧急”等集合",
+    "col2": "• 集合可在您的设备之间同步，也可以与您信任的人共享一个集合",
+    "emerg": "• 为您信任的人提供紧急访问，并可设置胁迫密码",
+    "agents": "• AI 代理只能使用您允许的登录信息，且须经您批准",
+    "cxf": "，或导入凭据交换（CXF）文件",
+    "promo": "新功能：可同步和共享的集合、全新的主页和 Mac 窗口，以及紧急访问。您的密码库依然只在您的 Mac 上。",
+    "whatsNew": "• 集合：按您的方式整理项目，在设备之间同步，并与您信任的人共享\n• 全新设计的窗口：主页、分标签的设置和新的菜单栏面板\n• 为您信任的人提供紧急访问，并可设置胁迫密码\n• Safari 将已保存的网站标为已验证，并对相似地址发出警告\n• 导入和导出凭据交换（CXF）文件\n• AI 代理经您批准后，只使用您允许的登录信息\n• 恢复测试也会检查来自 Windows 或 Mac 的完整备份\n• 问题修复和改进",
+    "shots": [
+      ["本地加密", "密码留在<em>您的 Mac 上</em>", "无需创建帐户。没有我们的云。用触控 ID 解锁。"],
+      ["安全中心", "看清<em>先修复什么</em>", "重复使用的密码、未启用双重验证的登录，以及支持通行密钥的网站。"],
+      ["专为 Mac 打造", "一切只需<em>一个 ⌘K</em>", "搜索项目、操作和设置，或在任何 App 中按 ⌃⌥K。"],
+      ["集合", "按<em>您的方式</em>整理", "将项目归入集合，并与您信任的人共享一个集合。"],
+      ["同步由您做主", "您的设备，<em>您的 Wi-Fi</em>", "与 iPhone 和 Windows 电脑加密同步。无需云帐户。"]
+    ]
+  }
+}

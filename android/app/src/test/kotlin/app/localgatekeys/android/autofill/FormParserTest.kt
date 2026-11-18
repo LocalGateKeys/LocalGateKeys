@@ -3,6 +3,7 @@ package app.localgatekeys.android.autofill
 import app.localgatekeys.android.passkey.PrivilegedBrowsers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -97,7 +98,18 @@ class FillTargetTest {
 
     @Test
     fun browser_page_is_web() {
-        assertEquals(FillTarget.Web("https://accounts.example.com", "com.android.chrome"), of("com.android.chrome", "accounts.example.com"))
+        assertEquals(FillTarget.Web("https://accounts.example.com", "com.android.chrome"), of("com.android.chrome", "accounts.example.com", "https"))
+    }
+
+    @Test
+    fun a_page_without_a_scheme_is_never_taken_as_https() {
+        // A bare host (compatibility mode reads the address bar): the scheme is unknown, so nothing is offered by itself.
+        val t = of("com.android.chrome", "accounts.example.com") as FillTarget.Web
+        assertFalse(t.schemeKnown)
+        assertEquals("https://accounts.example.com", t.origin)
+        assertNotEquals(FillTarget.Web("https://accounts.example.com", "com.android.chrome"), t)
+        assertTrue((of("com.android.chrome", "accounts.example.com", "HTTPS") as FillTarget.Web).schemeKnown)
+        assertNull(of("com.android.chrome", "accounts.example.com", "ftp"))
     }
 
     @Test

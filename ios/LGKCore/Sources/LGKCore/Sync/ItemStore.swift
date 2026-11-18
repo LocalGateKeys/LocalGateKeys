@@ -49,6 +49,13 @@ public struct SyncGroupState: Equatable, Sendable {
     /// workstream 6, desktop `peer_synced_at`, Android `peerSyncedAt`). Local only: never written to the folder or
     /// sent over Wi-Fi. Stored only when not empty.
     public var peerSyncedAt: [String: Int64]
+    /// Wi-Fi peers that answered a `features` message listing `collections` (desktop `collection_peers`, sub-plan 07
+    /// Task 4), sorted: personal collection states go into views (and are merged) only with them. Stored only when not
+    /// empty.
+    public var collectionPeers: [String]
+    /// Wi-Fi peers that answered `heir-hello` (sub-plan 08, desktop `heir_peers`), sorted: only they receive the
+    /// emergency access plan over Wi-Fi. Stored only when not empty.
+    public var heirPeers: [String]
 
     public init(groupID: String, epoch: Int64, key: [UInt8], identity: DeviceIdentity, installID: String,
                 hasFolder: Bool = true, lastSeen: [String: Int64] = [:], peerDigests: [String: String] = [:],
@@ -56,7 +63,8 @@ public struct SyncGroupState: Equatable, Sendable {
                 viewSigners: [String: String] = [:], lanPeers: [LanPeer] = [], unackedMembers: [String] = [],
                 peerGenerations: [String: Int64] = [:], rollbackSuspected: Int64 = 0, witnessPeers: [String] = [],
                 witnessCounters: [String: Int64] = [:], generationOffset: Int64 = 0,
-                attachmentPeers: [String] = [], peerSyncedAt: [String: Int64] = [:]) {
+                attachmentPeers: [String] = [], peerSyncedAt: [String: Int64] = [:], collectionPeers: [String] = [],
+                heirPeers: [String] = []) {
         self.groupID = groupID; self.epoch = epoch; self.key = key; self.identity = identity
         self.installID = installID; self.hasFolder = hasFolder; self.lastSeen = lastSeen
         self.peerDigests = peerDigests; self.membersEpoch = membersEpoch; self.members = members
@@ -68,6 +76,8 @@ public struct SyncGroupState: Equatable, Sendable {
         self.generationOffset = generationOffset
         self.attachmentPeers = attachmentPeers
         self.peerSyncedAt = peerSyncedAt
+        self.collectionPeers = collectionPeers
+        self.heirPeers = heirPeers
     }
 
     /// Most peers kept in `peerSyncedAt` (desktop `MAX_PEERS_SEEN`).
@@ -104,22 +114,62 @@ public struct StoreSnapshot: Equatable, Sendable {
     public var sync: SyncGroupState?
     /// Changes on every commit; a commit against an older revision is refused.
     public var revision: Int64
+    /// The share groups of this vault (sub-plan 07, `ShareRecord.encode`), exactly as stored: nil when there is none.
+    /// Kept raw so a damaged entry never stops the store from loading (`ShareGroups.records` decodes it strictly and
+    /// the share readers fail closed). Device-only secrets: never a record, so never in a view, a backup or an export.
+    public var shares: JSONValue?
+    /// The Mac's old local collections were moved into this store (`CollectionMigration`, sub-plan 07): the migration
+    /// never runs again, even from a local data file that still holds them. Device-only, like `shares`: never a
+    /// record, so never synced, in a view, a backup or an export.
+    public var collectionsMigrated: Bool
+    /// This device's identity in the sync group it last left (`KeptIdentity`), reused when it joins that group again.
+    /// Device-only, like `shares`: never a record, so never synced, in a view, a backup or an export.
+    public var keptIdentity: KeptIdentity?
 
     public init(records: [String: JSONValue] = [:], meta: [String: SyncMeta] = [:], sync: SyncGroupState? = nil,
-                revision: Int64 = 0) {
-        self.records = records; self.meta = meta; self.sync = sync; self.revision = revision
+                revision: Int64 = 0, shares: JSONValue? = nil, collectionsMigrated: Bool = false,
+                keptIdentity: KeptIdentity? = nil) {
+        self.records = records; self.meta = meta; self.sync = sync; self.revision = revision; self.shares = shares
+        self.collectionsMigrated = collectionsMigrated
+        self.keptIdentity = keptIdentity
     }
 }
 
 /// One atomic store write: the full new records, meta and group state, based on `baseRevision`.
 public struct StoreChange: Equatable, Sendable {
+    /// What a commit does with the stored share groups: `keep` them as they are (every write that is not about a
+    /// share), or `set` them (nil: none left).
+    public enum Shares: Equatable, Sendable {
+        case keep
+        case set(JSONValue?)
+    }
+
+    /// What a commit does with the kept identity: `keep` it (every write but Leave, Reset and a join that uses or
+    /// drops it), or `set` it (nil: none).
+    public enum Kept: Equatable, Sendable {
+        case keep
+        case set(KeptIdentity?)
+    }
+
     public var baseRevision: Int64
     public var records: [String: JSONValue]
     public var meta: [String: SyncMeta]
     public var sync: SyncGroupState?
+    public var shares: Shares
+    /// Sets `StoreSnapshot.collectionsMigrated`; nil keeps it as stored (every write but the migration's).
+    public var collectionsMigrated: Bool?
+    public var keptIdentity: Kept
 
-    public init(baseRevision: Int64, records: [String: JSONValue], meta: [String: SyncMeta], sync: SyncGroupState?) {
+    public init(baseRevision: Int64, records: [String: JSONValue], meta: [String: SyncMeta], sync: SyncGroupState?,
+                shares: Shares = .keep, collectionsMigrated: Bool? = nil, keptIdentity: Kept = .keep) {
         self.baseRevision = baseRevision; self.records = records; self.meta = meta; self.sync = sync
+        self.shares = shares; self.collectionsMigrated = collectionsMigrated; self.keptIdentity = keptIdentity
+    }
+
+    /// The kept identity after this commit, given the one stored before it.
+    public func keptIdentity(after stored: KeptIdentity?) -> KeptIdentity? {
+        if case .set(let value) = keptIdentity { return value }
+        return stored
     }
 }
 

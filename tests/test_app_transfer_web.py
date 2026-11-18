@@ -100,6 +100,25 @@ def test_export_then_import_into_another_profile(env):
     assert env.controller.session.live_item_count() == 1
 
 
+def test_an_imported_item_arrives_with_the_agent_switch_off(env):
+    """A transfer keeps item ids, so an id the owner allowed for AI agents here must not stay allowed for the
+    imported copy (the switch is per device and only the owner turns it on)."""
+    service = env.service
+    item_id = env.controller.session.summaries()[0].id
+    handle = service.choose("export")["handle"]
+    preview = service.preview("export", handle, TRANSFER, SCOPE, "skip", False)
+    service.commit(preview["token"], "export", handle, TRANSFER, TRANSFER, SCOPE, "skip", False)
+    second = env.profiles.create_profile("Second")
+    env.controller.select_profile(second.id)
+    env.controller.create(MASTER, MASTER)
+    env.controller.settings.agent_items = [item_id, "kept-id"]
+    handle = service.choose("import")["handle"]
+    preview = service.preview("import", handle, TRANSFER, SCOPE, "skip", False)
+    service.commit(preview["token"], "import", handle, TRANSFER, "", {}, "skip", False)
+    assert env.controller.session.live_item_count() == 1
+    assert env.controller.settings.agent_items == ["kept-id"]
+
+
 def test_commit_refuses_changed_inputs(env):
     service = env.service
     handle = service.choose("export")["handle"]

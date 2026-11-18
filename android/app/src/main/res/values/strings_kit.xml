@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Emergency kit</string>
+    <string name="kit_intro">Keep this page offline and apart from your phone. It tells you how to get back into LocalGateKeys if you forget the app password.</string>
+    <string name="kit_device">Phone</string>
+    <string name="kit_date">Date</string>
+    <string name="kit_version">LocalGateKeys version</string>
+    <string name="kit_app_password">App password (write it by hand, or keep it apart from this page):</string>
+    <string name="kit_phrase_heading">Recovery phrase (%1$d words, in order)</string>
+    <string name="kit_steps_heading">How to get back in</string>
+    <string name="kit_step1">On the LocalGateKeys lock screen, tap “%1$s”.</string>
+    <string name="kit_step2">Type the %1$d words above, in order.</string>
+    <string name="kit_step3">Choose a new app password. Your passwords are not changed.</string>
+    <string name="kit_step4">If the phone is lost or the vault is gone, install LocalGateKeys on a new phone, then restore your latest backup file or sync from your PC or another phone.</string>
+    <string name="kit_warning">Treat this page like your vault. A PDF saved with the recovery phrase on it is as sensitive as the vault itself: keep the paper somewhere safe and delete any saved PDF when you are done.</string>
+    <string name="kit_print_with_phrase">Print emergency kit with this phrase</string>
+    <string name="kit_print_blank">Print emergency kit (phrase boxes blank)</string>
+</resources>

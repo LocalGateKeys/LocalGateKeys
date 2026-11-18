@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">Verzamelingen</string>
+    <string name="collections_none">Nog geen verzamelingen.</string>
+    <string name="collections_footer">Notities, kaarten en andere getypeerde items kunnen aan verzamelingen worden toegevoegd. Aanmeldingen niet.</string>
+    <string name="collections_add_starters">Startverzamelingen toevoegen</string>
+    <string name="collections_new">Nieuwe verzameling</string>
+    <string name="collections_name">Naam</string>
+    <string name="collections_create">Aanmaken</string>
+    <string name="collections_delete_title">Verzameling verwijderen?</string>
+    <string name="collections_delete_message">De items erin blijven bewaard.</string>
+    <string name="collections_view_only">Alleen bekijken</string>
+    <string name="collections_shared">Gedeeld</string>
+    <string name="collections_picker_footer">Een item kan in maximaal 20 verzamelingen zitten.</string>
+    <string name="collections_all_items">Alle items</string>
+    <string name="collections_manage">Verzamelingen beheren</string>
+    <string name="collections_filter">Verzameling: %1$s</string>
+    <string name="collections_filter_clear">Alle items tonen</string>
+    <string name="collections_filter_empty">Geen items in deze verzameling.</string>
+    <string name="collections_read_only_item">Dit item zit in een verzameling die alleen-bekijken met je is gedeeld en kan op dit apparaat niet worden gewijzigd.</string>
+    <string name="collections_read_only">Deze verzameling is alleen-bekijken met je gedeeld en kan op dit apparaat niet worden gewijzigd.</string>
+    <string name="collections_shared_delete">Een gedeelde verzameling kan niet worden verwijderd. Stop eerst met delen of verlaat de verzameling.</string>
+    <string name="collections_limit">Je kunt maximaal 500 verzamelingen hebben.</string>
+    <string name="collections_not_member">Aanmeldingen en documenten kunnen niet aan een verzameling worden toegevoegd.</string>
+    <string name="collections_bad_name">Deze naam kan niet worden gebruikt.</string>
+    <string name="collections_gone">Die verzameling bestaat niet meer.</string>
+    <string name="collections_failed">De verzameling kon niet worden gewijzigd.</string>
+    <string name="collections_empty_name">Voer een naam in voor de verzameling.</string>
+    <string name="collections_long_name">Namen van verzamelingen mogen maximaal 100 tekens lang zijn.</string>
+    <string name="collections_duplicate">Er bestaat al een verzameling met deze naam.</string>
+    <string name="collections_too_many">Een item kan niet tot meer dan 20 verzamelingen behoren.</string>
+    <string name="collections_read_failed">De kluis kon niet op dit apparaat worden gelezen.</string>
+    <string name="collection_starter_personal">Persoonlijk</string>
+    <string name="collection_starter_work">Werk</string>
+    <string name="collection_starter_travel">Reizen</string>
+    <string name="collection_starter_emergency">Noodgeval</string>
+</resources>

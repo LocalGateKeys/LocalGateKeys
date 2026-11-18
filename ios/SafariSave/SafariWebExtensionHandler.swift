@@ -20,6 +20,9 @@ struct StoreKitEntitlement: SafariProEntitlement {
 /// Each one is answered by `SafariSaveService.handle`: classify a captured login, or save it into the
 /// sealed inbox the app imports at its next unlock. The extension never reads the vault, never syncs and
 /// never opens a network connection. Requests carry passwords: nothing here is ever logged.
+/// The toolbar popup's `pending_count` (the badge) is answered by the service too, with a number only. Its
+/// `open_app` and `open_app_supported` get `unsupported` here: an iPhone Safari extension has no supported way to
+/// open its app, so the popup does not show that button on the iPhone.
 final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     /// `NSExtensionContext` is not Sendable; the box carries it into the task that answers the request,
     /// which is the only code that touches it afterwards.
@@ -36,8 +39,8 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         Task {
             // Safari's keys open without Face ID while the phone is unlocked (no LAContext). They are in the
             // extension's own Keychain group, its only one (audit 2026-10-24 L-8): nothing else is readable here.
-            let service = SafariSaveService(keychain: SafariKeys.extensionVault(), settings: AppSettings.shared,
-                                            entitlement: StoreKitEntitlement())
+            // Its files are in the Safari app group, the only one it holds (audit 2026-11-10): no vault, no settings.
+            let service = SafariSaveService(keychain: SafariKeys.extensionVault(), entitlement: StoreKitEntitlement())
             AutoFillTrace.log("safari handler: request keys=\(request.count) host=\(host: request["origin"])")
             let reply = await service.handle(request)
             AutoFillTrace.log("safari handler: status=\(host: reply["status"] as? String) stored=\((reply["stored"] as? Bool) ?? false) error=\(host: reply["error"] as? String)")

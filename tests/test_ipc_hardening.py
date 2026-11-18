@@ -494,6 +494,14 @@ def test_tcp_fallback_requires_opt_in_outside_pytest(monkeypatch):
     assert host.tcp_fallback_allowed() is True
 
 
+def test_tcp_fallback_toggles_are_ignored_in_a_frozen_build(monkeypatch):
+    """I-3: a release build never turns the TCP fallback on from the environment."""
+    monkeypatch.setattr(host.sys, "frozen", True, raising=False)
+    monkeypatch.setenv("PYTEST_CURRENT_TEST", "x")
+    monkeypatch.setenv("LOCALGATEKEYS_ALLOW_TCP_FALLBACK", "1")
+    assert host.tcp_fallback_allowed() is False
+
+
 def test_disabled_tcp_fallback_never_connects(monkeypatch):
     monkeypatch.setattr(host, "tcp_fallback_allowed", lambda: False)
     monkeypatch.setattr(host.socket, "create_connection", lambda *a, **k: pytest.fail("must not connect"))

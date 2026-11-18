@@ -51,14 +51,15 @@ final class LocalStoreTests: XCTestCase {
             .object(["ns": .string("item"), "record": .object(["id": .string("n\(i)"), "kind": .string("note")])])
         }
         var records: [String: JSONValue] = [:]
-        for i in 0..<3 { records["n\(i)"] = note(i) }
+        let last = ItemLimit.freeItems - 1
+        for i in 0..<last { records["n\(i)"] = note(i) }
         try store.commit(StoreChange(baseRevision: 0, records: records, meta: [:], sync: nil))
         XCTAssertNil(hints.planFullRevision, "room left")
-        records["n3"] = note(3)
+        records["n\(last)"] = note(last)
         try store.commit(StoreChange(baseRevision: 1, records: records, meta: [:], sync: nil))
         XCTAssertEqual(hints.planFullRevision, 2)
         XCTAssertEqual(LocalStore.committedRevision(directory: dir), 2, "readable before unlock (plain CURRENT)")
-        records["n3"] = nil
+        records["n\(last)"] = nil
         try store.commit(StoreChange(baseRevision: 2, records: records, meta: [:], sync: nil))
         XCTAssertNil(hints.planFullRevision)
         XCTAssertNil(LocalStore.committedRevision(directory: dir.appendingPathComponent("missing")))
@@ -368,6 +369,61 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("attachment_peers")) }
         o["attachment_peers"] = .string("b-device")
         XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("attachment_peers")) }
+    }
+
+    /// Share groups (sub-plan 07) live in the sealed state only: kept by every commit that is not about them, set or
+    /// cleared by one that is, and absent from a store that has none (an older build reads it unchanged).
+    func test_share_groups_are_kept_until_a_commit_sets_them() throws {
+        let key = Array(repeating: UInt8(9), count: 32)
+        let store = try LocalStore(directory: dir, key: key, random: FixedRandom())
+        try store.commit(try sampleChange(base: 0))
+        XCTAssertNil(try store.load().shares)
+        let shares: JSONValue = .object(["group-1": .object(["version": .int(1), "note": .string("opaque to the store")])])
+        var set = try sampleChange(base: 1)
+        set.shares = .set(shares)
+        try store.commit(set)
+        XCTAssertEqual(try store.load().shares, shares)
+        try store.commit(try sampleChange(base: 2))
+        XCTAssertEqual(try store.load().shares, shares, "a commit that is not about shares keeps them")
+        XCTAssertEqual(try LocalStore(directory: dir, key: key, random: FixedRandom()).load().shares, shares)
+        var clear = try sampleChange(base: 3)
+        clear.shares = .set(nil)
+        try store.commit(clear)
+        XCTAssertNil(try store.load().shares)
+    }
+
+    /// The Mac's collections migration marker (sub-plan 07 task 5i): set once, kept by every later commit and by a
+    /// reopened store.
+    func test_collections_migrated_marker_is_kept_once_set() throws {
+        let key = Array(repeating: UInt8(9), count: 32)
+        let store = try LocalStore(directory: dir, key: key, random: FixedRandom())
+        try store.commit(try sampleChange(base: 0))
+        XCTAssertFalse(try store.load().collectionsMigrated)
+        var set = try sampleChange(base: 1)
+        set.collectionsMigrated = true
+        try store.commit(set)
+        XCTAssertTrue(try store.load().collectionsMigrated)
+        try store.commit(try sampleChange(base: 2))
+        XCTAssertTrue(try store.load().collectionsMigrated, "a commit that does not set it keeps it")
+        XCTAssertTrue(try LocalStore(directory: dir, key: key, random: FixedRandom()).load().collectionsMigrated)
+    }
+
+    func test_sync_state_collection_peers_round_trip_only_when_set() throws {
+        let plain = try XCTUnwrap(try sampleChange(base: 0).sync)
+        guard case .object(let p) = LocalStore.encodeSync(plain) else { return XCTFail() }
+        XCTAssertNil(p["collection_peers"])   // default is not written: an older state decodes the same
+        XCTAssertEqual(try LocalStore.decodeSync(.object(p)).collectionPeers, [])
+        var sync = plain
+        sync.collectionPeers = ["b-device", "c-device"]
+        guard case .object(var o) = LocalStore.encodeSync(sync) else { return XCTFail() }
+        XCTAssertEqual(o["collection_peers"], .array([.string("b-device"), .string("c-device")]))
+        XCTAssertEqual(try LocalStore.decodeSync(.object(o)), sync)
+        o["collection_peers"] = .array([.string("c-device"), .string("b-device")])
+        XCTAssertEqual(try LocalStore.decodeSync(.object(o)).collectionPeers, ["b-device", "c-device"])   // kept sorted
+        for bad: JSONValue in [.array([.string("b-device"), .string("b-device")]), .array([.string("bad id")]), .string("b-device")] {
+            o["collection_peers"] = bad
+            XCTAssertThrowsError(try LocalStore.decodeSync(.object(o))) { XCTAssertEqual($0 as? LocalStoreError, .corrupt("collection_peers")) }
+        }
     }
 }
 

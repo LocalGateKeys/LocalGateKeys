@@ -58,7 +58,9 @@ class _CountingSession:
 
 
 def test_pro_only_features_and_free_desktop_fill():
-    assert {f.value for f in licensing.Feature} == {"unlimited_items", "sync", "totp", "attachments"}
+    assert {f.value for f in licensing.Feature} == {"unlimited_items", "sync", "totp", "attachments",
+                                                   "emergency_access", "duress",
+                                                   "item_history_long", "travel", "hygiene_bulk", "access_policies"}
     assert not hasattr(licensing.Feature, "DESKTOP_FILL")
     assert not hasattr(ProGateMixin, "_pro_allowed")
 

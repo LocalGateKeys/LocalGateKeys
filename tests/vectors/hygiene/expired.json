@@ -1,0 +1,189 @@
+{
+  "cases": [
+    {
+      "expected_ids": [],
+      "name": "card 12/26 is not expired on 2026-12-31",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000620",
+          "kind": "card",
+          "payload": {
+            "expiry": "12/26",
+            "number": "4111111111111111"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Visa",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2026-12-31"
+    },
+    {
+      "expected_ids": [
+        "10000000-0000-4000-8000-000000000620"
+      ],
+      "name": "card 12/26 is expired on 2027-01-01",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000620",
+          "kind": "card",
+          "payload": {
+            "expiry": "12/26",
+            "number": "4111111111111111"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Visa",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2027-01-01"
+    },
+    {
+      "expected_ids": [
+        "10000000-0000-4000-8000-000000000621"
+      ],
+      "name": "a 4-digit year (11/2026) reads as 2026-11",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000621",
+          "kind": "card",
+          "payload": {
+            "expiry": "11/2026",
+            "number": "5555555555554444"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "MC",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2026-12-01"
+    },
+    {
+      "expected_ids": [
+        "10000000-0000-4000-8000-000000000622",
+        "10000000-0000-4000-8000-000000000624",
+        "10000000-0000-4000-8000-000000000627"
+      ],
+      "name": "licence, API key (YYYYMMDD), week date skipped, inactive subscription skipped",
+      "now": 1790000000,
+      "records": [
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000622",
+          "kind": "license",
+          "payload": {
+            "expiration_date": "2026-11-14"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Tool",
+          "updated_at": 1789999999
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000623",
+          "kind": "license",
+          "payload": {
+            "expiration_date": "2026-11-15"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Tool 2",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000624",
+          "kind": "api_key",
+          "payload": {
+            "expires": "20261114"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Key",
+          "updated_at": 1789999998
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000625",
+          "kind": "warranty",
+          "payload": {
+            "expiration_date": "2026-W46-1"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "TV",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000626",
+          "kind": "subscription",
+          "payload": {
+            "active": false,
+            "expiration_date": "2020-01-01"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Old",
+          "updated_at": 1789999900
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000627",
+          "kind": "subscription",
+          "payload": {
+            "active": true,
+            "expiration_date": "2020-01-01"
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Live",
+          "updated_at": 1789999997
+        },
+        {
+          "collection_ids": [],
+          "created_at": 1789999000,
+          "favorite": false,
+          "id": "10000000-0000-4000-8000-000000000628",
+          "kind": "purchase",
+          "payload": {
+            "expiration_date": ""
+          },
+          "revision": 1,
+          "tags": [],
+          "title": "Phone",
+          "updated_at": 1789999900
+        }
+      ],
+      "today": "2026-11-15"
+    }
+  ]
+}

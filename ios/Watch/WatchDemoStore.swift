@@ -11,7 +11,7 @@ struct WatchDemoStore: WatchSecretStoring {
         [WatchCode(id: "demo-1", title: "github.com", secret: "JBSWY3DPEHPK3PXP"),
          WatchCode(id: "demo-2", title: "proton.me", secret: "GEZDGNBVGY3TQOJQ"),
          WatchCode(id: "demo-3", title: "google.com", secret: "MFRGGZDFMZTWQ2LK"),
-         WatchCode(id: "demo-4", title: "Bank", secret: "KRSXG5CTMVRXEZLU")]
+         WatchCode(id: "demo-4", title: "Bank", secret: "KRSXG5CTMVRXEZLU", digits: 8)]
     }
     func save(_ codes: [WatchCode]) throws {}
     func removeAll() {}

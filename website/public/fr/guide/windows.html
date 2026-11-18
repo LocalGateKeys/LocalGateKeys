@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys pour Windows : guide</title>
+  <meta name="description" content="Configurer, déverrouiller, remplir, importer, sauvegarder et synchroniser LocalGateKeys sous Windows 10 et 11, pas à pas.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/windows">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/windows">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/windows">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/windows">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/windows">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/windows">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys pour Windows : guide">
+  <meta property="og:description" content="Configurer, déverrouiller, remplir, importer, sauvegarder et synchroniser LocalGateKeys sous Windows 10 et 11, pas à pas.">
+  <meta property="og:url" content="https://localgatekeys.app/fr/guide/windows">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Le logo de LocalGateKeys : un gestionnaire de mots de passe pour Windows, Mac et iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys pour Windows : guide">
+  <meta name="twitter:description" content="Configurer, déverrouiller, remplir, importer, sauvegarder et synchroniser LocalGateKeys sous Windows 10 et 11, pas à pas.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Aller au contenu</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../fr/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../../fr/features">Fonctionnalités</a></li>
+          <li><a href="../../fr/get-started">Démarrer</a></li>
+          <li><a href="../../fr/help">Guide</a></li>
+          <li><a href="../../fr/security">Sécurité</a></li>
+          <li><a href="../../fr/pricing">Tarifs</a></li>
+          <li><a href="../../fr/support">Assistance</a></li>
+          <li><a class="nav-cta" href="../../fr/download">Télécharger</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../../fr/features">Fonctionnalités</a></li>
+          <li><a href="../../fr/get-started">Démarrer</a></li>
+          <li><a href="../../fr/help">Guide</a></li>
+          <li><a href="../../fr/security">Sécurité</a></li>
+          <li><a href="../../fr/pricing">Tarifs</a></li>
+          <li><a href="../../fr/support">Assistance</a></li>
+          <li><a class="nav-cta" href="../../fr/download">Télécharger</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Langue</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr" aria-current="true">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys pour Windows</h1>
+  <p class="lead">Une aide pas à pas pour chaque écran et chaque fonction sur cet appareil. Chaque titre est un lien que vous pouvez partager.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Plateformes">
+    <ul><li><a class="help-tab" href="../../fr/guide/windows" aria-current="page">Windows</a></li><li><a class="help-tab" href="../../fr/guide/mac">Mac</a></li><li><a class="help-tab" href="../../fr/guide/iphone">iPhone et iPad</a></li><li><a class="help-tab" href="../../fr/guide/android">Android</a></li><li><a class="help-tab" href="../../fr/guide/extension">Extension de navigateur</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>À savoir sur tous les appareils</h2>
+    <ul>
+      <li><strong>Votre coffre-fort reste sur vos appareils.</strong> Il n’y a aucun compte et aucun serveur LocalGateKeys qui détienne vos mots de passe.</li>
+      <li><strong>Personne ne peut réinitialiser votre mot de passe principal ni votre mot de passe d’app.</strong> Configurez une phrase de récupération et conservez-la sur papier.</li>
+      <li><strong>L’offre gratuite</strong> contient jusqu’à 7 éléments. <strong>Pro</strong> (US$29.99, payé une seule fois) ajoute les éléments illimités, les codes à deux facteurs, les fichiers et la synchronisation. Modifier, supprimer et remplir des éléments que vous avez déjà n’est jamais bloqué.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Sujets Windows</h2>
+    <p class="panel-lead">Windows 10 (version 2004 ou ultérieure) et Windows 11, 64 bits. Installez-le depuis le Microsoft Store ou la <a href="../../fr/download">page de téléchargement</a>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Sujets Windows">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Dans cet onglet</summary>
+          <ol>
+            <li><a href="#win-setup">Premier démarrage et profils</a></li>
+            <li><a href="#win-unlock">Déverrouiller et verrouiller</a></li>
+            <li><a href="#win-screen">La fenêtre principale</a></li>
+            <li><a href="#win-items">Ajouter et modifier des éléments</a></li>
+            <li><a href="#win-trash">Supprimer, corbeille et annulation</a></li>
+            <li><a href="#win-search">Recherche, palette, Accès rapide</a></li>
+            <li><a href="#win-generator">Générateur de mots de passe</a></li>
+            <li><a href="#win-security">Centre de sécurité</a></li>
+            <li><a href="#win-2fa">Codes à deux facteurs et QR</a></li>
+            <li><a href="#win-import">Importer</a></li>
+            <li><a href="#win-export">Exporter et transférer</a></li>
+            <li><a href="#win-backups">Sauvegardes et restauration</a></li>
+            <li><a href="#win-sync">Synchronisation</a></li>
+            <li><a href="#win-share">Partager un élément</a></li>
+            <li><a href="#win-apps">Remplir les apps Windows</a></li>
+            <li><a href="#win-shared">Collections partagées</a></li>
+            <li><a href="#win-safety">Accès d’urgence et mot de passe de contrainte</a></li>
+            <li><a href="#win-dev">Outils de développement et agents IA</a></li>
+            <li><a href="#win-settings">Paramètres</a></li>
+            <li><a href="#win-pro">Licence Pro</a></li>
+            <li><a href="#win-updates">Mises à jour</a></li>
+            <li><a href="#win-keys">Raccourcis clavier</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">Premier démarrage et profils</a></h3>
+          <ol>
+            <li>Ouvrez LocalGateKeys. Saisissez un <strong>Mot de passe principal</strong> d’au moins 12 caractères, saisissez-le de nouveau dans <strong>Confirmer le mot de passe</strong>, puis choisissez <strong>Créer le coffre-fort</strong>.</li>
+            <li>Le guide <strong>Configurer LocalGateKeys</strong> suit, en cinq étapes : créer le coffre-fort, <strong>Configurer Windows Hello</strong>, <strong>Importer</strong> vos mots de passe, <strong>Ouvrir la phrase de récupération</strong> (vous ressaisissez trois de ses mots pour prouver que vous l’avez conservée) et <strong>Tester la connexion</strong> pour l’extension de navigateur.</li>
+            <li>Vous pouvez <strong>Ignorer</strong> n’importe quelle étape. Les étapes ignorées attendent sur une carte <em>Terminer la configuration</em> dans le coffre-fort, avec <strong>Poursuivre la configuration</strong> et <strong>Masquer</strong>.</li>
+          </ol>
+          <p class="tip"><strong>Astuce.</strong> Pour revoir le guide : Paramètres › Aide et diagnostics › <strong>Afficher de nouveau la configuration</strong>.</p>
+          <h4>Profils</h4>
+          <p>Chaque profil est un coffre-fort distinct avec son propre mot de passe principal, par exemple un pour le travail et un pour la maison.</p>
+          <ul>
+            <li>Sur l’écran de déverrouillage, choisissez <strong>Utiliser un autre profil</strong>, puis <strong>Créer un profil</strong> et saisissez un <strong>Nom du profil</strong>.</li>
+            <li>Pour modifier un profil, appuyez sur Ctrl+K et exécutez <strong>Changer de profil</strong>. Vous pouvez y <strong>Ajouter un profil</strong>, <strong>Modifier</strong>, définir une <strong>Photo…</strong> et une <strong>Couleur d’accent</strong>, ou le <strong>Supprimer</strong>.</li>
+            <li>Le <strong>Verrouiller et changer de personne</strong> du menu de la barre d’état verrouille et ouvre directement le sélecteur de profil.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">Déverrouiller et verrouiller</a></h3>
+          <h4>Façons de déverrouiller</h4>
+          <ul>
+            <li><strong>Mot de passe principal</strong>, puis <strong>Déverrouiller</strong>. Fonctionne toujours.</li>
+            <li><strong>Déverrouiller avec Windows Hello</strong> : empreinte, visage ou code PIN. Configurez-le dans Paramètres › Déverrouillage › Windows Hello › <strong>Configurer</strong>. <strong>Démarrer Windows Hello automatiquement</strong> (activé par défaut) affiche l’invite dès l’ouverture de la fenêtre.</li>
+            <li><strong>Utiliser la caméra à la place</strong> : reconnaissance du visage avec une webcam ordinaire, effectuée sur le PC. C’est moins sûr que Windows Hello. Configurez-la avec <strong>Configurer la vérification par caméra</strong>.</li>
+          </ul>
+          <h4>Mot de passe principal oublié ?</h4>
+          <ol>
+            <li>Sur l’écran de déverrouillage, choisissez <strong>Oublié ? Utiliser la phrase de récupération</strong>.</li>
+            <li>Saisissez les 24 mots, séparés par des espaces.</li>
+            <li>Choisissez un nouveau mot de passe principal (12 caractères ou plus), saisissez-le deux fois et choisissez <strong>Récupérer le coffre-fort</strong>.</li>
+          </ol>
+          <p class="note"><strong>Ensuite</strong>, configurez de nouveau Windows Hello et la vérification par caméra. La phrase de récupération continue de fonctionner.</p>
+          <h4>Changer le mot de passe principal</h4>
+          <p>Paramètres › Déverrouillage › Mot de passe principal › <strong>Modifier…</strong>. Saisissez l’actuel, puis le nouveau deux fois. Pour que votre phrase de récupération reste valable, saisissez aussi ses 24 mots ; sinon, créez une nouvelle phrase ensuite. Les sauvegardes déjà faites conservent le mot de passe avec lequel elles ont été créées.</p>
+          <h4>Verrouillage</h4>
+          <ul>
+            <li>Bouton <strong>Verrouiller</strong> de la barre supérieure, ou <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
+            <li><strong>Verrouillage d’urgence</strong> : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> partout dans Windows. Il verrouille aussitôt et annule tout remplissage en cours.</li>
+            <li>Paramètres › Verrouillage :
+              <ul>
+                <li><strong>Verrouiller après inactivité</strong> : Jamais, ou de 1 minute à 24 heures.</li>
+                <li><strong>Verrouiller quand Windows se verrouille</strong> (Win+L, changement d’utilisateur, déconnexion) et <strong>Verrouiller à la mise en veille</strong> (capot fermé, veille, hibernation).</li>
+                <li><strong>Ne jamais rester déverrouillé plus de</strong> : une limite stricte, quoi que vous fassiez.</li>
+                <li><strong>Compter l’activité de</strong> : Activité de l’ordinateur ou Activité du coffre-fort.</li>
+                <li><strong>Demander avant de transmettre les codes 2FA</strong> à l’extension de navigateur.</li>
+              </ul>
+            </li>
+          </ul>
+          <p>Le menu de l’icône de la barre d’état contient <strong>Ouvrir LocalGateKeys</strong>, <strong>Déverrouiller le coffre-fort</strong>, <strong>Verrouiller le coffre-fort</strong>, <strong>Verrouiller et changer d’utilisateur</strong>, <strong>Accès rapide</strong>, <strong>Rechercher des mises à jour</strong>, des interrupteurs pour <strong>Intégration au navigateur</strong> et <strong>Icônes de remplissage du bureau</strong>, et <strong>Quitter</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">La fenêtre principale</a></h3>
+          <dl class="defs">
+            <dt>Barre latérale · Coffre-fort</dt><dd><strong>Tous les éléments</strong>, <strong>Favoris</strong>, <strong>Utilisés récemment</strong>.</dd>
+            <dt>Barre latérale · Types</dt><dd>Une entrée par type que vous possédez, comme Identifiants, Cartes, Identités, Notes sécurisées, Documents, Wi-Fi ou Clés d’accès.</dd>
+            <dt>Barre latérale · Collections et vues</dt><dd>Vos collections et vos vues épinglées.</dd>
+            <dt>Barre latérale · Outils</dt><dd>Centre de sécurité, Générateur, Synchronisation et appareils, Appareils et connexions, Import et export, Corbeille. Les <strong>Paramètres</strong> se trouvent en bas. Les rappels s’ouvrent depuis la carte <em>À venir</em> de l’accueil, l’activité depuis le Centre de sécurité, Scanner un code QR avec <kbd>Ctrl</kbd>+<kbd>K</kbd> et la licence depuis Paramètres › Offre et synchronisation. <kbd>Ctrl</kbd>+<kbd>K</kbd> mène à chaque page.</dd>
+            <dt>Barre supérieure</dt><dd>Champ de recherche, <strong>Nouvel élément</strong>, <strong>Verrouiller</strong>, et <strong>Ctrl K</strong> pour la palette de commandes.</dd>
+            <dt>Accueil</dt><dd>Des cartes pour Santé des mots de passe, Sauvegarde et récupération, À venir et Générateur, plus <strong>Codes à usage unique</strong> (cliquez sur un code pour le copier).</dd>
+          </dl>
+          <h4>La liste des éléments</h4>
+          <ul>
+            <li>Filtres : <strong>Tous</strong>, <strong>À examiner</strong>, <strong>Sans 2FA</strong>, <strong>Expire bientôt</strong>.</li>
+            <li><strong>Tri</strong> : Titre A–Z, Titre Z–A, Date de modification, Date de création.</li>
+            <li>Les indicateurs sur une ligne signalent un mot de passe compromis, faible ou réutilisé.</li>
+            <li>Faites un clic droit sur une ligne (ou <kbd>Maj</kbd>+<kbd>F10</kbd>) pour Modifier, Copier le nom d’utilisateur, Copier le mot de passe, Copier le code 2FA, Ouvrir le site web, Partager…, Ajouter aux favoris et Mettre à la corbeille….</li>
+          </ul>
+          <h4>Le volet de détails</h4>
+          <p>Affiche les champs de l’élément sélectionné. Les mots de passe restent masqués tant que vous ne cliquez pas dessus. Des boutons copient le nom d’utilisateur, le mot de passe ou le code 2FA, ouvrent le site web, <strong>Modifier</strong>, <strong>Partager</strong> ou <strong>Mettre à la corbeille</strong>. Les documents ajoutent <strong>Ouvrir le fichier</strong>, <strong>Aperçu sécurisé</strong>, <strong>Enregistrer une copie…</strong> et <strong>Remplacer le fichier…</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">Ajouter et modifier des éléments</a></h3>
+          <ol>
+            <li>Choisissez <strong>Nouvel élément</strong> ou appuyez sur <kbd>Ctrl</kbd>+<kbd>N</kbd>.</li>
+            <li>Choisissez un type (cliquez dessus, appuyez sur son numéro ou commencez à saisir son nom) :
+              <ul>
+                <li><em>Connexions</em> : Identifiant de site web, Identifiant d’app de bureau, Clé d’accès</li>
+                <li><em>Argent</em> : Carte de paiement, Compte bancaire · <em>Personnel</em> : Identité, Note sécurisée, Document</li>
+                <li><em>Technique</em> : Clé SSH, Clé API, Réseau Wi-Fi, Signet · <em>Ce que vous possédez</em> : Licence, Abonnement, Garantie, Achat</li>
+              </ul>
+            </li>
+            <li>Renseignez les champs et choisissez <strong>Enregistrer</strong>. Si vous quittez avec des modifications non enregistrées, on vous demande <em>Abandonner vos modifications ?</em></li>
+          </ol>
+          <h4>Les identifiants en détail</h4>
+          <ul>
+            <li><strong>Titre</strong>, <strong>Site web</strong>, <strong>Nom d’utilisateur</strong>, <strong>Mot de passe</strong> et <strong>Notes</strong>.</li>
+            <li><strong>Modifier</strong> à côté du mot de passe vous permet d’en saisir un nouveau ; ou choisissez <strong>Phrase secrète</strong>, <strong>Aléatoire</strong> ou <strong>Code PIN</strong> pour en créer un. Changez-le aussi sur le site web, puis enregistrez.</li>
+            <li><strong>Deux facteurs</strong> : collez ici la clé de configuration du site (Pro). Voir <a href="#win-2fa">Codes à deux facteurs</a>.</li>
+            <li><strong>Champs personnalisés</strong> : <strong>Ajouter un champ</strong> pour tout le reste. Marquez un champ comme Masqué pour le traiter comme un mot de passe.</li>
+            <li><strong>Historique des mots de passe</strong> : jusqu’à 5 anciens mots de passe sont conservés, chiffrés, pendant un an. <strong>Copier le mot de passe précédent</strong> ou <strong>Restaurer ce mot de passe</strong>.</li>
+            <li><strong>Codes de récupération</strong> : un par ligne. <strong>Copier et utiliser le code suivant</strong> en copie un et le retire de la liste.</li>
+            <li><strong>Règles de remplissage automatique</strong> : Remplissage (Au clic ou Désactivé), Se connecter après le remplissage (Par défaut, Jamais ou Toujours), Toujours demander le mot de passe principal, et Proposer d’enregistrer les modifications depuis le navigateur.</li>
+          </ul>
+          <h4>Autres types</h4>
+          <p>Chaque type a ses propres champs. Les dates s’écrivent AAAA-MM-JJ. Chaque élément peut être un <strong>Favori</strong> et porter des <strong>Étiquettes</strong> (séparez-les par des virgules). Les documents utilisent <strong>Choisir un fichier et enregistrer</strong> (Pro).</p>
+          <h4>Collections et rappels</h4>
+          <ul>
+            <li>Les collections regroupent les éléments à votre façon : <strong>Ajouter une collection</strong>, <strong>Renommer</strong>, <strong>Archiver</strong>. Elles se synchronisent avec vos autres appareils, et vous pouvez en partager une avec d’autres personnes (voir <a href="#win-shared">Collections partagées</a>).</li>
+            <li><strong>Rappels</strong> liste les éléments qui expirent bientôt ou qui sont en retard, avec <strong>Terminer</strong> et <strong>Reporter d’un jour</strong>.</li>
+            <li><strong>Activité</strong> affiche l’historique de ce qui s’est passé dans le coffre-fort.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">Supprimer, corbeille et annulation</a></h3>
+          <ol>
+            <li>Sélectionnez un élément et choisissez <strong>Mettre à la corbeille</strong> ou appuyez sur <kbd>Suppr</kbd>.</li>
+            <li>Un message apparaît avec <strong>Annuler</strong> : cliquez dessus pour ramener aussitôt l’élément.</li>
+            <li>Plus tard, ouvrez Outils › <strong>Corbeille</strong> et utilisez <strong>Restaurer la sélection</strong>, <strong>Supprimer la sélection</strong> ou <strong>Vider la corbeille</strong>. Une suppression depuis la corbeille est irréversible.</li>
+          </ol>
+          <p>Paramètres › Confidentialité › <strong>Conserver les éléments supprimés pendant</strong> règle la durée sur 7, 14, 30 ou 90 jours, et <strong>Vider la corbeille automatiquement</strong> la vide pour vous.</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">Recherche, palette de commandes et Accès rapide</a></h3>
+          <ul>
+            <li><strong>Recherche</strong> : <kbd>Ctrl</kbd>+<kbd>F</kbd>, saisissez, puis appuyez sur <kbd>Entrée</kbd> pour ouvrir le premier résultat ou sur <kbd>↓</kbd> pour passer dans la liste.</li>
+            <li><strong>Palette de commandes</strong> : <kbd>Ctrl</kbd>+<kbd>K</kbd> trouve des éléments et des actions. Commencez par <code>&gt;</code> pour les actions seulement (Sauvegarder maintenant, Générer un mot de passe, Verrouiller maintenant, État de la synchronisation…), par <code>#</code> pour les étiquettes et par <code>@</code> pour les collections.</li>
+            <li><strong>Accès rapide</strong> : <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> partout dans Windows ouvre LocalGateKeys sur la page Accès rapide, pour trouver un identifiant, une note ou un favori. Modifiez le raccourci dans Paramètres › Remplissage automatique › Accès rapide.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">Générateur de mots de passe</a></h3>
+          <p>Ouvrez-le depuis la carte <strong>Générateur</strong> de l’Accueil ou avec Ctrl+K › Générer un mot de passe.</p>
+          <ul>
+            <li><strong>Aléatoire</strong> : choisissez la longueur et les caractères à utiliser : A–Z, a–z, 0–9 et symboles.</li>
+            <li><strong>Phrase secrète</strong> : choisissez le nombre de mots. Plus facile à saisir, tout aussi robuste si elle est assez longue.</li>
+            <li><strong>Générer à nouveau</strong> pour en obtenir un nouveau, <strong>Copier</strong> pour le copier.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">Centre de sécurité et santé des mots de passe</a></h3>
+          <p>Outils › <strong>Centre de sécurité</strong> liste ce qu’il faut corriger en premier : mots de passe faibles, réutilisés, anciens et compromis, et identifiants qui pourraient avoir la 2FA.</p>
+          <ul>
+            <li><strong>Vérifier toutes les fuites</strong> compare vos mots de passe à la liste de Have I Been Pwned. Seuls les 5 premiers caractères d’une empreinte quittent votre PC, jamais le mot de passe.</li>
+            <li>Les vérifications des fuites demandent deux changements dans Paramètres › Confidentialité : désactivez le <strong>mode hors ligne strict</strong> (activé par défaut) et activez <strong>Vérification des fuites</strong>. Le mode hors ligne strict bloque les vérifications des fuites, les icônes de sites et toute autre requête réseau.</li>
+            <li>Dans <strong>Santé des mots de passe</strong>, utilisez <strong>Ouvrir l’entrée</strong> ou <strong>Changer le mot de passe</strong> pour corriger un élément.</li>
+          </ul>
+          <p><strong>Activité réseau</strong>, en bas du Centre de sécurité, liste chaque connexion de LocalGateKeys et sa raison : recherche de mises à jour, vérifications de fuites, icônes de sites et synchronisation avec vos propres appareils.</p>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">Codes à deux facteurs et scan de QR</a> <span class="badge-pro">Pro</span></h3>
+          <p>LocalGateKeys peut afficher les codes à 6 chiffres qu’un site demande après le mot de passe, de sorte que vous n’avez pas besoin d’une app d’authentification distincte.</p>
+          <ol>
+            <li>Sur le site web, activez la connexion à deux facteurs / par app d’authentification pour qu’il affiche un code QR.</li>
+            <li>Dans LocalGateKeys, choisissez Ctrl+K › <strong>Scanner un code QR</strong>. Importez l’image de l’une des trois façons suivantes :
+              <ul>
+                <li><strong>Coller une capture d’écran</strong> : appuyez sur <kbd>Win</kbd>+<kbd>Maj</kbd>+<kbd>S</kbd>, sélectionnez le code QR, puis <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+                <li><strong>Choisir une image…</strong> (PNG, JPEG, BMP) ou faites glisser l’image.</li>
+                <li><strong>Utiliser la webcam</strong> et présentez devant elle l’écran d’un téléphone affichant le code.</li>
+              </ul>
+            </li>
+            <li>Choisissez l’identifiant auquel il appartient, ou <strong>Nouvel identifiant</strong>, puis <strong>Ouvrir dans l’éditeur</strong> et <strong>Enregistrer</strong>.</li>
+            <li>Saisissez le code actuel sur le site web pour finir d’y activer la 2FA.</li>
+          </ol>
+          <p>Vous pouvez aussi coller la clé de configuration ou un lien <code>otpauth://</code> directement dans la section <strong>Deux facteurs</strong> de l’identifiant.</p>
+          <h4>Passer de Google Authenticator</h4>
+          <ol>
+            <li>Dans Google Authenticator, choisissez <strong>Transférer des comptes › Exporter</strong>.</li>
+            <li>Scannez le code QR affiché (pour plusieurs codes, scannez chacun d’eux : « Code 1 sur 3 scanné »).</li>
+            <li>Cochez les comptes, choisissez <strong>Ajouter à l’identifiant existant</strong> ou Nouvel identifiant, puis <strong>Ajouter</strong>. Les doublons sont ignorés.</li>
+          </ol>
+          <p class="note">Les nouveaux identifiants créés ainsi reçoivent l’étiquette <code>needs-password</code> : saisissez le vrai mot de passe plus tard. Les images sont lues en mémoire et jamais enregistrées. Dans l’offre gratuite, les codes que vous avez déjà continuent de fonctionner ; en ajouter ou les modifier nécessite Pro.</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">Importer depuis un autre gestionnaire de mots de passe</a></h3>
+          <ol>
+            <li>Exportez vos mots de passe depuis l’ancienne app (voir la liste ci-dessous).</li>
+            <li>Dans LocalGateKeys, ouvrez Outils › Importer et exporter › <strong>Importer des mots de passe et des éléments…</strong> et choisissez le fichier. Le format est reconnu automatiquement. Les fichiers chiffrés demandent leur <strong>Mot de passe d’import</strong>.</li>
+            <li>Un CSV simple provenant d’une app inconnue affiche <strong>Choisir les colonnes</strong> : indiquez quelle colonne est le titre, le nom d’utilisateur, le mot de passe, etc.</li>
+            <li>Examinez chaque ligne : Ajouter, Ignorer, Remplacer, Fusionner ou Conserver les deux. Utilisez <strong>Ajouter tous les nouveaux</strong>, <strong>Remplacer tous les conflits</strong> ou <strong>Tout ignorer</strong> pour tout traiter d’un coup.</li>
+            <li>Choisissez <strong>Importer</strong>. Tout est importé d’un seul bloc ; si quelque chose échoue, rien n’est écrit.</li>
+            <li><strong>Supprimez le fichier d’export</strong> : il contient vos mots de passe non chiffrés.</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">Depuis</th><th scope="col">Fichier</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux ou CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (y compris protégé par mot de passe) ou CSV</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip ou CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (ouvert directement), XML ou CSV</td></tr>
+              <tr><td>Proton Pass</td><td>JSON zip ou CSV (export sans PGP)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Mots de passe d’Apple</td><td>CSV</td></tr>
+              <tr><td>Tout le reste</td><td>CSV, avec choix des colonnes</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Non importés : corbeille, historique des mots de passe, clés d’accès et pièces jointes. Les sites <code>http://</code> sont enregistrés en https. Les entrées sans site web ni mot de passe deviennent des notes sécurisées. Dans l’offre gratuite, la limite de 7 éléments s’applique. Les fichiers Credential Exchange (CXF, <code>.json</code> ou <code>.cxf</code>) d’autres gestionnaires sont aussi reconnus, clés d’accès comprises.</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">Export et transfert chiffré</a></h3>
+          <p>Outils › Importer et exporter › <strong>Exporter…</strong> propose :</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong> : chiffré avec un mot de passe de votre choix (12 caractères ou plus). Le choix le plus sûr.</li>
+            <li>CSV compatible Bitwarden, JSON Bitwarden, XML KeePass 2 : <em>non chiffrés</em>. Supprimez-les après usage.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong> : les identifiants, notes et clés d’accès choisis, pour un autre gestionnaire de mots de passe. <em>Non chiffré</em> ; les clés privées des clés d’accès ne sont incluses qu’avec votre accord.</li>
+            <li>Cochez <strong>Inclure les secrets de mot de passe à usage unique (2FA)</strong> pour emporter vos codes 2FA.</li>
+          </ul>
+          <p><strong>Transfert chiffré…</strong> déplace des éléments choisis (par favoris, types, étiquettes) vers un autre profil ou PC dans un paquet protégé par mot de passe. De l’autre côté, choisissez <strong>Importer un paquet</strong>, <strong>Inspecter</strong>, <strong>Aperçu</strong>, puis importez.</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">Sauvegardes et restauration</a></h3>
+          <h4>Sauvegardes planifiées (recommandé)</h4>
+          <ol>
+            <li>Paramètres › Sauvegardes › <strong>Mot de passe de sauvegarde</strong> › <strong>Définir…</strong>. Utilisez 12 caractères ou plus et <strong>notez-le</strong>.</li>
+            <li><strong>Sauvegardes planifiées</strong> : Chaque jour ou Chaque semaine, avec <strong>Heure</strong> et <strong>Jour de la semaine</strong>.</li>
+            <li><strong>Copie cloud</strong> › <strong>Choisir…</strong> un dossier, comme une clé USB ou un second disque, pour une seconde copie.</li>
+            <li><strong>Anciennes sauvegardes planifiées</strong> : ne conserver que la dernière, ou la dernière et la précédente.</li>
+            <li><strong>Test de restauration hebdomadaire</strong> : chaque semaine, LocalGateKeys vérifie qu’une sauvegarde planifiée se restaure. Rien n’est conservé. <strong>Sauvegardes automatiques à conserver</strong> fixe combien de sauvegardes automatiques sont gardées.</li>
+          </ol>
+          <p class="note">Les sauvegardes ne s’exécutent que lorsque le coffre-fort est déverrouillé. Une sauvegarde manquée pendant que l’app était fermée s’exécute au prochain déverrouillage.</p>
+          <h4>Page Sauvegarde et restauration</h4>
+          <p>Ouvrez-la depuis la carte Sauvegarde et récupération, avec Ctrl+K, ou depuis <strong>Sauvegarde et restauration</strong> sur l’écran de déverrouillage.</p>
+          <ul>
+            <li><strong>Créer une sauvegarde</strong> : un fichier <code>.lgk</code> chiffré avec son propre mot de passe.</li>
+            <li><strong>Vérifier une sauvegarde</strong> : vérifie qu’un fichier s’ouvre, sans toucher à votre coffre-fort.</li>
+            <li><strong>Restaurer la sauvegarde</strong> : nécessite le mot de passe de sauvegarde et le mot de passe principal d’alors. Vous pouvez la restaurer comme nouveau profil.</li>
+            <li><strong>Tester une restauration</strong> : ouvre une copie temporaire pour prouver que votre sauvegarde fonctionne, puis <strong>Abandonner la copie de test</strong>.</li>
+            <li><strong>Phrase de récupération</strong> (Configurer / Remplacer…) et <strong>Écrire le kit de récupération</strong>, une feuille imprimable.</li>
+          </ul>
+          <h4>Restaurer une sauvegarde de téléphone</h4>
+          <p>Importer et exporter › <strong>Restaurer une sauvegarde de téléphone…</strong>, choisissez le fichier <code>.lgkm</code> de l’app iPhone, saisissez son mot de passe, <strong>Aperçu</strong>, puis <strong>Restaurer</strong>. Les éléments sont ajoutés à votre coffre-fort ; rien n’est effacé.</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">Synchronisation entre appareils</a> <span class="badge-pro">Pro</span></h3>
+          <p>La synchronisation ne s’exécute que lorsque le coffre-fort est déverrouillé : au déverrouillage, toutes les 5 minutes, et quelques secondes après une modification. Il y a deux méthodes, et vous pouvez utiliser les deux :</p>
+          <h4>Wi-Fi (téléphone ou autre PC sur le même réseau)</h4>
+          <ol>
+            <li>Synchronisation et appareils › <strong>Activer la synchronisation Wi-Fi…</strong>. Conservez l’adresse et le port suggérés (47821), et choisissez <strong>Autoriser dans le Pare-feu Windows</strong> si on vous le demande.</li>
+            <li>Choisissez <strong>Afficher le code QR…</strong>. Le code ne fonctionne qu’une fois, pendant 120 secondes.</li>
+            <li>Scannez-le avec l’onglet Synchronisation de l’app du téléphone. Pour un autre PC, choisissez <strong>Copier le texte du code</strong> et utilisez-y <strong>Rejoindre par texte du code QR…</strong>.</li>
+            <li>Les deux appareils affichent un code à 6 chiffres. Choisissez <strong>Accepter</strong> uniquement s’ils sont identiques, sinon <strong>Refuser</strong>.</li>
+            <li>Juste après l’association, <strong>Annuler</strong> retire le nouvel appareil en cas d’erreur.</li>
+          </ol>
+          <p>Si l’adresse du PC change, choisissez <strong>Rechercher à nouveau</strong> sur le téléphone.</p>
+          <h4>Dossier cloud (Dropbox, iCloud Drive…)</h4>
+          <ol>
+            <li>Sur le premier appareil : <strong>Créer un groupe de synchronisation…</strong>, choisissez un dossier que votre app cloud synchronise, et définissez un mot de passe de synchronisation robuste (12 caractères ou plus).</li>
+            <li>Sur chacun des autres appareils : <strong>Rejoindre un dossier…</strong>, choisissez le dossier contenant <em>LocalGateKeys Sync</em>, saisissez le mot de passe de synchronisation.</li>
+          </ol>
+          <p>Le cloud ne voit jamais que des fichiers chiffrés.</p>
+          <p class="note">OneDrive et Google Drive ne sont pas disponibles pour la synchronisation pour le moment, le temps de résoudre un problème avec Apple. Utilisez plutôt Dropbox, iCloud Drive ou la synchronisation Wi-Fi.</p>
+          <h4>Gérer la synchronisation</h4>
+          <ul>
+            <li><strong>Synchroniser maintenant</strong> sur la page d’état de la synchronisation (cliquez sur la pastille de synchronisation dans la barre latérale).</li>
+            <li><strong>Retirer un appareil…</strong> (définit un nouveau mot de passe de synchronisation), <strong>Changer le mot de passe de synchronisation…</strong>.</li>
+            <li><strong>Quitter la synchronisation…</strong> conserve vos éléments et oublie le groupe. <strong>Réinitialiser la synchronisation sur ce PC…</strong> oublie aussi ses clés (demande deux fois).</li>
+            <li>Si un élément a été modifié sur deux appareils en même temps, la copie supplémentaire reçoit <em>(conflit de synchronisation)</em> dans son titre.</li>
+          </ul>
+          <p class="note">Chaque appareil du groupe a besoin de Pro. Un PC gratuit associé à un iPhone doté de Pro reprend la licence par la synchronisation et passe en Pro (voir <a href="#win-pro">Licence Pro</a>). Jusqu’à 16 appareils par groupe.</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">Partager un élément avec quelqu’un</a></h3>
+          <ol>
+            <li>Sélectionnez l’élément, choisissez <strong>Partager</strong>, puis <strong>Créer un partage</strong>.</li>
+            <li>LocalGateKeys affiche un <strong>Code de partage</strong> de six mots. Choisissez <strong>Enregistrer sous forme de fichier…</strong> (un <code>.lgkshare</code>) ou <strong>Afficher le code QR</strong>.</li>
+            <li>Envoyez le fichier, puis communiquez les six mots à la personne <em>par un autre moyen</em>, par exemple par téléphone ou en personne.</li>
+          </ol>
+          <p><strong>Réception :</strong> double-cliquez sur le fichier <code>.lgkshare</code>, ou Ctrl+K › Éléments partagés entrants › <strong>Ouvrir un élément partagé…</strong>. Saisissez les six mots, vérifiez l’<strong>Aperçu</strong>, puis <strong>Enregistrer dans le coffre-fort</strong>, <strong>Conserver les deux</strong> ou <strong>Rejeter</strong>. Les clés d’accès, les documents et les éléments avec un fichier joint ne peuvent pas être partagés.</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">Remplir les apps Windows</a></h3>
+          <p>LocalGateKeys peut remplir les fenêtres de connexion de programmes Windows ordinaires, pas seulement les sites web.</p>
+          <ol>
+            <li>Ouvrez la fenêtre de connexion du programme.</li>
+            <li>Appuyez sur <kbd>Ctrl</kbd>+<kbd>N</kbd>, choisissez <strong>Identifiant d’app de bureau</strong>, puis <strong>Inspecter l’application…</strong>.</li>
+            <li><strong>Associer les champs de connexion</strong> : pointez les champs du nom d’utilisateur et du mot de passe. Vous pouvez aussi <strong>Associer le bouton de connexion…</strong>.</li>
+            <li><strong>Enregistrer l’identifiant</strong>.</li>
+            <li>La fois suivante, appuyez sur <kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Espace</kbd> dans ce programme ou cliquez sur le bouton de remplissage à côté de son champ de mot de passe.</li>
+          </ol>
+          <p>Si le programme change après une mise à jour, ouvrez l’identifiant et choisissez <strong>Liaison d’application…</strong> › <strong>Actualiser la liaison…</strong>. LocalGateKeys ne lit que la disposition de la fenêtre, jamais ce que vous saisissez.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Collections partagées</a> <span class="badge-pro">Pro</span></h3>
+          <p>Partagez une collection avec votre famille ou une équipe via un dossier accessible à tous, par exemple un dossier OneDrive partagé. Ouvrez la collection, choisissez <strong>Partager la collection</strong>, le dossier, si les membres peuvent modifier ou seulement consulter, et un mot de passe de partage.</p>
+          <p>Les autres choisissent <strong>Rejoindre une collection partagée</strong>, le dossier et saisissent le mot de passe de partage ; vous choisissez ensuite <strong>Les laisser entrer</strong>. Seule cette collection passe par le dossier : vos autres éléments restent privés. Vous pouvez retirer quelqu’un, <strong>Arrêter le partage</strong> ou quitter à tout moment.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Accès d’urgence et mot de passe de contrainte</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Accès d’urgence</strong> (Pro) : sur la page Sauvegarde et restauration, choisissez <strong>Configurer l’accès d’urgence</strong>. Votre phrase de récupération est divisée en fragments pour des personnes de confiance ; vous choisissez combien de fragments sont nécessaires et un délai d’attente. Remettez à chacun sa feuille ou son fichier de fragment.</li>
+            <li>Quand assez de détenteurs demandent l’accès via le dossier partagé, vos appareils affichent la demande et vous pouvez <strong>Refuser</strong> jusqu’à la fin du délai. Un détenteur choisit <strong>On m’a donné l’accès</strong>, ajoute les fragments puis <strong>Demander l’accès</strong> ; une fois l’accès accordé, le coffre s’ouvre comme nouveau profil.</li>
+            <li><strong>Dossier de succession</strong>, sur la même page, crée une note pour vos héritiers (où est le testament, comptes à fermer, appareils et qui détient un fragment), puis le <strong>Kit d’urgence</strong> à imprimer.</li>
+            <li><strong>Mot de passe de contrainte</strong> (Pro) : Paramètres › Déverrouillage › <strong>Mot de passe de contrainte</strong> › <strong>Configurer</strong>. C’est un second mot de passe maître pour le cas où quelqu’un vous force à déverrouiller. Il ouvre un coffre séparé avec seulement les éléments choisis, et votre vrai coffre refuse ensuite son mot de passe maître pendant le nombre d’heures fixé. Il existe sous Windows, sur Mac, iPhone et Android.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Outils de développement et agents IA</a></h3>
+          <p>Paramètres › <strong>Développeur</strong> propose les clés SSH de votre coffre à ssh et Git sur ce PC, pour la connexion et la signature des commits. Chaque signature demande votre accord. <strong>Générer</strong> crée une nouvelle clé Ed25519 dans le coffre.</p>
+          <p><strong>Autoriser les agents IA à utiliser LocalGateKeys</strong> permet à des agents comme Claude Code de se connecter via MCP. Vous approuvez chaque connexion ou lecture ; l’agent ne voit jamais de mot de passe et chaque demande est journalisée. Dans la version Microsoft Store, ajoutez-le avec <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">Paramètres</a></h3>
+          <p>Utilisez le champ <strong>Rechercher dans les paramètres</strong> en haut (<kbd>Ctrl</kbd>+<kbd>F</kbd>) pour trouver n’importe quelle option. Les modifications sont enregistrées aussitôt.</p>
+          <dl class="defs">
+            <dt>Déverrouillage</dt><dd>Windows Hello, clé de sécurité, vérification par caméra, fichier de clé, YubiKey, mot de passe principal, phrase de récupération.</dd>
+            <dt>Verrouillage</dt><dd>Durées et déclencheurs du verrouillage automatique (voir <a href="#win-unlock">Déverrouiller et verrouiller</a>).</dd>
+            <dt>Remplissage automatique</dt><dd>Remplissage automatique du navigateur, <strong>Proposer LocalGateKeys pour les clés d’accès</strong>, remplissage automatique des apps de bureau, connexion après le remplissage, raccourci d’Accès rapide. <strong>Utiliser LocalGateKeys pour les clés d’accès Windows</strong> propose vos clés d’accès dans toutes les apps et tous les navigateurs de Windows 11, avec votre accord à chaque fois.</dd>
+            <dt>Confidentialité</dt><dd><strong>Effacer le presse-papiers après</strong> (5 secondes à 5 minutes), vérification des fuites, mode hors ligne strict, masquer des captures d’écran et du partage d’écran, durée de conservation de la corbeille, ouverture des documents dans d’autres apps.</dd>
+            <dt>Sauvegardes</dt><dd>Voir <a href="#win-backups">Sauvegardes et restauration</a>.</dd>
+            <dt>Apparence et app</dt><dd><strong>Thème</strong> Système, Clair ou Sombre ; <strong>Langue</strong> ; <strong>Démarrer avec Windows</strong> (démarre verrouillé) ; <strong>Garder en cours d’exécution dans la barre d’état</strong> ; Mises à jour.</dd>
+            <dt>Offre et synchronisation</dt><dd>Votre licence, la synchronisation des appareils et <strong>Effacer cet appareil s’il est retiré de la synchronisation</strong>.</dd>
+            <dt>Développeur</dt><dd>Agent SSH et signature Git, et agents IA (voir <a href="#win-dev">Outils de développement et agents IA</a>).</dd>
+            <dt>Aide et diagnostics</dt><dd>Raccourcis clavier, Afficher de nouveau la configuration, Appareils et connexions, Journal des erreurs, pages juridiques.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Licence Pro</a></h3>
+          <ol>
+            <li>Achetez Pro sur la <a href="../../fr/pricing">page des tarifs</a>. Votre clé (commençant par <code>LGK1-</code>) arrive par e-mail.</li>
+            <li>Ouvrez Paramètres › Offre et synchronisation › <strong>Licence</strong>, collez la clé et choisissez <strong>Installer</strong>, ou <strong>Ouvrir le fichier…</strong> pour un fichier <code>.lgklicense</code>.</li>
+          </ol>
+          <p>Vous avez acheté Pro dans l’app iPhone ? Associez le PC à l’iPhone (voir <a href="#win-sync">Synchronisation</a>) et un PC gratuit passe en Pro par la synchronisation. Ou, dans les Réglages de l’iPhone, choisissez <strong>Copier la clé</strong> et installez-la de la même façon sur le PC. La page Licence indique combien des 7 éléments gratuits vous utilisez. Plus de détails dans <a href="../../fr/licence">Votre licence Pro</a>.</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">Mises à jour</a></h3>
+          <p>LocalGateKeys du Microsoft Store se met à jour via le Store. Vous utilisez encore la version de l'ancien programme d'installation ? Sa dernière mise à jour est la 0.4.12 : désinstallez-la dans Paramètres Windows › Applications › Applications installées, puis installez LocalGateKeys depuis le Microsoft Store. Votre coffre reste où il est et s'ouvre avec le même mot de passe maître.</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">Raccourcis clavier</a></h3>
+          <p>Appuyez sur <kbd>F1</kbd> ou <kbd>?</kbd> dans l’app pour afficher cette liste.</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>Palette de commandes</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>Recherche</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>Nouvel élément</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Verrouiller</td></tr>
+              <tr><th scope="row"><kbd>Échap</kbd></th><td>Retour</td></tr>
+              <tr><th scope="row"><kbd>Entrée</kbd></th><td>Ouvrir l’élément sélectionné</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Copier le mot de passe (demande d’abord)</td></tr>
+              <tr><th scope="row"><kbd>Suppr</kbd></th><td>Mettre à la corbeille</td></tr>
+              <tr><th scope="row"><kbd>Maj</kbd>+<kbd>F10</kbd></th><td>Menu de l’élément</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>Verrouillage d’urgence, partout dans Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>Accès rapide, partout dans Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Maj</kbd>+<kbd>Espace</kbd></th><td>Remplir une app Windows associée</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../fr/help">Tout le guide sur une seule page</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestionnaire de mots de passe pour Windows, Mac et iPhone qui garde votre coffre-fort sur vos propres appareils.</p>
+        <p class="quiet">Ce site compte les visites avec Cloudflare Web Analytics, qui n’utilise pas de cookies. Il n’utilise aucun traceur publicitaire et ne dépose aucun cookie.</p>
+      </div>
+      <nav aria-label="Produit">
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="../../fr/features">Fonctionnalités</a></li>
+          <li><a href="../../fr/pricing">Tarifs</a></li>
+          <li><a href="../../fr/download">Télécharger</a></li>
+          <li><a href="../../fr/get-started">Démarrer</a></li>
+          <li><a href="../../fr/switch/">Changer</a></li>
+          <li><a href="../../buy">Acheter Pro</a></li>
+          <li><a href="../../fr/licence">Votre licence Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Récupérer votre licence</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Aide">
+        <h2>Aide</h2>
+        <ul>
+          <li><a href="../../fr/help">Guide d’utilisation</a></li>
+          <li><a href="../../fr/support">Assistance et FAQ</a></li>
+          <li><a href="../../fr/security">Sécurité</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Signaler une vulnérabilité</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Mentions légales">
+        <h2>Mentions légales</h2>
+        <p class="quiet">Ces documents sont en anglais, et la version anglaise fait foi.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contrat de licence</a></li>
+          <li><a href="../../legal/privacy">Politique de confidentialité</a></li>
+          <li><a href="../../legal/terms-of-sale">Conditions de vente</a></li>
+          <li><a href="../../legal/refunds">Politique de remboursement</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact : <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows est une marque du groupe de sociétés Microsoft. Chrome est une marque de Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID et Safari sont des marques d’Apple Inc., déposées aux États-Unis et dans d’autres pays.</p>
+      <nav class="lang-switch" aria-label="Langue"><ul><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr" aria-current="true">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

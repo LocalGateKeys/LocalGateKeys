@@ -805,3 +805,149 @@ def test_vector_keyrings_format2_and_format1():
     kr.verify_keyring_structure(v1)
     assert len(kr.member_signing_keys(v2)) == 3 and kr.member_signing_keys(v1) == {}
     assert [m["device_id"] for m in v1["members"]] == [m["device_id"] for m in v2["members"]]
+
+
+# --- share groups (sub-plan 07) -----------------------------------------------------------------
+
+SPEC = {"kind": "share", "collection_id": "0b9a3c7e-2f4d-4c1a-9e5b-1d2c3b4a5f60", "name": "Family",
+        "shared_mode": "read"}
+
+
+def make_share(pw: str = PW, spec: dict | None = None):
+    a = ident()
+    ring, gk = kr.create_group(pw, a, "A", _kdf_override=CHEAP, metadata=dict(spec or SPEC))
+    return a, ring, gk
+
+
+def remac(ring, gk):
+    """What any member holding G can do: rewrite the body and recompute the MAC."""
+    return kr._finish(ring, gk, None, ring["prev_mac"])
+
+
+def test_share_keyring_metadata_owner_and_encrypted_name():
+    a, ring, gk = make_share()
+    meta = ring["metadata"]
+    assert set(meta) == {"kind", "collection_id", "name_ct", "shared_mode", "owner", "owner_key"}
+    assert (meta["owner"], meta["owner_key"]) == (a.device_id, b64(a.signing_public_key))
+    assert meta["shared_mode"] == "read" and meta["collection_id"] == SPEC["collection_id"]
+    assert b"Family" not in canonical_json(ring)  # the folder never shows the collection name
+    assert kr.share_name(ring, gk) == "Family"
+    assert kr.approved_members(ring) == {a.device_id}
+    structure(ring)
+    assert accept(ring, gk, a) == gk
+
+
+def test_share_fields_are_mac_covered_against_outsiders():
+    a, ring, gk = make_share()
+    for field, value in (("shared_mode", "edit"), ("collection_id", "1b9a3c7e-2f4d-4c1a-9e5b-1d2c3b4a5f60")):
+        tampered = copy.deepcopy(ring)
+        tampered["metadata"][field] = value
+        with pytest.raises(kr.KeyringError):
+            accept(tampered, gk, a)
+        with pytest.raises(kr.KeyringError):
+            kr.join_with_password(tampered, PW, ident(), "B", _kdf_override=CHEAP)
+    stripped = {k: v for k, v in ring.items() if k not in ("metadata", "owner_sig", "content")}
+    assert reason(accept, stripped, gk, a) == "bad-fields"  # format 3 is always a share keyring
+    assert reason(accept, {**stripped, "format": 2}, gk, a) == "tampered"
+
+
+def test_a_member_cannot_forge_owner_changes():
+    a, ring, gk = make_share()
+    b, joined, _ = join(ring)
+    # Mode flip, re-MACed with G by member b: the owner's signature no longer verifies.
+    flipped = copy.deepcopy(joined)
+    flipped["metadata"]["shared_mode"] = "edit"
+    assert reason(accept, remac(flipped, gk), gk, a) == "bad-owner-sig"
+    # Self-approval by b, signed with its own key.
+    forged = copy.deepcopy(joined)
+    forged["owner_sig"]["members"] = sorted([a.device_id, b.device_id])
+    assert reason(accept, remac(forged, gk), gk, a) == "bad-content"  # share v2: no content wrap for b
+    forged["content"]["wraps"][b.device_id] = forged["content"]["wraps"][a.device_id]
+    assert reason(accept, remac(forged, gk), gk, a) == "bad-owner-sig"
+    # Dropping the owner from the member list.
+    dropped = copy.deepcopy(joined)
+    dropped["members"] = [m for m in dropped["members"] if m["device_id"] != a.device_id]
+    del dropped["device_wraps"][a.device_id]
+    assert reason(accept, remac(dropped, gk), gk, a) == "bad-owner"
+    # Claiming ownership: b names itself owner and signs with its own key.
+    usurp = copy.deepcopy(joined)
+    usurp["metadata"]["owner"], usurp["metadata"]["owner_key"] = b.device_id, b64(b.signing_public_key)
+    usurp = kr._sign_owner(usurp, b, content=kr.GroupKey(usurp["group_id"], usurp["epoch"], bytes(32)))
+    structure(remac(usurp, gk))  # self-consistent, so pinning the owner (share_group) is what refuses it
+    # A rotation by a member is refused outright, and so is an approval.
+    assert reason(rotate, joined, gk, b) == "not-owner"
+    assert reason(kr.owner_approve_members, joined, gk, b, _kdf_override=CHEAP) == "not-owner"
+
+
+def test_owner_rotation_and_approval_are_accepted():
+    a, ring, gk = make_share()
+    b, joined, _ = join(ring)
+    assert kr.approved_members(joined) == {a.device_id}  # b joined but is not approved yet
+    approved = kr.owner_approve_members(joined, gk, a, _kdf_override=CHEAP)
+    assert kr.approved_members(approved) == {a.device_id, b.device_id}
+    assert approved["prev_mac"] == joined["prev_mac"] and accept(approved, gk, b) == gk
+    rotated, gk2 = rotate(approved, gk, a)
+    assert rotated["metadata"]["name_ct"] != approved["metadata"]["name_ct"]
+    assert kr.share_name(rotated, gk2) == "Family"
+    assert kr.approved_members(rotated) == {a.device_id, b.device_id}
+    assert accept(rotated, gk, b) == gk2
+    removed, gk3 = rotate(rotated, gk2, a, pw=PW3, remove=[b.device_id])
+    assert kr.approved_members(removed) == {a.device_id}
+
+
+def test_personal_keyrings_have_no_share_fields_and_old_keyrings_still_verify():
+    a, ring, gk = make()
+    assert kr.keyring_metadata(ring) is None and kr.approved_members(ring) is None
+    _, joined, _ = join(ring)
+    rotated, _ = rotate(joined, gk, a)
+    for r in (ring, joined, rotated):
+        assert not {"metadata", "owner_sig"} & set(r)
+    assert reason(kr.owner_approve_members, ring, gk, a, _kdf_override=CHEAP) == "not-share"
+    from pathlib import Path as _Path
+
+    vectors = _Path(__file__).parent / "vectors" / "sync"
+    for name in ("keyring_epoch1.json", "keyring_v1_epoch1.json"):
+        kr.verify_keyring_structure(kr.parse_keyring((vectors / name).read_bytes()))
+
+
+@pytest.mark.parametrize("bad", [
+    {**SPEC, "extra": 1}, {k: v for k, v in SPEC.items() if k != "name"},
+    {**SPEC, "kind": "personal"}, {**SPEC, "kind": 1},
+    {**SPEC, "collection_id": "not-a-uuid"}, {**SPEC, "collection_id": "0B9A3C7E-2F4D-4C1A-9E5B-1D2C3B4A5F60"},
+    {**SPEC, "collection_id": 5}, {**SPEC, "name": ""}, {**SPEC, "name": " Family"}, {**SPEC, "name": "x" * 101},
+    {**SPEC, "name": 3}, {**SPEC, "shared_mode": "write"}, {**SPEC, "shared_mode": None},
+])
+def test_malformed_share_spec_is_rejected(bad):
+    with pytest.raises(kr.KeyringError):
+        kr.create_group(PW, ident(), "A", _kdf_override=CHEAP, metadata=bad)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("kind", "personal"), ("collection_id", "x"), ("name_ct", "AAAA"), ("name_ct", 5), ("shared_mode", "write"),
+    ("owner", ""), ("owner_key", "AAAA"), ("extra", 1),
+])
+def test_malformed_stored_metadata_is_rejected(field, value):
+    _, ring, _ = make_share()
+    ring = copy.deepcopy(ring)
+    ring["metadata"][field] = value
+    with pytest.raises(kr.KeyringError):
+        structure(ring)
+
+
+def test_share_fields_come_together_and_not_in_format1():
+    _, ring, _ = make_share()
+    for drop in ("metadata", "owner_sig"):
+        half = {k: v for k, v in ring.items() if k != drop}
+        assert reason(structure, half) == "bad-fields"
+    v1 = copy.deepcopy(ring)
+    v1["format"] = 1
+    assert reason(structure, v1) == "bad-fields"
+    other = copy.deepcopy(ring)
+    other["owner"] = "x"
+    assert reason(structure, other) == "bad-fields"
+    for bad in ({"members": [], "sig": ring["owner_sig"]["sig"]}, {"members": "x", "sig": "x"}, None,
+                {**ring["owner_sig"], "members": ring["owner_sig"]["members"] * 2}):
+        broken = copy.deepcopy(ring)
+        broken["owner_sig"] = bad
+        with pytest.raises(kr.KeyringError):
+            structure(broken)

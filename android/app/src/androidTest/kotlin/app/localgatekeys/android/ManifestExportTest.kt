@@ -28,8 +28,12 @@ class ManifestExportTest {
             if (android.os.Build.VERSION.SDK_INT >= 34) {
                 put("app.localgatekeys.android.passkey.LgkCredentialProviderService", "android.permission.BIND_CREDENTIAL_PROVIDER_SERVICE")
             }
+            // Sub-plan 06: WorkManager's job service (the codes widget's refresh job; Glance runs on it too).
+            put("androidx.work.impl.background.systemjob.SystemJobService", "android.permission.BIND_JOB_SERVICE")
+            // Sub-plan 06: the Quick Settings tile, bound only by the system UI.
+            put("app.localgatekeys.android.widget.CopyCodeTileService", "android.permission.BIND_QUICK_SETTINGS_TILE")
         }
-        assertEquals(listOf("app.localgatekeys.android.MainActivity") + services.keys, exported)
+        assertEquals((listOf("app.localgatekeys.android.MainActivity") + services.keys).sorted(), exported.sorted())
         for ((name, permission) in services) {
             assertEquals(name, permission, info.services.orEmpty().first { it.name == name }.permission)
         }
@@ -38,6 +42,11 @@ class ManifestExportTest {
             assertFalse(sheet, info.activities.orEmpty().first { it.name == "app.localgatekeys.android.$sheet" }.exported)
         }
         assertFalse(info.receivers.orEmpty().any { it.name.contains("ProfileInstallReceiver") })
+        // Sub-plan 06: the codes widget's receiver is private; Glance's list service and WorkManager's diagnostics
+        // receiver are not merged in.
+        assertFalse(info.receivers.orEmpty().first { it.name == "app.localgatekeys.android.widget.CodesWidgetReceiver" }.exported)
+        assertFalse(info.services.orEmpty().any { it.name.endsWith("GlanceRemoteViewsService") })
+        assertFalse(info.receivers.orEmpty().any { it.name.endsWith("DiagnosticsReceiver") })
     }
 
     /**

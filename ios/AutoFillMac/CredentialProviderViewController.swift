@@ -9,16 +9,29 @@ import AppSharedMac
 /// and never uses the clipboard.
 final class CredentialProviderViewController: ASCredentialProviderViewController, MacAutoFillSink {
     private lazy var model: MacAutoFillModel = {
-        let directory = (try? AppGroup.vaultDirectory()) ?? FileManager.default.temporaryDirectory
+        // The profile the app opened last (docs/design/mac-profiles-2026-11-03.md): its vault, Keychain items
+        // and per-vault settings (the plan hint, the shared unlock throttle).
+        let registry = ProfileRegistry.shared()
+        let profile = registry?.active().id ?? ProfileScope.defaultID
+        ProfileScope.select(profile)
+        let directory = registry?.vaultDirectory(for: profile) ?? FileManager.default.temporaryDirectory
         // The shared Keychain group, given explicitly: the Touch ID item and the vault's local key live there.
         let group = AppGroup.keychainAccessGroup
+        let prefix = ProfileScope.keychainPrefix
+        // The app's unlock-throttle marks (outside the vault folder), so a guess here counts against the same mark.
+        UnlockThrottle.markStore = KeychainThrottleMarks(accessGroup: group)
         let opener = ExtensionVaultOpener(directory: directory,
-                                          biometric: SystemBiometricKeyStore(accessGroup: group),
-                                          keychain: SystemKeychainVault(accessGroup: group))
+                                          biometric: SystemBiometricKeyStore(accessGroup: group, accountPrefix: prefix),
+                                          keychain: SystemKeychainVault(accessGroup: group, accountPrefix: prefix))
         let matcher = AutoFillMatcher.bundled()
         let codes: Bool = if #available(macOS 15.0, *) { true } else { false }
-        let m = MacAutoFillModel(opener: opener, matcher: matcher, pro: StoreKitEntitlement(),
-                                 identities: IdentityStoreSync(matcher: matcher.matcher, oneTimeCodes: codes))
+        // After a new passkey the identities are republished without travel-hidden items or logins whose access
+        // rules refuse autofill (the model sets the travel box from the Mac-local data at unlock).
+        var identities = IdentityStoreSync(matcher: matcher.matcher, oneTimeCodes: codes)
+        identities.omit = { snapshot in
+            AutoFillGate.omitted(snapshot, travel: TravelModeBox.shared.current, today: RecordDigest.today(), device: .computer)
+        }
+        let m = MacAutoFillModel(opener: opener, matcher: matcher, pro: StoreKitEntitlement(), identities: identities)
         m.sink = self
         return m
     }()
@@ -125,7 +138,6 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
 
     private nonisolated static func onMain(_ vc: CredentialProviderViewController,
                                            _ body: @escaping @MainActor @Sendable (CredentialProviderViewController) -> Void) {
-        nonisolated(unsafe) let vc = vc
         if Thread.isMainThread { MainActor.assumeIsolated { body(vc) } }
         else { DispatchQueue.main.async { MainActor.assumeIsolated { body(vc) } } }
     }
@@ -158,7 +170,7 @@ struct AutoFillRootView: View {
                     : String(localized: "\(row.login.title) needs your master password to fill."),
                 touchID: false, message: model.message, busy: model.busy,
                 onTouchID: {}, onSubmit: { p in Task { await model.confirmStrict(password: p) } },
-                onCancel: { model.cancelStrict() })
+                onCancel: { model.cancelStrict() }, passwordAllowed: !model.needsFactors)
         }
     }
 

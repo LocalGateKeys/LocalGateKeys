@@ -45,6 +45,17 @@ class SyncStatusSummaryTest {
         assertEquals(Dot.RED, SyncStatusSummary.of(joined(), err, now, now, EnglishTxt())!!.dot)
     }
 
+    @Test fun own_short_id_and_named_device_labels() {
+        val m = SyncCoordinator.Membership(
+            joined = true, hasFolder = true, deviceId = "54cf9842abcdef", members = listOf("pc-1", "mac-2"),
+            names = mapOf("pc-1" to "Work  PC", "mac-2" to null),
+        )
+        val s = SyncStatusSummary.of(m, emptyList(), now, now, EnglishTxt())!!
+        assertEquals("This device: Device 54cf9842", s.ownLabel)
+        assertEquals("Device mac-2", s.devices.single { it.id == "mac-2" }.name)
+        assertEquals("Work PC · Device pc-1", s.devices.single { it.id == "pc-1" }.name)
+    }
+
     @Test fun routes_and_texts() {
         assertEquals("just now", SyncStatusSummary.ago(5, EnglishTxt()))
         assertEquals("3 h ago", SyncStatusSummary.ago(3 * 3600 + 5, EnglishTxt()))

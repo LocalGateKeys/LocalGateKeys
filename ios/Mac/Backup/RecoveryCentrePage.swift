@@ -10,7 +10,18 @@ import AppSharedMac
 struct RecoveryCentrePage: View {
     @Bindable var model: RecoveryCentreModel
     var onImportExport: () -> Void = {}
+    /// Sub-plan 08: emergency access over this vault (nil: not available).
+    var emergency: EmergencyAccess? = nil
+    /// The master password prompt emergency access asks before granting now or showing a recovered phrase (audit
+    /// 2026-11-10: never Touch ID or the Mac's login password). Its own gate: it is shown over this page's sheet.
+    var emergencyGate: StrictItemGate? = nil
+    /// The unlocked vault the estate pack note goes into (sub-plan 12); nil hides it.
+    var estateStore: (any ItemStore)? = nil
+    var onNeedsPro: () -> Void = {}
+    /// Runs when the emergency access sheet closes: the estate pack note may have been added, so the item list reloads.
+    var onVaultChange: () -> Void = {}
     @Environment(\.macTheme) private var theme
+    @State private var showingEmergency = false
     @State private var phraseMode: PhraseMode?
     @State private var puttingBack: MacFullBackup.SafetyCopy?
 
@@ -35,6 +46,7 @@ struct RecoveryCentrePage: View {
                 fullBackupCard
                 scheduleCard(status)
                 oldBackupsCard
+                if emergency != nil { emergencyCard }
                 HStack(spacing: 8) {
                     Text("Imports from other password managers, phone backups and exports are on the Import & export page.")
                         .font(.system(size: 12)).foregroundStyle(theme.textMuted)
@@ -56,7 +68,8 @@ struct RecoveryCentrePage: View {
         }
         .sheet(item: $phraseMode, onDismiss: { model.refresh() }) { box in
             if let passwords = model.passwords {
-                RecoveryPhraseSheet(passwords: passwords, mode: box.mode, onClose: { phraseMode = nil }).macThemed()
+                RecoveryPhraseSheet(passwords: passwords, mode: box.mode, onClose: { phraseMode = nil },
+                                    kitFacts: { EmergencyKitDocument.macFacts(schedule: model.scheduleModel) }).macThemed()
             }
         }
         .sheet(item: $model.form, onDismiss: { model.showReadyPreview() }) { form in
@@ -112,6 +125,11 @@ struct RecoveryCentrePage: View {
                 }
             }
             .disabled(model.passwords == nil)
+            Text("A printable page with where your vault and backups are and how to restore. The recovery phrase boxes stay blank.")
+                .font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
+            // Blank boxes: a phrase is never stored, so the filled kit is only offered while a new phrase is on screen.
+            Button("Print emergency kit…") { EmergencyKitDocument.print(EmergencyKitDocument.macFacts(schedule: model.scheduleModel), words: nil) }
+                .buttonStyle(PillButtonStyle(primary: false))
         }
     }
 
@@ -192,6 +210,25 @@ struct RecoveryCentrePage: View {
 
     static func date(_ millis: Int64) -> String { RestorePreview.dateText(millis / 1000) }
 
+    /// Emergency access (sub-plan 08, Task 5c): the owner's requests and the holder's shards, in a sheet.
+    private var emergencyCard: some View {
+        card(EmergencyAccessText.title) {
+            Text(EmergencyAccessText.footer).font(.system(size: 12.5)).foregroundStyle(theme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(EmergencyAccessText.title) { showingEmergency = true }
+        }
+        .sheet(isPresented: $showingEmergency, onDismiss: onVaultChange) {
+            if let emergency {
+                EmergencyAccessView(access: emergency, gate: emergencyGate, estateStore: estateStore,
+                                    isPro: MacAppEnvironment.pro.isPro,
+                                    onNeedsPro: { showingEmergency = false; onNeedsPro() })
+                    .formStyle(.grouped)
+                    .frame(minWidth: 520, minHeight: 560)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingEmergency = false } } }
+            }
+        }
+    }
+
     // MARK: chrome
 
     private func note(_ text: String, _ color: Color) -> some View {
@@ -217,7 +254,7 @@ struct ScheduleControls: View {
     @State private var timeText = ""
     @State private var timeError: String?
     @State private var settingPassword = false
-    @State private var clearingPassword = false
+    @State private var keySheet: BackupKeySheet.Mode?
     @Environment(\.macTheme) private var theme
 
     var body: some View {
@@ -265,13 +302,7 @@ struct ScheduleControls: View {
             }
             Text(BackupScheduleModel.mirrorText).font(.system(size: 12)).foregroundStyle(theme.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
-            row(String(localized: "Backup password"), schedule.hasPassword ? String(localized: "Set") : String(localized: "Not set · scheduled backups need one")) {
-                Button(schedule.hasPassword ? String(localized: "Change…") : String(localized: "Set…")) { settingPassword = true }
-                    .buttonStyle(PillButtonStyle(primary: !schedule.hasPassword))
-                if schedule.hasPassword {
-                    Button("Clear…") { clearingPassword = true }.buttonStyle(PillButtonStyle(primary: false))
-                }
-            }
+            backupKeyRows
             if let notice = schedule.phraseNotice { Text(notice).font(.system(size: 12)).foregroundStyle(theme.warning) }
             if let notice = schedule.lastNotice { Text(notice).font(.system(size: 12)).foregroundStyle(theme.textMuted) }
         }
@@ -280,10 +311,61 @@ struct ScheduleControls: View {
         .sheet(isPresented: $settingPassword, onDismiss: onChange) {
             SchedulePasswordSheet(schedule: schedule, onClose: { settingPassword = false }).macThemed()
         }
-        .alert("Clear backup password?", isPresented: $clearingPassword) {
-            Button("Clear", role: .destructive) { schedule.clearPassword(); onChange() }
-            Button("Cancel", role: .cancel) {}
-        } message: { Text(BackupScheduleModel.clearQuestion) }
+        .sheet(item: $keySheet, onDismiss: onChange) { mode in
+            BackupKeySheet(schedule: schedule, mode: mode, onClose: { keySheet = nil }).macThemed()
+        }
+    }
+
+    /// The backup key (design `backup-public-key-2026-10-31.md`): its line and actions, the upgrade notice (Q1), the
+    /// pause after a rollback or a missing or damaged record (2.3, 16c) and the re-bind after a phrase change (Q2).
+    @ViewBuilder private var backupKeyRows: some View {
+        let state = schedule.keyState
+        let paused = schedule.paused
+        let ready: Bool = { if case .ready = state, !paused { return true }; return false }()
+        let unreadable: Bool = { if case .unreadable = state { return true }; return false }()
+        row(String(localized: "Backup password"), schedule.keyLine) {
+            if ready {
+                Button("Change…") { keySheet = .change }.buttonStyle(PillButtonStyle(primary: schedule.record?.setBy == "migrated"))
+                Button("Forgot…") { keySheet = .reset }.buttonStyle(PillButtonStyle(primary: false))
+                Button("Remove…") { keySheet = .remove }.buttonStyle(PillButtonStyle(primary: false))
+            } else if paused || unreadable {
+                EmptyView()   // paused: only the proof below; unreadable: nothing until it reads again
+            } else if case .legacy = state {
+                EmptyView()   // migrated at unlock
+            } else {
+                Button("Set…") { settingPassword = true }.buttonStyle(PillButtonStyle(primary: true))
+                if case .damaged = state {
+                    Button("Remove…") { keySheet = .remove }.buttonStyle(PillButtonStyle(primary: false))
+                }
+            }
+        }
+        if let notice = schedule.upgradeNotice {
+            HStack(spacing: 8) {
+                Text(notice).font(.system(size: 12)).foregroundStyle(theme.warning).fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Change…") { keySheet = .change }.buttonStyle(PillButtonStyle(primary: true))
+                Button("Dismiss") { schedule.dismissUpgradeNotice(); onChange() }.buttonStyle(PillButtonStyle(primary: false))
+            }
+        }
+        if let pausedNotice = schedule.pausedNotice {
+            HStack(spacing: 8) {
+                Text(pausedNotice).font(.system(size: 12)).foregroundStyle(theme.warning).fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Confirm…") { keySheet = .confirm }.buttonStyle(PillButtonStyle(primary: true))
+                Button("Forgot…") { keySheet = .reset }.buttonStyle(PillButtonStyle(primary: false))
+            }
+        }
+        if ready, schedule.needsRebind {
+            HStack(spacing: 8) {
+                Text(BackupScheduleModel.rebindNeededText).font(.system(size: 12)).foregroundStyle(theme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                Button("Enter backup password…") { keySheet = .rebind }.buttonStyle(PillButtonStyle(primary: true))
+            }
+        }
+        if ready {
+            Button("Test a backup…") { keySheet = .test }.buttonStyle(PillButtonStyle(primary: false))
+        }
     }
 
     private func commitTime() {
@@ -327,7 +409,7 @@ struct SchedulePasswordSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Backup password").font(.title3.weight(.semibold))
-            Text(String(localized: "Scheduled backups are encrypted with this password, which is kept in this Mac's Keychain. Choose one different from your master password, at least 12 characters. Both are needed to restore a backup."))
+            Text(String(localized: "Scheduled backups are locked with a public key made from this password. The password itself is not stored, so keep it safe: it is needed with the master password to restore a backup. Choose one different from your master password, at least 12 characters."))
                 .font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
             SecureField("Backup password", text: $password).glassField()
             SecureField("Confirm backup password", text: $again).glassField()
@@ -365,6 +447,7 @@ struct FullBackupPasswordSheet: View {
     @State private var password = ""
     @State private var again = ""
     @State private var master = ""
+    @State private var keyLine: String?
     @Environment(\.macTheme) private var theme
 
     private var title: String {
@@ -388,6 +471,26 @@ struct FullBackupPasswordSheet: View {
 
     private var isCreate: Bool { if case .create = form.kind { true } else { false } }
 
+    /// A Windows vault with a key file / YubiKey: what it also needs, asked once verify or preview said so.
+    @ViewBuilder private var factorRows: some View {
+        if let request = model.factorRequest, form.kind == .verify(request.url) || form.kind == .restore(request.url) {
+            if request.kinds.contains(.keyFile) {
+                HStack(spacing: 8) {
+                    Text(request.keyFile.map { MacFactors.keyFileChosen($0.lastPathComponent) } ?? MacFactors.noKeyFileChosen)
+                        .font(.system(size: 12.5)).lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: 8)
+                    Button(MacFactors.chooseKeyFileButton) { model.chooseRestoreKeyFile() }
+                        .buttonStyle(GlassButtonStyle())
+                        .disabled(model.working)
+                }
+            }
+            if request.kinds.contains(.yubiKeyHMAC), YubiKeyPrompt.shared.waitingSlot == nil {
+                Text(MacFactors.yubiKeyNeeded(slot: request.slot)).font(.system(size: 12.5))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     private var actionLabel: String {
         switch form.kind {
         case .create: String(localized: "Create")
@@ -400,9 +503,12 @@ struct FullBackupPasswordSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title).font(.title3.weight(.semibold))
             Text(detail).font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
+            if let keyLine { Text(keyLine).font(.system(size: 12.5)).fixedSize(horizontal: false, vertical: true) }
             SecureField("Backup password", text: $password).glassField()
             if isCreate { SecureField("Confirm backup password", text: $again).glassField() }
             SecureField(isCreate ? String(localized: "Master password") : String(localized: "Master password when the backup was made"), text: $master).glassField()
+            factorRows
+            YubiKeyTouchBanner(prompt: YubiKeyPrompt.shared)
             if let e = model.error { Text(e).font(.system(size: 12.5)).foregroundStyle(theme.warning) }
             HStack {
                 Spacer()
@@ -423,6 +529,12 @@ struct FullBackupPasswordSheet: View {
             }
         }
         .padding(24).frame(width: 460).background(WashBackground()).foregroundStyle(theme.text)
+        .onAppear {
+            switch form.kind {
+            case .verify(let url), .restore(let url): keyLine = model.keyLine(for: url)
+            case .create: keyLine = nil
+            }
+        }
     }
 }
 
@@ -430,6 +542,7 @@ struct FullBackupPasswordSheet: View {
 struct RestorePreviewSheet: View {
     let model: RecoveryCentreModel
     let pending: RecoveryCentreModel.PendingRestore
+    @State private var keyLine: String?
     @Environment(\.macTheme) private var theme
 
     var body: some View {
@@ -437,6 +550,9 @@ struct RestorePreviewSheet: View {
             Text("Replace this vault with the backup?").font(.title3.weight(.semibold))
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(pending.preview.lines, id: \.self) { Text("• " + $0).font(.system(size: 12.5)) }
+            }
+            if let keyLine {
+                Text(keyLine).font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
             }
             Text("A safety copy of the vault as it is now is kept on this Mac first. Your master password is asked next.")
                 .font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
@@ -447,6 +563,138 @@ struct RestorePreviewSheet: View {
             }
         }
         .padding(24).frame(width: 500).background(WashBackground()).foregroundStyle(theme.text)
+        .onAppear { keyLine = model.keyLine(for: pending.url) }
+    }
+}
+
+/// The backup key's sheets (design sections 6, 7, 9.2, 2.3 and Q2): change (with re-lock), reset with the recovery
+/// phrase, remove (backup password or phrase), re-bind after a phrase change, confirm after a rollback, test a backup.
+struct BackupKeySheet: View {
+    enum Mode: String, Identifiable { case change, reset, remove, rebind, confirm, test; var id: String { rawValue } }
+
+    let schedule: BackupScheduleModel
+    let mode: Mode
+    var onClose: () -> Void
+    @State private var current = ""
+    @State private var phrase = ""
+    @State private var new = ""
+    @State private var again = ""
+    @State private var master = ""
+    @State private var relock = true
+    @State private var usePhrase = false
+    @State private var error: String?
+    @State private var result: String?
+    @State private var working = false
+    @Environment(\.macTheme) private var theme
+
+    private var title: String {
+        switch mode {
+        case .change: String(localized: "Change backup password")
+        case .reset: String(localized: "Reset backup password")
+        case .remove: String(localized: "Remove backup password")
+        case .rebind: String(localized: "Re-bind the recovery phrase")
+        case .confirm: String(localized: "Confirm backup password")
+        case .test: String(localized: "Test a backup")
+        }
+    }
+
+    private var detail: String {
+        switch mode {
+        case .change: BackupScheduleModel.relockNoteText
+        case .reset: schedule.resetUnavailableReason ?? String(localized: "Enter the 24 words of this vault's recovery phrase, then a new backup password twice. Backups made before the reset still need the old backup password.")
+        case .remove: String(localized: "Scheduled backups stop until you set a backup password again. Existing backup files keep the password they were made with. Enter the current backup password or the recovery phrase that can reset it.")
+        case .rebind: BackupScheduleModel.rebindNeededText
+        case .confirm: schedule.pausedNotice ?? ""
+        case .test: String(localized: "Checks the backup password and opens the newest scheduled backup with it. Nothing is restored or changed.")
+        }
+    }
+
+    private var canReset: Bool { mode != .reset || schedule.resetUnavailableReason == nil }
+    private var needsNew: Bool { mode == .change || mode == .reset }
+    private var needsPhrase: Bool { mode == .reset || (mode == .remove && usePhrase) }
+    private var needsCurrent: Bool { !needsPhrase && mode != .reset }
+    /// A missing or damaged record (16c): the master password rebuilds the file's keys.
+    private var needsMaster: Bool { (mode == .confirm || mode == .reset) && schedule.proofNeedsMaster }
+
+    private var ready: Bool {
+        guard canReset, !working else { return false }
+        if needsCurrent && current.isEmpty { return false }
+        if needsPhrase && phrase.isEmpty { return false }
+        if needsNew && (new.isEmpty || again.isEmpty) { return false }
+        if needsMaster && master.isEmpty { return false }
+        return true
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title).font(.title3.weight(.semibold))
+            if !detail.isEmpty {
+                Text(detail).font(.system(size: 12.5)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
+            }
+            if mode == .remove {
+                Toggle(String(localized: "Use the recovery phrase instead"), isOn: $usePhrase).font(.system(size: 12.5))
+            }
+            if needsCurrent { SecureField(String(localized: "Current backup password"), text: $current).glassField() }
+            if needsPhrase && canReset {
+                TextField(String(localized: "Recovery phrase (24 words)"), text: $phrase, axis: .vertical).lineLimit(3...5).glassField()
+            }
+            if needsNew && canReset {
+                SecureField(String(localized: "New backup password"), text: $new).glassField()
+                SecureField(String(localized: "Confirm new backup password"), text: $again).glassField()
+            }
+            if needsMaster && canReset { SecureField(String(localized: "Master password"), text: $master).glassField() }
+            if mode == .change {
+                Toggle(String(localized: "Re-lock existing scheduled backups"), isOn: $relock).font(.system(size: 12.5))
+            }
+            if let error { Text(error).font(.system(size: 12.5)).foregroundStyle(theme.warning).fixedSize(horizontal: false, vertical: true) }
+            if let result { Text(result).font(.system(size: 12.5)).foregroundStyle(theme.success).fixedSize(horizontal: false, vertical: true) }
+            HStack {
+                Spacer()
+                Button(result == nil ? String(localized: "Cancel") : String(localized: "Done"), action: onClose)
+                    .buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
+                if result == nil {
+                    Button(working ? String(localized: "Working…") : String(localized: "Continue")) { run() }
+                        .buttonStyle(PillButtonStyle(primary: true)).keyboardShortcut(.defaultAction)
+                        .disabled(!ready)
+                }
+            }
+        }
+        .padding(24).frame(width: 480).background(WashBackground()).foregroundStyle(theme.text)
+    }
+
+    private func run() {
+        // Captured now: the sheet may close before the Task runs.
+        let (schedule, mode, current, phrase, new, again, relock, usePhrase) =
+            (self.schedule, self.mode, self.current, self.phrase, self.new, self.again, self.relock, self.usePhrase)
+        let master = self.master
+        let close = onClose
+        working = true
+        error = nil
+        Task {
+            do {
+                switch mode {
+                case .change:
+                    result = try await schedule.changePassword(old: current, new: new, confirm: again, relock: relock)
+                case .reset:
+                    try await schedule.resetPassword(phrase: phrase, new: new, confirm: again, master: master)
+                    result = schedule.lastNotice
+                case .remove:
+                    try await schedule.removeKey(proof: usePhrase ? .phrase(phrase) : .password(current))
+                    close()
+                case .rebind:
+                    try await schedule.rebind(password: current)
+                    close()
+                case .confirm:
+                    try await schedule.confirmKey(password: current, master: master)
+                    close()
+                case .test:
+                    result = try await schedule.testBackup(password: current)
+                }
+            } catch {
+                self.error = BackupScheduleModel.describe(error)
+            }
+            working = false
+        }
     }
 }
 

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeysへの乗り換え</title>
+  <meta name="description" content="1Password、Bitwarden、LastPassなどのパスワードマネージャーからLocalGateKeysへパスワードを移す手順ガイドです。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ja/switch/">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/switch/">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/switch/">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/switch/">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/switch/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/switch/">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/switch/">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/switch/">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/switch/">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/switch/">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/switch/">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/switch/">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/switch/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeysへの乗り換え">
+  <meta property="og:description" content="1Password、Bitwarden、LastPassなどのパスワードマネージャーからLocalGateKeysへパスワードを移す手順ガイドです。">
+  <meta property="og:url" content="https://localgatekeys.app/ja/switch/">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys のロゴ: Windows・Mac・iPhone 用のパスワード管理アプリ。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeysへの乗り換え">
+  <meta name="twitter:description" content="1Password、Bitwarden、LastPassなどのパスワードマネージャーからLocalGateKeysへパスワードを移す手順ガイドです。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">コンテンツへスキップ</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../ja/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="メイン">
+        <ul class="nav">
+          <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/help">ガイド</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../../ja/download">ダウンロード</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>メニュー</summary>
+        <nav aria-label="メイン">
+          <ul class="nav nav-stack">
+            <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/help">ガイド</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../../ja/download">ダウンロード</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>言語</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../switch/" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../../de/switch/" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeysへの乗り換え</h1>
+  <p class="lead">今お使いのパスワードマネージャーを選んでください。各ガイドで、エクスポート方法、LocalGateKeysへのインポート方法、移行されないものを説明します。</p>
+</div>
+
+<div class="wrap page-body prose">
+  <ul>
+    <li><a href="../../ja/switch/1password">1Password</a></li>
+    <li><a href="../../ja/switch/bitwarden">Bitwarden</a></li>
+    <li><a href="../../ja/switch/lastpass">LastPass</a></li>
+    <li><a href="../../ja/switch/dashlane">Dashlane</a></li>
+    <li><a href="../../ja/switch/enpass">Enpass</a></li>
+    <li><a href="../../ja/switch/keepass">KeePass</a></li>
+    <li><a href="../../ja/switch/proton-pass">Proton Pass</a></li>
+    <li><a href="../../ja/switch/nordpass">NordPass</a></li>
+    <li><a href="../../ja/switch/apple-passwords">Apple Passwords</a></li>
+    <li><a href="../../ja/switch/google">Google Password Manager</a></li>
+    <li><a href="../../ja/switch/microsoft-authenticator">Microsoft Authenticator</a></li>
+  </ul>
+  <p class="callout">パスキーはCSVエクスポートでは移行されません。LocalGateKeysは、CXFファイル（Appleのパスワードアプリや、CXFをエクスポートできる他のアプリ）からパスキーをインポートできます。対応はPC、Android、iPhone、Macです。</p>
+  <p>LocalGateKeys ProはUS$29.99の1回払いです。支払いは1回だけ。すべてのアップデートが永久に無料。無料版は最大7項目まで、期間の制限はありません。</p>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>保管庫をご自身のデバイスに置いたままにする、Windows、Mac、iPhone向けのパスワードマネージャーです。</p>
+        <p class="quiet">本サイトはCookieを使わないCloudflare Web Analyticsでページの閲覧数を計測しています。広告トラッカーは使用せず、Cookieも設定しません。</p>
+      </div>
+      <nav aria-label="製品">
+        <h2>製品</h2>
+        <ul>
+          <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/download">ダウンロード</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/switch/">乗り換え</a></li>
+          <li><a href="../../buy">Proを購入</a></li>
+          <li><a href="../../ja/licence">Proライセンス</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">ライセンスを再取得</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="ヘルプ">
+        <h2>ヘルプ</h2>
+        <ul>
+          <li><a href="../../ja/help">ユーザーガイド</a></li>
+          <li><a href="../../ja/support">サポートとFAQ</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">脆弱性の報告</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法的情報">
+        <h2>法的情報</h2>
+        <p class="quiet">これらの文書は英語で提供されており、適用され拘束力を持つのは英語版です。</p>
+        <ul>
+          <li><a href="../../legal/eula">ライセンス契約</a></li>
+          <li><a href="../../legal/privacy">プライバシーポリシー</a></li>
+          <li><a href="../../legal/terms-of-sale">販売条件</a></li>
+          <li><a href="../../legal/refunds">返金ポリシー</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas。お問い合わせ: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windowsは Microsoft グループ企業の商標です。Chromeは Google LLC の商標です。Apple、iPhone、Apple Watch、Face ID、Touch ID、Safariは、米国およびその他の国で登録されたApple Inc.の商標です。</p>
+      <nav class="lang-switch" aria-label="言語"><ul><li><a href="../../switch/" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../../de/switch/" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

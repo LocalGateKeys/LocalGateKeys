@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Bestätigte Website</string>
+    <string name="autofill_site_related">Zugehörige Website</string>
+    <string name="autofill_site_lookalike">Nachgeahmte Website</string>
+    <string name="autofill_site_new">Neue Website</string>
+    <string name="autofill_guard_title">Ist das die richtige Website?</string>
+    <string name="autofill_guard_body">%1$s sieht aus wie %2$s, wo Ihr Login gespeichert ist, ist aber eine andere Website. Fahren Sie nur fort, wenn Sie sicher sind.</string>
+    <string name="autofill_guard_body_mixed">%1$s mischt Buchstaben aus verschiedenen Alphabeten, ein häufiger Phishing-Trick. Fahren Sie nur fort, wenn Sie sicher sind.</string>
+    <string name="autofill_guard_continue">Weiter auf %1$s</string>
+    <string name="autofill_guard_go_back">Zurück</string>
+    <string name="autofill_same_account_title">Ist das dasselbe Konto wie bei %1$s?</string>
+    <string name="autofill_same_account_body">%1$s hat denselben Namen wie %2$s, wo Ihr Login gespeichert ist, aber eine andere Endung. Fahren Sie nur fort, wenn es dasselbe Unternehmen ist.</string>
+    <string name="autofill_same_account_yes">Dasselbe Konto</string>
+    <string name="autofill_pick_other_site_body">Dieses Login ist für %2$s gespeichert, nicht für %1$s. Füllen Sie es auf %1$s nur aus, wenn Sie sicher sind, dass es die richtige Website ist.</string>
+    <string name="autofill_pick_no_site_body">Für dieses Login ist keine Website gespeichert. Füllen Sie es auf %1$s nur aus, wenn Sie sicher sind, dass es die richtige Website ist.</string>
+    <string name="autofill_pick_scheme_unknown_body">Der Browser hat nicht angegeben, ob %1$s eine sichere Seite (https) ist. Füllen Sie es nur aus, wenn Sie sicher sind.</string>
+</resources>

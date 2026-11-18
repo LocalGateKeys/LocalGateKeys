@@ -9,55 +9,68 @@ description: [[t:download.description]]
 
 <div class="wrap page-body">
   <div class="downloads">
-    <div class="dl-row">
+    <div class="dl-row" id="windows">
       <div>
         <h2>[[t:download.microsoft-store.1]]</h2>
         <p>[[t:download.microsoft-store.2]]</p>
+        <p class="dl-guide"><a href="[[home]]guide/windows.html">[[t:guide.read]]</a></p>
       </div>
       <!-- if:MS_STORE_LIVE --><a class="button primary store-button" href="{{MS_STORE_URL}}"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>[[t:download.microsoft-store.3]]</span></a><!-- else --><span class="button disabled" aria-disabled="true">[[t:download.microsoft-store.4]]</span><!-- /if -->
     </div>
-    <div class="dl-row">
-      <div>
-        <h2>[[t:download.installer-for-windows.1]]</h2>
-        <p>[[t:download.installer-for-windows.2]]</p>
-        <!-- if:INSTALLER_URL --><p class="hash">[[t:download.installer-for-windows.3]]</p>
-        <p class="quiet">[[t:download.installer-for-windows.4]]</p><!-- /if -->
-      </div>
-      <!-- if:INSTALLER_URL --><a class="button" href="{{INSTALLER_URL}}">[[t:download.installer-for-windows.5]]</a><!-- else --><span class="button disabled" aria-disabled="true">[[t:download.installer-for-windows.6]]</span><!-- /if -->
-    </div>
-    <div class="dl-row">
+    <div class="dl-row" id="chrome">
       <div>
         <h2>[[t:download.extension-for-google-chrome.1]]</h2>
         <p>[[t:download.extension-for-google-chrome.2]]</p>
+        <p class="dl-guide"><a href="[[home]]guide/extension.html">[[t:guide.read]]</a></p>
       </div>
       <!-- if:CHROME_STORE_URL --><a class="button" href="{{CHROME_STORE_URL}}">[[t:download.extension-for-google-chrome.3]]</a><!-- else --><span class="button disabled" aria-disabled="true">[[t:download.extension-for-google-chrome.4]]</span><!-- /if -->
     </div>
-    <div class="dl-row">
+    <div class="dl-row" id="edge">
       <div>
         <h2>[[t:download.extension-for-microsoft-edge.1]]</h2>
         <p>[[t:download.extension-for-microsoft-edge.2]]</p>
+        <p class="dl-guide"><a href="[[home]]guide/extension.html">[[t:guide.read]]</a></p>
       </div>
       <!-- if:EDGE_ADDONS_URL --><a class="button" href="{{EDGE_ADDONS_URL}}">[[t:download.extension-for-microsoft-edge.3]]</a><!-- else --><span class="button disabled" aria-disabled="true">[[t:download.extension-for-microsoft-edge.4]]</span><!-- /if -->
-    </div>
-    <div class="dl-row">
+    </div><!-- if:FIREFOX_ADDON_URL -->
+    <div class="dl-row" id="firefox">
+      <div>
+        <h2>[[t:download.extension-for-mozilla-firefox.1]]</h2>
+        <p>[[t:download.extension-for-mozilla-firefox.2]]</p>
+        <p class="dl-guide"><a href="[[home]]guide/extension.html">[[t:guide.read]]</a></p>
+      </div>
+      <a class="button" href="{{FIREFOX_ADDON_URL}}">[[t:download.extension-for-mozilla-firefox.3]]</a>
+    </div><!-- /if -->
+    <div class="dl-row" id="iphone">
       <div>
         <h2>[[t:download.iphone.1]]</h2>
         <p>[[t:download.iphone.2]]</p>
+        <p class="dl-guide"><a href="[[home]]guide/iphone.html">[[t:guide.read]]</a></p>
       </div>
       <!-- if:IPHONE_APP_URL --><a class="button store-button" href="{{IPHONE_APP_URL}}"><svg class="apple-logo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span>[[t:download.iphone.3]]</span></a><!-- /if -->
     </div>
+<!-- if:MAC_APP_URL -->    <div class="dl-row" id="mac">
+      <div>
+        <h2>[[t:index.v2.platform.mac]]</h2>
+        <p>[[t:download.mac.2]]</p>
+        <p class="dl-guide"><a href="[[home]]guide/mac.html">[[t:guide.read]]</a></p>
+      </div>
+      <a class="button store-button" href="{{MAC_APP_URL}}"><svg class="apple-logo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span>[[t:download.mac.3]]</span></a>
+    </div>
+<!-- /if -->    <div class="dl-row" id="android">
+      <div>
+        <h2><!-- if:MAC_APP_URL -->[[t:index.v2.platform.android]]<!-- else -->[[t:download.v2.soon.title]]<!-- /if --></h2>
+        <p><!-- if:MAC_APP_URL -->[[t:download.android.text]]<!-- else -->[[t:download.v2.soon.text]]<!-- /if --></p>
+        <p class="dl-guide"><a href="[[home]]guide/android.html">[[t:guide.read]]</a></p>
+      </div>
+      <!-- if:ANDROID_APP_URL --><a class="button store-button" href="{{ANDROID_APP_URL}}">[[t:index.v2.store.play]]</a><!-- else --><span class="button disabled" aria-disabled="true">[[t:download.v2.soon.button]]</span><!-- /if -->
+    </div>
   </div>
 
-  <!-- if:INSTALLER_URL -->
-  <div class="prose">
-    <h2>[[t:download.check-the-installer-before.1]]</h2>
-    <p>[[t:download.check-the-installer-before.2]]</p>
+  <div class="prose" id="old-installer">
+    <h2>[[t:download.v2.old-installer.title]]</h2>
+    <p>[[t:download.v2.old-installer.text]]</p>
   </div>
-  <pre><code>[[t:download.check-the-installer-before.3]]</code></pre>
-  <div class="prose">
-    <p>[[t:download.check-the-installer-before.4]]</p>
-  </div>
-  <!-- /if -->
   <div class="prose">
 
     <h2>[[t:download.what-you-need.1]]</h2>
@@ -66,6 +79,7 @@ description: [[t:download.description]]
       <li>[[t:download.what-you-need.3]]</li>
       <li>[[t:download.what-you-need.4]]</li>
       <li>[[t:download.what-you-need.5]]</li>
+      <li>[[t:download.v2.need-watch]]</li>
     </ul>
 
     <h2>[[t:download.after-installing.1]]</h2>

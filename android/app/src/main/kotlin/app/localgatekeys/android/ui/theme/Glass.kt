@@ -46,31 +46,35 @@ val GlassBlurRadius = 24.dp
 /**
  * Records [content] into a layer for the glass above it, blurred on Android 12 and later. Glass controls must be drawn
  * outside [content] (as siblings above it), never inside, or they would blur themselves.
+ *
+ * Inside [content] there is never a backdrop: [LocalGlassBackdrop] is null there, so an [lgkGlass] placed in the content
+ * by mistake draws the solid fill. Sampling the layer it is being recorded into made a render-node cycle and crashed
+ * the RenderThread (Security check's back arrow, release check 2026-11-01).
  */
 @Composable
 fun GlassBackdropHost(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val raw = rememberGraphicsLayer()
     val blurred = rememberGraphicsLayer()
     val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    CompositionLocalProvider(LocalGlassBackdrop provides if (canBlur) blurred else null) {
-        Box(
-            modifier.drawWithContent {
-                raw.record { this@drawWithContent.drawContent() }
-                if (canBlur) {
-                    val r = GlassBlurRadius.toPx()
-                    blurred.renderEffect = BlurEffect(r, r, TileMode.Clamp)
-                    blurred.record { drawLayer(raw) }
-                }
-                drawLayer(raw)
-            },
-        ) { content() }
+    Box(
+        modifier.drawWithContent {
+            raw.record { this@drawWithContent.drawContent() }
+            if (canBlur) {
+                val r = GlassBlurRadius.toPx()
+                blurred.renderEffect = BlurEffect(r, r, TileMode.Clamp)
+                blurred.record { drawLayer(raw) }
+            }
+            drawLayer(raw)
+        },
+    ) {
+        CompositionLocalProvider(LocalGlassBackdrop provides null) { content() }
     }
 }
 
 /**
  * Glass for controls only (tab bar, plus and avatar buttons). Content never sits on glass.
- * Android 12 and later: a real backdrop blur (see [GlassBackdropHost]) under a translucent fill; below: the translucent
- * fill alone. Always a 0.5 dp highlight border. Reduced transparency: the solid glass fill; increased contrast: a 1.5 dp border.
+ * Android 12 and later: a real backdrop blur (see [GlassBackdropHost]) under a translucent fill; below: the fill made
+ * opaque (without blur, anything translucent lets text behind it through). Always a 0.5 dp highlight border. Reduced transparency: the solid glass fill; increased contrast: a 1.5 dp border.
  */
 fun Modifier.lgkGlass(shape: Shape): Modifier = composed {
     val colors = LgkTheme.colors
@@ -85,7 +89,8 @@ fun Modifier.lgkGlass(shape: Shape): Modifier = composed {
         val fillAlpha = if (backdrop != null) {
             if (LgkTheme.isDark) 0.45f else 0.5f
         } else {
-            if (LgkTheme.isDark) 0.62f else 0.72f
+            // No blur below Android 12: opaque, or list text scrolling under the tab bar shows through.
+            1f
         }
         onGloballyPositioned { origin = it.positionInRoot() }
             .clip(shape)
@@ -97,6 +102,18 @@ fun Modifier.lgkGlass(shape: Shape): Modifier = composed {
             .background(colors.glassFill.copy(alpha = fillAlpha), shape)
             .border(BorderStroke(if (strong) 1.5.dp else 0.5.dp, highlight), shape)
     }
+}
+
+/**
+ * A toast capsule (copy, Undo): it carries text, so it is solid like a group, never glass. The group surface, a hairline
+ * border and a soft shadow so it lifts off the list below.
+ */
+fun Modifier.lgkToastSurface(shape: Shape): Modifier = composed {
+    val dark = LgkTheme.isDark
+    val shadowColor = Color.Black.copy(alpha = if (dark) 0.40f else 0.14f)
+    shadow(12.dp, shape, ambientColor = shadowColor, spotColor = shadowColor)
+        .background(LgkTheme.colors.groupSurface, shape)
+        .border(BorderStroke(if (LgkTheme.increasedContrast) 1.5.dp else 0.5.dp, LgkTheme.colors.glassBorder), shape)
 }
 
 /** A solid content group: group surface, a 1 dp top highlight and a soft shadow so it lifts off the glow. */

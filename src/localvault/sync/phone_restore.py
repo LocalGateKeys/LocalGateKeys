@@ -273,6 +273,9 @@ def restore(session: Any, lease: Any, plan: RestorePlan, *, now: int) -> Restore
     files = plan.files or {}
     file_issues = import_missing(session, lease, plan.view.states, lambda ref: files.get(ref.blob)) if files else []
     report = run_merge(session, lease, device_id=desktop_device_id(session), views=[plan.view], now=now)
+    from . import removal
+
+    removal.forget_session_watch(session)  # an old removal notice must not erase the restored vault
     new = len(_live_ids(session) - before)
     updated = max(0, report.applied - new)
     return RestoreReport(

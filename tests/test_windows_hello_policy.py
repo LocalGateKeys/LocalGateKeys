@@ -39,9 +39,11 @@ def test_policy_rejects_unsafe_key(native, name, value):
         obj._policy(HANDLE(1))
 
 
-def setup_unwrap(obj):
+def setup_unwrap(obj, opened=None):
     @contextmanager
-    def key(_record):
+    def key(_record, *, silent=True):
+        if opened is not None:
+            opened.append(silent)
         yield HANDLE(1)
     obj._key = key
     obj._context = lambda *_args: None
@@ -135,3 +137,22 @@ def test_native_prompt_requires_a_parent(native):
     obj, _ = native
     with pytest.raises(HelloError, match="visible"):
         obj._context(HANDLE(1), 0, "Unlock")
+
+
+def test_unwrap_opens_the_key_with_ui_allowed(native):
+    # A key opened with NCRYPT_SILENT_FLAG stays silent: the Passport provider then answers
+    # the interactive decrypt with NTE_SILENT_CONTEXT and never shows the Hello prompt
+    # (seen on a real PC, 2026-11-10). The silent probe still passes the flag per call.
+    obj, _props = native
+    opened, calls = [], []
+    setup_unwrap(obj, opened)
+
+    def crypt(_key, _data, *, decrypt, silent=False, oaep_hash="SHA256"):
+        calls.append(silent)
+        if silent:
+            raise NativeError("decrypt", NTE_SILENT_CONTEXT)
+        return bytearray(b"S" * 32)
+    obj._crypt = crypt
+    assert obj.unwrap("a" * 32, b"c" * 256, 123) == bytearray(b"S" * 32)
+    assert opened == [False]
+    assert calls == [True, False]

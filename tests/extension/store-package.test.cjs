@@ -107,7 +107,7 @@ test("Firefox store manifest is the build-firefox-manifest variant", () => {
     assert.deepEqual(manifest, firefoxManifest(sourceManifest));
     assert.equal(manifest.key, undefined);
     assert.equal(manifest.browser_specific_settings.gecko.id, "localgatekeys@localgatekeys.app");
-    assert.deepEqual(manifest.background, { scripts: ["api.js", "background.js"] });
+    assert.deepEqual(manifest.background, { scripts: ["api.js", "lookalike.js", "background.js"] });
   } finally {
     fs.rmSync(outDir, { recursive: true, force: true });
   }
@@ -120,6 +120,14 @@ test("every file the manifests and popup load is packaged", () => {
   // Nothing in the allowlist is dead weight either.
   const referenced = new Set(store.referencedFiles(sourceManifest));
   for (const file of store.PACKAGE_FILES) assert.ok(referenced.has(file), `${file} is not loaded by anything`);
+});
+
+test("the lookalike classifier ships with its suffix list and the list's MPL notice", () => {
+  for (const file of ["lookalike.js", "psl-min.json", "THIRD-PARTY-NOTICES.txt"]) assert.ok(store.PACKAGE_FILES.includes(file), file);
+  const notice = fs.readFileSync(path.join(EXT, "THIRD-PARTY-NOTICES.txt"), "utf8");
+  assert.match(notice, /Public Suffix List/);
+  assert.match(notice, /https:\/\/mozilla\.org\/MPL\/2\.0\//);
+  assert.match(notice, /https:\/\/publicsuffix\.org\/list\/public_suffix_list\.dat/);
 });
 
 test("store zips are byte-for-byte reproducible", () => {

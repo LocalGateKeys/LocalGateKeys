@@ -9,6 +9,14 @@ struct CodesStrip: View {
     let items: [VaultItem]
     let onCopy: (CodeEntry) -> Void
     @Environment(\.macTheme) private var theme
+    /// Folded shows only the header with the count; no code is computed and the item list gets the space.
+    /// Remembered per profile (the default profile keeps the old unprefixed key).
+    @AppStorage private var folded: Bool
+
+    init(model: OverviewModel, items: [VaultItem], onCopy: @escaping (CodeEntry) -> Void) {
+        _model = Bindable(wrappedValue: model); self.items = items; self.onCopy = onCopy
+        _folded = AppStorage(wrappedValue: false, ProfileScope.defaultsPrefix + OverviewModel.codesFoldedKey)
+    }
 
     var body: some View {
         let all = model.codes
@@ -16,19 +24,34 @@ struct CodesStrip: View {
             let visible = OverviewModel.visibleCodes(all, expanded: model.codesExpanded)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("One-time codes").font(.system(size: 14, weight: .semibold)).accessibilityAddTraits(.isHeader)
+                    Button { folded.toggle() } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: folded ? "chevron.right" : "chevron.down")
+                                .font(.system(size: 11, weight: .semibold)).foregroundStyle(theme.textMuted)
+                                .frame(width: 12)
+                            (folded ? Text("One-time codes · \(all.count)") : Text("One-time codes"))
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(folded ? Text("Expand one-time codes") : Text("Collapse one-time codes"))
+                    .accessibilityAddTraits(.isHeader)
+                    .help(folded ? Text("Expand one-time codes") : Text("Collapse one-time codes"))
                     Spacer()
-                    if let toggle = visible.toggle {
+                    if !folded, let toggle = visible.toggle {
                         Button(toggle) { model.codesExpanded.toggle() }
                             .buttonStyle(.plain).font(.system(size: 12.5)).foregroundStyle(theme.link)
                     }
                 }
                 .padding(.horizontal, 2)
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let now = Int64(context.date.timeIntervalSince1970)
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                        ForEach(visible.shown) { entry in
-                            CodeTile(entry: entry, item: items.first { $0.id == entry.id }, now: now) { onCopy(entry) }
+                if !folded {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        let now = Int64(context.date.timeIntervalSince1970)
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                            ForEach(visible.shown) { entry in
+                                CodeTile(entry: entry, item: items.first { $0.id == entry.id }, now: now) { onCopy(entry) }
+                            }
                         }
                     }
                 }

@@ -101,6 +101,26 @@ final class MacSettingsTests: XCTestCase {
         XCTAssertEqual(clip.clearAfter, 300)
     }
 
+    /// Settings › Backups › weekly restore test: on by default, saved where the Security centre's switch reads it.
+    func testRestoreTestWeeklySavesForSecurityCentre() {
+        let m = model()
+        XCTAssertTrue(m.restoreTestWeekly)
+        m.restoreTestWeekly = false
+        XCTAssertEqual(settings.defaults.object(forKey: RestoreTestModel.weeklyKey) as? Bool, false)
+        XCTAssertFalse(RestoreTestModel(folder: FileManager.default.temporaryDirectory, defaults: settings.defaults).weekly)
+        XCTAssertFalse(model().restoreTestWeekly)
+    }
+
+    /// The ⌘, window's Recovery centre, Licence and Show setup again wait for the main window as a request.
+    func testSettingsWindowPageRequest() {
+        let bridge = QuickAccessBridge()
+        bridge.open(.licence)
+        let first = bridge.pendingPage
+        XCTAssertEqual(first?.page, .licence)
+        bridge.open(.licence)
+        XCTAssertNotEqual(bridge.pendingPage, first)   // a second press is a new request
+    }
+
     func testAppearanceOverride() {
         let m = model()
         XCTAssertEqual(m.appearance, .system)

@@ -7,20 +7,24 @@ import app.localgatekeys.core.records.LicenseException
 import app.localgatekeys.core.records.LicenseInfo
 import app.localgatekeys.core.records.Namespace
 import app.localgatekeys.core.sync.StoreSnapshot
+import app.localgatekeys.core.sync.itemRecords
 
 /** The free plan's item limit. */
 object ItemLimit {
-    const val FREE_ITEMS = 4
+    const val FREE_ITEMS = 7
 
     enum class Action { CREATE, RESTORE, EDIT, DELETE, AUTOFILL }
 
-    /** Live synced items: logins and typed items; tombstones, licence states and kinds that never sync excluded. */
-    fun liveCount(s: StoreSnapshot): Int = s.records.entries.count { (id, wrapper) ->
+    /**
+     * Live synced items: logins and typed items; tombstones, licence states, the emergency access plan, kinds that never
+     * sync and collection states (sub-plan 07: collections are free) excluded.
+     */
+    fun liveCount(s: StoreSnapshot): Int = s.itemRecords.entries.count { (id, wrapper) ->
         if (s.meta[id]?.deleted == true) return@count false
         val w = (wrapper as? JsonValue.Obj)?.fields ?: return@count false
         val ns = (w["ns"] as? JsonValue.Str)?.v ?: return@count false
         val r = (w["record"] as? JsonValue.Obj)?.fields ?: return@count false
-        ns != Namespace.LICENSE.wire && r["kind"] != JsonValue.Str("document")
+        ns != Namespace.LICENSE.wire && ns != Namespace.HEIR.wire && r["kind"] != JsonValue.Str("document")
     }
 
     /** Only creating or restoring needs a free slot or Pro; nothing that exists is ever blocked. */

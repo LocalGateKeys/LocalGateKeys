@@ -17,11 +17,16 @@ public enum AppPasswordError: Error, Equatable {
     case wait(seconds: Int64)
     /// Face ID enrolment changed: the shortcut was removed.
     case biometricChanged
+    /// The Face ID shortcut's Keychain item is not there (removed some other way, or not restored to this device).
+    case biometricKeyMissing
     /// AutoFill without a Face ID shortcut: the app must be unlocked with the password first.
     case openAppFirst
     case corrupt
     /// Turning on while the file already exists (it would replace the recovery phrase).
     case alreadyOn
+    /// AutoFill while the app password also asks for a key file or YubiKey and no Face ID shortcut is set up: an
+    /// extension can read neither (no file picker, no reliable NFC sheet), so the app must be opened.
+    case openAppForFactors
 }
 
 /// From the 5th consecutive wrong try: 30 s, doubling per further wrong try, at most 15 min (as Android).
@@ -74,7 +79,7 @@ public struct SystemBootClock: AppPasswordBootClock {
         guard sysctlbyname("kern.bootsessionuuid", nil, &size, nil, 0) == 0, size > 0 else { return nil }
         var buf = [CChar](repeating: 0, count: size)
         guard sysctlbyname("kern.bootsessionuuid", &buf, &size, nil, 0) == 0 else { return nil }
-        let id = String(cString: buf)
+        let id = String(decoding: buf.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
         return id.isEmpty ? nil : id
     }
 }
@@ -136,8 +141,10 @@ public final class PhoneBiometricKeyStore: AppPasswordBiometricStore, @unchecked
         case errSecSuccess:
             guard let d = out as? Data else { throw KeychainVaultError.status(st) }
             return Array(d)
-        // An item whose biometric set changed can no longer be read: the shortcut is gone.
-        case errSecItemNotFound, errSecAuthFailed, errSecInvalidData: throw AppPasswordError.biometricChanged
+        // An item whose biometric set changed can no longer be read, but it is still listed (attributes only). An item
+        // that is not there at all was removed some other way (review L1): never reported as "Face ID changed".
+        case errSecItemNotFound: throw exists ? AppPasswordError.biometricChanged : AppPasswordError.biometricKeyMissing
+        case errSecAuthFailed, errSecInvalidData: throw AppPasswordError.biometricChanged
         case errSecUserCanceled: throw LAError(.userCancel)
         default: throw KeychainVaultError.status(st)
         }
@@ -235,6 +242,9 @@ public final class AppPasswordStore: @unchecked Sendable {
 
     public var isOn: Bool { FileManager.default.fileExists(atPath: url.path) }
     public var biometricOn: Bool { isOn && biometric.exists }
+    /// The key-file / YubiKey factors of the file (public specs only), empty without a file or for version 1.
+    public var factorSpecs: [FactorSpec] { (try? readFile())?.factors ?? [] }
+    public var hasFactors: Bool { !factorSpecs.isEmpty }
 
     public func readFile() throws -> MasterKeyFile {
         guard let data = FileManager.default.contents(atPath: url.path) else { throw AppPasswordError.required }
@@ -249,11 +259,11 @@ public final class AppPasswordStore: @unchecked Sendable {
 
     public func waitSeconds() -> Int64 {
         let boot = bootClock.bootID
-        let stampBoot = defaults.string(forKey: Self.failureBootKey)
-        let stampUptime: Int64 = defaults.object(forKey: Self.failureUptimeKey) == nil
-            ? -1 : Int64(defaults.integer(forKey: Self.failureUptimeKey))
-        return AppPasswordDelay.remaining(failures: defaults.integer(forKey: Self.failuresKey),
-                                          lastFailureAt: Int64(defaults.integer(forKey: Self.failureAtKey)), now: now(),
+        let stampBoot = defaults.string(forKey: ProfileScope.key(Self.failureBootKey))
+        let stampUptime: Int64 = defaults.object(forKey: ProfileScope.key(Self.failureUptimeKey)) == nil
+            ? -1 : Int64(defaults.integer(forKey: ProfileScope.key(Self.failureUptimeKey)))
+        return AppPasswordDelay.remaining(failures: defaults.integer(forKey: ProfileScope.key(Self.failuresKey)),
+                                          lastFailureAt: Int64(defaults.integer(forKey: ProfileScope.key(Self.failureAtKey))), now: now(),
                                           lastFailureUptime: stampUptime, uptime: bootClock.uptime,
                                           sameBoot: boot != nil && boot == stampBoot)
     }
@@ -263,7 +273,7 @@ public final class AppPasswordStore: @unchecked Sendable {
         if wait > 0 { throw AppPasswordError.wait(seconds: wait) }
         do {
             let key = try body()
-            if defaults.integer(forKey: Self.failuresKey) != 0 { defaults.set(0, forKey: Self.failuresKey) }
+            if defaults.integer(forKey: ProfileScope.key(Self.failuresKey)) != 0 { defaults.set(0, forKey: ProfileScope.key(Self.failuresKey)) }
             return key
         } catch MasterKeyError.wrongPassword {
             noteFailure(); throw wrong
@@ -274,21 +284,130 @@ public final class AppPasswordStore: @unchecked Sendable {
         }
     }
 
-    private func noteFailure() {
-        defaults.set(Int(now()), forKey: Self.failureAtKey)
-        defaults.set(Int(bootClock.uptime), forKey: Self.failureUptimeKey)
-        if let boot = bootClock.bootID {
-            defaults.set(boot, forKey: Self.failureBootKey)
-        } else {
-            defaults.removeObject(forKey: Self.failureBootKey)
-        }
-        defaults.set(defaults.integer(forKey: Self.failuresKey) + 1, forKey: Self.failuresKey)
+    /// A wrong try counted outside `open` (the duress password change, a refused unlock while the real vault is held).
+    public func noteWrongTry() { noteFailure() }
+
+    /// The wrong tries counted so far.
+    public var failureCount: Int { defaults.integer(forKey: ProfileScope.key(Self.failuresKey)) }
+
+    /// A right password refused (the real one while it is held): counted as one more wrong try after `previous`, the
+    /// count before the try (a right `open` reset it), so the delay grows exactly as for a wrong guess.
+    public func noteWrongTry(after previous: Int) {
+        defaults.set(previous, forKey: ProfileScope.key(Self.failuresKey))
+        noteFailure()
     }
 
-    /// The local key; Argon2id runs on the calling thread (call it off the main actor).
+    /// A right password checked outside `open`: the wrong-try count starts again.
+    public func clearFailures() {
+        if defaults.integer(forKey: ProfileScope.key(Self.failuresKey)) != 0 { defaults.set(0, forKey: ProfileScope.key(Self.failuresKey)) }
+    }
+
+    private func noteFailure() {
+        defaults.set(Int(now()), forKey: ProfileScope.key(Self.failureAtKey))
+        defaults.set(Int(bootClock.uptime), forKey: ProfileScope.key(Self.failureUptimeKey))
+        if let boot = bootClock.bootID {
+            defaults.set(boot, forKey: ProfileScope.key(Self.failureBootKey))
+        } else {
+            defaults.removeObject(forKey: ProfileScope.key(Self.failureBootKey))
+        }
+        defaults.set(defaults.integer(forKey: ProfileScope.key(Self.failuresKey)) + 1, forKey: ProfileScope.key(Self.failuresKey))
+    }
+
+    /// The local key; Argon2id runs on the calling thread (call it off the main actor). A file with key-file /
+    /// YubiKey factors (`MasterKeyFile` v2) throws `FactorError.required` here: use `open(password:factors:)`.
     public func open(password: String) throws -> [UInt8] {
         let file = try readFile()
         return try counted(.wrongPassword) { try file.open(password: password) }
+    }
+
+    /// The local key of a file that may have factors: the wait and the file itself (password length, version/factors
+    /// consistency) are checked first, so a malformed file never asks for a YubiKey touch; then the factors are taken
+    /// from `factors` and checked (`FactorError.required` / `.mismatch`, never counted as a wrong try), then Argon2id
+    /// runs on the calling task (call it detached).
+    public func open(password: String, factors: FactorSecrets) async throws -> [UInt8] {
+        let file = try readFile()
+        let wait = waitSeconds()
+        if wait > 0 { throw AppPasswordError.wait(seconds: wait) }
+        let specs = try file.factorsForUnlock(password: password)
+        var secrets = try await CompositeKey.secrets(for: specs, from: factors)
+        defer { for i in secrets.indices { for j in secrets[i].indices { secrets[i][j] = 0 } } }
+        return try counted(.wrongPassword) { try file.open(password: password, secrets: secrets) }
+    }
+
+    /// A password check that keeps what it opened: the local key, the file, its factors and their secrets (list
+    /// order), and what supplied them (its YubiKey responder answers a renewed challenge). `clear()` zeroes the key
+    /// and the secrets.
+    public struct Opened: Sendable {
+        public var key: [UInt8]
+        public let file: MasterKeyFile
+        public let specs: [FactorSpec]
+        public var secrets: [[UInt8]]
+        public let input: FactorSecrets
+        public mutating func clear() {
+            for i in key.indices { key[i] = 0 }
+            for i in secrets.indices { for j in secrets[i].indices { secrets[i][j] = 0 } }
+        }
+    }
+
+    /// `open(password:factors:)` keeping the factors (the same order of checks: the wait, the file, the factors,
+    /// then Argon2id on the calling task). Settings uses it before a change, so a YubiKey is touched once for the
+    /// check and once more for its renewed challenge.
+    public func openKeepingFactors(password: String, factors: FactorSecrets) async throws -> Opened {
+        let file = try readFile()
+        let wait = waitSeconds()
+        if wait > 0 { throw AppPasswordError.wait(seconds: wait) }
+        let specs = try file.factorsForUnlock(password: password)
+        var secrets: [[UInt8]] = []
+        if !specs.isEmpty { secrets = try await CompositeKey.secrets(for: specs, from: factors) }
+        do {
+            let key = try counted(.wrongPassword) { try file.open(password: password, secrets: secrets) }
+            return Opened(key: key, file: file, specs: specs, secrets: secrets, input: factors)
+        } catch {
+            for i in secrets.indices { for j in secrets[i].indices { secrets[i][j] = 0 } }
+            throw error
+        }
+    }
+
+    /// The seal of a rewritten password wrapper did not open again to the same local key: nothing was written.
+    public static let sealCheckFailed = LocalStoreError.corrupt("sealed app password file")
+
+    /// Rewrites only the password wrapper of `opened` (same local key, the recovery wrapper carried over) under
+    /// `password` with its factors minus `dropping` plus `added` (just enrolled, list order key file first). A kept
+    /// YubiKey answers a new challenge through `opened.input.yubiKey` (COMPOSITE_KEY_V1 §1.2: renewed whenever the
+    /// wrapper is rewritten). Verify before commit: the new file is opened again with the password and the secrets
+    /// still in memory and must give the same local key before it replaces the old one (Mac `checkSealed`). No
+    /// factors left: version 1 again. Argon2id runs twice on the calling task (call it detached). Returns the specs.
+    @discardableResult
+    public func rewrap(_ opened: Opened, password: String, dropping: FactorKind? = nil,
+                       added: (specs: [FactorSpec], secrets: [[UInt8]]) = ([], []),
+                       random: any RandomSource) async throws -> [FactorSpec] {
+        var specs: [FactorSpec] = [], secrets: [[UInt8]] = []
+        defer { for i in secrets.indices { for j in secrets[i].indices { secrets[i][j] = 0 } } }
+        for (spec, secret) in zip(opened.specs, opened.secrets)
+        where spec.kind != dropping && !added.specs.contains(where: { $0.kind == spec.kind }) {
+            if spec.kind == .yubiKeyHMAC {
+                guard let respond = opened.input.yubiKey, let slot = spec.slot else { throw FactorError.required([.yubiKeyHMAC]) }
+                let fresh = try await CompositeKey.enrolYubiKey(slot: slot, random: random, respond: respond)
+                specs.append(fresh.spec); secrets.append(fresh.secret)
+            } else {
+                specs.append(spec); secrets.append(secret)
+            }
+        }
+        specs += added.specs; secrets += added.secrets
+        let rank: (FactorSpec) -> Int = { $0.kind == .keyFile ? 0 : 1 }
+        let order = specs.indices.sorted { rank(specs[$0]) < rank(specs[$1]) }
+        specs = order.map { specs[$0] }; secrets = order.map { secrets[$0] }
+        var out = try MasterKeyFile.seal(localKey: opened.key, password: password, params: params, random: random,
+                                         factors: specs, secrets: secrets)
+        out.recovery = opened.file.recovery
+        var reopened: [UInt8]
+        do { reopened = try out.open(password: password, secrets: secrets) } catch { throw Self.sealCheckFailed }
+        defer { for i in reopened.indices { reopened[i] = 0 } }
+        var diff: UInt8 = reopened.count == opened.key.count ? 0 : 1
+        for (a, b) in zip(reopened, opened.key) { diff |= a ^ b }
+        guard diff == 0 else { throw Self.sealCheckFailed }
+        try write(out)
+        return specs
     }
 
     public func open(phrase: String) throws -> [UInt8] {
@@ -310,11 +429,38 @@ public final class AppPasswordStore: @unchecked Sendable {
         return (file, try BIP39.phrase(entropy: entropy))
     }
 
-    /// A new password wrapper; the recovery wrapper is kept.
+    /// A new password wrapper without factors (version 1); the recovery wrapper is kept. This is the recovery-phrase
+    /// reset: it drops any key-file / YubiKey factors (the phrase is the way back when one is lost). A password change
+    /// on a file with factors uses `withNewPassword(_:localKey:password:random:factors:)`.
     public func withNewPassword(_ file: MasterKeyFile, localKey: [UInt8], password: String, random: any RandomSource) throws -> MasterKeyFile {
         var out = try MasterKeyFile.seal(localKey: localKey, password: password, params: params, random: random)
         out.recovery = file.recovery
         return out
+    }
+
+    /// A new password wrapper that keeps the file's factors: the same key file (checked) and, for a YubiKey, its
+    /// answer to the old challenge, then a new challenge (renewed whenever the wrapper is rewritten). The recovery
+    /// wrapper is kept. Without factors this is the version-1 `withNewPassword`.
+    public func withNewPassword(_ file: MasterKeyFile, localKey: [UInt8], password: String, random: any RandomSource,
+                                factors: FactorSecrets) async throws -> MasterKeyFile {
+        var renewed = try await CompositeKey.renewed(file.factors ?? [], with: factors, random: random)
+        defer { for i in renewed.secrets.indices { for j in renewed.secrets[i].indices { renewed.secrets[i][j] = 0 } } }
+        var out = try MasterKeyFile.seal(localKey: localKey, password: password, params: params, random: random,
+                                         factors: renewed.specs, secrets: renewed.secrets)
+        out.recovery = file.recovery
+        return out
+    }
+
+    /// AutoFill with the app password on (the extension has no password field, no key-file picker and no reliable NFC
+    /// sheet): only the Face ID shortcut opens the vault there. "Always ask for the key file / YubiKey" (`alwaysAsk`)
+    /// deletes the shortcut while factors are set. Without the shortcut: `openAppForFactors` when the file has a key
+    /// file or YubiKey, else `openAppFirst`.
+    public func autoFillGate(alwaysAsk: Bool, duress: PhoneDuress? = PhoneDuress.shared()) throws {
+        // Sub-plan 08: while the real vault is held after a duress unlock, AutoFill and passkeys offer nothing.
+        if let duress, duress.servicesBlocked() { throw AppPasswordError.openAppFirst }
+        let factored = hasFactors
+        if alwaysAsk, factored { try? biometric.remove() }
+        guard biometricOn else { throw factored ? AppPasswordError.openAppForFactors : AppPasswordError.openAppFirst }
     }
 
     /// Erase and turn-off: the shortcut, then the file. True when both are gone.
@@ -401,7 +547,7 @@ public final class KeychainReprotectJournal: AppPasswordReprotectJournal, @unche
 /// `repairAtUnlock` (every unlock, both modes) re-runs `reprotect` while that mark is still set.
 public enum AppPasswordKeychainMigration {
     static var slots: [VaultSlot] {
-        VaultSlot.allCases.filter { $0 != .localKey && !VaultSlot.deviceUnlocked.contains($0) }
+        VaultSlot.allCases.filter { $0 != .localKey && !VaultSlot.deviceUnlocked.contains($0) && !VaultSlot.fillMarker.contains($0) }
     }
 
     /// Marks a mode change as started (before the password file is written or removed).

@@ -61,6 +61,10 @@ object GeneratorStrength {
             options.words.coerceIn(PasswordGenerator.WORDS_RANGE) * log2(size.toDouble()) +
                 (if (options.appendNumber) log2(90.0) else 0.0)
         }
+        GeneratorOptions.Mode.ANSWER -> {
+            val size = if (wordlistCount > 0) wordlistCount else PassphraseWordlist.FALLBACK.size
+            options.answerWords.coerceIn(PasswordGenerator.ANSWER_WORDS_RANGE) * log2(size.toDouble())
+        }
     }
 
     /** Distinct characters the password draws from: the chosen groups minus look-alikes and exclusions. */

@@ -24,12 +24,16 @@
 	<string>$(LGK_APP_GROUP)</string>
 	<key>LGKKeychainGroup</key>
 	<string>$(LGK_KEYCHAIN_GROUP)</string>
+	<key>LGKSafariAppGroup</key>
+	<string>$(LGK_SAFARI_APP_GROUP)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>ASCredentialProviderExtensionCapabilities</key>
 			<dict>
+				<key>ProvidesOneTimeCodes</key>
+				<true/>
 				<key>ProvidesPasskeys</key>
 				<true/>
 				<key>ProvidesPasswords</key>

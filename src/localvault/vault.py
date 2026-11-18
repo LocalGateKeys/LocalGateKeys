@@ -18,7 +18,7 @@ import threading
 import time
 import unicodedata
 import uuid
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,7 +29,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-from . import secret_text
+from . import composite_key, keyfile, outside_marks, secret_text
+from .composite_key import FactorSpec
 from .i18n import t
 from .secret_text import SecretText, as_secret
 from .access_policy import normalized_policy
@@ -54,9 +55,17 @@ from .totp import generate_totp, normalize_secret
 LEGACY_FORMAT_VERSION = 1
 CATALOG_ENVELOPE_VERSION = 2  # format v2: Argon2id output used directly as the catalog key
 FORMAT_VERSION = 3  # format v3: random data key wrapped by an Argon2id-derived KEK
-SUPPORTED_FORMAT_VERSIONS = (LEGACY_FORMAT_VERSION, CATALOG_ENVELOPE_VERSION, FORMAT_VERSION)
+# Format v4: v3 plus key-file / YubiKey factors in the password wrapper (docs/formats/COMPOSITE_KEY_V1.md
+# §5).  Written only while a factor is set; every AAD keeps the literal v3 identity.
+VERSION_V4 = 4
+SUPPORTED_FORMAT_VERSIONS = (LEGACY_FORMAT_VERSION, CATALOG_ENVELOPE_VERSION, FORMAT_VERSION, VERSION_V4)
+# Versions with a random data key behind wrappers (same catalog, wrapper and unlock-context encodings).
+WRAPPED_KEY_VERSIONS = (FORMAT_VERSION, VERSION_V4)
 FORMAT_V2_IDENTIFIER = "localgatekeys-vault-v2"
 FORMAT_V3_IDENTIFIER = "localgatekeys-vault-v3"
+FORMAT_V4 = "localgatekeys-vault-v4"
+MAX_PASSWORD_WRAPPER_FIELDS_V4 = 3  # nonce, ciphertext, factors
+MAX_FACTORS = len(composite_key.KINDS)
 LEGACY_CATALOG_IDENTIFIER = "localgatekeys-credentials-v1"
 AAD_PREFIX = b"localvault-prototype|vault|v1|"
 AAD_PREFIX_V2 = b"localgatekeys|vault|v2|"
@@ -64,19 +73,34 @@ AAD_PREFIX_V3 = b"localgatekeys|vault|v3|"
 WRAPPER_AAD_PREFIX = b"localgatekeys|vault-key-wrapper|v3|"
 UNLOCK_CONTEXT_PREFIX = b"localgatekeys|unlock-context|v3|"
 ROLLBACK_ANCHOR_INFO = b"localgatekeys|rollback-anchor|v1"
+# HKDF info of the key behind BaseVaultSession.site_pair_id (phishing-shield "same account" ids).
+SITE_PAIR_INFO = b"localgatekeys|site-pair|v1"
 RECOVERY_KEY_INFO = b"localgatekeys|recovery-key|v1"
 ROLLBACK_ANCHOR_SCHEME = "hkdf-hmac-sha256-v1"
 # Recorded inside the encrypted payload of v3 vaults: an anchor must exist.
 ANCHOR_REQUIRED_KEY = "rollback_anchor_required"
 RECOVERY_WRAPPER_KIND = "bip39-english-24"
 BIP39_ENGLISH_SHA256 = "2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda"
+# 256 MiB since 2026-10-30 (was 64 MiB).  The vault, ``.lgk``, ``.lgkfull`` and
+# selective-transfer files copy this default; their only readers are Windows and
+# the Mac (``FullBackupV2.KDF.isAccepted`` / ``DesktopVaultFile``), both of which
+# accept 8-512 MiB.  Phone backup, sync keyring, share and the phone app-password
+# KDFs are separate fixed formats and do not follow it.
 DEFAULT_KDF = {
     "name": "argon2id",
     "time_cost": 3,
-    "memory_cost_kib": 65536,
+    "memory_cost_kib": 262144,
     "parallelism": 4,
     "hash_len": 32,
 }
+# Machines with less physical RAM keep the previous 64 MiB for new vaults and are
+# never upgraded on unlock (an unknown RAM size counts as low).
+KDF_LOW_MEMORY_RAM_BYTES = 4 * 1024 ** 3
+LOW_MEMORY_KDF_MEMORY_KIB = 64 * 1024
+# Encrypted-payload preference written by a KDF upgrade while Hello/camera were
+# bound: the unlock context the sidecars had before it, so a crash between the
+# vault publish and the sidecar rewrite is repaired at the next password unlock.
+KDF_UPGRADE_CONTEXT_PREF = "kdf_upgrade_previous_context"
 
 MIN_KDF_MEMORY_KIB = 8 * 1024
 MAX_KDF_MEMORY_KIB = 512 * 1024
@@ -85,7 +109,7 @@ MAX_VAULT_BYTES = 24 * 1024 * 1024
 MAX_WRAPPER_FIELD_CHARS = 512
 MAX_WRAPPERS = 4
 VAULT_MIGRATION_JOURNAL_VERSION = 2
-MIGRATION_OPERATIONS = ("catalog-v1-to-v2", "envelope-v2-to-v3")
+MIGRATION_OPERATIONS = ("catalog-v1-to-v2", "envelope-v2-to-v3", "kdf-upgrade")
 
 # Master-password throttling: the first five attempts are free; afterwards the
 # wait doubles from two seconds up to one minute until a success resets it.
@@ -99,6 +123,34 @@ THROTTLE_BINDING_FIELD = "throttle_binding"
 
 _LOG = logging.getLogger("localvault.vault")
 _monotonic = time.monotonic  # patched by tests with a fake clock
+
+
+_CLOCK_SLACK_SECONDS = 2 * 86400
+# A stored time may run ahead of this computer's clock by at most this much when it moves the clock
+# anchor forward (W-L12): a synced record from a peer whose clock is far in the future cannot lift
+# the anchor (and so switch off the clock-jump guard) beyond local time plus one day.
+_CLOCK_FUTURE_SKEW_SECONDS = 86400
+
+
+def _newest_payload_time(payload: Any, *, now: float | None = None) -> int:
+    """The newest updated/deleted time stored in a payload (0 when none), capped at local ``now``
+    plus ``_CLOCK_FUTURE_SKEW_SECONDS``."""
+    newest = 0
+    if not isinstance(payload, dict):
+        return 0
+    cap = int(time.time() if now is None else now) + _CLOCK_FUTURE_SKEW_SECONDS
+    for key in ("updated_at", "created_at"):
+        value = payload.get(key)
+        if isinstance(value, int) and not isinstance(value, bool):
+            newest = max(newest, min(value, cap))
+    for group in ("items", "entries", "trash"):
+        for record in payload.get(group) or ():
+            if isinstance(record, dict):
+                for key in ("updated_at", "deleted_at", "created_at"):
+                    value = record.get(key)
+                    if isinstance(value, int) and not isinstance(value, bool):
+                        newest = max(newest, min(value, cap))
+    return newest
 
 
 class VaultError(Exception):
@@ -123,6 +175,87 @@ class UnlockThrottled(VaultError):
     def __init__(self, retry_after: float):
         self.retry_after = max(0.0, float(retry_after))
         super().__init__(t("vault.tooManyIncorrectAttempts", seconds=int(self.retry_after + 0.999)))
+
+
+class VaultTooNew(VaultError):
+    """The vault's format version is above the newest this build knows (``VERSION_V4``)."""
+
+    def __init__(self, version: int):
+        self.version = int(version)
+        super().__init__(t("vault.err.tooNew"))
+
+
+_FACTOR_REQUIRED_MESSAGES = {
+    (composite_key.KEYFILE,): "vault.err.factorRequiredKeyFile",
+    (composite_key.YUBIKEY_HMAC,): "vault.err.factorRequiredYubiKey",
+    composite_key.KINDS: "vault.err.factorRequiredBoth",
+}
+
+
+class FactorRequired(VaultError):
+    """The vault lists key-file / YubiKey factors that were not supplied (``kinds``, in list order).
+
+    Raised before any key derivation; it is not a password failure.  The recovery phrase opens the
+    vault without the factors.
+    """
+
+    def __init__(self, kinds: Iterable[str]):
+        kinds = list(kinds)
+        self.kinds = [kind for kind in composite_key.KINDS if kind in kinds]
+        super().__init__(t(_FACTOR_REQUIRED_MESSAGES.get(tuple(self.kinds), "vault.err.factorRequiredBoth")))
+
+
+class FactorMismatch(VaultError, composite_key.FactorMismatch):
+    """``composite_key.FactorMismatch`` as a user error: the key file or YubiKey is not this vault's.
+
+    Raised from the factor's ``check`` before Argon2 runs, and never counted by ``UnlockThrottle``.
+    """
+
+    def __init__(self, kind: str):
+        Exception.__init__(self, t("vault.err.keyFileMismatch" if kind == composite_key.KEYFILE
+                                   else "vault.err.yubiKeyMismatch"))
+        self.kind = kind
+
+
+@dataclass(frozen=True)
+class FactorSecrets:
+    """What the user supplies for a vault's factors at unlock.
+
+    ``keyfile`` is the key file's bytes (``keyfile.key_from_bytes`` turns them into the secret);
+    ``yubikey_response`` receives the 64-byte padded challenge and returns the YubiKey's 20-byte
+    HMAC-SHA1 response, so the vault code never touches hardware.
+    """
+
+    keyfile: bytes | None = None
+    yubikey_response: Callable[[bytes], bytes] | None = None
+
+
+@dataclass(frozen=True)
+class FactorInput:
+    """A factor to add: ``kind`` "keyfile" (``keyfile_bytes``) or "yubikey-hmac" (``responder``, ``slot`` 1/2)."""
+
+    kind: str
+    keyfile_bytes: bytes | None = None
+    slot: int | None = None
+    responder: Callable[[bytes], bytes] | None = None
+
+
+class _HeldFactors:
+    """The factors a session was unlocked with, for later password checks; ``lock()`` wipes them.
+
+    Only the key file's 32-byte secret is kept (a zeroable buffer).  A YubiKey is kept as its
+    responder callable and asked again each time: its response is never stored beyond one use.
+    """
+
+    def __init__(self, keyfile_secret: bytearray | None = None,
+                 responder: Callable[[bytes], bytes] | None = None) -> None:
+        self.keyfile_secret = keyfile_secret
+        self.responder = responder
+
+    def wipe(self) -> None:
+        _zero(self.keyfile_secret)
+        self.keyfile_secret = None
+        self.responder = None
 
 
 class RollbackRequiresConfirmation(VaultError):
@@ -170,6 +303,10 @@ class ProFeatureRequired(VaultError):
         "totp": "vault.proNeededTotp",
         "attachments": "vault.proNeededAttachments",
         "sync": "vault.proNeededSync",
+        "sharing": "vault.proNeededSharing",
+        "travel": "travel.needsPro",
+        "hygiene_bulk": "hygiene.bulkNeedsPro",
+        "access_policies": "access.needsPro",
     }
 
     def __init__(self, feature: str):
@@ -309,11 +446,21 @@ def _header_version(header: dict[str, Any]) -> int:
         raise VaultError("Vault format version is malformed") from exc
 
 
+def _has_wrapped_key(header: dict[str, Any]) -> bool:
+    """Format 3 or 4: a random data key behind password / recovery wrappers."""
+    return _header_version(header) in WRAPPED_KEY_VERSIONS
+
+
 def _v3_identity(header: dict[str, Any]) -> dict[str, Any]:
-    """Public, stable identity fields shared by every v3 authenticated encoding."""
+    """Public, stable identity fields shared by every v3 authenticated encoding.
+
+    A v4 header authenticates the literal v3 identity (COMPOSITE_KEY_V1.md §5), so its catalog,
+    recovery wrapper and unlock context match the same header written as v3.
+    """
     return {
         "version": FORMAT_VERSION,
-        "format": header.get("format", FORMAT_V3_IDENTIFIER),
+        "format": FORMAT_V3_IDENTIFIER if _header_version(header) == VERSION_V4
+        else header.get("format", FORMAT_V3_IDENTIFIER),
         "catalog": header.get("catalog", CATALOG_FORMAT),
         "catalog_version": header.get("catalog_version", CATALOG_VERSION),
         "vault_id": header.get("vault_id", ""),
@@ -329,7 +476,7 @@ def _aad(header: dict[str, Any]) -> bytes:
     generation instead; wrapper metadata is authenticated by the wrappers.
     """
     version = _header_version(header)
-    if version == FORMAT_VERSION:
+    if version in WRAPPED_KEY_VERSIONS:
         authenticated_header = _v3_identity(header)
         authenticated_header["generation"] = header.get("generation", 0)
         authenticated_header["cipher"] = {"name": header["cipher"]["name"]}
@@ -357,14 +504,182 @@ def _wrapper_aad(header: dict[str, Any], name: str, metadata: dict[str, Any]) ->
     return WRAPPER_AAD_PREFIX + _canonical_json(body)
 
 
+def _header_factor_specs(header: dict[str, Any]) -> list[FactorSpec]:
+    """The factor list of a v4 header (validated, §2 order); ``[]`` for any other version."""
+    if _header_version(header) != VERSION_V4:
+        return []
+    wrappers = header.get("wrappers")
+    wrapper = wrappers.get("password") if isinstance(wrappers, dict) else None
+    value = wrapper.get("factors") if isinstance(wrapper, dict) else None
+    if not isinstance(value, list) or not 1 <= len(value) <= MAX_FACTORS:
+        raise VaultError("Vault key factors are malformed")
+    try:
+        specs = [FactorSpec.from_json(item) for item in value]
+        composite_key.validate_specs(specs)
+    except (ValueError, TypeError) as exc:
+        raise VaultError("Vault key factors are malformed") from exc
+    return specs
+
+
+def _password_metadata(header: dict[str, Any], specs: list[FactorSpec]) -> dict[str, Any]:
+    """The password wrapper's authenticated metadata: the KDF, plus the factor list in v4."""
+    metadata: dict[str, Any] = {"kdf": header["kdf"]}
+    if specs:
+        metadata["factors"] = [spec.to_json() for spec in specs]
+    return metadata
+
+
+def _set_factor_format(header: dict[str, Any], specs: list[FactorSpec]) -> None:
+    """v4 while a factor is set, v3 otherwise (a vault without factors stays v3 byte for byte)."""
+    if specs:
+        header["version"], header["format"] = VERSION_V4, FORMAT_V4
+    else:
+        header["version"], header["format"] = FORMAT_VERSION, FORMAT_V3_IDENTIFIER
+
+
+def _zero_all(buffers: Iterable[bytearray]) -> None:
+    for buffer in buffers:
+        _zero(buffer)
+
+
+def _factor_secret(spec: FactorSpec, factors: FactorSecrets | None, held: _HeldFactors | None) -> bytearray:
+    """One factor's 32-byte secret, checked against ``spec.check`` (raises ``FactorMismatch``)."""
+    if spec.kind == composite_key.KEYFILE:
+        if factors is not None and factors.keyfile is not None:
+            try:
+                secret = bytearray(keyfile.key_from_bytes(bytes(factors.keyfile)))
+            except ValueError:  # KeyFileError: not a usable key file
+                raise FactorMismatch(spec.kind) from None
+        else:
+            if held is None or held.keyfile_secret is None:
+                raise FactorRequired([spec.kind])
+            secret = bytearray(held.keyfile_secret)
+    else:
+        responder = factors.yubikey_response if factors is not None and factors.yubikey_response else None
+        if responder is None:
+            if held is None or held.responder is None:
+                raise FactorRequired([spec.kind])
+            responder = held.responder
+        try:
+            response = responder(spec.padded_challenge)
+        except VaultError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - no answer from the YubiKey: treat it as not there
+            raise FactorRequired([spec.kind]) from exc
+        try:
+            secret = bytearray(composite_key.yubikey_secret(response))
+        except (ValueError, TypeError):
+            raise FactorMismatch(spec.kind) from None
+        finally:
+            if isinstance(response, bytearray):
+                _zero(response)
+    if not hmac.compare_digest(composite_key.factor_check(secret), spec.check):
+        _zero(secret)
+        raise FactorMismatch(spec.kind)
+    return secret
+
+
+def _resolve_factor_secrets(specs: list[FactorSpec], factors: FactorSecrets | None,
+                            held: _HeldFactors | None = None) -> list[bytearray]:
+    """The secrets for ``specs`` in list order (the caller zeroes them); no key derivation runs.
+
+    Every factor must be supplied (``factors`` first, then what the session holds), else
+    ``FactorRequired`` names the missing ones before anything is asked of a YubiKey.  Each secret
+    is checked as soon as it is known, so a wrong key file is reported before the YubiKey is used.
+    """
+    missing = []
+    for spec in specs:
+        if spec.kind == composite_key.KEYFILE:
+            supplied = (factors is not None and factors.keyfile is not None) or \
+                (held is not None and held.keyfile_secret is not None)
+        else:
+            supplied = (factors is not None and factors.yubikey_response is not None) or \
+                (held is not None and held.responder is not None)
+        if not supplied:
+            missing.append(spec.kind)
+    if missing:
+        raise FactorRequired(missing)
+    found: list[bytearray] = []
+    try:
+        for spec in specs:
+            found.append(_factor_secret(spec, factors, held))
+    except BaseException:
+        _zero_all(found)
+        raise
+    return found
+
+
+def _password_kek(password: str | SecretText, kdf: dict[str, Any], specs: list[FactorSpec],
+                  factor_secrets: list[bytearray]) -> bytearray:
+    """The password wrapper's key: the Argon2id KEK, combined with the factor secrets in v4 (§4)."""
+    try:
+        return composite_key.derive_wrapping_key(lambda: _derive_key(password, kdf), specs, factor_secrets)
+    except composite_key.FactorMismatch as exc:
+        if isinstance(exc, FactorMismatch):
+            raise
+        raise FactorMismatch(exc.kind) from None
+
+
+def _enrol_yubikey(responder: Callable[[bytes], bytes], slot: int) -> tuple[FactorSpec, bytearray]:
+    """A ``yubikey-hmac`` factor with a new challenge, answered by ``responder`` now."""
+    challenge = composite_key.new_challenge()
+    try:
+        response = responder(composite_key.pad_challenge(challenge))
+    except VaultError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - no answer from the YubiKey: treat it as not there
+        raise FactorRequired([composite_key.YUBIKEY_HMAC]) from exc
+    try:
+        secret = bytearray(composite_key.yubikey_secret(response))
+    except (ValueError, TypeError):
+        # Not a 20-byte HMAC-SHA1 answer: the slot is most likely not set up for challenge-response.
+        raise VaultError(t("vault.err.yubiKeyBadAnswer", slot=slot)) from None
+    finally:
+        if isinstance(response, bytearray):
+            _zero(response)
+    spec = FactorSpec(kind="yubikey-hmac", check=composite_key.factor_check(secret), slot=slot,
+                      challenge=challenge.hex())
+    return spec, secret
+
+
+def _enrol_factor(new: FactorInput) -> tuple[FactorSpec, bytearray]:
+    """The spec and secret of a factor being added (the caller zeroes the secret)."""
+    if not isinstance(new, FactorInput):
+        raise VaultError("Unknown unlock factor")
+    if new.kind == composite_key.KEYFILE:
+        if not isinstance(new.keyfile_bytes, (bytes, bytearray)):
+            raise VaultError(t("vault.err.keyFileInvalid"))
+        try:
+            secret = bytearray(keyfile.key_from_bytes(bytes(new.keyfile_bytes)))
+        except ValueError:
+            raise VaultError(t("vault.err.keyFileInvalid")) from None
+        return FactorSpec(kind="keyfile", check=composite_key.factor_check(secret)), secret
+    if new.kind == composite_key.YUBIKEY_HMAC:
+        slot = 2 if new.slot is None else new.slot
+        if type(slot) is not int or slot not in composite_key.YUBIKEY_SLOTS or not callable(new.responder):
+            raise VaultError("A YubiKey factor needs slot 1 or 2 and a responder")
+        return _enrol_yubikey(new.responder, slot)
+    raise VaultError("Unknown unlock factor")
+
+
+def _unlock_sidecar_kinds() -> list[tuple[str, str, Any]]:
+    """``(name, payload binding key, upgrade_envelope_context)`` for every local unlock sidecar."""
+    from .face_unlock import upgrade_envelope_context as upgrade_face
+    from .fido_unlock import upgrade_envelope_context as upgrade_fido
+    from .hello_unlock import upgrade_envelope_context as upgrade_hello
+    return [("face", "face_binding", upgrade_face), ("fido", "fido_binding", upgrade_fido),
+            ("hello", "hello_binding", upgrade_hello)]
+
+
 def unlock_context_for_header(header: dict[str, Any]) -> str:
     """Hex digest that local unlock sidecars (Hello/camera) bind to.
 
     It is stable across ordinary saves, and changes when the master password,
     the key generation or the vault format changes, so a stale sidecar is
-    refused before any native prompt is shown.
+    refused before any native prompt is shown.  Adding or removing a key-file /
+    YubiKey factor (v3 <-> v4) does not change it: v4 uses the v3 identity.
     """
-    if _header_version(header) == FORMAT_VERSION:
+    if _has_wrapped_key(header):
         body = _v3_identity(header)
         body["kdf"] = header.get("kdf", {})
         body["cipher"] = {"name": header["cipher"]["name"]}
@@ -483,6 +798,41 @@ def _derive_key(password: str | SecretText, kdf: dict[str, Any]) -> bytearray:
     finally:
         if owned:
             secret.wipe()
+
+
+def _total_physical_memory_bytes() -> int | None:
+    """Installed physical RAM in bytes, or None when it cannot be read."""
+    try:
+        if sys.platform == "win32":
+            class _MemoryStatusEx(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+            status = _MemoryStatusEx()
+            status.dwLength = ctypes.sizeof(_MemoryStatusEx)
+            if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                return None
+            return int(status.ullTotalPhys) or None
+        total = int(os.sysconf("SC_PAGE_SIZE")) * int(os.sysconf("SC_PHYS_PAGES"))
+        return total if total > 0 else None
+    except (AttributeError, OSError, ValueError, TypeError):
+        return None
+
+
+def _low_memory_machine() -> bool:
+    total = _total_physical_memory_bytes()
+    return total is None or total < KDF_LOW_MEMORY_RAM_BYTES
+
+
+def _default_kdf() -> dict[str, Any]:
+    """KDF parameters for a new password wrapper on this machine (no salt)."""
+    kdf: dict[str, Any] = dict(DEFAULT_KDF)
+    if _low_memory_machine():
+        kdf["memory_cost_kib"] = min(int(kdf["memory_cost_kib"]), LOW_MEMORY_KDF_MEMORY_KIB)
+    return kdf
 
 
 def _empty_payload() -> dict[str, Any]:
@@ -1154,6 +1504,12 @@ def _throttle_key_id(key: bytes) -> str:
     return hmac.new(key, b"localgatekeys|unlock-throttle-key-id|v1", hashlib.sha256).hexdigest()[:32]
 
 
+#: DPAPI entropy of the high-water mark kept outside the vault folder (``outside_marks``).
+_THROTTLE_MARK_ENTROPY = b"localgatekeys|unlock-throttle-mark|v1"
+_THROTTLE_MARK_PURPOSE = "unlock-throttle"
+_THROTTLE_ID_MARK_PURPOSE = "unlock-throttle-id"
+
+
 def _valid_throttle_binding(value: Any) -> bool:
     return (isinstance(value, dict) and set(value) == {"key_id", "location"}
             and all(isinstance(value[name], str) and len(value[name]) == 32
@@ -1180,6 +1536,14 @@ class UnlockThrottle:
     (the maximum delay, never a permanent lock-out), so deleting both files
     no longer clears the failures.  A vault without the field (older
     release, not saved since) keeps the behaviour above until its next save.
+
+    Audit 2026-11-10: all of these files sit in the vault folder, so copying
+    the folder before guessing and putting it back reset the count.  Each
+    failure therefore also raises a high-water mark kept outside the folder
+    (``outside_marks``: HKCU on Windows, DPAPI-sealed when available), and the
+    count read at start is the larger of the two.  A missing or unreadable
+    mark falls back to the folder counter (never a lock-out, never lower); a
+    malformed one fails closed like a forged counter.  A success clears both.
     """
 
     def __init__(self, path: Path):
@@ -1247,7 +1611,7 @@ class UnlockThrottle:
             header = json.loads(self.path.read_bytes())
         except (OSError, ValueError, RecursionError):  # deep nesting: _read_vault_header refuses it
             return None
-        if not isinstance(header, dict) or header.get("version") != FORMAT_VERSION:
+        if not isinstance(header, dict) or header.get("version") not in WRAPPED_KEY_VERSIONS:
             return None
         binding = header.get(THROTTLE_BINDING_FIELD)
         if not _valid_throttle_binding(binding) or binding["location"] != _throttle_location(self.path):
@@ -1285,7 +1649,90 @@ class UnlockThrottle:
             _THROTTLE_BINDINGS[self._id] = binding
             return dict(binding)
 
+    # -- high-water mark outside the vault folder (audit 2026-11-10) ----------
+    def _mark_name(self) -> str:
+        return outside_marks.name_for(_THROTTLE_MARK_PURPOSE, self.path)
+
+    def _header_vault_id(self) -> str | None:
+        return header_vault_id(self.path)
+
+    def _id_mark_name(self) -> str | None:
+        """Design decision 2026-11-12: a second mark keyed by the vault id, so a copy of the folder opened from
+        another path still finds the count (the path mark alone starts at zero there)."""
+        vault_id = self._header_vault_id()
+        if vault_id is None:
+            return None
+        return outside_marks.name_for_id(_THROTTLE_ID_MARK_PURPOSE, vault_id)
+
+    def _outside_failures(self) -> int | None:
+        """The larger count of the path and vault-id marks; None when neither can be read (the folder counter
+        then decides)."""
+        counts = [self._path_mark_failures()]
+        vault_id = self._header_vault_id()
+        if vault_id is not None:
+            counts.append(self._read_mark(outside_marks.name_for_id(_THROTTLE_ID_MARK_PURPOSE, vault_id),
+                                          "vault_id", vault_id))
+        known = [count for count in counts if count is not None]
+        return max(known) if known else None
+
+    def _path_mark_failures(self) -> int | None:
+        return self._read_mark(self._mark_name(), "location", _throttle_location(self.path))
+
+    def _read_mark(self, name: str, bound_field: str, bound_value: str) -> int | None:
+        """One mark's count; None when it is missing or cannot be read; malformed fails closed."""
+        try:
+            raw = outside_marks.read(name)
+        except OSError:
+            return None
+        if raw is None:
+            return None
+        try:
+            record = json.loads(raw)
+            if not isinstance(record, dict):
+                raise ValueError
+            if "dpapi" in record:
+                if not isinstance(record["dpapi"], str):
+                    raise ValueError
+                opened = _dpapi_unprotect(record["dpapi"], _THROTTLE_MARK_ENTROPY)
+                if opened is None:
+                    return None  # no DPAPI here: cannot read it, which must not lock the owner out
+                record = json.loads(opened)
+                if not isinstance(record, dict):
+                    raise ValueError
+            failures = record.get("failures")
+            if type(failures) is not int or failures < 0 or record.get(bound_field) != bound_value:
+                raise ValueError
+            return failures
+        except (ValueError, TypeError, RecursionError):
+            _LOG.warning("Unlock attempt mark for %s is malformed; failing closed.", self.path.name)
+            return THROTTLE_FAIL_CLOSED_FAILURES
+
+    def _raise_outside_mark(self, failures: int) -> None:
+        """Best effort; never lowers a mark another process raised meanwhile."""
+        failures = max(int(failures), self._outside_failures() or 0)
+        marks = [(self._mark_name(), {"failures": failures, "location": _throttle_location(self.path)})]
+        vault_id = self._header_vault_id()
+        if vault_id is not None:
+            marks.append((outside_marks.name_for_id(_THROTTLE_ID_MARK_PURPOSE, vault_id),
+                          {"failures": failures, "vault_id": vault_id}))
+        for name, record in marks:
+            body = _canonical_json(record)
+            sealed = _dpapi_protect(body, "LocalGateKeys unlock attempts", _THROTTLE_MARK_ENTROPY)
+            value = json.dumps({"dpapi": sealed}) if sealed is not None else body.decode("utf-8")
+            outside_marks.write(name, value)
+
+    def _delete_outside_marks(self) -> None:
+        outside_marks.delete(self._mark_name())
+        id_mark = self._id_mark_name()
+        if id_mark is not None:
+            outside_marks.delete(id_mark)
+
     def _load_failures(self) -> int:
+        folder = self._load_folder_failures()
+        outside = self._outside_failures()
+        return folder if outside is None else max(folder, outside)
+
+    def _load_folder_failures(self) -> int:
         state_path = _unlock_throttle_path(self.path)
         if self._binding_broken():
             _LOG.warning("Unlock attempt key for %s is missing or replaced; failing closed.", self.path.name)
@@ -1374,11 +1821,29 @@ class UnlockThrottle:
             state["failures"] = float(failures)
             state["not_before"] = _monotonic() + _throttle_delay(failures)
             self._store_failures(failures)
+            self._raise_outside_mark(failures)
 
     def reset(self) -> None:
         with _THROTTLE_LOCK:
             _THROTTLE_STATE[self._id] = {"failures": 0.0, "not_before": _monotonic()}
             self._store_failures(0)
+            self._delete_outside_marks()
+
+
+def header_vault_id(path: Path | str) -> str | None:
+    """The v3/v4 header's ``vault_id`` (authenticated by the catalog AAD), read without unlocking; None when the
+    file is missing, unreadable or older.  Keys the outside marks that must follow a copy to another folder."""
+    path = Path(path)
+    try:
+        if not path.is_file() or path.stat().st_size > MAX_VAULT_BYTES:
+            return None
+        header = json.loads(path.read_bytes())
+    except (OSError, ValueError, RecursionError):
+        return None
+    if not isinstance(header, dict) or header.get("version") not in WRAPPED_KEY_VERSIONS:
+        return None
+    vault_id = header.get("vault_id")
+    return vault_id if isinstance(vault_id, str) and 0 < len(vault_id) <= 128 else None
 
 
 def unlock_throttle(path: Path) -> UnlockThrottle:
@@ -1388,6 +1853,286 @@ def unlock_throttle(path: Path) -> UnlockThrottle:
 def remaining_backoff_seconds(path: Path) -> float:
     """Seconds until the next master-password attempt for this vault is accepted."""
     return UnlockThrottle(path).remaining_backoff_seconds()
+
+
+# --------------------------------------------------------------------------
+# Rollback marks outside the vault folder (known-limitations plan, item 1)
+# --------------------------------------------------------------------------
+#
+# The anchor beside the vault cannot tell an older vault+anchor pair copied back from the real one, so every
+# committed generation is also recorded outside the folder (``outside_marks``: HKCU on Windows, DPAPI-sealed when
+# available): generation + HMAC under the rollback-anchor key, bound to the vault id.  Two values, as the unlock
+# throttle keeps: one named by the vault's path, one by its vault id (which also holds, encrypted under the anchor
+# key, the path where it was last raised).
+#
+# Rules (a false "rolled back" refusal locks the owner out of a good vault, so each refusal needs proof):
+# - A mark refuses only when it authenticates under this vault's data key and is higher than the vault.
+# - A mark that does not authenticate (another vault that lived at this path, a copy whose data key was rotated,
+#   garbage) is ignored and replaced, never a refusal: whoever can write it can also delete it, so refusing on it
+#   adds no protection and only creates lock-outs.  An unreadable store (or a sealed value without DPAPI here) is
+#   ignored and left as it is.  A missing mark is minted again.
+# - The path mark decides at its path.  The vault-id mark decides only on the app's own unlock of the live vault
+#   (``MARKS_LIVE``) at a path without a valid path mark (a moved folder): it refuses when the place it was raised
+#   at is this path or no longer holds this vault (the folder was moved, then an older copy put there); when that
+#   place still holds the vault (two live copies, e.g. a backup restored as a second profile) the unlock is only
+#   flagged (``rollback_anchor_missing``), since refusing would lock the restored profile out.
+# - Copies (``check_anchor=False``, read-only probes) never read or write a mark.  Restores set the destination's
+#   marks to exactly the restored generation once the restored vault is in place (``write_rollback_anchor``,
+#   ``mark_restored``), never before: a restore that stops earlier leaves them as they were.
+# - A data-key rotation (every master-password change) keeps a record under each retired key, the last
+#   ``_ROLLBACK_MARK_RETIRED_MAX`` of them, so a copy under one of those keys is refused too; the v3 upgrade keeps
+#   one for the format 1/2 vault it replaced (no vault id).
+
+_ROLLBACK_MARK_ENTROPY = b"localgatekeys|rollback-mark|v1"
+_ROLLBACK_MARK_PLACE_INFO = b"localgatekeys|rollback-mark-place|v1"
+_ROLLBACK_MARK_NONCE_INFO = b"localgatekeys|rollback-mark-place-nonce|v1"
+_ROLLBACK_MARK_SCHEME = "localgatekeys-rollback-mark-v1"
+_ROLLBACK_MARK_PURPOSE = "rollback-mark"
+_ROLLBACK_ID_MARK_PURPOSE = "rollback-mark-id"
+#: ``_decrypt_vault`` mark handling: none (copies and probes), the path mark only, or the app's live unlock.
+MARKS_OFF, MARKS_COPY, MARKS_LIVE = "off", "copy", "live"
+
+
+@dataclass(frozen=True)
+class _RollbackMark:
+    state: str  # "ok", "missing", "foreign" (does not authenticate) or "unreadable"
+    generation: int = 0
+    place: str | None = None  # vault-id mark: where it was last raised (normalised absolute path)
+    settled: bool = True  # False while it still carries a data-key rotation's second MAC
+    retired: Any = None  # the records of the data keys rotations retired (newest first), carried forward by raises
+    own: bool = True  # False: it authenticated only through one of those records (a vault under a retired key)
+
+
+def _mark_place(path: Path) -> str:
+    return os.path.normcase(str(Path(path).absolute()))
+
+
+def _mark_location(path: Path) -> str:
+    return hashlib.sha256(b"localgatekeys|rollback-mark-location|v1|"
+                          + _mark_place(path).encode("utf-8")).hexdigest()[:32]
+
+
+def _rollback_mark_names(path: Path, vault_id: str) -> list[tuple[str, str]]:
+    names = [("path", outside_marks.name_for(_ROLLBACK_MARK_PURPOSE, path))]
+    if vault_id:
+        names.append(("id", outside_marks.name_for_id(_ROLLBACK_ID_MARK_PURPOSE, vault_id)))
+    return names
+
+
+def _rollback_mark_mac(anchor_key: bytes | bytearray, kind: str, generation: int, vault_id: str,
+                       place: str) -> bytes:
+    body = _canonical_json({"scheme": _ROLLBACK_MARK_SCHEME, "kind": kind, "generation": int(generation),
+                            "vault_id": vault_id, "place": place})
+    return hmac.new(anchor_key, body, hashlib.sha256).digest()
+
+
+def _seal_mark_place(anchor_key: bytes | bytearray, vault_id: str, generation: int, path: Path) -> str:
+    """The place, encrypted under the anchor key with the vault id as AAD.  The nonce is derived (HMAC under its own
+    subkey over the generation, vault id and place), never drawn: raising a mark must take nothing from the random
+    source, or it would shift every later random byte of the save it follows (the deterministic backup vectors
+    replay that stream).  A nonce repeats only for the same generation, vault id and place, i.e. the same
+    plaintext and AAD, which gives the same ciphertext again and reveals nothing new."""
+    key = _hkdf(anchor_key, _ROLLBACK_MARK_PLACE_INFO)
+    nonce_key = _hkdf(anchor_key, _ROLLBACK_MARK_NONCE_INFO)
+    try:
+        place = _mark_place(path)
+        nonce = hmac.new(nonce_key, _canonical_json({"generation": int(generation), "vault_id": vault_id,
+                                                     "place": place}), hashlib.sha256).digest()[:12]
+        # As for the catalog: the key is handed over as its bytearray and the plaintext is a buffer zeroed after.
+        plaintext = bytearray(place.encode("utf-8"))
+        try:
+            return _b64e(nonce + AESGCM(key).encrypt(nonce, plaintext, vault_id.encode("utf-8")))
+        finally:
+            _zero(plaintext)
+    finally:
+        _zero(key)
+        _zero(nonce_key)
+
+
+def _open_mark_place(anchor_key: bytes | bytearray, vault_id: str, sealed: str) -> str | None:
+    key = _hkdf(anchor_key, _ROLLBACK_MARK_PLACE_INFO)
+    try:
+        raw = _b64d(sealed)
+        if len(raw) < 12 + 16:
+            return None
+        plaintext = _aesgcm_decrypt(key, raw[:12], raw[12:], vault_id.encode("utf-8"))
+        try:
+            return plaintext.decode("utf-8")
+        finally:
+            _zero(plaintext)
+    except (VaultError, InvalidTag, ValueError):
+        return None  # sealed under a rotation's other key
+    finally:
+        _zero(key)
+
+
+#: Retired-key records a mark keeps (newest first): a copy from before more data-key changes than this (each
+#: master-password change is one) is no longer recognised by the marks.  Bounded so a value stays small.
+_ROLLBACK_MARK_RETIRED_MAX = 8
+
+
+def _retired_mark(retired_key: bytes | bytearray, kind: str, generation: int, vault_id: str,
+                  path: Path) -> dict[str, Any]:
+    """After a data-key rotation: the generation the new key starts at, under the retired key.  Any vault still
+    under that key is older, so a copy taken before a master-password change and put back is refused too.
+    ``vault_id`` is the one the retired vault had: "" for a format 1/2 vault the v3 upgrade gave its id."""
+    place = _mark_location(path) if kind == "path" else ""
+    return {"generation": int(generation),
+            "mac": _b64e(_rollback_mark_mac(retired_key, "retired-" + kind, generation, vault_id, place))}
+
+
+def _retired_records(value: Any) -> list[dict[str, Any]]:
+    """A stored ``retired`` field as a list (values written before the chain kept a single record)."""
+    if isinstance(value, dict):
+        return [value]
+    if isinstance(value, list):
+        return [record for record in value[:_ROLLBACK_MARK_RETIRED_MAX] if isinstance(record, dict)]
+    return []
+
+
+def _rollback_mark_value(anchor_key: bytes | bytearray, kind: str, generation: int, vault_id: str, path: Path, *,
+                         previous_key: bytes | bytearray | None = None, retired: Any = None) -> str:
+    """The stored value; ``previous_key`` adds a second MAC so a data-key rotation cut short opens either vault,
+    ``retired`` keeps the records of the data keys rotations retired (``_retired_mark``, newest first)."""
+    place = _mark_location(path) if kind == "path" else _seal_mark_place(anchor_key, vault_id, generation, path)
+    record: dict[str, Any] = {"version": 1, "generation": int(generation), "place": place,
+                              "mac": _b64e(_rollback_mark_mac(anchor_key, kind, generation, vault_id, place))}
+    if previous_key is not None:
+        record["previous"] = _b64e(_rollback_mark_mac(previous_key, kind, generation, vault_id, place))
+    retired = _retired_records(retired)
+    if retired:
+        record["retired"] = retired
+    body = _canonical_json(record)
+    sealed = _dpapi_protect(body, "LocalGateKeys rollback mark", _ROLLBACK_MARK_ENTROPY)
+    return json.dumps({"dpapi": sealed}) if sealed is not None else body.decode("utf-8")
+
+
+def _read_rollback_mark(name: str, kind: str, anchor_key: bytes | bytearray, vault_id: str,
+                        path: Path) -> _RollbackMark:
+    try:
+        raw = outside_marks.read(name)
+    except OSError:
+        return _RollbackMark("unreadable")
+    if raw is None:
+        return _RollbackMark("missing")
+    try:
+        record = json.loads(raw)
+        if not isinstance(record, dict):
+            raise ValueError
+        if "dpapi" in record:
+            if not isinstance(record["dpapi"], str):
+                raise ValueError
+            opened = _dpapi_unprotect(record["dpapi"], _ROLLBACK_MARK_ENTROPY)
+            if opened is None:
+                return _RollbackMark("unreadable")  # sealed, and no DPAPI here to open it
+            record = json.loads(opened)
+            if not isinstance(record, dict):
+                raise ValueError
+        generation, place = record.get("generation"), record.get("place")
+        if type(generation) is not int or not 0 <= generation <= 2**63 - 1 or not isinstance(place, str):
+            raise ValueError
+        if kind == "path" and place != _mark_location(path):
+            raise ValueError
+        expected = _rollback_mark_mac(anchor_key, kind, generation, vault_id, place)
+        macs = [record.get(field) for field in ("mac", "previous")]
+        retired = _retired_records(record.get("retired"))
+        if any(isinstance(mac, str) and hmac.compare_digest(_b64d(mac), expected) for mac in macs):
+            where = _open_mark_place(anchor_key, vault_id, place) if kind == "id" else None
+            return _RollbackMark("ok", generation, where, "previous" not in record, retired or None)
+        for entry in retired:
+            retired_generation, retired_mac = entry.get("generation"), entry.get("mac")
+            if (type(retired_generation) is int and 0 <= retired_generation <= 2**63 - 1
+                    and isinstance(retired_mac, str)
+                    and hmac.compare_digest(retired_mac,
+                                            _retired_mark(anchor_key, kind, retired_generation, vault_id,
+                                                          path)["mac"])):
+                # A vault under a key a rotation retired (or from before the v3 upgrade gave it its id).
+                return _RollbackMark("ok", retired_generation, own=False)
+        raise ValueError
+    except (ValueError, TypeError, RecursionError, VaultError):
+        return _RollbackMark("foreign")
+
+
+def _rollback_mark_refusal() -> str:
+    """The refusal when a mark is newer than the vault: unlike the anchor's message, it names the way back to an
+    older state on purpose (a vault folder put back by hand, for example from File History, is refused)."""
+    return t("vault.err.rollbackMarkOlder", restore=t("command.backup-restore.title"))
+
+
+def _check_rollback_marks(path: Path, generation: int, anchor_key: bytes | bytearray, vault_id: str, *,
+                          live: bool) -> tuple[bool, bool]:
+    """Refuse a vault older than an authenticated mark (rules above); nothing is written.
+
+    Returns (the path mark authenticated, flag the unlock: an older second copy of a vault that is still live).
+    """
+    path_mark = _read_rollback_mark(outside_marks.name_for(_ROLLBACK_MARK_PURPOSE, path), "path", anchor_key,
+                                    vault_id, path)
+    if path_mark.state == "ok":
+        if path_mark.generation > generation:
+            raise VaultError(_rollback_mark_refusal())
+        return True, False
+    if path_mark.state == "foreign":
+        _LOG.warning("Rollback mark for %s does not belong to this vault; it is replaced.", path.name)
+    if not live or not vault_id:
+        return False, False
+    id_mark = _read_rollback_mark(outside_marks.name_for_id(_ROLLBACK_ID_MARK_PURPOSE, vault_id), "id",
+                                  anchor_key, vault_id, path)
+    if id_mark.state != "ok" or id_mark.generation <= generation:
+        return False, False
+    place = id_mark.place
+    if place is not None and (place == _mark_place(path) or header_vault_id(Path(place)) != vault_id):
+        raise VaultError(_rollback_mark_refusal())
+    # Another copy still holds this vault id (or the mark is from a key a rotation retired, so where it was
+    # raised cannot be read): flag it instead of locking this copy out.
+    _LOG.warning("A newer copy of the vault at %s may still be on this PC.", path.name)
+    return False, True
+
+
+def _raise_rollback_marks(path: Path, generation: int, anchor_key: bytes | bytearray, vault_id: str, *,
+                          exact: bool = False, previous_key: bytes | bytearray | None = None,
+                          retired_key: bytes | bytearray | None = None,
+                          retired_vault_id: str | None = None) -> None:
+    """Best effort: raise both marks to ``generation`` (never lower an authenticated one), or with ``exact`` set
+    them to it (a confirmed restore, a data-key rotation).  ``previous_key`` / ``retired_key``: a rotation's
+    old key (``_rollback_mark_value``, ``_retired_mark``); ``retired_vault_id`` the retired vault's id when it
+    differs (the v3 upgrade).  The retired-key records of a mark that authenticates under this key (or
+    ``previous_key``) are carried forward, newest first, at most ``_ROLLBACK_MARK_RETIRED_MAX``.  A failure never
+    blocks an unlock or a save."""
+    try:
+        for kind, name in _rollback_mark_names(path, vault_id):
+            mark = _read_rollback_mark(name, kind, anchor_key, vault_id, path)
+            if not exact:
+                if mark.state == "unreadable":
+                    continue
+                if mark.state == "ok" and (
+                        mark.generation > generation
+                        or (mark.generation == generation and mark.settled
+                            and (kind == "path" or mark.place == _mark_place(path)))):
+                    continue
+            elif not (mark.state == "ok" and mark.own) and previous_key is not None:
+                mark = _read_rollback_mark(name, kind, previous_key, vault_id, path)  # mid-rotation: the old key
+            retired = list(mark.retired or []) if mark.state == "ok" and mark.own else []
+            if retired_key is not None:
+                retired.insert(0, _retired_mark(retired_key, kind, generation,
+                                                vault_id if retired_vault_id is None else retired_vault_id, path))
+            outside_marks.write(name, _rollback_mark_value(anchor_key, kind, generation, vault_id, path,
+                                                           previous_key=previous_key,
+                                                           retired=retired[:_ROLLBACK_MARK_RETIRED_MAX]))
+    except Exception:  # noqa: BLE001 - the marks are best effort
+        _LOG.warning("Could not update the rollback mark for %s.", Path(path).name)
+
+
+def forget_rollback_marks(path: Path | str) -> None:
+    """Best effort: delete the rollback marks of the vault at ``path`` (its path mark, and its vault-id mark when
+    the file is still there to name it), for a vault being removed for good (the duress vault, an erased
+    profile), so the store does not keep a value computed from its path.  Call it before the files go."""
+    path = Path(path)
+    names = [outside_marks.name_for(_ROLLBACK_MARK_PURPOSE, path)]
+    vault_id = header_vault_id(path)
+    if vault_id:
+        names.append(outside_marks.name_for_id(_ROLLBACK_ID_MARK_PURPOSE, vault_id))
+    for name in names:
+        outside_marks.delete(name)
 
 
 # --------------------------------------------------------------------------
@@ -1478,7 +2223,7 @@ def recovery_phrase_enrolled(path: Path) -> bool:
         header, _source = _read_vault_header(Path(path))
     except (VaultError, OSError):
         return False
-    wrappers = header.get("wrappers") if _header_version(header) == FORMAT_VERSION else None
+    wrappers = header.get("wrappers") if _has_wrapped_key(header) else None
     return isinstance(wrappers, dict) and isinstance(wrappers.get("recovery"), dict)
 
 
@@ -1574,6 +2319,7 @@ class VaultSession:
         self._edit_token_key: bytearray | None = bytearray(secrets.token_bytes(32))
         self._payload: dict[str, Any] | None = payload
         self._last_envelope_upgrade_result: dict[str, Any] | None = None
+        self._last_kdf_upgrade_result: dict[str, Any] | None = None
         self._pending_v3_header: dict[str, Any] | None = None
         self.reenroll_required: tuple[str, ...] = ()
         self.recovery_unlocked = False
@@ -1581,12 +2327,19 @@ class VaultSession:
         # session, kept only until the new master password is set so the same
         # phrase can be re-wrapped under the rotated data key; lock() zeroes it.
         self._recovery_entropy: bytearray | None = None
+        # Key file / YubiKey of a v4 vault this session was opened (or last re-authenticated) with,
+        # so password checks for sensitive actions can include them; lock() wipes it.
+        self._held_factors: _HeldFactors | None = None
         # Public, non-secret unlock-generation identity for controllers that
         # must reject in-flight work after lock/profile replacement.  It is
         # deliberately independent of catalog contents and survives the
         # locked state long enough for a bound controller to fail closed.
         self._workspace_session_generation = uuid.uuid4().hex
         self._committed_payload = copy.deepcopy(payload)
+        # Clock anchor for trash expiry: the newest time the vault itself has
+        # seen, plus a monotonic reading, so a forward wall-clock jump cannot
+        # make every trash record look expired at once.
+        self._clock_anchor = (_newest_payload_time(payload), time.monotonic())
         self._last_catalog_migration_result: dict[str, Any] | None = None
         self._disk_digest = hashlib.sha256(path.read_bytes()).digest() if path.exists() else None
         self._reminder_service = None
@@ -1596,6 +2349,11 @@ class VaultSession:
         # none was found at unlock (deleted, or the vault was copied without
         # it).  A new anchor has been written; callers should tell the user.
         self.rollback_anchor_missing = False
+        # Where this session's commits raise the rollback marks kept outside the folder: its own path, None for
+        # a copy (``_decrypt_vault`` decides).  A restore marks its destination once published (``mark_restored``).
+        self._rollback_marks_target: Path | None = Path(path)
+        self._rollback_marks_off = False  # a copy opened without its anchor check: never reads or writes a mark
+        self._rollback_marks_deferred = False  # while a journaled promotion may still be rolled back
         self._suppress_rolling_backup = False
         self.trash_retention_days = 30
         # Non-secret result of the last recovery-phrase create / replace / remove.
@@ -1607,6 +2365,8 @@ class VaultSession:
         # Free plan limit on live items; None means unlimited (Pro).  Set by
         # the app from licensing after unlock.  Sync apply never checks it.
         self.item_limit: int | None = None
+        # Live items in this profile's other vaults (free plan counts them together; sub-plan 12).
+        self.item_limit_offset: int = 0
         # Pro-only features this session may add or change (licensing.Feature
         # values); None means unrestricted.  Set by the app with item_limit.
         self.pro_features: frozenset[str] | None = None
@@ -1671,6 +2431,16 @@ class VaultSession:
         """
         from .item_service import ItemService
         return ItemService(self)
+
+    @property
+    def read_only_collection_ids(self) -> frozenset[str]:
+        """Collections shared with this vault read-only (sub-plan 07): the item service refuses edits there.
+
+        Also those another of this person's devices holds read-only (a share link received through
+        personal collections sync), so a second device never edits a read-only shared item.
+        """
+        from .sync.share_group import linked_read_only_collection_ids, read_only_collection_ids
+        return read_only_collection_ids(self) | linked_read_only_collection_ids(self)
 
     @property
     def history(self):
@@ -1829,7 +2599,7 @@ class VaultSession:
         if self._key is None:
             raise VaultLockedError(t("vault.err.keyUnavailable"))
         catalog = CATALOG_FORMAT if catalog_version == CATALOG_VERSION else LEGACY_CATALOG_IDENTIFIER
-        source = self._header if _header_version(self._header) == FORMAT_VERSION else self._pending_v3_header
+        source = self._header if _has_wrapped_key(self._header) else self._pending_v3_header
         if source is not None:
             header = copy.deepcopy(source)
             header["catalog_version"] = int(catalog_version)
@@ -1858,7 +2628,7 @@ class VaultSession:
 
     def _prepare_promotion(self, password: SecretText) -> None:
         """Remember a v3 header for a v1/v2 session so its first save publishes v3."""
-        if _header_version(self._header) == FORMAT_VERSION or self._pending_v3_header is not None:
+        if _has_wrapped_key(self._header) or self._pending_v3_header is not None:
             return
         self._pending_v3_header = self._promoted_header(catalog_version=self._catalog_version, password=password)
 
@@ -1891,13 +2661,20 @@ class VaultSession:
         self._catalog_version = int(catalog_version)
         self._header = header
         self._payload = payload
+        # The rollback marks are raised once the journal is gone: a recovery from it puts the older vault back.
+        deferred, self._rollback_marks_deferred = self._rollback_marks_deferred, True
         try:
             atomic_write_json(journal_path, {**journal, "status": "publishing"})
             if before_save is not None:
                 before_save()
             self.save()
             journal_path.unlink(missing_ok=True)
+            self._rollback_marks_deferred = deferred
+            if not deferred:
+                # A format 1/2 vault that just got its id: a copy from before the upgrade is an older copy too.
+                self._raise_own_rollback_marks(retired_vault_id=str(old_header.get("vault_id", "")))
         except BaseException:
+            self._rollback_marks_deferred = deferred
             if journal_path.exists():
                 _recover_vault_migration(self.path, in_process=True)
             self._catalog_version = old_catalog_version
@@ -1964,12 +2741,9 @@ class VaultSession:
         reenroll: list[str] = []
         prefs = payload.get("preferences", {})
         prefs = prefs if isinstance(prefs, dict) else {}
-        from .face_unlock import upgrade_envelope_context as upgrade_face
-        from .hello_unlock import upgrade_envelope_context as upgrade_hello
         upgraded_payload = copy.deepcopy(payload)
         upgraded_prefs = upgraded_payload.setdefault("preferences", {})
-        for name, binding_key, convert in (("face", "face_binding", upgrade_face),
-                                           ("hello", "hello_binding", upgrade_hello)):
+        for name, binding_key, convert in _unlock_sidecar_kinds():
             if not prefs.get(binding_key):
                 continue
             if convert(self.path, old_context, new_context):
@@ -1994,6 +2768,131 @@ class VaultSession:
             "backup_path": str(backup.resolve()), "data_key": "inherited",
             "converted": sorted(converted), "reenroll_required": sorted(reenroll),
         }
+
+    @property
+    def last_kdf_upgrade_result(self) -> dict[str, Any] | None:
+        """Result of the Argon2id parameter upgrade attempted by this unlock, if any."""
+        return copy.deepcopy(self._last_kdf_upgrade_result)
+
+    def _bound_unlock_sidecars(self) -> list[tuple[str, Any]]:
+        """``(name, upgrade_envelope_context)`` for each Hello/camera/security-key grant recorded in the payload."""
+        prefs = self._require_payload().get("preferences", {})
+        if not isinstance(prefs, dict):
+            return []
+        return [(name, convert) for name, binding_key, convert in _unlock_sidecar_kinds() if prefs.get(binding_key)]
+
+    def _upgrade_kdf_on_unlock(self, password: SecretText, factor_secrets: list[bytearray] | None = None) -> None:
+        """Re-wrap the data key under the current Argon2id default after a master-password unlock.
+
+        Only the password wrapper changes: same data key, fresh salt, stronger
+        memory cost (time cost is never lowered).  The recovery wrapper and the
+        catalog stay valid because neither authenticates the KDF.  The new
+        wrapper is checked with a fresh derivation before anything is written,
+        then published through the crash-safe migration journal.  Hello/camera
+        sidecars are moved to the new unlock context after the publish; the old
+        context is kept in the payload (``KDF_UPGRADE_CONTEXT_PREF``) so a crash
+        in between is repaired by the next password unlock.  Any failure leaves
+        the vault as it was and the session usable; the next password unlock
+        tries again.  Machines with < 4 GiB RAM are skipped.
+        """
+        self._last_kdf_upgrade_result = None
+        header = self._header
+        if self._key is None or not _has_wrapped_key(header):
+            return
+        target: dict[str, Any] = dict(DEFAULT_KDF)
+        current = header.get("kdf")
+        try:
+            current_memory = int(current["memory_cost_kib"])  # type: ignore[index]
+            current_time = int(current["time_cost"])  # type: ignore[index]
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return
+        target_memory = int(target["memory_cost_kib"])
+        if current_memory >= target_memory:
+            return
+        result: dict[str, Any] = {"from_memory_cost_kib": current_memory, "to_memory_cost_kib": target_memory}
+        if _low_memory_machine():
+            self._last_kdf_upgrade_result = {**result, "outcome": "skipped", "reason": "low-memory"}
+            return
+        new_kdf = {**target, "time_cost": max(current_time, int(target["time_cost"])),
+                   "salt": _b64e(os.urandom(16))}
+        old_context = unlock_context_for_header(header)
+        try:
+            upgraded = copy.deepcopy(header)
+            specs = _header_factor_specs(header)
+            factor_secrets = factor_secrets or []
+            upgraded["wrappers"]["password"] = self._password_wrapper(upgraded, password, new_kdf, specs,
+                                                                      factor_secrets)
+            if not self._password_wrapper_matches(password, upgraded, factor_secrets):
+                raise VaultError("The re-wrapped password key did not verify")
+            new_context = unlock_context_for_header(upgraded)
+            sidecars = self._bound_unlock_sidecars()
+            payload = copy.deepcopy(self._require_payload())
+            prefs = payload.get("preferences")
+            if sidecars and isinstance(prefs, dict):
+                # Keep the context this upgrade produced too: the repair below applies only
+                # while the header still carries it, never against a later context.
+                prefs[KDF_UPGRADE_CONTEXT_PREF] = {"previous": old_context, "target": new_context}
+            snapshot = self._journaled_promotion("kdf-upgrade", upgraded, payload, self._catalog_version)
+        except Exception as exc:  # noqa: BLE001 - an upgrade failure must never block the unlock
+            self._last_kdf_upgrade_result = {**result, "outcome": "failed", "error": str(exc)}
+            _LOG.warning("Vault KDF upgrade deferred: %s", exc)
+            return
+        converted: list[str] = []
+        pending: list[str] = []
+        for name, convert in sidecars:
+            (converted if convert(self.path, old_context, new_context) else pending).append(name)
+        # The pre-upgrade snapshot holds the same data key behind the weaker wrapper:
+        # drop it once the published file is confirmed (rolling backups age out as usual).
+        snapshot_removed = False
+        if self._published_header_matches(upgraded):
+            try:
+                snapshot.unlink()
+                snapshot_removed = True
+            except OSError:
+                _LOG.warning("Could not remove the pre-upgrade vault snapshot %s.", snapshot.name)
+        self._last_kdf_upgrade_result = {
+            **result, "outcome": "upgraded", "data_key": "inherited", "converted": sorted(converted),
+            "sidecars_pending": sorted(pending), "snapshot_removed": snapshot_removed,
+        }
+
+    def _published_header_matches(self, header: dict[str, Any]) -> bool:
+        """The vault on disk carries ``header``'s password wrapper and decrypts with the data key."""
+        try:
+            disk_header, _source = _read_vault_header(self.path)
+            if (disk_header.get("kdf") != header.get("kdf")
+                    or disk_header.get("wrappers", {}).get("password") != header["wrappers"]["password"]):
+                return False
+            cipher = disk_header["cipher"]
+            nonce = _b64d(str(cipher["nonce"]))
+            if len(nonce) != 12 or self._key is None:
+                return False
+            plaintext = _aesgcm_decrypt(self._key, nonce, _b64d(str(cipher["ciphertext"])), _aad(disk_header))
+            _zero(plaintext)
+            return True
+        except (InvalidTag, OSError, ValueError, TypeError, KeyError, VaultError):
+            return False
+
+    def _repair_unlock_sidecars_after_kdf_upgrade(self) -> list[str]:
+        """Finish moving Hello/camera sidecars when a KDF upgrade was interrupted after its publish."""
+        if not _has_wrapped_key(self._header):
+            return []
+        prefs = self._require_payload().get("preferences", {})
+        stored = prefs.get(KDF_UPGRADE_CONTEXT_PREF) if isinstance(prefs, dict) else None
+        target = None
+        if isinstance(stored, dict):
+            previous, target = stored.get("previous"), stored.get("target")
+            if not isinstance(target, str) or len(target) != 64:
+                return []
+        else:
+            previous = stored  # the single-string form written by earlier builds
+        if not isinstance(previous, str) or len(previous) != 64:
+            return []
+        current = unlock_context_for_header(self._header)
+        if secrets.compare_digest(previous, current):
+            return []
+        if target is not None and not secrets.compare_digest(target, current):
+            return []  # the header moved on since that upgrade: the stored context is stale
+        return [name for name, convert in self._bound_unlock_sidecars() if convert(self.path, previous, current)]
 
     # Compatibility spelling for migration callers from the implementation
     # plan and for profile lifecycle code that treats it as a command.
@@ -2068,6 +2967,22 @@ class VaultSession:
         if item is None:
             raise VaultError(t("vault.err.credentialGone"))
         return self._entry_revision(item)
+
+    def site_pair_id(self, page_origin: str, saved_origin: str) -> str:
+        """Opaque id of a (page origin, saved origin) pair for the phishing shield.
+
+        HMAC-SHA256 with a subkey of this vault's data key, so the id the browser
+        extension stores for a "same account" answer cannot be matched against a
+        list of popular sites by anyone who reads the browser profile.
+        """
+        key = self._key
+        if key is None:
+            raise VaultLockedError(t("vault.err.locked"))
+        subkey = _hkdf(key, SITE_PAIR_INFO)
+        try:
+            return hmac.new(bytes(subkey), f"{page_origin}\n{saved_origin}".encode(), hashlib.sha256).hexdigest()[:32]
+        finally:
+            _zero(subkey)
 
     def _entry_revision(self, item: Mapping[str, Any]) -> int:
         """Per-credential token: the first 60 bits of ``_entry_token`` as an int (fits JSON and int checks)."""
@@ -2542,6 +3457,38 @@ class VaultSession:
             return True
         return False
 
+    def set_ai_agent_use(self, entry_id: str, allowed: bool) -> bool:
+        """Store "AI agents may use this login" (``scope.ai_agents``, agent_gate) on a website login.
+
+        Off removes the key, so a login that was never opted in and one turned off look the same. The flag
+        syncs with the scope; returns False when nothing changed.
+        """
+        from .agent_gate import AGENT_SCOPE_KEY
+
+        if type(allowed) is not bool:
+            raise VaultError("ai_agents is malformed")
+        payload = self._require_payload()
+        for item in payload["entries"]:
+            if item.get("id") != entry_id:
+                continue
+            if item.get("kind") != "web":
+                raise VaultError("Only website logins can be used by AI agents")
+            scope = item.get("scope")
+            if not isinstance(scope, dict):
+                raise VaultError("Website login scope is malformed")
+            if (scope.get(AGENT_SCOPE_KEY) is True) == allowed:
+                return False
+            if allowed:
+                scope[AGENT_SCOPE_KEY] = True
+            else:
+                scope.pop(AGENT_SCOPE_KEY, None)
+            now = int(time.time())
+            item["updated_at"] = now
+            payload["updated_at"] = now
+            self.save()
+            return True
+        return False
+
     def set_entry_extras(
         self,
         entry_id: str,
@@ -2590,7 +3537,7 @@ class VaultSession:
         limit = self.item_limit
         if limit is None:
             return
-        count = self.live_item_count()
+        count = self.live_item_count() + max(0, int(getattr(self, "item_limit_offset", 0) or 0))
         if count + n > limit:
             raise ItemLimitReached(limit, count)
 
@@ -2626,6 +3573,8 @@ class VaultSession:
             except BaseException:
                 if self._key is not None:
                     self._payload = original
+                if self._batch_depth == 1:
+                    self._history_marks = {}  # the labelled changes were rolled back with the block
                 raise
             finally:
                 self._batch_depth -= 1
@@ -2654,20 +3603,26 @@ class VaultSession:
                 raise VaultLockedError(t("vault.err.locked"))
             return hmac.compare_digest(candidate, self._key)
 
-    def _password_wrapper_matches(self, password: SecretText) -> bool:
-        """Derive the KEK and compare the unwrapped data key; no file is written."""
+    def _password_wrapper_matches(self, password: SecretText, header: dict[str, Any] | None = None,
+                                  factor_secrets: list[bytearray] | None = None) -> bool:
+        """Derive the KEK and compare the unwrapped data key; no file is written.
+
+        ``header`` checks a prepared (not yet published) header instead of the current one;
+        ``factor_secrets`` are that header's factor secrets in list order (v4).
+        """
         if self._key is None:
             raise VaultLockedError(t("vault.err.locked"))
-        header = self._header
-        kek = _derive_key(password, header["kdf"])
+        header = self._header if header is None else header
+        specs = _header_factor_specs(header)
+        kek = _password_kek(password, header["kdf"], specs, factor_secrets or [])
         try:
-            if _header_version(header) != FORMAT_VERSION:
+            if not _has_wrapped_key(header):
                 return self._matches_key(kek)
             wrapper = header["wrappers"]["password"]
             try:
                 unwrapped = _unwrap_key(kek, _validated_wrapper_field(wrapper, "nonce", 12),
                                         _validated_wrapper_field(wrapper, "ciphertext", 48),
-                                        _wrapper_aad(header, "password", {"kdf": header["kdf"]}))
+                                        _wrapper_aad(header, "password", _password_metadata(header, specs)))
             except InvalidTag:
                 return False
             try:
@@ -2677,39 +3632,212 @@ class VaultSession:
         finally:
             _zero(kek)
 
-    def verify_master_password(self, password: str | SecretText) -> bool:
-        """Throttled, in-memory check of the master password for sensitive actions."""
+    def verify_master_password(self, password: str | SecretText, *, factors: FactorSecrets | None = None) -> bool:
+        """Throttled, in-memory check of the master password for sensitive actions.
+
+        For a v4 vault the factors are part of the check: ``factors`` if given (they are then held
+        for later checks), else the ones this session holds.  A missing or wrong factor raises
+        ``FactorRequired`` / ``FactorMismatch`` and is not counted as a failed password.
+        """
+        _zero_all(self._verify_password(password, factors))
+        return True
+
+    def _verify_password(self, password: str | SecretText, factors: FactorSecrets | None) -> list[bytearray]:
+        """``verify_master_password`` returning the verified factor secrets (the caller zeroes them)."""
         self._require_payload()
         throttle = UnlockThrottle(self.path)
         throttle.check()
         secret, owned = _master_secret(password, t("vault.err.wrongPassword"))
         try:
+            specs = _header_factor_specs(self._header)
+            factor_secrets = _resolve_factor_secrets(specs, factors, self._held_factors)
             try:
-                if not self._password_wrapper_matches(secret):
+                if not self._password_wrapper_matches(secret, factor_secrets=factor_secrets):
                     throttle.record_failure()
                     raise InvalidMasterPassword(t("vault.err.wrongPassword"))
-            except InvalidMasterPassword:
+            except (InvalidMasterPassword, FactorRequired, FactorMismatch):
+                _zero_all(factor_secrets)
                 raise
             except VaultError as exc:
+                _zero_all(factor_secrets)
                 # Malformed wrappers must not count as a password failure nor pass.
                 raise VaultError(t("vault.err.passwordNotVerified", detail=exc)) from exc
+            except BaseException:
+                _zero_all(factor_secrets)
+                raise
         finally:
             if owned:
                 secret.wipe()
         throttle.reset()
-        return True
+        self._hold_factors(specs, factor_secrets, factors)
+        return factor_secrets
 
-    def _password_wrapper(self, header: dict[str, Any], password: SecretText, kdf: dict[str, Any]) -> dict[str, Any]:
+    def held_factor_secrets(self) -> FactorSecrets | None:
+        """The key file / YubiKey this session holds since its unlock, as ``FactorSecrets`` (``None``: none).
+
+        The key file comes back as its 32-byte KeePass key (a valid raw key file of its own); the
+        YubiKey as its responder, asked again on each use.  Sessions opened by Windows Hello, a
+        security key or the camera hold none, and ``lock()`` wipes them.
+        """
+        held = self._held_factors
+        if held is None or (held.keyfile_secret is None and held.responder is None):
+            return None
+        keyfile_secret = None if held.keyfile_secret is None else bytes(held.keyfile_secret)
+        return FactorSecrets(keyfile=keyfile_secret, yubikey_response=held.responder)
+
+    def _hold_factors(self, specs: list[FactorSpec], factor_secrets: list[bytearray],
+                      factors: FactorSecrets | None) -> None:
+        """Keep the verified factors supplied in ``factors`` for later password checks (see ``_HeldFactors``)."""
+        if factors is None or not specs:
+            return
+        held = self._held_factors or _HeldFactors()
+        for spec, secret in zip(specs, factor_secrets, strict=True):
+            if spec.kind == composite_key.KEYFILE and factors.keyfile is not None:
+                _zero(held.keyfile_secret)
+                held.keyfile_secret = bytearray(secret)
+            elif spec.kind == composite_key.YUBIKEY_HMAC and factors.yubikey_response is not None:
+                held.responder = factors.yubikey_response
+        self._held_factors = held
+
+    def _password_wrapper(self, header: dict[str, Any], password: SecretText, kdf: dict[str, Any],
+                          specs: list[FactorSpec] | None = None,
+                          factor_secrets: list[bytearray] | None = None) -> dict[str, Any]:
+        """Wrap the data key under ``password`` (+ the factor ``specs`` and their secrets).
+
+        Also sets ``header``'s KDF and its version: v4 with factors, v3 without, so a vault
+        without factors is written exactly as before.
+        """
         if not isinstance(password, SecretText) or not 12 <= password.char_count <= MAX_MASTER_PASSWORD_LENGTH:
             raise VaultError(t("vault.err.passwordLength"))
-        kek = _derive_key(password, kdf)
+        specs = list(specs or [])
+        kek = _password_kek(password, kdf, specs, list(factor_secrets or []))
         try:
             header["kdf"] = kdf
-            nonce, ciphertext = _wrap_key(kek, self._key or b"", _wrapper_aad(header, "password", {"kdf": kdf}))
+            _set_factor_format(header, specs)
+            nonce, ciphertext = _wrap_key(kek, self._key or b"",
+                                          _wrapper_aad(header, "password", _password_metadata(header, specs)))
         finally:
             _zero(kek)
         # No created_at: it sat outside the wrapper AAD and nothing read it (old vaults may still carry it).
-        return {"nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
+        wrapper: dict[str, Any] = {"nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
+        if specs:
+            wrapper["factors"] = [spec.to_json() for spec in specs]
+        return wrapper
+
+    def _require_new_wrapper_opens(self, password: SecretText, header: dict[str, Any],
+                                   factor_secrets: list[bytearray]) -> None:
+        """Before a new password wrapper is committed: it must open with what is in memory.
+
+        The wrapping key is derived again (Argon2id + the factor secrets already held, no YubiKey
+        touch) and must unwrap the session's data key, as the KDF upgrade checks.
+        """
+        if not self._password_wrapper_matches(password, header, factor_secrets):
+            raise VaultError("The re-wrapped password key did not verify")
+
+    def _renewed_factors(self, factor_secrets: list[bytearray],
+                         factors: FactorSecrets | None) -> tuple[list[FactorSpec], list[bytearray]]:
+        """The current factors for a rotated data key: same key file, a new YubiKey challenge.
+
+        The YubiKey (``factors`` or the held responder) must answer the new challenge now; the
+        caller zeroes the returned secrets.
+        """
+        specs = _header_factor_specs(self._header)
+        renewed: list[FactorSpec] = []
+        renewed_secrets: list[bytearray] = []
+        try:
+            for spec, secret in zip(specs, factor_secrets, strict=True):
+                if spec.kind == composite_key.KEYFILE:
+                    renewed.append(spec)
+                    renewed_secrets.append(bytearray(secret))
+                    continue
+                responder = factors.yubikey_response if factors is not None and factors.yubikey_response \
+                    else (self._held_factors.responder if self._held_factors is not None else None)
+                if responder is None:
+                    raise FactorRequired([spec.kind])
+                # The key answering the new challenge must be the one that matches the current
+                # factor: re-ask the old challenge first (FactorMismatch from its check otherwise),
+                # so a swapped YubiKey can never become the vault's factor.
+                _zero(_factor_secret(spec, FactorSecrets(yubikey_response=responder), None))
+                new_spec, new_secret = _enrol_yubikey(responder, spec.slot or 2)
+                renewed.append(new_spec)
+                renewed_secrets.append(new_secret)
+        except BaseException:
+            _zero_all(renewed_secrets)
+            raise
+        return renewed, renewed_secrets
+
+    @_under_session_lock
+    def add_factor(self, password: str | SecretText, new: FactorInput, *,
+                   factors: FactorSecrets | None = None) -> list[FactorSpec]:
+        """Add a key file or YubiKey to the password wrapper (writes format v4); returns the factor list.
+
+        Needs the master password and the factors already set (``factors`` or the held ones).
+        Only the password wrapper is rewritten, with the same KDF and salt: the data key, the
+        recovery wrapper and the Hello / security-key / camera sidecars stay valid.  The data key
+        is not rotated, so copies of the vault made before still open with the password alone
+        (COMPOSITE_KEY_V1.md §5); changing the master password rotates it.
+        """
+        secret, owned = _master_secret(password, t("vault.err.wrongPassword"))
+        try:
+            current = self._verify_password(secret, factors)
+            added: bytearray | None = None
+            try:
+                if not _has_wrapped_key(self._header):
+                    raise VaultError("Save the vault once before adding a key file or YubiKey")
+                specs = _header_factor_specs(self._header)
+                if any(spec.kind == new.kind for spec in specs):
+                    raise VaultError(t("vault.err.factorAlreadySet"))
+                new_spec, added = _enrol_factor(new)
+                pairs = sorted([*zip(specs, current, strict=True), (new_spec, added)],
+                               key=lambda pair: composite_key.KINDS.index(pair[0].kind))
+                merged = [spec for spec, _secret in pairs]
+                header = copy.deepcopy(self._header)
+                merged_secrets = [value for _spec, value in pairs]
+                header["wrappers"]["password"] = self._password_wrapper(
+                    header, secret, copy.deepcopy(self._header["kdf"]), merged, merged_secrets)
+                self._require_new_wrapper_opens(secret, header, merged_secrets)
+                self._commit_header_change(header)
+                held_input = FactorSecrets(keyfile=new.keyfile_bytes, yubikey_response=new.responder)
+                self._hold_factors([new_spec], [added], held_input)
+                return merged
+            finally:
+                _zero_all(current)
+                _zero(added)
+        finally:
+            if owned:
+                secret.wipe()
+
+    @_under_session_lock
+    def remove_factor(self, password: str | SecretText, kind: str, *,
+                      factors: FactorSecrets | None = None) -> list[FactorSpec]:
+        """Remove the factor of ``kind``; returns the remaining list (none left: format v3 again)."""
+        secret, owned = _master_secret(password, t("vault.err.wrongPassword"))
+        try:
+            current = self._verify_password(secret, factors)
+            try:
+                specs = _header_factor_specs(self._header)
+                if not any(spec.kind == kind for spec in specs):
+                    raise VaultError(t("vault.err.factorNotSet"))
+                kept = [(spec, value) for spec, value in zip(specs, current, strict=True) if spec.kind != kind]
+                remaining = [spec for spec, _value in kept]
+                header = copy.deepcopy(self._header)
+                kept_secrets = [value for _spec, value in kept]
+                header["wrappers"]["password"] = self._password_wrapper(
+                    header, secret, copy.deepcopy(self._header["kdf"]), remaining, kept_secrets)
+                self._require_new_wrapper_opens(secret, header, kept_secrets)
+                self._commit_header_change(header)
+                if self._held_factors is not None:
+                    if kind == composite_key.KEYFILE:
+                        _zero(self._held_factors.keyfile_secret)
+                        self._held_factors.keyfile_secret = None
+                    else:
+                        self._held_factors.responder = None
+                return remaining
+            finally:
+                _zero_all(current)
+        finally:
+            if owned:
+                secret.wipe()
 
     def _commit_header_change(self, header: dict[str, Any], *, before_save: Any = None) -> None:
         """Save with a replacement header; restore the previous header on failure."""
@@ -2724,7 +3852,8 @@ class VaultSession:
             raise
 
     def change_master_password(self, current_password: str | SecretText, new_password: str | SecretText, *,
-                               recovery_phrase: str | None = None) -> dict[str, Any]:
+                               recovery_phrase: str | None = None,
+                               factors: FactorSecrets | None = None) -> dict[str, Any]:
         """Set a new master password and rotate the data key with it.
 
         Re-wrapping the old data key would let a leaked old password plus any
@@ -2736,6 +3865,9 @@ class VaultSession:
         supplied; otherwise it is invalidated and reported.  Windows Hello and
         camera verification always need to be set up again; the caller removes
         their sidecars and OS keys with ``cleanup_after_password_change``.
+
+        A v4 vault keeps its factors: ``factors`` (or the held ones) must include the YubiKey,
+        which answers a new challenge for the new wrapper.
         """
         new_secret, new_owned = _master_secret(new_password, t("vault.err.passwordLength"))
         current_secret = None
@@ -2744,9 +3876,13 @@ class VaultSession:
             if not 12 <= new_secret.char_count <= 4096:
                 raise VaultError(t("vault.err.passwordLength"))
             current_secret, current_owned = _master_secret(current_password, t("vault.err.wrongPassword"))
-            self.verify_master_password(current_secret)
-            return self._rotate_data_key(current_secret, new_secret, recovery_phrase=recovery_phrase,
-                                         remove_unlock_envelopes=False)
+            factor_secrets = self._verify_password(current_secret, factors)
+            try:
+                return self._rotate_data_key(current_secret, new_secret, recovery_phrase=recovery_phrase,
+                                             remove_unlock_envelopes=False, factor_secrets=factor_secrets,
+                                             factors=factors)
+            finally:
+                _zero_all(factor_secrets)
         finally:
             if new_owned:
                 new_secret.wipe()
@@ -2765,6 +3901,10 @@ class VaultSession:
         Hello and camera bindings are revoked; the caller removes their
         sidecars and OS keys with ``cleanup_after_password_change`` (they only
         wrap the retired data key).  Returns the ``_rotate_data_key`` result.
+
+        A key file / YubiKey set on the vault is dropped, since the phrase is
+        what opens a vault whose factor was lost: the new password alone opens
+        it (format 3 again) and ``factors_removed`` lists the kinds.
         """
         if not self.recovery_unlocked:
             raise VaultError(t("vault.err.newPasswordNeedsRecovery"))
@@ -2772,11 +3912,11 @@ class VaultSession:
         try:
             if not 12 <= new_secret.char_count <= 4096:
                 raise VaultError(t("vault.err.passwordLength"))
-            if _header_version(self._header) != FORMAT_VERSION:
+            if not _has_wrapped_key(self._header):
                 raise VaultError(t("vault.err.recoveryNeedsFormat3"))
             entropy = self._recovery_entropy
             result = self._rotate_data_key(None, new_secret, recovery_phrase=None, recovery_entropy=entropy,
-                                           remove_unlock_envelopes=False)
+                                           remove_unlock_envelopes=False, drop_factors=True)
         finally:
             if new_owned:
                 new_secret.wipe()
@@ -2789,8 +3929,77 @@ class VaultSession:
     # -- recovery phrase ------------------------------------------------------
     def has_recovery_phrase(self) -> bool:
         self._require_payload()
-        wrappers = self._header.get("wrappers") if _header_version(self._header) == FORMAT_VERSION else None
+        wrappers = self._header.get("wrappers") if _has_wrapped_key(self._header) else None
         return isinstance(wrappers, dict) and isinstance(wrappers.get("recovery"), dict)
+
+    def recovery_entropy(self, phrase: str | None, *, reauthenticate: Callable[[], bool] | None) -> bytes:
+        """The 32-byte entropy of this vault's current recovery phrase, for emergency-access shards (sub-plan 08).
+
+        The vault never stores the phrase or its entropy, so the owner types the phrase (a session opened with
+        the phrase may pass ``None``).  ``reauthenticate`` is called first and must return exactly ``True``
+        (the app asks for the master password or Windows Hello); anything else raises ``PermissionError``
+        before the phrase is looked at.  The phrase must open this vault's current recovery wrapper and yield
+        this session's data key, else ``RecoveryPhraseError``.  The caller owns the returned bytes.
+        """
+        self._require_payload()
+        if reauthenticate is None or reauthenticate() is not True:
+            raise PermissionError(t("error.cancelled"))
+        if phrase is None:
+            held = self._recovery_entropy if self.recovery_unlocked else None
+            if held is None:
+                raise RecoveryPhraseError(t("vault.err.recovery24Words"))
+            entropy = bytes(held)
+        else:
+            entropy = entropy_from_phrase(phrase)
+        data_key = self._unwrap_recovery(entropy)
+        try:
+            if not self._matches_key(data_key):
+                raise RecoveryPhraseError(t("vault.err.recoveryWrongVault"))
+        finally:
+            _zero(data_key)
+        return entropy
+
+    _HEIR_PLAN = "heir_plan"
+
+    def heir_plan_record(self) -> dict[str, Any] | None:
+        """The stored emergency-access plan record (``heir.py`` validates it), or ``None``."""
+        value = self._read_prefs().get(self._HEIR_PLAN)
+        return copy.deepcopy(value) if value is not None else None
+
+    @_under_session_lock
+    def set_heir_plan_record(self, record: dict[str, Any] | None) -> None:
+        """Store (or with ``None`` remove) the emergency-access plan record in one save."""
+        if record is not None and not isinstance(record, dict):
+            raise VaultError("The emergency access plan is malformed")
+        self._commit_prefs({self._HEIR_PLAN: record})
+
+    _HEIR_IDENTITY = "heir_identity"
+
+    def heir_identity_record(self) -> dict[str, Any] | None:
+        """This vault's emergency-access requester keys (``heir_flow.RequesterIdentity``), or ``None``."""
+        value = self._read_prefs().get(self._HEIR_IDENTITY)
+        return copy.deepcopy(value) if value is not None else None
+
+    @_under_session_lock
+    def set_heir_identity_record(self, record: dict[str, Any] | None) -> None:
+        """Store (or with ``None`` remove) the requester keys in one save."""
+        if record is not None and not isinstance(record, dict):
+            raise VaultError("The emergency access keys are malformed")
+        self._commit_prefs({self._HEIR_IDENTITY: record})
+
+    _HEIR_RECEIVED = "heir_received"
+
+    def heir_received_record(self) -> dict[str, Any] | None:
+        """The emergency-access shards and shared folder this vault holds as a holder, or ``None``."""
+        value = self._read_prefs().get(self._HEIR_RECEIVED)
+        return copy.deepcopy(value) if isinstance(value, dict) else None
+
+    @_under_session_lock
+    def set_heir_received_record(self, record: dict[str, Any] | None) -> None:
+        """Store (or with ``None`` remove) the holder's shards and folder in one save."""
+        if record is not None and not isinstance(record, dict):
+            raise VaultError("The emergency access shards are malformed")
+        self._commit_prefs({self._HEIR_RECEIVED: record})
 
     def _recovery_wrapper_outlives_removal(self) -> bool:
         """Whether a local older copy still carries a recovery wrapper of the current data key.
@@ -2836,19 +4045,29 @@ class VaultSession:
         wrapper anywhere, is only an added wrapper.
         """
         secret, owned = _master_secret(current_password, t("vault.err.wrongPassword"))
+        factor_secrets: list[bytearray] = []
         try:
-            self.verify_master_password(secret)
+            factor_secrets = self._verify_password(secret, None)
             words = bip39_words()  # fail early if the word list is damaged
             assert len(words) == 2048
             entropy = os.urandom(32)
             salt = os.urandom(16)
-            if self.has_recovery_phrase() or self._recovery_wrapper_outlives_removal():
-                result = self._rotate_data_key(secret, secret, recovery_phrase=None,
-                                               new_recovery_entropy=entropy)
-                self.last_recovery_phrase_change = {"operation": "replace", **result}
-                return phrase_from_entropy(entropy)
-            header = self._promoted_header(catalog_version=self._catalog_version, password=secret)
+            # Owner decision Q2 (backup-public-key design): a new phrase cannot reset the scheduled-backup
+            # password until the record's reset authority is re-bound with the backup password.
+            flagged = self._flag_backup_key_rebind()
+            try:
+                if self.has_recovery_phrase() or self._recovery_wrapper_outlives_removal():
+                    result = self._rotate_data_key(secret, secret, recovery_phrase=None,
+                                                   new_recovery_entropy=entropy, factor_secrets=factor_secrets)
+                    self.last_recovery_phrase_change = {"operation": "replace", **result}
+                    return phrase_from_entropy(entropy)
+                header = self._promoted_header(catalog_version=self._catalog_version, password=secret)
+            except BaseException:
+                if flagged:
+                    self._prefs().pop(self._BACKUP_KEY_REBIND, None)
+                raise
         finally:
+            _zero_all(factor_secrets)
             if owned:
                 secret.wipe()
         metadata = {"kind": RECOVERY_WRAPPER_KIND, "salt": _b64e(salt)}
@@ -2858,7 +4077,12 @@ class VaultSession:
         finally:
             _zero(recovery_key)
         header["wrappers"]["recovery"] = {**metadata, "nonce": _b64e(nonce), "ciphertext": _b64e(ciphertext)}
-        self._commit_header_change(header)
+        try:
+            self._commit_header_change(header)
+        except BaseException:
+            if flagged:
+                self._prefs().pop(self._BACKUP_KEY_REBIND, None)
+            raise
         self.last_recovery_phrase_change = {"operation": "create", "key_generation": header.get("key_generation"),
                                             "recovery_phrase_invalidated": False, "reenroll_required": [],
                                             "purged_backups": 0, "retained_old_copies": 0}
@@ -2871,12 +4095,14 @@ class VaultSession:
         Returns the rotation result, or ``None`` when no phrase was enrolled.
         """
         secret, owned = _master_secret(current_password, t("vault.err.wrongPassword"))
+        factor_secrets: list[bytearray] = []
         try:
-            self.verify_master_password(secret)
+            factor_secrets = self._verify_password(secret, None)
             if not self.has_recovery_phrase():
                 return None
-            result = self._rotate_data_key(secret, secret, recovery_phrase=None)
+            result = self._rotate_data_key(secret, secret, recovery_phrase=None, factor_secrets=factor_secrets)
         finally:
+            _zero_all(factor_secrets)
             if owned:
                 secret.wipe()
         self.last_recovery_phrase_change = {"operation": "remove", **result}
@@ -2894,10 +4120,13 @@ class VaultSession:
         re-encrypted catalog, so they stay readable without being rewritten.
         """
         secret, owned = _master_secret(current_password, t("vault.err.wrongPassword"))
+        factor_secrets: list[bytearray] = []
         try:
-            self.verify_master_password(secret)
-            return self._rotate_data_key(secret, secret, recovery_phrase=recovery_phrase)
+            factor_secrets = self._verify_password(secret, None)
+            return self._rotate_data_key(secret, secret, recovery_phrase=recovery_phrase,
+                                         factor_secrets=factor_secrets)
         finally:
+            _zero_all(factor_secrets)
             if owned:
                 secret.wipe()
 
@@ -2905,7 +4134,9 @@ class VaultSession:
     def _rotate_data_key(self, current_password: SecretText | None, new_password: SecretText, *, recovery_phrase: str | None,
                          remove_unlock_envelopes: bool = True,
                          recovery_entropy: bytes | bytearray | None = None,
-                         new_recovery_entropy: bytes | bytearray | None = None) -> dict[str, Any]:
+                         new_recovery_entropy: bytes | bytearray | None = None,
+                         factor_secrets: list[bytearray] | None = None, factors: FactorSecrets | None = None,
+                         drop_factors: bool = False) -> dict[str, Any]:
         """Rotate the data key and wrap it under ``new_password``; the caller verified the password.
 
         ``current_password`` is ``None`` only for a recovery-phrase session,
@@ -2924,11 +4155,38 @@ class VaultSession:
         ``remove_unlock_envelopes=False`` the stale sidecar files are left for
         the caller's ``cleanup_after_password_change``, which also deletes the
         OS-held key; they only wrap the retired data key.
+
+        A v4 vault's factors are kept (``factor_secrets``: the verified secrets of the current
+        list) with a new YubiKey challenge, which ``factors`` or the held responder answers before
+        anything changes; ``drop_factors`` writes the new wrapper without them (``factors_removed``).
         """
         payload = self._require_payload()
         old_key = self._key
         if old_key is None:
             raise VaultLockedError(t("vault.err.keyUnavailable"))
+        current_specs = _header_factor_specs(self._header)
+        new_specs: list[FactorSpec] = []
+        new_factor_secrets: list[bytearray] = []
+        if current_specs and not drop_factors:
+            if factor_secrets is None:
+                raise FactorRequired([spec.kind for spec in current_specs])
+            new_specs, new_factor_secrets = self._renewed_factors(factor_secrets, factors)
+        try:
+            return self._rotate_data_key_with(
+                payload, old_key, current_password, new_password, recovery_phrase=recovery_phrase,
+                remove_unlock_envelopes=remove_unlock_envelopes, recovery_entropy=recovery_entropy,
+                new_recovery_entropy=new_recovery_entropy, new_specs=new_specs,
+                new_factor_secrets=new_factor_secrets,
+                factors_removed=[spec.kind for spec in current_specs] if drop_factors else [])
+        finally:
+            _zero_all(new_factor_secrets)
+
+    def _rotate_data_key_with(self, payload: dict[str, Any], old_key: bytearray, current_password: SecretText | None,
+                              new_password: SecretText, *, recovery_phrase: str | None, remove_unlock_envelopes: bool,
+                              recovery_entropy: bytes | bytearray | None,
+                              new_recovery_entropy: bytes | bytearray | None, new_specs: list[FactorSpec],
+                              new_factor_secrets: list[bytearray], factors_removed: list[str]) -> dict[str, Any]:
+        """``_rotate_data_key`` once the new factor list and its secrets are known."""
         if recovery_phrase is not None:
             recovery_entropy = entropy_from_phrase(recovery_phrase)
         if new_recovery_entropy is not None:
@@ -2945,9 +4203,14 @@ class VaultSession:
         self._key = new_key
         result: dict[str, Any] = {"key_generation": header["key_generation"], "recovery_phrase_invalidated": False,
                                   "reenroll_required": [], "purged_backups": 0, "retained_old_copies": 0}
+        if factors_removed:
+            result["factors_removed"] = factors_removed
         try:
-            header["wrappers"]["password"] = self._password_wrapper(header, new_password,
-                                                                    {**DEFAULT_KDF, "salt": _b64e(os.urandom(16))})
+            header["wrappers"]["password"] = self._password_wrapper(
+                header, new_password, {**_default_kdf(), "salt": _b64e(os.urandom(16))}, new_specs,
+                new_factor_secrets)
+            if new_specs:  # self._key is already the new data key here
+                self._require_new_wrapper_opens(new_password, header, new_factor_secrets)
             had_recovery = isinstance(self._header.get("wrappers", {}).get("recovery"), dict)
             wrap_entropy = new_recovery_entropy if new_recovery_entropy is not None else (
                 recovery_entropy if had_recovery else None)
@@ -2968,9 +4231,18 @@ class VaultSession:
 
             def drop_bindings() -> None:
                 if isinstance(prefs, dict):
-                    for name, binding in (("hello", "hello_binding"), ("face", "face_binding")):
+                    for name, binding in (("hello", "hello_binding"), ("face", "face_binding"),
+                                          ("fido", "fido_binding")):
                         if prefs.pop(binding, None):
                             result["reenroll_required"].append(name)
+                    # Emergency access (sub-plan 08): shards split the old phrase, which no longer opens the vault.
+                    # Only the device that made the plan (home) holds its phrase; a plan received by sync from
+                    # another of the owner's devices (home False) is not about this vault's phrase.
+                    plan = prefs.get(self._HEIR_PLAN)
+                    if result["recovery_phrase_invalidated"] and isinstance(plan, dict) \
+                            and plan.get("home", True) is not False:
+                        plan["stale"] = True
+                        result["heir_plan_stale"] = True
 
             # The rollback anchor is keyed from the data key: before the commit
             # it is re-minted so it authenticates under BOTH keys (a crash
@@ -2990,6 +4262,13 @@ class VaultSession:
                                                  previous_key=old_anchor_key, previous_vault_id=old_vault_id)
                     except OSError as exc:
                         raise VaultError("Could not update vault rollback-protection metadata") from exc
+                # The marks outside the folder follow the anchor: both keys until the commit (which raises them
+                # under the new key alone), the old key again if it fails.  A mark that ends up under the other
+                # key never refuses an unlock; it is replaced.
+                marks_target = self._rollback_marks_target
+                if marks_target is not None and vault_id == old_vault_id:
+                    _raise_rollback_marks(marks_target, generation, new_anchor_key, vault_id,
+                                          exact=True, previous_key=old_anchor_key)
                 self._suppress_rolling_backup = True
                 try:
                     self._commit_header_change(header, before_save=drop_bindings)
@@ -3001,7 +4280,19 @@ class VaultSession:
                         _write_generation_anchor(self.path, generation, old_anchor_key, old_vault_id)
                     except OSError:
                         pass
+                    if marks_target is not None and vault_id == old_vault_id:
+                        _raise_rollback_marks(marks_target, generation, old_anchor_key, old_vault_id, exact=True)
                     raise
+                if marks_target is not None:
+                    # Committed: the old key is retired, so a copy still under it (taken before this change, or
+                    # before up to ``_ROLLBACK_MARK_RETIRED_MAX`` changes) is refused like any older copy.  A
+                    # restore's staged copy has no marks target: its destination is marked once published.  A
+                    # format 1/2 vault whose upgrade did not run gets its id here: the retired record carries the
+                    # old id ("" ), as the v3 upgrade's does, so its copy from before (no id) is refused too.
+                    committed = int((self._committed_payload or {}).get("generation", 0))
+                    _raise_rollback_marks(marks_target, committed, new_anchor_key, vault_id, exact=True,
+                                          retired_key=old_anchor_key,
+                                          retired_vault_id=None if vault_id == old_vault_id else old_vault_id)
             finally:
                 self._suppress_rolling_backup = False
                 _zero(new_anchor_key)
@@ -3016,6 +4307,9 @@ class VaultSession:
                 if name == "hello":
                     from .hello_unlock import envelope_path as hello_envelope
                     hello_envelope(self.path).unlink(missing_ok=True)
+                elif name == "fido":
+                    from .fido_unlock import envelope_path as fido_envelope
+                    fido_envelope(self.path).unlink(missing_ok=True)
                 else:
                     from .face_unlock import envelope_path as face_envelope
                     face_envelope(self.path).unlink(missing_ok=True)
@@ -3048,7 +4342,7 @@ class VaultSession:
                         continue
                     if candidate.suffix == ".json" and candidate.stat().st_size <= MAX_VAULT_BYTES:
                         header = json.loads(candidate.read_bytes())
-                        if (isinstance(header, dict) and _header_version(header) == FORMAT_VERSION
+                        if (isinstance(header, dict) and _has_wrapped_key(header)
                                 and header.get("vault_id") == self._header.get("vault_id")
                                 and header.get("key_generation") == generation):
                             continue
@@ -3059,7 +4353,7 @@ class VaultSession:
 
     def _unwrap_recovery(self, entropy: bytes) -> bytearray:
         header = self._header
-        wrapper = header.get("wrappers", {}).get("recovery") if _header_version(header) == FORMAT_VERSION else None
+        wrapper = header.get("wrappers", {}).get("recovery") if _has_wrapped_key(header) else None
         if not isinstance(wrapper, dict):
             raise RecoveryPhraseError(t("vault.err.noRecoveryPhrase"))
         return _unwrap_recovery_wrapper(header, wrapper, entropy)
@@ -3080,7 +4374,7 @@ class VaultSession:
                 keep = False
                 if backup.stat().st_size <= MAX_VAULT_BYTES:
                     header = json.loads(backup.read_bytes())
-                    if isinstance(header, dict) and _header_version(header) == FORMAT_VERSION \
+                    if isinstance(header, dict) and _has_wrapped_key(header) \
                             and type(header.get("generation")) is int \
                             and header["generation"] >= int(generation) \
                             and header.get("key_generation") == self._header.get("key_generation"):
@@ -3115,6 +4409,29 @@ class VaultSession:
             prefs["hello_binding"] = record_id
         self.save()
 
+    def fido_binding(self) -> str:
+        """Security-key unlock authorization, stored inside the authenticated, encrypted payload."""
+        prefs = self._require_payload().get("preferences", {})
+        value = prefs.get("fido_binding", "") if isinstance(prefs, dict) else ""
+        if (isinstance(value, str) and len(value) == 32
+                and all(c in "0123456789abcdef" for c in value)):
+            return value
+        return ""
+
+    def set_fido_binding(self, record_id: str | None) -> None:
+        if record_id is not None and (not isinstance(record_id, str) or len(record_id) != 32
+                                     or any(c not in "0123456789abcdef" for c in record_id)):
+            raise VaultError("Invalid security key binding")
+        payload = self._require_payload()
+        prefs = payload.setdefault("preferences", {})
+        if not isinstance(prefs, dict):
+            raise VaultError("Vault preferences are malformed")
+        if record_id is None:
+            prefs.pop("fido_binding", None)
+        else:
+            prefs["fido_binding"] = record_id
+        self.save()
+
     def face_binding(self) -> str:
         """Authorization for ordinary-webcam verification lives inside the vault."""
         prefs = self._require_payload().get("preferences", {})
@@ -3138,40 +4455,164 @@ class VaultSession:
             prefs["face_binding"] = record_id
         self.save()
 
-    def scheduled_backup_password(self) -> str:
-        """Backup password for scheduled .lgk backups, kept only in the encrypted payload.
+    # -- scheduled-backup public key (docs/design/backup-public-key-2026-10-31.md) -------------
+    # The vault keeps only the public backup key *record* (section 3.3).  Releases before it stored
+    # the backup password itself; ``migrate_scheduled_backup_password`` is the only reader of that
+    # old field and removes it in the same save that adds the record (section 5).
+    _LEGACY_BACKUP_PASSWORD = "scheduled_backup_password"  # noqa: S105 - a preference name
+    _BACKUP_KEY = "scheduled_backup_key"
+    _BACKUP_KEY_REBIND = "scheduled_backup_key_rebind"
 
-        It is never written to plaintext settings and disappears from this
-        session with the rest of the payload when the vault locks.
-        """
-        prefs = self._require_payload().get("preferences", {})
-        value = prefs.get("scheduled_backup_password", "") if isinstance(prefs, dict) else ""
-        return value if isinstance(value, str) and len(value) >= 12 else ""
-
-    def has_scheduled_backup_password(self) -> bool:
-        return bool(self.scheduled_backup_password())
-
-    def set_scheduled_backup_password(self, password: str | None) -> None:
-        if password is not None and (not isinstance(password, str) or len(password) < 12
-                                     or len(password) > 1024 or "\x00" in password):
-            raise VaultError(t("vault.err.backupPasswordShort"))
+    def _prefs(self) -> dict[str, Any]:
         payload = self._require_payload()
         prefs = payload.setdefault("preferences", {})
         if not isinstance(prefs, dict):
             raise VaultError("Vault preferences are malformed")
-        previous = prefs.get("scheduled_backup_password")
-        if password is None:
-            prefs.pop("scheduled_backup_password", None)
-        else:
-            prefs["scheduled_backup_password"] = password
+        return prefs
+
+    def _read_prefs(self) -> dict[str, Any]:
+        """The preferences for reading: never adds an empty object to the payload."""
+        prefs = self._require_payload().get("preferences", {})
+        return prefs if isinstance(prefs, dict) else {}
+
+    def scheduled_backup_key(self) -> dict[str, Any] | None:
+        """The validated public backup key record, or ``None`` when none is set.
+
+        A stored value that does not validate raises ``backup_key.DamagedRecordError``:
+        scheduled backups then skip with a warning (design section 3.3).
+        """
+        from .backup_key import validate_record
+
+        value = self._read_prefs().get(self._BACKUP_KEY)
+        return None if value is None else validate_record(value)
+
+    def has_scheduled_backup_key(self) -> bool:
+        return self._read_prefs().get(self._BACKUP_KEY) is not None
+
+    def scheduled_backup_key_rebind_needed(self) -> bool:
+        """Set when a recovery phrase was created or replaced while a backup key record existed (owner Q2)."""
+        return self._read_prefs().get(self._BACKUP_KEY_REBIND) is True
+
+    def recovery_wrapper_snapshot(self) -> dict[str, str] | None:
+        """The reset authority of the current recovery phrase (``recovery-wrapper-v1``); ``None`` without one."""
+        from .backup_key import capture_wrapper_authority
+
+        self._require_payload()
+        return capture_wrapper_authority(self._header)
+
+    def _commit_prefs(self, changes: dict[str, Any]) -> None:
+        """Apply ``{name: value | None}`` (``None`` removes) in one save; put every value back if it fails."""
+        prefs = self._prefs()
+        missing = object()
+        previous = {name: copy.deepcopy(prefs[name]) if name in prefs else missing for name in changes}
+        for name, value in changes.items():
+            if value is None:
+                prefs.pop(name, None)
+            else:
+                prefs[name] = copy.deepcopy(value)
         try:
             self.save()
         except BaseException:
-            if previous is None:
-                prefs.pop("scheduled_backup_password", None)
-            else:
-                prefs["scheduled_backup_password"] = previous
+            prefs = self._prefs()
+            for name, value in previous.items():
+                if value is missing:
+                    prefs.pop(name, None)
+                else:
+                    prefs[name] = value
             raise
+
+    @_under_session_lock
+    def set_scheduled_backup_key(self, record: dict[str, Any] | None | Callable[[dict[str, str] | None], Any], *,
+                                 predecessor: dict[str, Any] | None = None) -> dict[str, Any] | None:
+        """Store (or with ``None`` remove) the record and return it.  The caller has checked the proof (section 4).
+
+        ``record`` may be a callable that gets the current recovery-phrase snapshot
+        (``recovery_wrapper_snapshot``), taken under the session lock, and returns the record to store, so the
+        authority it binds is the phrase that is current when it is saved (review L8).
+
+        A record replaces an existing valid one only as its successor: the same key (a re-bind) or one
+        whose newest history entry is the existing key (a change or reset).  ``predecessor`` names the record
+        the caller proved instead (design 16c: the record last seen on this device, after a rollback); the
+        successor rule is then checked against it.  A damaged record may be replaced by any valid one.  An old
+        stored backup password is removed in the same save.  The re-bind flag is cleared only when the
+        stored record's authority is the current phrase's; otherwise it is set.
+        """
+        from .backup_key import DamagedRecordError, validate_record
+
+        rebind: bool | None = None
+        if record is not None:
+            snapshot = self.recovery_wrapper_snapshot()
+            if callable(record):
+                record = record(snapshot)
+            record = validate_record(record)
+            if predecessor is not None:
+                base = validate_record(predecessor)
+            else:
+                try:
+                    base = self.scheduled_backup_key()
+                except DamagedRecordError:
+                    base = None
+            if base is not None and record["key_id"] != base["key_id"] and (
+                    not record["history"] or record["history"][0]["key_id"] != base["key_id"]):
+                raise VaultError("A backup key can only be replaced by its change, reset or re-bind")
+            if snapshot is not None and record["reset_authority"] != snapshot:
+                rebind = True
+        self._commit_prefs({self._BACKUP_KEY: record, self._LEGACY_BACKUP_PASSWORD: None,
+                            self._BACKUP_KEY_REBIND: rebind})
+        return record
+
+    def _flag_backup_key_rebind(self) -> bool:
+        """Before a phrase is created or replaced: mark that the record's reset authority must be re-bound."""
+        prefs = self._require_payload().get("preferences")  # never adds an empty preferences object
+        if not isinstance(prefs, dict) or prefs.get(self._BACKUP_KEY) is None or prefs.get(self._BACKUP_KEY_REBIND) is True:
+            return False
+        prefs[self._BACKUP_KEY_REBIND] = True
+        return True
+
+    def _legacy_scheduled_backup_password(self) -> str:
+        """Migration only (design section 5): where releases before the public key kept the backup password."""
+        value = self._read_prefs().get(self._LEGACY_BACKUP_PASSWORD, "")
+        return value if isinstance(value, str) and 12 <= len(value) <= 4096 and "\x00" not in value else ""
+
+    def scheduled_backup_migration_pending(self) -> bool:
+        """An old stored backup password is still in the vault and ``migrate_scheduled_backup_password`` would act."""
+        prefs = self._read_prefs()
+        return self._LEGACY_BACKUP_PASSWORD in prefs and (
+            prefs.get(self._BACKUP_KEY) is not None or bool(self._legacy_scheduled_backup_password()))
+
+    def migrate_scheduled_backup_password(self, now: int) -> dict[str, Any] | None:
+        """Section 5: turn a stored backup password into the public key record and return it (``None``: nothing done).
+
+        Argon2 runs before the session lock is taken (call this on a worker thread).  The record is added
+        and the password removed in one save; if that save fails both are put back and the error is raised,
+        so the caller retries on the next unlock.  No backup file is read or touched.
+        """
+        from . import backup
+        from .backup_key import build_record, derive_backup_key, new_kdf
+
+        prefs = self._read_prefs()
+        if prefs.get(self._BACKUP_KEY) is not None:
+            if self._LEGACY_BACKUP_PASSWORD in prefs:
+                # Both exist (one save makes this impossible; checked anyway): keep the record.
+                with self._state_lock:
+                    self._commit_prefs({self._LEGACY_BACKUP_PASSWORD: None})
+            return None
+        password = self._legacy_scheduled_backup_password()
+        if not password:
+            return None
+        key = derive_backup_key(password, new_kdf(parameters=backup.BACKUP_KDF))
+        try:
+            with self._state_lock:
+                prefs = self._prefs()
+                if prefs.get(self._BACKUP_KEY) is not None or self._legacy_scheduled_backup_password() != password:
+                    return None  # changed while Argon2 ran
+                record = build_record(key, now=int(now), set_by="migrated",
+                                      reset_authority=self.recovery_wrapper_snapshot())
+                self._commit_prefs({self._BACKUP_KEY: record, self._LEGACY_BACKUP_PASSWORD: None})
+                return record
+        finally:
+            key.wipe()
+            password = ""
 
     def unlock_context(self) -> str:
         self._require_payload()
@@ -3187,12 +4628,56 @@ class VaultSession:
 
     @_under_session_lock
     def write_rollback_anchor(self, path: Path | None = None) -> None:
-        """Write an authenticated rollback anchor for this session's committed generation."""
+        """Write an authenticated rollback anchor for this session's committed generation.
+
+        A restore (``backup._restore_verified``) calls this for the file it just published: the rollback marks
+        outside the folder are set to exactly this generation first (a confirmed restore lowers them), so a crash
+        between the two leaves marks that are not above the anchor.
+        """
         payload = self._require_payload()
+        target = Path(path or self.path)
+        generation = int(payload.get("generation", 0))
+        vault_id = str(self._header.get("vault_id", ""))
         anchor_key = _rollback_anchor_key(self._key or b"")
         try:
-            _write_generation_anchor(Path(path or self.path), int(payload.get("generation", 0)), anchor_key,
-                                     str(self._header.get("vault_id", "")))
+            if not self._rollback_marks_off:
+                _raise_rollback_marks(target, generation, anchor_key, vault_id, exact=True)
+            _write_generation_anchor(target, generation, anchor_key, vault_id)
+        finally:
+            _zero(anchor_key)
+
+    @_under_session_lock
+    def mark_restored(self, path: Path) -> None:
+        """A restore just put this session's committed vault (and its anchor) in place at ``path``: set both
+        rollback marks there to exactly its generation (a confirmed restore may lower them).  Only once the
+        restored file is there, never for a staged copy that may still be dropped.  Best effort."""
+        payload = self._committed_payload if isinstance(self._committed_payload, dict) else self._require_payload()
+        if self._rollback_marks_off or self._key is None or len(self._key) != 32:
+            return
+        anchor_key = _rollback_anchor_key(self._key)
+        try:
+            _raise_rollback_marks(Path(path), int(payload.get("generation", 0)), anchor_key,
+                                  str(self._header.get("vault_id", "")), exact=True)
+        finally:
+            _zero(anchor_key)
+
+    def _raise_own_rollback_marks(self, *, retired_vault_id: str | None = None) -> None:
+        """Best effort: this session's committed generation to its marks (``_rollback_marks_target``).
+
+        ``retired_vault_id``: the vault just got its id (the v3 upgrade, which keeps the data key), so a copy
+        from before, which has no id, is recorded as retired (``_retired_mark``) and refused like an older one.
+        """
+        target = self._rollback_marks_target
+        if target is None or self._rollback_marks_deferred or self._key is None or len(self._key) != 32:
+            return
+        committed = self._committed_payload if isinstance(self._committed_payload, dict) else {}
+        anchor_key = _rollback_anchor_key(self._key)
+        try:
+            vault_id = str(self._header.get("vault_id", ""))
+            _raise_rollback_marks(target, int(committed.get("generation", 0)), anchor_key, vault_id)
+            if retired_vault_id is not None and retired_vault_id != vault_id:
+                _raise_rollback_marks(target, int(committed.get("generation", 0)), anchor_key, vault_id,
+                                      exact=True, retired_key=anchor_key, retired_vault_id=retired_vault_id)
         finally:
             _zero(anchor_key)
 
@@ -3202,6 +4687,10 @@ class VaultSession:
 
         ``None`` means there is no anchor; a VaultError means the anchor exists
         but was minted for a different data key or has been tampered with.
+
+        Asked about another path (``backup._check_restore_rollback``), this session is a restore copy headed
+        there.  Nothing is marked for that path until the copy is in place (``mark_restored``): a restore that
+        stops before (cancelled, failed) leaves the vault there and its marks as they were.
         """
         self._require_payload()
         target = Path(path or self.path)
@@ -3213,6 +4702,54 @@ class VaultSession:
         finally:
             _zero(anchor_key)
         return generation
+
+    @_under_session_lock
+    def resealed(self, vault_json: dict[str, Any], change: Callable[[dict[str, Any]], None]) -> dict[str, Any]:
+        """``vault_json`` (this vault's encrypted file, e.g. as read from disk for a backup) with ``change``
+        applied to its catalog, encrypted again under this session's data key with a fresh nonce.
+
+        The header is otherwise unchanged (the same generation, so the rollback anchor beside the file still
+        matches it) and the live vault is not touched.  A file that does not open with this key raises
+        ``VaultError``; the plaintext lives only in buffers that are zeroed.
+        """
+        self._require_payload()
+        if self._key is None or len(self._key) != 32:
+            raise VaultLockedError(t("vault.err.keyUnavailable"))
+        header = copy.deepcopy(vault_json)
+        try:
+            cipher = header["cipher"]
+            nonce = _b64d(str(cipher["nonce"]))
+            ciphertext = _b64d(str(cipher["ciphertext"]))
+            if len(nonce) != 12:
+                raise VaultError("Vault nonce has an invalid length")
+            version = _catalog_version_of(header)
+            plaintext = _aesgcm_decrypt(self._key, nonce, ciphertext, _aad(header))
+            try:
+                parsed = _json_from_buffer(plaintext)
+            finally:
+                _zero(plaintext)
+                del plaintext
+        except VaultError:
+            raise
+        except (InvalidTag, UnicodeDecodeError, ValueError, KeyError, TypeError) as exc:
+            raise VaultError("This vault file does not open with the unlocked vault's key") from exc
+        change(parsed)
+        try:
+            payload = _validate_payload(parsed, version)
+        except ItemSchemaError as exc:
+            raise VaultError(str(exc)) from exc
+        if _has_wrapped_key(header) and int(payload.get("generation", 0)) != int(header["generation"]):
+            raise VaultError("Vault header generation does not match its encrypted catalog")
+        new_nonce = os.urandom(12)
+        header["cipher"]["nonce"] = _b64e(new_nonce)
+        buffer = _canonical_json_buffer(payload)
+        try:
+            sealed = AESGCM(self._key).encrypt(new_nonce, buffer, _aad(header))
+        finally:
+            _zero(buffer)
+            del buffer
+        header["cipher"]["ciphertext"] = _b64e(sealed)
+        return header
 
     def fill_and_sign_in_enabled(self) -> bool:
         prefs = self._require_payload().get("preferences", {})
@@ -3394,6 +4931,40 @@ class VaultSession:
                 raise
         return removed
 
+    def check_rolling_backup(self) -> tuple[Path, int] | None:
+        """Sub-plan 12 restore test at unlock: decrypt the newest rolling backup with a copy of this session's
+        data key (nothing is written; no password is used or kept) and count its entries.
+
+        ``None`` when there is no rolling backup under the current key generation; ``VaultError`` when the
+        newest one does not open.
+        """
+        if self.backup_dir is None or not self.backup_dir.exists():
+            return None
+        rows = [p for p in self.backup_dir.glob("vault-*.json") if p.is_file() and not p.is_symlink()]
+        if not rows:
+            return None
+        newest = max(rows, key=lambda p: p.stat().st_mtime_ns)
+        try:
+            source = newest.read_bytes()
+            if len(source) > MAX_VAULT_BYTES:
+                raise VaultError("Rolling backup is too large")
+            header = json.loads(source)
+            if not isinstance(header, dict):
+                raise VaultError("Rolling backup is malformed")
+        except (OSError, ValueError, RecursionError) as exc:
+            raise VaultError("Rolling backup could not be read") from exc
+        if _has_wrapped_key(header) and header.get("key_generation") != self._header.get("key_generation"):
+            return None  # written under an older key: not this session's to test
+        with self._state_lock:
+            if self._key is None:
+                raise VaultError("Vault is locked")
+            key = bytearray(self._key)
+        copy = _decrypt_vault(newest, header, source, key, check_anchor=False)
+        try:
+            return newest, len(copy.summaries())
+        finally:
+            copy.lock()
+
     def _rolling_backup(self) -> None:
         if (self.backup_count <= 0 or self.backup_dir is None or not self.path.exists()
                 or self._suppress_rolling_backup):
@@ -3426,6 +4997,114 @@ class VaultSession:
         self.save()
         return True
 
+    # --- Login history (feature pack 2026-11-15, section 1): device-local, never synced -------------
+    def mark_history_change(self, entry_ids: Iterable[str], change_type: str) -> None:
+        """Label the next captured snapshot of these logins (``sync``, ``restore``, ``import``, ``merge``)."""
+        marks = getattr(self, "_history_marks", None)
+        if not isinstance(marks, dict):
+            marks = self._history_marks = {}
+        for entry_id in entry_ids:
+            marks[str(entry_id)] = str(change_type)
+
+    def entry_history_rows(self, entry_id: str) -> list[dict[str, Any]]:
+        """This login's stored snapshots, newest first (copies)."""
+        from . import item_history
+
+        rows = self._require_payload().get(item_history.ENTRY_HISTORY_KEY)
+        if not isinstance(rows, list):
+            return []
+        mine = [copy.deepcopy(r) for r in rows if item_history.valid_row(r) and r["item_id"] == str(entry_id)]
+        mine.sort(key=lambda r: (-int(r["created_at"]), str(r["snapshot_id"])))
+        return mine
+
+    def _capture_entry_history(self, payload: dict[str, Any]) -> None:
+        """Snapshot every login whose synced content differs from the last committed version.
+
+        Runs on every save, after the trash auto-purge: rows of logins that are neither live nor in the
+        trash (deleted forever by any path) are dropped, and the age limit is applied (W-M5), so a purged
+        password does not live on in history and old rows go even when no login is edited.
+        """
+        from . import item_history
+
+        committed = getattr(self, "_committed_payload", None)
+        now = int(time.time())
+        self._drop_stale_entry_history(payload, now)
+        if not isinstance(committed, dict):
+            return
+        before = {str(e.get("id")): e for e in committed.get("entries", []) if isinstance(e, dict)}
+        marks = getattr(self, "_history_marks", None) or {}
+        added: list[dict[str, Any]] = []
+        for entry in payload.get("entries", []):
+            if not isinstance(entry, dict):
+                continue
+            old = before.get(str(entry.get("id")))
+            if old is None or old == entry or old.get("kind") != entry.get("kind"):
+                continue
+            if item_history.comparable(old) == item_history.comparable(entry):
+                continue
+            added.append(item_history.make_row(old, ns="entry", now=now,
+                                               change_type=marks.get(str(entry.get("id")), "update")))
+        if not added:
+            return
+        existing = payload.get(item_history.ENTRY_HISTORY_KEY)
+        rows = [r for r in existing if item_history.valid_row(r)] if isinstance(existing, list) else []
+        payload[item_history.ENTRY_HISTORY_KEY] = item_history.prune(rows + added, now,
+                                                                     self._entry_history_limits())
+
+    def _entry_history_limits(self) -> dict[str, int]:
+        from . import item_history
+
+        allowed = getattr(self, "pro_features", None)
+        pro = allowed is None or "item_history_long" in allowed
+        return item_history.limits_for(pro, max_bytes=item_history.WINDOWS_ENTRY_HISTORY_BYTES)
+
+    def _drop_stale_entry_history(self, payload: dict[str, Any], now: int) -> None:
+        """Cheap per-save clean-up of ``entry_history``: no row of a login that is neither live nor in the
+        trash, and none older than the age limit.  Leaves the key untouched when nothing goes."""
+        from . import item_history
+
+        rows = payload.get(item_history.ENTRY_HISTORY_KEY)
+        if not isinstance(rows, list) or not rows:
+            return
+        known = {str(e.get("id")) for e in payload.get("entries", []) if isinstance(e, dict)}
+        known.update(str(r["entry"].get("id")) for r in payload.get("trash", [])
+                     if isinstance(r, dict) and isinstance(r.get("entry"), dict))
+        cutoff = now - int(self._entry_history_limits()["max_age_days"]) * 86400
+        kept = [r for r in rows if item_history.valid_row(r) and r["item_id"] in known
+                and int(r["created_at"]) >= cutoff]
+        if len(kept) != len(rows):
+            payload[item_history.ENTRY_HISTORY_KEY] = kept
+
+    def set_entry_access(self, entry_id: str, access: dict[str, Any] | None) -> bool:
+        """Write a login's ``scope.access`` (contract 4.1 write form; ``None`` removes it). False when unchanged."""
+        from .access_policy import ACCESS_SCOPE_KEY
+
+        payload = self._require_payload()
+        for item in payload["entries"]:
+            if item.get("id") != entry_id:
+                continue
+            scope = item.get("scope")
+            if not isinstance(scope, dict):
+                raise VaultError("Login scope is malformed")
+            if scope.get(ACCESS_SCOPE_KEY) == access or (access is None and ACCESS_SCOPE_KEY not in scope):
+                return False
+            original = copy.deepcopy(item)
+            if access is None:
+                scope.pop(ACCESS_SCOPE_KEY, None)
+            else:
+                scope[ACCESS_SCOPE_KEY] = copy.deepcopy(access)
+            now = int(time.time())
+            item["updated_at"] = now
+            payload["updated_at"] = now
+            try:
+                self.save()
+            except BaseException:
+                item.clear()
+                item.update(original)
+                raise
+            return True
+        raise VaultError(t("vault.err.deletedNotFound"))
+
     @_under_session_lock
     def save(self) -> None:
         if self._batch_depth:
@@ -3436,14 +5115,24 @@ class VaultSession:
                 self._save_locked()
         except OSError:
             self._payload = copy.deepcopy(self._committed_payload)
+            self._history_marks = {}
             raise VaultError(t("vault.err.writeFailed")) from None
+
+    def _trusted_now(self) -> float:
+        """Wall-clock time, capped at the vault's newest stored time plus 2 days plus the
+        monotonic time since unlock: a clock that jumped forward cannot expire the trash."""
+        newest, mono = getattr(self, "_clock_anchor", (0, time.monotonic()))
+        now = time.time()
+        if newest <= 0:
+            return now
+        return min(now, newest + _CLOCK_SLACK_SECONDS + max(0.0, time.monotonic() - mono))
 
     def _save_locked(self) -> None:
         payload = self._require_payload()
         if self._key is None or len(self._key) != 32:
             raise VaultLockedError(t("vault.err.keyUnavailable"))
         old_header = copy.deepcopy(self._header)
-        if _header_version(self._header) != FORMAT_VERSION and self._pending_v3_header is not None:
+        if not _has_wrapped_key(self._header) and self._pending_v3_header is not None:
             # The first write after a master-password unlock publishes format v3
             # around the unchanged data key.
             promoted = copy.deepcopy(self._pending_v3_header)
@@ -3454,8 +5143,9 @@ class VaultSession:
             if self.trash_auto_purge:
                 # Expire before validating so state tied to purged items is
                 # cleaned up instead of being written to disk unchecked.
-                cutoff = int(time.time()) - self.trash_retention_days * 86400
+                cutoff = int(self._trusted_now()) - self.trash_retention_days * 86400
                 payload["trash"] = [r for r in payload.get("trash", []) if r["deleted_at"] >= cutoff]
+            self._capture_entry_history(payload)
             try:
                 _validate_payload(payload, self._catalog_version)
             except ItemSchemaError as exc:
@@ -3468,7 +5158,7 @@ class VaultSession:
             vault_id = str(self._header.get("vault_id", ""))
             try:
                 anchor_generation, _anchor_upgrade = _read_generation_anchor(
-                    self.path, anchor_key, vault_id, require_mac=_header_version(old_header) == FORMAT_VERSION)
+                    self.path, anchor_key, vault_id, require_mac=_has_wrapped_key(old_header))
             finally:
                 _zero(anchor_key)
             current_generation = int(payload.get("generation", 0))
@@ -3476,14 +5166,14 @@ class VaultSession:
                 raise VaultError(t("vault.err.rollbackNewest"))
             payload["generation"] = max(1, current_generation, self._generation_floor,
                                         anchor_generation + (1 if self._disk_digest is not None else 0))
-            if _header_version(self._header) == FORMAT_VERSION:
+            if _has_wrapped_key(self._header):
                 # Authenticated record that this vault always has a MAC anchor,
                 # so a deleted anchor is detected at the next unlock.
                 payload[ANCHOR_REQUIRED_KEY] = True
             nonce = os.urandom(12)
             header = copy.deepcopy(self._header)
             header["cipher"]["nonce"] = _b64e(nonce)
-            if _header_version(header) == FORMAT_VERSION:
+            if _has_wrapped_key(header):
                 header["generation"] = int(payload["generation"])
                 # R-8: bind the unlock-throttle key in use here (authenticated by the AAD below).
                 binding = UnlockThrottle(self.path).binding()
@@ -3515,9 +5205,17 @@ class VaultSession:
             self._pending_v3_header = None
             self._disk_digest = disk_digest
             self._committed_payload = committed
+            self._history_marks = {}
+            # After the vault and its anchor: a mark is never above the vault on disk.  A format 1/2 vault that
+            # got its id in this save (its upgrade at unlock failed): its copy from before, with no id, is
+            # recorded as retired like after the upgrade (``_raise_own_rollback_marks``).
+            self._raise_own_rollback_marks(retired_vault_id=str(old_header.get("vault_id") or ""))
         except BaseException:
             self._payload = copy.deepcopy(self._committed_payload)
             self._header = old_header
+            # The failed write's change is rolled back, so are its history labels: a later save must not reuse
+            # them for another change ("Arrived by sync" on a local edit, or the reverse).
+            self._history_marks = {}
             raise
 
     def lock(self) -> None:
@@ -3538,9 +5236,13 @@ class VaultSession:
             self._committed_payload = None
             self._last_catalog_migration_result = None
             self._last_envelope_upgrade_result = None
+            self._last_kdf_upgrade_result = None
             self.recovery_unlocked = False
             _zero(self._recovery_entropy)
             self._recovery_entropy = None
+            if self._held_factors is not None:
+                self._held_factors.wipe()
+                self._held_factors = None
             self._workspace_session_generation = uuid.uuid4().hex
         try:
             from .attachments import AttachmentStore
@@ -3574,7 +5276,7 @@ def _validated_text(value: str, field: str, max_len: int, *, allow_empty: bool) 
 
 def _catalog_version_of(header: dict[str, Any]) -> int:
     version = _header_version(header)
-    if version == FORMAT_VERSION:
+    if version in WRAPPED_KEY_VERSIONS:
         try:
             catalog_version = int(header.get("catalog_version", CATALOG_VERSION))
         except (TypeError, ValueError) as exc:
@@ -3608,7 +5310,7 @@ def _create_vault_with(path: Path, secret: SecretText, kdf_overrides: dict[str, 
     if secret.char_count < 12:
         raise VaultError(t("vault.err.passwordTooShortPrototype"))
 
-    kdf = dict(DEFAULT_KDF)
+    kdf = _default_kdf()
     if kdf_overrides:
         for key in ("time_cost", "memory_cost_kib", "parallelism", "hash_len"):
             if key in kdf_overrides:
@@ -3682,6 +5384,27 @@ def _validate_v3_header(header: dict[str, Any]) -> None:
         raise VaultError("Vault unlock-throttle binding is malformed")
 
 
+def _validate_v4_header(header: dict[str, Any]) -> None:
+    """``_validate_v3_header`` for a v4 header: its own format identifier and a factor list.
+
+    ``wrappers.password`` must hold ``factors`` (1-2 objects valid under COMPOSITE_KEY_V1.md §2, in
+    §2 order) and at most three fields; the rest is checked by the v3 rules on a copy without it.
+    """
+    if header.get("format") != FORMAT_V4:
+        raise VaultError("Unsupported vault format identifier")
+    wrappers = header.get("wrappers")
+    if not isinstance(wrappers, dict):
+        raise VaultError("Vault key wrappers are malformed")
+    password = wrappers.get("password")
+    if not isinstance(password, dict) or "factors" not in password \
+            or len(password) > MAX_PASSWORD_WRAPPER_FIELDS_V4:
+        raise VaultError("Vault key wrapper is malformed")
+    _header_factor_specs(header)
+    without_factors = {name: value for name, value in password.items() if name != "factors"}
+    _validate_v3_header({**header, "format": FORMAT_V3_IDENTIFIER,
+                         "wrappers": {**wrappers, "password": without_factors}})
+
+
 def _reject_json_constant(name: str) -> Any:
     raise ValueError(f"non-finite number {name}")
 
@@ -3702,7 +5425,10 @@ def _read_vault_header(path: Path) -> tuple[dict[str, Any], bytes]:
     except (OSError, ValueError, RecursionError) as exc:
         # RecursionError: Python 3.14's C decoder raises it for deeply nested input.
         raise VaultError(t("vault.err.unableToRead", detail=exc)) from exc
-    if header.get("version") not in SUPPORTED_FORMAT_VERSIONS:
+    version = header.get("version")
+    if version not in SUPPORTED_FORMAT_VERSIONS:
+        if type(version) is int and version > max(WRAPPED_KEY_VERSIONS):
+            raise VaultTooNew(version)
         raise VaultError("Unsupported vault format version")
     if header.get("version") == CATALOG_ENVELOPE_VERSION:
         if header.get("format") != FORMAT_V2_IDENTIFIER or header.get("catalog") != CATALOG_FORMAT:
@@ -3714,13 +5440,22 @@ def _read_vault_header(path: Path) -> tuple[dict[str, Any], bytes]:
         raise VaultError("Vault KDF metadata is missing")
     if header.get("version") == FORMAT_VERSION:
         _validate_v3_header(header)
+    elif header.get("version") == VERSION_V4:
+        _validate_v4_header(header)
     return header, source_bytes
 
 
 def _decrypt_vault(path: Path, header: dict[str, Any], source_bytes: bytes,
                    key: bytearray, *, backup_dir: Path | None = None,
-                   backup_count: int = 0, check_anchor: bool = True) -> VaultSession:
-    """Consume ownership of the catalog key on success, zero it on every failure."""
+                   backup_count: int = 0, check_anchor: bool = True,
+                   rollback_marks: str = MARKS_LIVE) -> VaultSession:
+    """Consume ownership of the catalog key on success, zero it on every failure.
+
+    ``rollback_marks`` (with ``check_anchor``): ``MARKS_LIVE`` for the app's own unlock of the vault at ``path``
+    (password through ``unlock_vault(upgrade_kdf=True)``, Hello, camera, security key, the duress vault),
+    ``MARKS_COPY`` for other unlocks (the path mark only; a copy without its anchor or path mark is not
+    marked), ``MARKS_OFF`` for read-only probes.  ``check_anchor=False`` is ``MARKS_OFF``.
+    """
     try:
         if len(key) != 32:
             raise VaultError("Invalid vault key length")
@@ -3738,21 +5473,37 @@ def _decrypt_vault(path: Path, header: dict[str, Any], source_bytes: bytes,
             _zero(plaintext)
             del plaintext
         payload = _validate_payload(parsed, version)
-        if _header_version(header) == FORMAT_VERSION and int(payload.get("generation", 0)) != int(header["generation"]):
+        if _has_wrapped_key(header) and int(payload.get("generation", 0)) != int(header["generation"]):
             raise VaultError("Vault header generation does not match its encrypted catalog")
         anchor_missing = False
+        marks_mode = rollback_marks if check_anchor else MARKS_OFF
+        marked = False
         if check_anchor:
             anchor_key = _rollback_anchor_key(key)
+            vault_id = str(header.get("vault_id", ""))
+            generation = int(payload.get("generation", 0))
             try:
+                if marks_mode != MARKS_OFF:
+                    # Before the anchor is touched: a refusal writes nothing.
+                    marked, second_copy = _check_rollback_marks(path, generation, anchor_key, vault_id,
+                                                                 live=marks_mode == MARKS_LIVE)
+                    anchor_missing = second_copy
                 anchor_missing = _check_generation_anchor(
-                    path, payload, anchor_key, str(header.get("vault_id", "")),
-                    require_mac=_header_version(header) == FORMAT_VERSION)
+                    path, payload, anchor_key, vault_id,
+                    require_mac=_has_wrapped_key(header)) or anchor_missing
+                # Only the live vault, or a path already marked, is marked: a restore's or a check's
+                # private copy leaves nothing in the store.
+                marked = marked or marks_mode == MARKS_LIVE
+                if marked:
+                    _raise_rollback_marks(path, generation, anchor_key, vault_id)
             finally:
                 _zero(anchor_key)
         session = VaultSession(path, header, key, payload, backup_dir=backup_dir,
                                backup_count=backup_count)
         session._disk_digest = hashlib.sha256(source_bytes).digest()
         session.rollback_anchor_missing = anchor_missing
+        session._rollback_marks_off = marks_mode == MARKS_OFF
+        session._rollback_marks_target = Path(path) if marked else None
         return session
     except BaseException as exc:
         key[:] = b"\0" * len(key)
@@ -3761,15 +5512,21 @@ def _decrypt_vault(path: Path, header: dict[str, Any], source_bytes: bytes,
         raise
 
 
-def _unwrap_password_wrapper(header: dict[str, Any], master_password: SecretText) -> bytearray:
-    """Argon2id(master password) -> KEK -> data key.  The KEK never outlives this call."""
+def _unwrap_password_wrapper(header: dict[str, Any], master_password: SecretText,
+                             factor_secrets: list[bytearray] | None = None) -> bytearray:
+    """Argon2id(master password) [+ factor secrets] -> KEK -> data key.  The KEK never outlives this call.
+
+    ``factor_secrets`` are the v4 factors' secrets in list order (``_resolve_factor_secrets``).
+    """
     wrapper = header["wrappers"]["password"]
     nonce = _validated_wrapper_field(wrapper, "nonce", 12)
     ciphertext = _validated_wrapper_field(wrapper, "ciphertext", 48)
-    kek = _derive_key(master_password, header["kdf"])
+    specs = _header_factor_specs(header)
+    kek = _password_kek(master_password, header["kdf"], specs, factor_secrets or [])
     try:
         try:
-            return _unwrap_key(kek, nonce, ciphertext, _wrapper_aad(header, "password", {"kdf": header["kdf"]}))
+            return _unwrap_key(kek, nonce, ciphertext,
+                               _wrapper_aad(header, "password", _password_metadata(header, specs)))
         except InvalidTag as exc:
             raise InvalidMasterPassword(t("vault.err.wrongPasswordOrModified")) from exc
     finally:
@@ -3792,12 +5549,15 @@ def _unwrap_recovery_wrapper(header: dict[str, Any], wrapper: dict[str, Any], en
 
 
 def _open_with_password(path: Path, header: dict[str, Any], source_bytes: bytes, master_password: SecretText, *,
-                        backup_dir: Path | None, backup_count: int) -> VaultSession:
-    if _header_version(header) == FORMAT_VERSION:
-        data_key = _unwrap_password_wrapper(header, master_password)
+                        backup_dir: Path | None, backup_count: int,
+                        factor_secrets: list[bytearray] | None = None,
+                        rollback_marks: str = MARKS_LIVE) -> VaultSession:
+    if _has_wrapped_key(header):
+        data_key = _unwrap_password_wrapper(header, master_password, factor_secrets)
     else:
         data_key = _derive_key(master_password, header["kdf"])
-    return _decrypt_vault(path, header, source_bytes, data_key, backup_dir=backup_dir, backup_count=backup_count)
+    return _decrypt_vault(path, header, source_bytes, data_key, backup_dir=backup_dir, backup_count=backup_count,
+                          rollback_marks=rollback_marks)
 
 
 def _rebind_throttle(session: VaultSession, throttle: UnlockThrottle) -> None:
@@ -3808,21 +5568,38 @@ def _rebind_throttle(session: VaultSession, throttle: UnlockThrottle) -> None:
     old key and every later start would fail closed.  Best effort.
     """
     try:
-        if _header_version(session._header) == FORMAT_VERSION and throttle._binding_broken():
+        if _has_wrapped_key(session._header) and throttle._binding_broken():
             session.save()
     except (VaultError, OSError):
         _LOG.warning("Could not re-record the unlock-throttle key for %s.", session.path.name)
 
 
-def unlock_vault(path: Path, master_password: str | SecretText, *, backup_dir: Path | None = None,
-                 backup_count: int = 0, upgrade_envelope: bool = True) -> VaultSession:
-    """Open the vault with its master password.
+def unlock_vault(path: Path, master_password: str | SecretText, *, factors: FactorSecrets | None = None,
+                 backup_dir: Path | None = None, backup_count: int = 0, upgrade_envelope: bool = True,
+                 upgrade_kdf: bool = False) -> VaultSession:
+    """Open the vault with its master password (and, for a v4 vault, its key file / YubiKey).
+
+    A v4 vault raises ``FactorRequired`` when ``factors`` lacks one of its factors and
+    ``FactorMismatch`` when one is not this vault's; both come before Argon2 runs and neither
+    counts as a failed password.  Factors given for a vault without any are ignored.  The session
+    keeps what it was opened with (``_HeldFactors``) for later password checks until ``lock()``.
 
     ``upgrade_envelope=False`` is for read-only probes of a copy (backup
     verification): a v1/v2 envelope is opened as-is, so no migration journal
     or encrypted pre-migration snapshot is written next to the copy.
+
+    ``upgrade_kdf=True`` (the app's own password unlock of the live vault only;
+    restores, probes and checks leave it off) re-wraps the data key under the
+    current Argon2id default when the vault uses weaker parameters, see
+    ``VaultSession._upgrade_kdf_on_unlock``.  Hello, camera and recovery-phrase
+    unlocks have no password and never upgrade.
+
+    The rollback marks kept outside the folder follow the same split: ``upgrade_kdf=True`` is the live vault
+    (both marks), ``upgrade_envelope=False`` a probe (no mark is read or written), anything else a copy that
+    may be headed elsewhere (the path mark only), see ``_decrypt_vault``.
     """
     path = Path(path)
+    marks_mode = MARKS_LIVE if upgrade_kdf else MARKS_COPY if upgrade_envelope else MARKS_OFF
     if not isinstance(master_password, (str, SecretText)):
         raise InvalidMasterPassword(t("vault.err.passwordEmpty"))
     secret, owned = _master_secret(master_password, t("vault.err.passwordTextInvalid"))
@@ -3831,26 +5608,80 @@ def unlock_vault(path: Path, master_password: str | SecretText, *, backup_dir: P
         throttle.check()
         _recover_vault_migration(path)
         header, source_bytes = _read_vault_header(path)
+        specs = _header_factor_specs(header)
+        factor_secrets = _resolve_factor_secrets(specs, factors)  # not a password attempt: never throttled
         try:
-            session = _open_with_password(path, header, source_bytes, secret,
-                                          backup_dir=backup_dir, backup_count=backup_count)
-        except InvalidMasterPassword:
-            throttle.record_failure()
-            raise
-        throttle.reset()
-        if upgrade_envelope:
-            _rebind_throttle(session, throttle)
-        if _header_version(header) != FORMAT_VERSION and upgrade_envelope:
             try:
-                session._prepare_promotion(secret)
-                session._upgrade_envelope_on_unlock()
-            except BaseException:
-                session.lock()
+                session = _open_with_password(path, header, source_bytes, secret, backup_dir=backup_dir,
+                                              backup_count=backup_count, factor_secrets=factor_secrets,
+                                              rollback_marks=marks_mode)
+            except InvalidMasterPassword:
+                throttle.record_failure()
                 raise
-        return session
+            throttle.reset()
+            session._hold_factors(specs, factor_secrets, factors)
+            if upgrade_envelope:
+                _rebind_throttle(session, throttle)
+            if not _has_wrapped_key(header) and upgrade_envelope:
+                try:
+                    session._prepare_promotion(secret)
+                    session._upgrade_envelope_on_unlock()
+                except BaseException:
+                    session.lock()
+                    raise
+            if upgrade_kdf and upgrade_envelope:
+                try:
+                    try:
+                        session._repair_unlock_sidecars_after_kdf_upgrade()
+                    except Exception as exc:  # noqa: BLE001 - a sidecar repair never blocks the unlock
+                        _LOG.warning("Could not finish moving the unlock sidecars: %s", exc)
+                    session._upgrade_kdf_on_unlock(secret, factor_secrets)
+                except BaseException:
+                    session.lock()
+                    raise
+            return session
+        finally:
+            _zero_all(factor_secrets)
     finally:
         if owned:
             secret.wipe()
+
+
+def vault_identifier(path: Path) -> str:
+    """The vault's ``vault_id`` from its public header (empty when the header has none)."""
+    header, _source = _read_vault_header(Path(path))
+    return str(header.get("vault_id") or "")
+
+
+def vault_factors(path: Path) -> list[FactorSpec]:
+    """The vault's key-file / YubiKey factors from its public header (no secret is read); ``[]`` for none."""
+    header, _source = _read_vault_header(Path(path))
+    return _header_factor_specs(header)
+
+
+def add_factor(path: Path, password: str | SecretText, factors: FactorSecrets | None, new: FactorInput, *,
+               backup_dir: Path | None = None, backup_count: int = 0) -> list[FactorSpec]:
+    """Open the vault with ``password`` and its current ``factors``, add ``new`` and lock it again.
+
+    Returns the new factor list.  See ``VaultSession.add_factor`` (the data key is not rotated).
+    """
+    session = unlock_vault(path, password, factors=factors, backup_dir=backup_dir, backup_count=backup_count)
+    try:
+        added: list[FactorSpec] = session.add_factor(password, new)
+        return added
+    finally:
+        session.lock()
+
+
+def remove_factor(path: Path, password: str | SecretText, factors: FactorSecrets | None, kind: str, *,
+                  backup_dir: Path | None = None, backup_count: int = 0) -> list[FactorSpec]:
+    """Open the vault, remove the factor of ``kind`` (the last one writes v3 again) and lock it."""
+    session = unlock_vault(path, password, factors=factors, backup_dir=backup_dir, backup_count=backup_count)
+    try:
+        remaining: list[FactorSpec] = session.remove_factor(password, kind)
+        return remaining
+    finally:
+        session.lock()
 
 
 def unlock_with_recovery_phrase(path: Path, phrase: str, *, backup_dir: Path | None = None,
@@ -3867,7 +5698,7 @@ def unlock_with_recovery_phrase(path: Path, phrase: str, *, backup_dir: Path | N
     entropy = entropy_from_phrase(phrase)
     _recover_vault_migration(path)
     header, source_bytes = _read_vault_header(path)
-    wrapper = header.get("wrappers", {}).get("recovery") if _header_version(header) == FORMAT_VERSION else None
+    wrapper = header.get("wrappers", {}).get("recovery") if _has_wrapped_key(header) else None
     if not isinstance(wrapper, dict):
         raise RecoveryPhraseError(t("vault.err.noRecoveryPhrase"))
     try:
@@ -3875,7 +5706,9 @@ def unlock_with_recovery_phrase(path: Path, phrase: str, *, backup_dir: Path | N
     except RecoveryPhraseError:
         throttle.record_failure()
         raise
-    session = _decrypt_vault(path, header, source_bytes, data_key, backup_dir=backup_dir, backup_count=backup_count)
+    # Also how a backup's copy is opened with its phrase: the path mark only (``_decrypt_vault``).
+    session = _decrypt_vault(path, header, source_bytes, data_key, backup_dir=backup_dir, backup_count=backup_count,
+                             rollback_marks=MARKS_COPY)
     throttle.reset()
     _rebind_throttle(session, throttle)
     session.recovery_unlocked = True
@@ -3903,6 +5736,34 @@ def _unlock_vault_with_key(path: Path, key: bytearray, *, expected_context: str,
                                   backup_count=backup_count)
         if not secrets.compare_digest(session.hello_binding(), expected_binding):
             raise VaultError(t("vault.err.helloRevoked"))
+        return session
+    except BaseException:
+        if session is not None:
+            session.lock()
+        key[:] = b"\0" * len(key)
+        raise
+
+
+def _unlock_vault_with_security_key(path: Path, key: bytearray, *, expected_context: str,
+                                   expected_binding: str, backup_dir: Path | None = None,
+                                   backup_count: int = 0) -> VaultSession:
+    """Internal security-key route; consume a key unwrapped with the key's hmac-secret.
+
+    Same checks as the Windows Hello route, against the separate ``fido_binding``
+    so revoking one method never leaves the other authorized by mistake.
+    """
+    session = None
+    try:
+        if not expected_binding:
+            raise VaultError(t("vault.err.securityKeyNotAuthorized"))
+        header, source_bytes = _read_vault_header(path)
+        context = unlock_context_for_header(header)
+        if not secrets.compare_digest(context, expected_context):
+            raise VaultError(t("vault.err.passwordOrHeaderChanged"))
+        session = _decrypt_vault(path, header, source_bytes, key, backup_dir=backup_dir,
+                                  backup_count=backup_count)
+        if not secrets.compare_digest(session.fido_binding(), expected_binding):
+            raise VaultError(t("vault.err.securityKeyRevoked"))
         return session
     except BaseException:
         if session is not None:

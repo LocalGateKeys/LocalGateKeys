@@ -23,7 +23,7 @@ final class PhoneLocalData: PhoneLocalHosting {
     nonisolated static let info = Array("localgatekeys|ios-local-data|v1".utf8)
     nonisolated static let aad = Array("localgatekeys|ios-local-data|v1".utf8)
     nonisolated static let formatVersion: UInt8 = 1
-    nonisolated static let resetMessage = String(localized: "Recently deleted and reminders on this iPhone couldn't be read and were reset.")
+    nonisolated static let resetMessage = DeviceText.isPad ? String(localized: "ipad.phoneLocalData.recentlyDeletedAndReminders", defaultValue: "Recently deleted and reminders on this iPad couldn't be read and were reset.") : String(localized: "Recently deleted and reminders on this iPhone couldn't be read and were reset.")
 
     enum Failure: Error { case format, unreadableFileInPlace }
 

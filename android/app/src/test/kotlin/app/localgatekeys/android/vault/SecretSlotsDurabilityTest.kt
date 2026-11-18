@@ -31,10 +31,12 @@ class SecretSlotsDurabilityTest {
             mapOf(
                 Slot.PAIRED_PEER to "paired-peer", Slot.INSTALL_ID to "install-id", Slot.HELLO_COUNTER to "hello-counter",
                 Slot.PEER_COUNTERS to "peer-counters", Slot.FOLDER_URI to "folder-uri",
+                Slot.HEIR_FOLDER_URI to "heir-folder-uri", Slot.HEIR_IDENTITY to "heir-identity", Slot.HEIR_SHARDS to "heir-shards",
+                Slot.KEPT_IDENTITY to "kept-identity",
             ),
             Slot.entries.associateWith { it.key },
         )
-        assertEquals(5, Slot.entries.size)
+        assertEquals(9, Slot.entries.size)
     }
 
     @Test fun all_slots_round_trip_together() {

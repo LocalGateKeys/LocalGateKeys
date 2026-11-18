@@ -9,6 +9,7 @@ requiring source files or a virtual environment.
 """
 
 import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -22,6 +23,7 @@ from .config import (
     EXTENSION_ID,
     NATIVE_HOST_NAME,
     ExtensionTrust,
+    atomic_write_bytes,
     atomic_write_json,
     data_dir,
     extension_trust,
@@ -115,6 +117,17 @@ def _firefox_manifest_payload(host_executable: Path, firefox_id: str = FIREFOX_E
     }
 
 
+def _write_firefox_launcher() -> Path | None:
+    """Write the packaged Firefox launcher batch file; ``None`` when not packaged."""
+
+    launcher = distribution.firefox_native_host_launcher_path()
+    script = distribution.firefox_native_host_launcher_script()
+    if launcher is None or script is None:
+        return None
+    atomic_write_bytes(launcher, script.encode("ascii"))
+    return launcher
+
+
 def _secure_data_directory(path: Path) -> None:
     """Apply current-user-only DACLs when possible without requiring elevation.
 
@@ -167,18 +180,28 @@ def _register_manifest(manifest_path: Path, firefox_manifest_path: Path | None =
         key_path = f"{root}\\{NATIVE_HOST_NAME}"
         if packaged:
             current = _registered_value(winreg, key_path)
-            if current is not None:
-                # Inside an MSIX package, changing an existing HKCU value is
-                # copy-on-write into the package's private hive: the browser
-                # would keep the real value and this process would see a
-                # private one from then on. Never write over it. The value is
-                # the same data-directory path in every build, so a matching
-                # value (e.g. from an earlier Inno Setup install) is final.
-                if not _same_registry_path(current, str(path)):
-                    conflicts.append(root)
+            if current is not None and _same_registry_path(current, str(path)):
+                # The value is the same data-directory path in every build, so
+                # a matching value (e.g. from an Inno Setup install) is final,
+                # unless the package's view differs from the real HKCU.
+                if _real_value_matches(key_path, path) is not False:
+                    continue
+            elif current is not None and _is_working_manifest(current):
+                # Another working LocalGateKeys install owns the registration
+                # (e.g. Inno Setup with its own data folder): never take it over.
+                conflicts.append(root)
                 continue
-        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as key:
-            winreg.SetValueEx(key, None, 0, winreg.REG_SZ, str(path))
+            # Missing or stale (manifest gone, not ours, or launcher gone):
+            # write our own computed path, then check what the browsers see.
+            _write_registry_value(winreg, key_path, path)
+            if _real_value_matches(key_path, path) is False:
+                # Older Windows 11 builds made this write private to the
+                # package; write it from a process outside the package.
+                _run_reg_outside_package("add", f"HKCU\\{key_path}", "/ve", "/t", "REG_SZ", "/d", str(path), "/f")
+                if _real_value_matches(key_path, path) is False:
+                    conflicts.append(root)
+            continue
+        _write_registry_value(winreg, key_path, path)
     if conflicts:
         raise OSError("The browser registration for LocalGateKeys points at a different manifest under "
                       + ", ".join(conflicts) + ". Remove the other LocalGateKeys installation, then start "
@@ -196,6 +219,139 @@ def _registered_value(winreg: Any, key_path: str) -> str | None:
 
 def _same_registry_path(left: str, right: str) -> bool:
     return os.path.normcase(os.path.abspath(left)) == os.path.normcase(os.path.abspath(right))
+
+
+def _write_registry_value(winreg: Any, key_path: str, path: Path) -> None:
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as key:
+        winreg.SetValueEx(key, None, 0, winreg.REG_SZ, str(path))
+
+
+def _is_working_manifest(value: str) -> bool:
+    """True when ``value`` names a readable LocalGateKeys manifest whose launcher exists.
+
+    The file is only read, never run; anything else makes the value stale.
+    """
+
+    try:
+        manifest = Path(value)
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(data, dict) or data.get("name") != NATIVE_HOST_NAME:
+        return False
+    launcher = data.get("path")
+    if not isinstance(launcher, str) or not launcher:
+        return False
+    launcher_path = Path(launcher)
+    if not launcher_path.is_absolute():
+        # Chrome resolves a relative path against the manifest's folder.
+        launcher_path = manifest.parent / launcher_path
+    # lexists: an app execution alias is a reparse point stat() cannot follow.
+    return os.path.lexists(launcher_path)
+
+
+def _real_value_matches(key_path: str, path: Path) -> bool | None:
+    """Whether the real HKCU value (what browsers read) equals ``path``.
+
+    Asked from a reg.exe outside the package, since this process may see a
+    package-private copy. Exact match, case-insensitive; reg.exe's printed
+    output is not parsed because it loses non-ASCII characters. ``None`` when
+    the check could not run. No ``/ve``: combined with ``/f`` it ignores the
+    search and always succeeds (measured); the key holds only this one value.
+    """
+
+    code = _run_reg_outside_package("query", f"HKCU\\{key_path}", "/f", str(path), "/d", "/e")
+    if code is None or code not in (0, 1):
+        return None
+    return code == 0
+
+
+_PROC_THREAD_ATTRIBUTE_DESKTOP_APP_POLICY = 0x00020012
+# Measured on Windows 11 26300: the created process itself runs outside the
+# package (it has no package identity), and so does everything it starts.
+_DESKTOP_APP_BREAKAWAY_ENABLE_PROCESS_TREE = 0x01
+
+
+def _run_reg_outside_package(*args: str) -> int | None:
+    """Run System32 ``reg.exe`` outside the MSIX container; its exit code, or ``None``.
+
+    Only the fixed native-messaging key paths and this app's own manifest
+    paths are passed in. No shell is involved and no handles are inherited.
+    """
+
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes as wt
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        class STARTUPINFOW(ctypes.Structure):
+            _fields_ = [("cb", wt.DWORD), ("lpReserved", wt.LPWSTR), ("lpDesktop", wt.LPWSTR),
+                        ("lpTitle", wt.LPWSTR), ("dwX", wt.DWORD), ("dwY", wt.DWORD), ("dwXSize", wt.DWORD),
+                        ("dwYSize", wt.DWORD), ("dwXCountChars", wt.DWORD), ("dwYCountChars", wt.DWORD),
+                        ("dwFillAttribute", wt.DWORD), ("dwFlags", wt.DWORD), ("wShowWindow", wt.WORD),
+                        ("cbReserved2", wt.WORD), ("lpReserved2", ctypes.c_void_p), ("hStdInput", wt.HANDLE),
+                        ("hStdOutput", wt.HANDLE), ("hStdError", wt.HANDLE)]
+
+        class STARTUPINFOEXW(ctypes.Structure):
+            _fields_ = [("StartupInfo", STARTUPINFOW), ("lpAttributeList", ctypes.c_void_p)]
+
+        class PROCESS_INFORMATION(ctypes.Structure):
+            _fields_ = [("hProcess", wt.HANDLE), ("hThread", wt.HANDLE), ("dwProcessId", wt.DWORD),
+                        ("dwThreadId", wt.DWORD)]
+
+        init_list = kernel32.InitializeProcThreadAttributeList
+        init_list.argtypes = [ctypes.c_void_p, wt.DWORD, wt.DWORD, ctypes.POINTER(ctypes.c_size_t)]
+        update_list = kernel32.UpdateProcThreadAttribute
+        update_list.argtypes = [ctypes.c_void_p, wt.DWORD, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_size_t,
+                                ctypes.c_void_p, ctypes.c_void_p]
+        delete_list = kernel32.DeleteProcThreadAttributeList
+        delete_list.argtypes = [ctypes.c_void_p]
+        create = kernel32.CreateProcessW
+        create.argtypes = [wt.LPCWSTR, wt.LPWSTR, ctypes.c_void_p, ctypes.c_void_p, wt.BOOL, wt.DWORD,
+                           ctypes.c_void_p, wt.LPCWSTR, ctypes.c_void_p, ctypes.c_void_p]
+        kernel32.WaitForSingleObject.argtypes = [wt.HANDLE, wt.DWORD]
+        kernel32.GetExitCodeProcess.argtypes = [wt.HANDLE, ctypes.POINTER(wt.DWORD)]
+        kernel32.TerminateProcess.argtypes = [wt.HANDLE, wt.UINT]
+        kernel32.CloseHandle.argtypes = [wt.HANDLE]
+
+        size = ctypes.c_size_t(0)
+        init_list(None, 1, 0, ctypes.byref(size))
+        attributes = ctypes.create_string_buffer(size.value)
+        if not init_list(attributes, 1, 0, ctypes.byref(size)):
+            return None
+        try:
+            policy = wt.DWORD(_DESKTOP_APP_BREAKAWAY_ENABLE_PROCESS_TREE)
+            if not update_list(attributes, 0, _PROC_THREAD_ATTRIBUTE_DESKTOP_APP_POLICY, ctypes.byref(policy),
+                               ctypes.sizeof(policy), None, None):
+                return None
+            startup = STARTUPINFOEXW()
+            startup.StartupInfo.cb = ctypes.sizeof(STARTUPINFOEXW)
+            startup.lpAttributeList = ctypes.cast(attributes, ctypes.c_void_p)
+            info = PROCESS_INFORMATION()
+            reg = system32("reg.exe")
+            command_line = ctypes.create_unicode_buffer(subprocess.list2cmdline([reg, *args]))
+            flags = 0x00080000 | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)  # EXTENDED_STARTUPINFO_PRESENT
+            if not create(reg, command_line, None, None, False, flags, None, None,
+                          ctypes.byref(startup), ctypes.byref(info)):
+                return None
+        finally:
+            delete_list(attributes)
+        try:
+            if kernel32.WaitForSingleObject(info.hProcess, 15000) != 0:
+                kernel32.TerminateProcess(info.hProcess, 1)
+                return None
+            code = wt.DWORD()
+            if not kernel32.GetExitCodeProcess(info.hProcess, ctypes.byref(code)):
+                return None
+            return int(code.value)
+        finally:
+            kernel32.CloseHandle(info.hThread)
+            kernel32.CloseHandle(info.hProcess)
+    except Exception:
+        return None
 
 
 def _unregister_manifest() -> None:
@@ -242,8 +398,11 @@ def repair_browser_bridge(extension_id: str = EXTENSION_ID) -> Path:
     trust = extension_trust()
     manifest_path = _manifest_path()
     atomic_write_json(manifest_path, _manifest_payload(launch_path, extension_id, trust))
+    # Firefox cannot start the alias directly (the packaged host would not get
+    # its stdio pipes); it starts a fixed batch file that runs the alias.
+    firefox_launch_path = _write_firefox_launcher() or launch_path
     firefox_manifest_path = _firefox_manifest_path()
-    atomic_write_json(firefox_manifest_path, _firefox_manifest_payload(launch_path))
+    atomic_write_json(firefox_manifest_path, _firefox_manifest_payload(firefox_launch_path))
 
     config = {
         "version": BRIDGE_CONFIG_VERSION,
@@ -264,6 +423,11 @@ def repair_browser_bridge(extension_id: str = EXTENSION_ID) -> Path:
     }
     if launch_path != host_executable:
         config["native_host_launch_path"] = str(launch_path)
+    if firefox_launch_path != launch_path:
+        config["firefox_native_host_launch_path"] = str(firefox_launch_path)
+    if not getattr(sys, "frozen", False):
+        # Development: the pipe gives the cli scope to this lgk.exe (frozen builds use <install dir>\cli\lgk.exe).
+        config["cli_path"] = str(Path(__file__).resolve().parents[2] / "dist-personal" / "lgk" / "lgk.exe")
     atomic_write_json(install_config_path(), config)
     # Last, so a registration conflict (packaged builds raise) still leaves the
     # manifests and pins above consistent with each other.
@@ -277,7 +441,11 @@ def unregister_browser_bridge() -> None:
     if os.name != "nt":
         return
     _unregister_manifest()
-    for path in (_manifest_path(), _firefox_manifest_path(), install_config_path()):
+    paths = [_manifest_path(), _firefox_manifest_path(), install_config_path()]
+    launcher = distribution.firefox_native_host_launcher_path()
+    if launcher is not None:
+        paths.append(launcher)
+    for path in paths:
         try:
             path.unlink()
         except FileNotFoundError:

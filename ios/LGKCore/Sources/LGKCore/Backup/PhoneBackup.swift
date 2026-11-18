@@ -378,6 +378,8 @@ extension PhoneBackup {
         var noFile = 0
         let known = Set([device, backup.deviceID]).union(snapshot.sync?.members ?? [])
         for s in backup.states {
+            // Collection states never come back from a backup (it holds none; a stray one is unreadable).
+            if CollectionStates.isStateID(s.id) { unreadable += 1; continue }
             guard var state = try? ItemState(itemID: s.id, vv: s.vv, deleted: s.deleted, deletedAt: s.deletedAt, item: s.item)
             else { unreadable += 1; continue }
             // Unreadable first (Windows and Android order): a document that is both is skipped, not "file missing".

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Zestaw awaryjny</string>
+    <string name="kit_intro">Przechowuj tę stronę offline i oddzielnie od telefonu. Wyjaśnia, jak wrócić do LocalGateKeys, gdy zapomnisz hasła aplikacji.</string>
+    <string name="kit_device">Telefon</string>
+    <string name="kit_date">Data</string>
+    <string name="kit_version">Wersja LocalGateKeys</string>
+    <string name="kit_app_password">Hasło aplikacji (wpisz odręcznie lub trzymaj osobno od tej strony):</string>
+    <string name="kit_phrase_heading">Fraza odzyskiwania (%1$d słów, po kolei)</string>
+    <string name="kit_steps_heading">Jak wrócić do aplikacji</string>
+    <string name="kit_step1">Na ekranie blokady LocalGateKeys dotknij „%1$s”.</string>
+    <string name="kit_step2">Wpisz powyższe słowa (%1$d) po kolei.</string>
+    <string name="kit_step3">Wybierz nowe hasło aplikacji. Twoje hasła nie zmienią się.</string>
+    <string name="kit_step4">Jeśli telefon zginął lub sejfu już nie ma, zainstaluj LocalGateKeys na nowym telefonie, a potem przywróć najnowszy plik kopii zapasowej albo zsynchronizuj dane z komputera lub innego telefonu.</string>
+    <string name="kit_warning">Traktuj tę stronę jak swój sejf. Zapisany plik PDF z frazą odzyskiwania jest tak samo wrażliwy jak sam sejf: zamknij papier w bezpiecznym miejscu, a zapisane pliki PDF usuń, gdy skończysz.</string>
+    <string name="kit_print_with_phrase">Drukuj zestaw awaryjny z tą frazą</string>
+    <string name="kit_print_blank">Drukuj zestaw awaryjny (pola frazy puste)</string>
+</resources>

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys dla iPhone&#x27;a i iPada: przewodnik</title>
+  <meta name="description" content="Jak używać LocalGateKeys na iPhonie i iPadzie: konfiguracja, autouzupełnianie, klucze dostępu, kody 2FA, import i synchronizacja.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pl/guide/iphone">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/iphone">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/iphone">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/iphone">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/iphone">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/iphone">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/iphone">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/iphone">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/iphone">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/iphone">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/iphone">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/iphone">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/iphone">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys dla iPhone&#x27;a i iPada: przewodnik">
+  <meta property="og:description" content="Jak używać LocalGateKeys na iPhonie i iPadzie: konfiguracja, autouzupełnianie, klucze dostępu, kody 2FA, import i synchronizacja.">
+  <meta property="og:url" content="https://localgatekeys.app/pl/guide/iphone">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Logo LocalGateKeys: menedżer haseł na Windows, Mac i iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys dla iPhone&#x27;a i iPada: przewodnik">
+  <meta name="twitter:description" content="Jak używać LocalGateKeys na iPhonie i iPadzie: konfiguracja, autouzupełnianie, klucze dostępu, kody 2FA, import i synchronizacja.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../pl/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Główne">
+        <ul class="nav">
+          <li><a href="../../pl/features">Funkcje</a></li>
+          <li><a href="../../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../../pl/help">Przewodnik</a></li>
+          <li><a href="../../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../../pl/pricing">Cennik</a></li>
+          <li><a href="../../pl/support">Wsparcie</a></li>
+          <li><a class="nav-cta" href="../../pl/download">Pobierz</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Główne">
+          <ul class="nav nav-stack">
+            <li><a href="../../pl/features">Funkcje</a></li>
+          <li><a href="../../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../../pl/help">Przewodnik</a></li>
+          <li><a href="../../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../../pl/pricing">Cennik</a></li>
+          <li><a href="../../pl/support">Wsparcie</a></li>
+          <li><a class="nav-cta" href="../../pl/download">Pobierz</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Język</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/iphone" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/iphone" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/iphone" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/iphone" hreflang="pl" lang="pl" aria-current="true">Polski</a></li><li><a href="../../zh-hans/guide/iphone" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/iphone" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/iphone" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/iphone" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/iphone" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/iphone" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/iphone" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys na iPhone'a</h1>
+  <p class="lead">Pomoc krok po kroku dla każdego ekranu i funkcji na tym urządzeniu. Każdy nagłówek to link, który możesz udostępnić.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platformy">
+    <ul><li><a class="help-tab" href="../../pl/guide/windows">Windows</a></li><li><a class="help-tab" href="../../pl/guide/mac">Mac</a></li><li><a class="help-tab" href="../../pl/guide/iphone" aria-current="page">iPhone i iPad</a></li><li><a class="help-tab" href="../../pl/guide/android">Android</a></li><li><a class="help-tab" href="../../pl/guide/extension">Rozszerzenie przeglądarki</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Warto wiedzieć na każdym urządzeniu</h2>
+    <ul>
+      <li><strong>Twój sejf zostaje na Twoich urządzeniach.</strong> Nie ma konta ani serwera LocalGateKeys, który przechowywałby Twoje hasła.</li>
+      <li><strong>Nikt nie może zresetować Twojego hasła głównego ani hasła aplikacji.</strong> Ustaw frazę odzyskiwania i przechowuj ją na papierze.</li>
+      <li><strong>Free</strong> mieści do 7 elementów. <strong>Pro</strong> (US$29.99, płatność jednorazowa) dodaje nieograniczoną liczbę elementów, kody dwuskładnikowe, pliki i synchronizację. Edytowanie, usuwanie i wypełnianie elementów, które już masz, nigdy nie jest blokowane.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
+    <h2 class="panel-title" id="iphone-title">Tematy iPhone</h2>
+    <p class="panel-lead">Pobierz z <a href="https://apps.apple.com/app/id6825488435">App Store</a> (iOS 17 lub nowszy). Aplikacja ma cztery karty: <strong>Sejf</strong>, <strong>Synchronizacja</strong>, <strong>Bezpieczeństwo</strong> i <strong>Ustawienia</strong>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Tematy iPhone">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#ios-setup">Pierwsze uruchomienie i odblokowywanie</a></li>
+            <li><a href="#ios-apppw">Hasło aplikacji i odzyskiwanie</a></li>
+            <li><a href="#ios-items">Elementy: dodawanie, edycja, usuwanie</a></li>
+            <li><a href="#ios-search">Wyszukiwanie i akcje</a></li>
+            <li><a href="#ios-generator">Generator haseł</a></li>
+            <li><a href="#ios-2fa">Kody dwuskładnikowe</a></li>
+            <li><a href="#ios-autofill">Autouzupełnianie w aplikacjach i Safari</a></li>
+            <li><a href="#ios-passkeys">Klucze dostępu</a></li>
+            <li><a href="#ios-safari">Zapisywanie z Safari</a></li>
+            <li><a href="#ios-security">Karta Bezpieczeństwo</a></li>
+            <li><a href="#ios-import">Import i eksport</a></li>
+            <li><a href="#ios-sync">Synchronizacja</a></li>
+            <li><a href="#ios-share">Udostępnianie elementu</a></li>
+            <li><a href="#ios-settings">Ustawienia</a></li>
+            <li><a href="#ios-more">Hasło przymusu i więcej</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ios-setup">
+          <h3><a href="#ios-setup">Pierwsze uruchomienie i odblokowywanie</a></h3>
+          <p>Nie trzeba tworzyć hasła. Sejf otwiera się za pomocą <strong>Face ID</strong>, <strong>Touch ID</strong> lub kodu iPhone'a, tak jak telefon. (iPhone musi mieć ustawiony kod).</p>
+          <ol>
+            <li>Otwórz aplikację i stuknij <strong>Odblokuj</strong>.</li>
+            <li>Następuje krótka konfiguracja: Odblokuj przez Face ID, <strong>Zaimportuj hasła</strong>, <strong>Dodaj hasło aplikacji</strong> (opcjonalne) i <strong>Włącz autouzupełnianie</strong>.</li>
+            <li>Pomiń, co chcesz. Karta <em>Dokończ konfigurację</em> u góry sejfu pozwala wrócić; Ustawienia › <strong>Pokaż konfigurację ponownie</strong> również.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ios-apppw">
+          <h3><a href="#ios-apppw">Hasło aplikacji i fraza odzyskiwania</a></h3>
+          <p>Opcjonalne dodatkowe hasło, które otwiera LocalGateKeys zamiast kodu iPhone'a. Przydatne, jeśli inni znają Twój kod.</p>
+          <ol>
+            <li>Ustawienia › Hasło aplikacji › włącz <strong>Używaj hasła aplikacji</strong>.</li>
+            <li>Wybierz silne hasło (co najmniej 12 znaków) i zostaw włączone <strong>Odblokuj za pomocą Face ID</strong>, jeśli chcesz mieć skrót.</li>
+            <li>Zapisz 24-wyrazową <strong>frazę odzyskiwania</strong>, stuknij <strong>Zapisane</strong> i wpisz trzy słowa, o które prosi aplikacja.</li>
+          </ol>
+          <p><strong>Nie pamiętasz?</strong> Stuknij <strong>Nie pamiętasz hasła aplikacji?</strong> na ekranie odblokowania, wpisz 24 słowa i wybierz nowe hasło aplikacji.</p>
+          <p class="note">Jeśli dodasz do iPhone'a nową twarz lub odcisk palca, skrót Face ID wyłączy się dla bezpieczeństwa: wpisz raz hasło aplikacji i włącz go ponownie.</p>
+        </article>
+
+        <article class="topic" id="ios-items">
+          <h3><a href="#ios-items">Elementy: dodawanie, edycja, usuwanie</a></h3>
+          <ol>
+            <li>Na karcie Sejf stuknij <strong>+</strong> i wybierz rodzaj: login do strony, bezpieczna notatka, karta, tożsamość, konto bankowe, zakup, subskrypcja, gwarancja, Wi-Fi, licencja oprogramowania, klucz API, klucz SSH lub zakładka.</li>
+            <li>Wypełnij pola i stuknij <strong>Zapisz</strong>. Jeśli przerwiesz w połowie, aplikacja zaproponuje, by później <strong>Kontynuować</strong> niezapisany element.</li>
+          </ol>
+          <ul>
+            <li>Dotknij i przytrzymaj element w sejfie, aby wybrać <strong>Kopiuj nazwę użytkownika</strong>, <strong>Kopiuj hasło</strong>, <strong>Kopiuj kod 2FA</strong>, <strong>Otwórz stronę</strong> lub oznaczyć go jako <strong>Ulubiony</strong>. Otwórz go, aby skopiować dowolne pole, oznaczyć gwiazdką lub <strong>Udostępnić</strong>. Skopiowany tekst po chwili znika ze schowka i nigdy nie trafia na inne urządzenia Apple.</li>
+            <li><strong>Historia haseł</strong> loginu przechowuje stare hasła: skopiuj lub przywróć jedno (wymaga Face ID).</li>
+            <li>Każdy element oprócz loginu (karta, subskrypcja, gwarancja, licencja…) może mieć <strong>przypomnienie</strong> przed terminem; dla karty proponowana jest data ważności.</li>
+            <li><strong>Załącz plik</strong> (Pro, do 25 MB, przechowywany w postaci zaszyfrowanej) przez <strong>+</strong>.</li>
+            <li><strong>Usuń</strong>: element trafia do <em>Ostatnio usunięte</em>, z opcją <strong>Cofnij</strong> przez kilka sekund. Ustawienia › Dane › <strong>Ostatnio usunięte</strong> pozwala <strong>Przywrócić</strong> lub <strong>Usunąć na zawsze</strong>.</li>
+            <li><strong>Sortuj</strong> wg nazwy lub daty, najpierw ulubione albo pogrupowane wg typu.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-search">
+          <h3><a href="#ios-search">Wyszukiwanie i szybkie akcje</a></h3>
+          <p>Stuknij przycisk wyszukiwania (lupę) u góry sejfu i pisz; przeciągnięcie sejfu w dół synchronizuje. Wpisz najpierw <code>&gt;</code>, aby zobaczyć <strong>Akcje</strong>: Nowy element, Generuj hasło, Skanuj kod QR, Zablokuj teraz, Synchronizuj teraz, Kontrola bezpieczeństwa, Ostatnio usunięte, Import i eksport i inne.</p>
+        </article>
+
+        <article class="topic" id="ios-generator">
+          <h3><a href="#ios-generator">Generator haseł</a></h3>
+          <p>Przez <code>&gt;</code> Generuj hasło lub podczas edycji hasła loginu. Wybierz hasło o danej <strong>Długości</strong> albo frazę z liczbą <strong>Słów</strong> i <strong>Separatorem</strong>. Stuknij przycisk odświeżania, aby wygenerować ponownie, potem <strong>Użyj</strong>. Aplikacja pamięta ostatnio użyte opcje; Ustawienia › Generator haseł › <strong>Przywróć ustawienia domyślne</strong> przywraca wartości domyślne.</p>
+        </article>
+
+        <article class="topic" id="ios-2fa">
+          <h3><a href="#ios-2fa">Kody dwuskładnikowe</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>Na stronie włącz 2FA przez aplikację uwierzytelniającą, aby pokazała kod QR.</li>
+            <li>W LocalGateKeys wybierz <strong>Skanuj kod QR</strong> (przez <code>&gt;</code> lub pole 2FA loginu). Stuknij <strong>Użyj aparatu</strong> lub <strong>Wybierz ze Zdjęć</strong> (dla zrzutu ekranu).</li>
+            <li>Kod trafia do pasującego loginu albo otwiera się nowy login gotowy do zapisania.</li>
+          </ol>
+          <p>Kody pojawiają się w elemencie i w wierszu <strong>Kody</strong> sejfu. Możesz też wkleić klucz konfiguracyjny w polu <strong>Sekret 2FA</strong> loginu. Działają też eksporty z Google Authenticator (Przenieś konta), także wieloczęściowe.</p>
+          <p>Chcesz mieć kody na nadgarstku? Zobacz <a href="../../pl/help#watch">Apple Watch</a>.</p>
+        </article>
+
+        <article class="topic" id="ios-autofill">
+          <h3><a href="#ios-autofill">Autouzupełnianie w aplikacjach i Safari</a></h3>
+          <ol>
+            <li>W LocalGateKeys przejdź do Ustawienia › Autouzupełnianie › <strong>Otwórz ustawienia autouzupełniania</strong>.</li>
+            <li>W Ustawieniach iPhone'a, w <strong>Ogólne › Autouzupełnianie i hasła</strong>, włącz <strong>LocalGateKeys</strong>.</li>
+            <li>Teraz stuknij pole nazwy użytkownika lub hasła w dowolnej aplikacji lub stronie: login pojawi się nad klawiaturą albo stuknij ikonę klucza, aby wybrać.</li>
+          </ol>
+          <p>Opcje w Ustawienia › Autouzupełnianie:</p>
+          <ul>
+            <li><strong>Pokazuj loginy na pasku QuickType</strong>: podpowiedzi nad klawiaturą.</li>
+            <li><strong>Kopiuj kod 2FA podczas uzupełniania</strong>: aby wkleić kod na następnym ekranie. Znika po czasie ustawionym w <strong>Wyczyść schowek po</strong> (domyślnie 60 sekund).</li>
+            <li><strong>Proponuj LocalGateKeys dla kluczy dostępu</strong>.</li>
+          </ul>
+          <p>W iOS 18 i nowszych wypełniają się też karty i dane kontaktowe: stuknij pole tekstowe, wybierz <strong>Autouzupełnianie › Hasła</strong> i wskaż pole. Login zapisany dla strony <code>https</code> nie jest proponowany na zwykłej stronie <code>http</code>.</p>
+        </article>
+
+        <article class="topic" id="ios-passkeys">
+          <h3><a href="#ios-passkeys">Klucze dostępu</a></h3>
+          <p>Przy włączonym autouzupełnianiu, gdy strona zaproponuje utworzenie klucza dostępu, wybierz LocalGateKeys. Klucz zostaje zapisany w sejfie i synchronizuje się z komputerem. Działa też logowanie na komputerze przez zeskanowanie jego kodu QR iPhone'em. Strona szczegółów klucza pokazuje stronę i konto; sam klucz nigdy nie jest pokazywany. Możesz zmienić jego nazwę lub go usunąć.</p>
+        </article>
+
+        <article class="topic" id="ios-safari">
+          <h3><a href="#ios-safari">Zapisywanie loginów z Safari</a></h3>
+          <ol>
+            <li>Ustawienia iPhone'a › Aplikacje › Safari › Rozszerzenia › <strong>LocalGateKeys</strong>: włącz i zezwól na wszystkich stronach.</li>
+            <li>Zaloguj się na stronie w Safari i stuknij <strong>Zapisz</strong> w monicie.</li>
+            <li>Przy następnym odblokowaniu LocalGateKeys <strong>Zapisać z Safari?</strong> pokazuje, co przechwycono, z oznaczeniem <em>Nowy login</em> lub <em>Aktualizuje zapisane hasło</em>. Wybierz, co zachować, albo <strong>Zdecyduj później</strong>.</li>
+          </ol>
+          <p>Wybierz <strong>Nigdy na tej stronie</strong>, aby wyłączyć monit na stronie.</p>
+        </article>
+
+        <article class="topic" id="ios-security">
+          <h3><a href="#ios-security">Karta Bezpieczeństwo</a></h3>
+          <p>Wynik i listy loginów, które <strong>Wyciekły</strong>, są <strong>Powtórzone</strong>, <strong>Słabe</strong>, <strong>Stare</strong> lub mogłyby używać 2FA. Przesuń login w lewo, aby wybrać <strong>Zmień hasło</strong> lub <strong>Odrzuć</strong>. Sprawdzanie wycieków jest wyłączone, dopóki nie wyłączysz Ustawienia › <strong>Ścisły tryb offline</strong> (domyślnie włączony) i nie włączysz <strong>Zezwól na sprawdzanie wycieków</strong>.</p>
+        </article>
+
+        <article class="topic" id="ios-import">
+          <h3><a href="#ios-import">Import i eksport</a></h3>
+          <h4>Z Haseł Apple (iOS 26)</h4>
+          <ol>
+            <li>Otwórz aplikację <strong>Hasła</strong>, stuknij menu i wybierz <strong>Eksportuj dane do innej aplikacji</strong>.</li>
+            <li>Wybierz <strong>LocalGateKeys</strong>. Przenoszone są loginy, kody 2FA i klucze dostępu. Powtórzenie niczego nie dubluje.</li>
+          </ol>
+          <h4>Z pliku</h4>
+          <p>Ustawienia › Import i eksport › <strong>Importuj z pliku</strong>: eksporty z Haseł Apple, Safari, Chrome, Edge, Brave, Firefox, Bitwarden (także chronione hasłem), 1Password (<code>.1pux</code>), LastPass, KeePass (<code>.kdbx</code>), Proton Pass, Dashlane lub dowolny CSV. Przeglądasz każdy element, zanim stukniesz <strong>Importuj</strong>. Potem usuń plik eksportu.</p>
+          <h4>Kopia zapasowa i eksport</h4>
+          <ul>
+            <li><strong>Eksportuj zaszyfrowaną kopię zapasową</strong>: plik <code>.lgkm</code> z hasłem o długości 12+ znaków. Przywróć go w Windows.</li>
+            <li><strong>Eksportuj jako CSV</strong>: niezaszyfrowany, do przeniesienia do innej aplikacji. Aplikacja prosi o potwierdzenie.</li>
+            <li><strong>Eksportuj do pliku CXF…</strong> zapisuje wybrane loginy, notatki i klucze dostępu w pliku Credential Exchange, który mogą zaimportować inne menedżery haseł. Plik nie jest szyfrowany.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-sync">
+          <h3><a href="#ios-sync">Synchronizacja z komputerem</a> <span class="badge-pro">Pro</span></h3>
+          <h4>Przez Wi-Fi</h4>
+          <ol>
+            <li>Na komputerze otwórz Sync i urządzenia i wybierz <strong>Pokaż kod QR</strong>.</li>
+            <li>Na iPhonie otwórz kartę <strong>Synchronizacja</strong> i w ciągu 120 sekund stuknij <strong>Skanuj kod QR</strong>. (Za pierwszym razem zezwól na dostęp do sieci lokalnej). Brak aparatu? Stuknij <strong>Wklej tekst kodu</strong> i wklej tekst z <strong>Kopiuj tekst kodu</strong> na komputerze.</li>
+            <li>Sprawdź, czy oba ekrany pokazują ten sam kod, a potem wybierz <strong>Akceptuj</strong> na komputerze.</li>
+          </ol>
+          <p>Synchronizacja następuje, gdy oba urządzenia są w tej samej sieci Wi-Fi i odblokowane. <strong>Synchronizuj teraz</strong> ją wymusza; <strong>Znajdź ponownie</strong> pomaga, gdy zmienił się adres komputera.</p>
+          <h4>Przez folder w chmurze</h4>
+          <p>Stuknij <strong>Dołącz do folderu…</strong>, wybierz folder <em>LocalGateKeys Sync</em> w iCloud Drive lub Dropbox i wpisz hasło synchronizacji grupy.</p>
+          <p class="note">OneDrive i Google Drive są na razie niedostępne do synchronizacji, dopóki nie zostanie rozwiązany problem z Apple. Użyj Dropbox, iCloud Drive lub synchronizacji przez Wi-Fi.</p>
+          <h4>Kończenie</h4>
+          <p><strong>Opuść synchronizację…</strong> lub <strong>Zresetuj synchronizację na tym iPhonie…</strong> (każde pyta dwa razy). Twoje elementy zostają na telefonie.</p>
+        </article>
+
+        <article class="topic" id="ios-share">
+          <h3><a href="#ios-share">Udostępnianie elementu</a></h3>
+          <ol>
+            <li>Otwórz element i stuknij <strong>Udostępnij</strong>.</li>
+            <li>Aplikacja pokazuje sześć słów. Wyślij plik przez <strong>AirDrop lub udostępnij plik…</strong> albo <strong>Pokaż kod jako QR</strong>.</li>
+            <li>Przekaż sześć słów drugiej osobie osobno, nigdy razem z plikiem.</li>
+          </ol>
+          <p><strong>Odbieranie:</strong> otwórz plik <code>.lgkshare</code> z AirDrop lub Plików (albo <strong>Odbierz udostępniony element</strong>) i wpisz sześć słów. Kluczy dostępu i elementów z załączonym plikiem nie można udostępniać.</p>
+        </article>
+
+        <article class="topic" id="ios-settings">
+          <h3><a href="#ios-settings">Ustawienia</a></h3>
+          <dl class="defs">
+            <dt>Bezpieczeństwo</dt><dd><strong>Automatyczna blokada po wyjściu z aplikacji</strong>, <strong>Blokuj przy bezczynności</strong>, <strong>Ukrywaj hasła do stuknięcia</strong>, <strong>Czyść schowek po</strong>, <strong>Zablokuj teraz</strong>.</dd>
+            <dt>Prywatność</dt><dd><strong>Ścisły tryb offline</strong>, ikony stron, nazwy elementów w powiadomieniach, sprawdzanie wycieków.</dd>
+            <dt>Wygląd</dt><dd>Systemowy, Jasny lub Ciemny.</dd>
+            <dt>Dane</dt><dd>Ostatnio usunięte, jak długo przechowywać usunięte elementy, Import i eksport.</dd>
+            <dt>Wymazywanie</dt><dd><strong>Wymaż sejf tego iPhone'a</strong> usuwa sejf tylko na tym iPhonie (pyta dwa razy). Komputer i folder synchronizacji pozostają bez zmian.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">Hasło przymusu i więcej</a></h3>
+          <ul>
+            <li><strong>Hasło przymusu</strong> (Pro): drugie hasło aplikacji na wypadek, gdy ktoś zmusza Cię do odblokowania. Otwiera osobny sejf tylko z wybranymi elementami, a Twój sejf odrzuca potem hasło aplikacji przez ustawioną liczbę godzin. Najpierw włącz hasło aplikacji, potem ustaw je w Ustawieniach w sekcji <strong>Hasło przymusu</strong>.</li>
+            <li><strong>Hostuj synchronizację Wi-Fi na tym telefonie</strong> (Pro) na karcie Sync pozwala innym urządzeniom sparować się bezpośrednio z iPhone’em, bez komputera.</li>
+            <li>Plan dostępu awaryjnego utworzony na komputerze trafia na iPhone’a przez synchronizację, więc tu też możesz odrzucać lub przyznawać prośby. <strong>Utwórz notatkę pakietu spadkowego</strong> dodaje notatkę dla spadkobierców.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-pro">
+          <h3><a href="#ios-pro">Pro</a></h3>
+          <p>Ustawienia › Pro › <strong>Przejdź na wyższy plan</strong>, potem kup: jedna płatność, bez subskrypcji, bez konta. Na nowym iPhonie użyj <strong>Przywróć zakupy</strong> z tym samym kontem Apple.</p>
+          <p>Zakup odblokowuje też Windows. Sparuj komputer z iPhone'em na karcie <strong>Synchronizacja</strong>, a darmowy komputer przejmie licencję przez synchronizację i stanie się Pro. Możesz też wybrać <strong>Kopiuj klucz</strong> i zainstalować ten klucz na komputerze (Ustawienia › Plan i synchronizacja › Licencja).</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../pl/help">Cały przewodnik na jednej stronie</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Menedżer haseł dla Windows, Maca i iPhone'a, który trzyma Twój sejf na Twoich własnych urządzeniach.</p>
+        <p class="quiet">Ta strona liczy odwiedziny za pomocą Cloudflare Web Analytics, które nie używa plików cookie. Nie używa trackerów reklamowych i nie zapisuje plików cookie.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../../pl/features">Funkcje</a></li>
+          <li><a href="../../pl/pricing">Cennik</a></li>
+          <li><a href="../../pl/download">Pobierz</a></li>
+          <li><a href="../../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../../pl/switch/">Przesiadka</a></li>
+          <li><a href="../../buy">Kup Pro</a></li>
+          <li><a href="../../pl/licence">Twoja licencja Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Odzyskaj licencję</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Pomoc">
+        <h2>Pomoc</h2>
+        <ul>
+          <li><a href="../../pl/help">Przewodnik</a></li>
+          <li><a href="../../pl/support">Wsparcie i FAQ</a></li>
+          <li><a href="../../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Zgłoś lukę w zabezpieczeniach</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Prawne">
+        <h2>Prawne</h2>
+        <p class="quiet">Te dokumenty są w języku angielskim, a obowiązuje i jest wiążąca wersja angielska.</p>
+        <ul>
+          <li><a href="../../legal/eula">Umowa licencyjna</a></li>
+          <li><a href="../../legal/privacy">Polityka prywatności</a></li>
+          <li><a href="../../legal/terms-of-sale">Warunki sprzedaży</a></li>
+          <li><a href="../../legal/refunds">Polityka zwrotów</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows jest znakiem towarowym grupy firm Microsoft. Chrome jest znakiem towarowym Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID i Safari są znakami towarowymi Apple Inc., zarejestrowanymi w USA i innych krajach.</p>
+      <nav class="lang-switch" aria-label="Język"><ul><li><a href="../../guide/iphone" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/iphone" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/iphone" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/iphone" hreflang="pl" lang="pl" aria-current="true">Polski</a></li><li><a href="../../zh-hans/guide/iphone" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/iphone" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/iphone" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/iphone" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/iphone" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/iphone" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/iphone" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

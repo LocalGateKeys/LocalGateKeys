@@ -101,6 +101,7 @@ fun SyncStatusSheet(
                     Spacer(Modifier.width(8.dp))
                     Text(txt.s(SyncStatusSummary.THIS_DEVICE), color = c.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 }
+                summary.ownLabel?.let { Text(it, color = c.secondaryText, style = MaterialTheme.typography.bodyMedium) }
                 Text(summary.pill, color = c.secondaryText, style = MaterialTheme.typography.bodyMedium)
             }
             for (d in summary.devices) {

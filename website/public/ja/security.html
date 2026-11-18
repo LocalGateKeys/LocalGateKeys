@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>セキュリティ | LocalGateKeys</title>
-  <meta name="description" content="LocalGateKeysが保管庫をどのように守るか、そして何を守れないか。">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys のセキュリティ</title>
+  <meta name="description" content="Argon2id と AES-256-GCM による保護、アカウントもサーバーもない理由、設計上守れないもの。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/ja/security">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys のセキュリティ">
+  <meta property="og:description" content="Argon2id と AES-256-GCM による保護、アカウントもサーバーもない理由、設計上守れないもの。">
+  <meta property="og:url" content="https://localgatekeys.app/ja/security">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys のロゴ: Windows・Mac・iPhone 用のパスワード管理アプリ。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys のセキュリティ">
+  <meta name="twitter:description" content="Argon2id と AES-256-GCM による保護、アカウントもサーバーもない理由、設計上守れないもの。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,22 +44,39 @@
   <a class="skip" href="#main">コンテンツへスキップ</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../ja/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../ja/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="メイン">
+      <nav class="nav-wide" aria-label="メイン">
         <ul class="nav">
-          <li><a href="../ja/features.html">機能</a></li>
-          <li><a href="../ja/pricing.html">料金</a></li>
-          <li><a href="../ja/security.html" aria-current="page">セキュリティ</a></li>
-          <li><a href="../ja/get-started.html">はじめに</a></li>
-          <li><a href="../ja/help.html">ガイド</a></li>
-          <li><a href="../ja/download.html">ダウンロード</a></li>
-          <li><a href="../ja/support.html">サポート</a></li>
-          <li><a href="../buy.html">Proを購入</a></li>
+          <li><a href="../ja/features">機能</a></li>
+          <li><a href="../ja/get-started">はじめに</a></li>
+          <li><a href="../ja/help">ガイド</a></li>
+          <li><a href="../ja/security" aria-current="page">セキュリティ</a></li>
+          <li><a href="../ja/pricing">料金</a></li>
+          <li><a href="../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../ja/download">ダウンロード</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>メニュー</summary>
+        <nav aria-label="メイン">
+          <ul class="nav nav-stack">
+            <li><a href="../ja/features">機能</a></li>
+          <li><a href="../ja/get-started">はじめに</a></li>
+          <li><a href="../ja/help">ガイド</a></li>
+          <li><a href="../ja/security" aria-current="page">セキュリティ</a></li>
+          <li><a href="../ja/pricing">料金</a></li>
+          <li><a href="../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../ja/download">ダウンロード</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>言語</span></summary>
+        <ul class="lang-menu-list"><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -62,13 +93,14 @@
   </div>
   <dl class="spec">
     <dt>保管庫の暗号化</dt><dd>AES-256-GCM。保存のたびに新しいランダムなナンスを使用</dd>
-    <dt>マスターパスワード</dt><dd>Argon2id、メモリ64 MiB、3パス、並列度4、ラッパーごとにランダムなソルト</dd>
+    <dt>マスターパスワード</dt><dd>Argon2id、3パス、並列度4、ラッパーごとにランダムなソルト。メモリはWindowsアプリで256 MiB(メモリが4 GB未満のPCでは64 MiB)、Mac、iPhone、Androidのアプリで64 MiB</dd>
     <dt>リカバリーフレーズ</dt><dd>任意の24語のBIP39フレーズ(256ビット)。HKDF-SHA256で拡張</dd>
-    <dt>Windows Hello</dt><dd>保管庫の鍵をラップし、マスターパスワードはラップしません</dd>
+    <dt>Windows Hello、Touch ID、Face ID、指紋認証</dt><dd>デバイスが保護する保存領域から保管庫の鍵を取り出します。マスターパスワードが保存されることはありません</dd>
     <dt>バックアップと転送</dt><dd>Argon2idとAES-256-GCM。パラメーターは認証付きヘッダーに保存</dd>
     <dt>デバイス同期</dt><dd>ランダムなグループ鍵を、X25519とHKDF-SHA256で各デバイスに渡します。クラウドフォルダーの場合は、さらに同期パスワードからArgon2idでラップします。すべてのレコードはAES-256-GCMで封印され、項目、バージョン、鍵のエポックに結び付けられます。各デバイスのファイルは、書き込んだデバイスに結び付けられます</dd>
-    <dt>パスキー</dt><dd>ES256(P-256)の鍵を暗号化された保管庫の中に保管。アプリは、ページではなく、ブラウザーが報告するオリジンから署名対象のデータを作成します</dd>
+    <dt>パスキー</dt><dd>ES256(P-256)の鍵を暗号化された保管庫内に保持します。署名するデータは、ページからではなく、ブラウザーが報告するオリジンからアプリが組み立てます。Microsoft Store版のアプリはWindows 11のパスキープロバイダーにもなれます(既定ではオフ)。その場合、Windowsはパスキーのサイト名とアカウント名を独自の一覧に保持しますが、鍵は保持しません</dd>
     <dt>ディスクへの書き込み</dt><dd>一時ファイルに書き込み、フラッシュしてから、アトミックに置き換えるので、クラッシュしても保管庫が中途半端な状態で残ることはありません</dd>
+    <dt>AIエージェント</dt><dd>既定ではオフ(Pro)。エージェントは、お使いのデバイス上のlgk mcpを通じてのみアプリにアクセスでき、許可したログインと項目だけが見えます。リクエストは1件ずつあなたが承認し、サインインの入力はアプリ自身が行います。エージェントへの応答にパスワードが含まれることはありません。各リクエストはアクセスログに記録され、その項目はSHA-256ハッシュで連鎖しています。セキュリティチェックで連鎖が損なわれていないかを確認できます</dd>
   </dl>
 
   <div class="ledger">
@@ -82,6 +114,8 @@
         <li>暗号化されていないパスワードがディスクにあること</li>
         <li>ご自身の操作なしにフォームが送信されること</li>
         <li>クラウドプロバイダーが同期データを読み取ること(保存されるのは暗号文だけ)</li>
+        <li>LocalGateKeysが提示するアカウントをWebページが読み取ること。Chrome、Edge、Firefoxでは、ページが読み取れない拡張機能専用のフレームに一覧を表示します</li>
+        <li>AIエージェントがLocalGateKeysからパスワードを取得すること。エージェントへの応答にパスワードは含まれず、エージェントに見えるのは許可したログインだけです</li>
       </ul>
     </section>
     <section class="not" aria-labelledby="not-protects">
@@ -93,6 +127,7 @@
         <li>保管庫がロック解除されている間に、あなたのPCを使う人</li>
         <li>攻撃者が内容を操作できる、正規のアプリの中でのフィッシング</li>
         <li>保管庫、バックアップ、マスターパスワードをすべて失い、リカバリーフレーズもない場合: 当社を含め、誰にも開けません</li>
+        <li>ブラウザーを操作するAIエージェントが、LocalGateKeysがページに入力したパスワードを読み取ること、またはあなたが承認したコマンドが受け取ったシークレットを外部に渡すこと</li>
       </ul>
     </section>
   </div>
@@ -110,28 +145,34 @@
       <li>ご自身が開始していないサインインの送信</li>
     </ul>
 
-    <h2>ネットワークについて正直に</h2>
+    <h2 id="network">ネットワークについて正直に</h2>
     <p>LocalGateKeysのアカウントはなく、保管庫を保持するサーバーもありません。アプリがインターネットに接続するのは、次の場合だけです:</p>
     <ul>
-      <li><strong>アップデートの確認。</strong>「アップデートを確認」を選んだときに、アプリは小さなファイルを1つダウンロードし、アプリに組み込まれた鍵で署名を検証します。インストーラーを自分でダウンロードしたり実行したりすることはありません。</li>
-      <li><strong>ライセンスの失効リスト。</strong>アップデートの確認と同時に、返金されたライセンスの署名付きリストをダウンロードし、PC上でお客様のライセンスをそのリストと照合します。ライセンスに関する情報は何も送信しません。</li>
+      <li><strong>アップデート。</strong>WindowsアプリはMicrosoft Storeが、MacアプリとiPhoneアプリはApp Storeがアップデートします。LocalGateKeys自身がインストーラーをダウンロードしたり実行したりすることはありません。提供を終了したWindowsのインストーラー版(最終版の0.4.12まで)は、「アップデートを確認」を選んだときに当社のサーバーから小さなファイルを1つダウンロードし、アプリに組み込まれた鍵で署名を検証します。</li>
+      <li><strong>ライセンス失効リスト。</strong>インストーラー版でのアップデート確認のたび、およびMicrosoft Store版のアプリで厳格なオフラインモードがオフのときに「アップデートを確認」を選ぶと、アプリは返金済みライセンスの署名付きリストをダウンロードし、お使いのPC上でライセンスを照合します。ライセンスに関する情報は何も送信しません。</li>
       <li><strong>Webサイトのアイコン。</strong>サイトのアイコンを表示するため、アプリはそのサイト自身のアドレスからアイコンをダウンロードします。ユーザー名、パスワード、保管庫のデータは送信されませんが、ダウンロードのたびに、そのサイトとネットワークを監視している人に、保管庫にそこのアカウントがあることが伝わります。既定ではオフで、設定で「Webサイトのアイコンを表示」をオンにした場合にのみ行われます。厳格オフラインモードではブロックされます。</li>
       <li><strong>漏えいチェック(オンにした場合)。</strong>チェックを開始すると、アプリは各パスワードのSHA-1ハッシュの先頭5文字をHave I Been Pwnedに送信します。このサービスが目にするのはIPアドレスだけで、パスワード、完全なハッシュ、ユーザー名、Webサイトを目にすることはありません。</li>
       <li><strong>同期(設定した場合)。</strong>家庭内のネットワークでは、デバイス同士が直接通信します。クラウドフォルダー経由の場合は、クラウドドライブアプリがアップロードを行います。</li>
+      <li><strong>Mac、iPhone、AndroidアプリでのPro購入。</strong>アプリはストアの署名付き購入記録を当社のライセンスサーバーに送信し、サーバーはライセンスキーを返します。メールアドレスやデバイスのデータは送信しません。</li>
+      <li><strong>確認済みサイト。</strong>そっくりなアドレスの検出はお使いのデバイス上で行われます。保存したサイトがアプリの外に出ることはなく、サーバーには何も送信されません。</li>
     </ul>
-    <p>厳格オフラインモードは既定でオンです。バックグラウンドでのインターネット通信、Webサイトのアイコン、漏えいチェックをブロックし、アップデートの確認では事前にお尋ねします。アップデートを確認したときに当社のサーバーが目にする情報は、<a href="../legal/privacy.html">プライバシーポリシー</a>に正確に記載しています。</p>
+    <p>Windowsアプリでは、セキュリティセンター › ネットワークアクティビティに、これらの接続が時刻、ホスト、結果とともに一覧表示されます。保存したWebサイトの名前はアプリの実行中にだけ表示され、ディスクに書き込まれることはありません。自宅のネットワーク上のデバイスは「ローカルネットワーク」と表示されます。</p>
+    <p>厳格オフラインモードは既定でオンです。バックグラウンドでのインターネット通信、Webサイトのアイコン、漏えいチェックをブロックし、アップデートの確認では事前にお尋ねします。アップデートを確認したときに当社のサーバーが目にする情報は、<a href="../legal/privacy">プライバシーポリシー</a>に正確に記載しています。</p>
 
     <h2>既知の制限事項</h2>
     <ul>
-      <li>マスターパスワードは、アプリに届いた時点で消去可能なバッファに移され、必要とした処理が終わると消去されます。入力するページはMicrosoft Edge WebView2で動作しており、そのページからアプリへの受け渡しで短時間残るコピーが作られます。どちらのコピーも、アプリが消去することはできません。</li>
-      <li>カメラによるロック解除は利便性のための確認であり、写真やマスクに対する認定された保護ではありません。より強力なのはWindows Helloです。</li>
+      <li>マスターパスワードは、アプリに届いた時点で消去可能なバッファに移され、必要とした処理が終わると消去されます。入力するページはMicrosoft Edge WebView2で動作しています。ページは入力欄を空にし、アプリは受け渡しで作られたコピーを手放しますが、これは鍵が計算される前に行われます。ただし、この2つのコピーはどちらもメモリ上で上書きできないため、しばらくの間は痕跡が残ることがあります。</li>
+      <li>カメラによるロック解除ではランダムな頭の動きを求めるため、カメラの前に平らにかざした写真や、画面に映した静止画では通過できません。ただし、これはあくまで利便性のためのチェックであり、認定された保護ではありません。曲げたり折ったりした写真、指示に合わせて動く動画、マスクでは通過する可能性があります。より強力なのは Windows Hello です。</li>
       <li>Windowsアプリへの入力は、管理者として実行されているプログラム、独自に描画されたゲームの画面、検証できない埋め込みWebビューでは動作しません。</li>
-      <li>保管庫は、古いコピーに巻き戻されたことを検出します。同期を使っている場合は、他のデバイスも保管庫の新しさを記憶しているため、保管庫とそのアンカーファイルを一緒に削除しても次の同期で検出されます(現時点ではWindows PCのみで、iPhone、Mac、Androidのアプリは今後対応します)。同期を使わない場合、両方のファイルを置き換えられる相手は、このチェックを回避できます。</li>
-      <li>パスキーが使えるのはChromeとEdgeだけで、ページそのものに対してのみです。別のサイトのフレーム内でのサインインでは、ブラウザー標準のパスキーのダイアログを使います。新しいパスキーを承認した後にサイト側でキャンセルされると、パスキーが保管庫に残ることがあります。その場合は、アプリで削除してください。</li>
+      <li>保管庫は、古いコピーに巻き戻されたことを検出します。同期を使っている場合は、他のデバイスが保管庫の新しさを記憶しているため、どれかのデバイスに古いコピーが戻されると、次の同期でどのアプリでも通知されます。同期を使わない場合、Windows PCは保管庫フォルダーの外に2つ目の記録を保持するため、アンカーファイルごと元に戻された古い保管庫は受け付けられません。ただし、Windowsアカウントの設定を変更できる人は、この記録も削除できます。iPhone、Mac、Androidのアプリは他のアプリからファイルを保護していますが、同期を使わない場合、古いコピーに置き換えられても気づきません。</li>
+      <li>パスキーはChrome、Edge、Firefoxで使えます。別のサイトのフレーム内でパスキーを使ってサインインする機能は、外側のサイトが許可している場合にChromeとEdgeで動作します。Firefoxでの場合と、別のサイトのフレーム内でパスキーを作成する場合は、ブラウザー標準のパスキーのダイアログを使います。新しいパスキーを承認した後にサイト側でキャンセルされると、アプリはそのパスキーを再び削除します。サイトがパスキーを保持したかどうかをアプリが判断できない場合、パスキーは保管庫に残るため、アプリで削除できます。</li>
+      <li>そっくりなアドレスの警告は目安であり、防壁ではありません。ページ自身のスクリプトは、たとえばフォームを送信せずにパスワードを送るなどして、これを回避できます。アドレスはご自身でも確認してください。</li>
+      <li>緊急アクセスにはサーバーがないため、待機期間とあなたの拒否を強制するのはアプリだけです。十分な数のシェアを持つ人は、待たずにすぐバックアップを復旧できます。一緒に動かない人を選び、シェアは別々に保管してください。</li>
+      <li>強制用パスワードは、アプリのロック解除を強要される場合に備えるものです。ディスク上のファイルを調べる人には効きません。注意深い人なら2つ目の保管庫があることに気づく可能性があります。Windows、Mac、iPhone、Androidで使えます。</li>
     </ul>
 
     <h2>脆弱性の報告</h2>
-    <p><a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>へメールしてください。対象範囲、対応にかかる時間、研究者への謝辞の方法については、<a href="../legal/vulnerability-disclosure.html">脆弱性開示ポリシー</a>をご覧ください。</p>
+    <p><a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>へメールしてください。対象範囲、対応にかかる時間、研究者への謝辞の方法については、<a href="../legal/vulnerability-disclosure">脆弱性開示ポリシー</a>をご覧ください。</p>
   </div>
 </div>
   </main>
@@ -139,43 +180,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>保管庫をご自身のデバイスに置いたままにする、Windows向けのパスワードマネージャーです。</p>
-        <p class="quiet">このサイトはCookieを設定せず、アクセス解析も行わず、他社からは何も読み込みません。</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>保管庫をご自身のデバイスに置いたままにする、Windows、Mac、iPhone向けのパスワードマネージャーです。</p>
+        <p class="quiet">本サイトはCookieを使わないCloudflare Web Analyticsでページの閲覧数を計測しています。広告トラッカーは使用せず、Cookieも設定しません。</p>
       </div>
       <nav aria-label="製品">
         <h2>製品</h2>
         <ul>
-          <li><a href="../ja/features.html">機能</a></li>
-          <li><a href="../ja/pricing.html">料金</a></li>
-          <li><a href="../ja/download.html">ダウンロード</a></li>
-          <li><a href="../ja/licence.html">Proライセンス</a></li>
+          <li><a href="../ja/features">機能</a></li>
+          <li><a href="../ja/pricing">料金</a></li>
+          <li><a href="../ja/download">ダウンロード</a></li>
+          <li><a href="../ja/get-started">はじめに</a></li>
+          <li><a href="../ja/switch/">乗り換え</a></li>
+          <li><a href="../buy">Proを購入</a></li>
+          <li><a href="../ja/licence">Proライセンス</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">ライセンスを再取得</a></li>
         </ul>
       </nav>
       <nav aria-label="ヘルプ">
         <h2>ヘルプ</h2>
         <ul>
-          <li><a href="../ja/help.html">ユーザーガイド</a></li>
-          <li><a href="../ja/support.html">サポートとFAQ</a></li>
-          <li><a href="../ja/security.html">セキュリティ</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">脆弱性の報告</a></li>
+          <li><a href="../ja/help">ユーザーガイド</a></li>
+          <li><a href="../ja/support">サポートとFAQ</a></li>
+          <li><a href="../ja/security">セキュリティ</a></li>
+          <li><a href="../legal/vulnerability-disclosure">脆弱性の報告</a></li>
         </ul>
       </nav>
       <nav aria-label="法的情報">
         <h2>法的情報</h2>
         <p class="quiet">これらの文書は英語で提供されており、適用され拘束力を持つのは英語版です。</p>
         <ul>
-          <li><a href="../legal/eula.html">ライセンス契約</a></li>
-          <li><a href="../legal/privacy.html">プライバシーポリシー</a></li>
-          <li><a href="../legal/terms-of-sale.html">販売条件</a></li>
-          <li><a href="../legal/refunds.html">返金ポリシー</a></li>
+          <li><a href="../legal/eula">ライセンス契約</a></li>
+          <li><a href="../legal/privacy">プライバシーポリシー</a></li>
+          <li><a href="../legal/terms-of-sale">販売条件</a></li>
+          <li><a href="../legal/refunds">返金ポリシー</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas。お問い合わせ: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windowsは Microsoft グループ企業の商標です。Chromeは Google LLC の商標です。</p>
-      <p class="lang-switch" role="navigation" aria-label="言語"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja" aria-current="true">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windowsは Microsoft グループ企業の商標です。Chromeは Google LLC の商標です。Apple、iPhone、Apple Watch、Face ID、Touch ID、Safariは、米国およびその他の国で登録されたApple Inc.の商標です。</p>
+      <nav class="lang-switch" aria-label="言語"><ul><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

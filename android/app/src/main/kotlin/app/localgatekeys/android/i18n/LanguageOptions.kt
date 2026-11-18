@@ -20,6 +20,7 @@ object LanguageOptions {
         LanguageOption("pt-BR", "Português (Brasil)"),
         LanguageOption("ko", "한국어"),
         LanguageOption("nl", "Nederlands"),
+        LanguageOption("fr", "Français"),
     )
 
     /** The option for the app's current locale tags ("" when none is set or it is not one of ours). */

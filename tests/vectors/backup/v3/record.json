@@ -1,0 +1,1473 @@
+{
+  "note": "TEST ONLY: every password, phrase and key here is published.",
+  "password_proofs": [
+    {
+      "matches": true,
+      "password": "fixture café password 2026",
+      "record": "set"
+    },
+    {
+      "matches": false,
+      "password": "second fixture backup password",
+      "record": "set"
+    },
+    {
+      "matches": true,
+      "password": "second fixture backup password",
+      "record": "changed"
+    },
+    {
+      "matches": false,
+      "password": "fixture café password 2026",
+      "record": "changed"
+    },
+    {
+      "matches": true,
+      "password": "third fixture backup password",
+      "record": "reset"
+    },
+    {
+      "matches": true,
+      "password": "fixture backup password 2026",
+      "record": "migrated"
+    }
+  ],
+  "previous_history": [
+    {
+      "key_id": "00000000000000000000000000000001",
+      "replaced_at": 1793001000,
+      "set_at": 1793000900,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000002",
+      "replaced_at": 1793000900,
+      "set_at": 1793000800,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000003",
+      "replaced_at": 1793000800,
+      "set_at": 1793000700,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000004",
+      "replaced_at": 1793000700,
+      "set_at": 1793000600,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000005",
+      "replaced_at": 1793000600,
+      "set_at": 1793000500,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000006",
+      "replaced_at": 1793000500,
+      "set_at": 1793000400,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000007",
+      "replaced_at": 1793000400,
+      "set_at": 1793000300,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000008",
+      "replaced_at": 1793000300,
+      "set_at": 1793000200,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000009",
+      "replaced_at": 1793000200,
+      "set_at": 1793000100,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "0000000000000000000000000000000a",
+      "replaced_at": 1793000100,
+      "set_at": 1793000000,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "0000000000000000000000000000000b",
+      "replaced_at": 1793000000,
+      "set_at": 1792999900,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "0000000000000000000000000000000c",
+      "replaced_at": 1792999900,
+      "set_at": 1792999800,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "0000000000000000000000000000000d",
+      "replaced_at": 1792999800,
+      "set_at": 1792999700,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "0000000000000000000000000000000e",
+      "replaced_at": 1792999700,
+      "set_at": 1792999600,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "0000000000000000000000000000000f",
+      "replaced_at": 1792999600,
+      "set_at": 1792999500,
+      "set_by": "changed"
+    },
+    {
+      "key_id": "00000000000000000000000000000010",
+      "replaced_at": 1792999500,
+      "set_at": 1792999400,
+      "set_by": "changed"
+    }
+  ],
+  "records": {
+    "changed": {
+      "canonical": "{\"history\":[{\"key_id\":\"7678d5726806d21391294214bb01eb01\",\"replaced_at\":1793002000,\"set_at\":1793001000,\"set_by\":\"set\"}],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"Slb465iWfFVeEOfUGNDIyA==\",\"time_cost\":1},\"key_id\":\"fcff6ece0e50fc1f9e31dbc981a4ab4a\",\"public_key\":\"GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=\",\"reset_at\":null,\"reset_authority\":{\"aad\":\"bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==\",\"ciphertext\":\"NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur\",\"kind\":\"recovery-wrapper-v1\",\"nonce\":\"xUfVmleeI65ixGIT\",\"salt\":\"tArr0vQOdwFbFgx1X32xzA==\"},\"set_at\":1793002000,\"set_by\":\"changed\",\"v\":1}",
+      "inputs": {
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "now": 1793002000,
+        "password": "second fixture backup password",
+        "previous": "set",
+        "reset_authority": "authority.json windows.old_snapshot"
+      },
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    "changed_history_full": {
+      "canonical": "{\"history\":[{\"key_id\":\"fcff6ece0e50fc1f9e31dbc981a4ab4a\",\"replaced_at\":1793003000,\"set_at\":1793002000,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000001\",\"replaced_at\":1793001000,\"set_at\":1793000900,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000002\",\"replaced_at\":1793000900,\"set_at\":1793000800,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000003\",\"replaced_at\":1793000800,\"set_at\":1793000700,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000004\",\"replaced_at\":1793000700,\"set_at\":1793000600,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000005\",\"replaced_at\":1793000600,\"set_at\":1793000500,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000006\",\"replaced_at\":1793000500,\"set_at\":1793000400,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000007\",\"replaced_at\":1793000400,\"set_at\":1793000300,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000008\",\"replaced_at\":1793000300,\"set_at\":1793000200,\"set_by\":\"changed\"},{\"key_id\":\"00000000000000000000000000000009\",\"replaced_at\":1793000200,\"set_at\":1793000100,\"set_by\":\"changed\"},{\"key_id\":\"0000000000000000000000000000000a\",\"replaced_at\":1793000100,\"set_at\":1793000000,\"set_by\":\"changed\"},{\"key_id\":\"0000000000000000000000000000000b\",\"replaced_at\":1793000000,\"set_at\":1792999900,\"set_by\":\"changed\"},{\"key_id\":\"0000000000000000000000000000000c\",\"replaced_at\":1792999900,\"set_at\":1792999800,\"set_by\":\"changed\"},{\"key_id\":\"0000000000000000000000000000000d\",\"replaced_at\":1792999800,\"set_at\":1792999700,\"set_by\":\"changed\"},{\"key_id\":\"0000000000000000000000000000000e\",\"replaced_at\":1792999700,\"set_at\":1792999600,\"set_by\":\"changed\"},{\"key_id\":\"0000000000000000000000000000000f\",\"replaced_at\":1792999600,\"set_at\":1792999500,\"set_by\":\"changed\"}],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"ErfGQpn+8xeJl8MNWUwJKw==\",\"time_cost\":1},\"key_id\":\"c6a61f7b07a418120d40e90a25fe8ed8\",\"public_key\":\"5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=\",\"reset_at\":null,\"reset_authority\":null,\"set_at\":1793003000,\"set_by\":\"changed\",\"v\":1}",
+      "inputs": {
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "now": 1793003000,
+        "password": "third fixture backup password",
+        "previous": "changed, with its history replaced by previous_history (16 entries)",
+        "reset_authority": null
+      },
+      "record": {
+        "history": [
+          {
+            "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+            "replaced_at": 1793003000,
+            "set_at": 1793002000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000001",
+            "replaced_at": 1793001000,
+            "set_at": 1793000900,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000002",
+            "replaced_at": 1793000900,
+            "set_at": 1793000800,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000003",
+            "replaced_at": 1793000800,
+            "set_at": 1793000700,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000004",
+            "replaced_at": 1793000700,
+            "set_at": 1793000600,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000005",
+            "replaced_at": 1793000600,
+            "set_at": 1793000500,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000006",
+            "replaced_at": 1793000500,
+            "set_at": 1793000400,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000007",
+            "replaced_at": 1793000400,
+            "set_at": 1793000300,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000008",
+            "replaced_at": 1793000300,
+            "set_at": 1793000200,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000009",
+            "replaced_at": 1793000200,
+            "set_at": 1793000100,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000a",
+            "replaced_at": 1793000100,
+            "set_at": 1793000000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000b",
+            "replaced_at": 1793000000,
+            "set_at": 1792999900,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000c",
+            "replaced_at": 1792999900,
+            "set_at": 1792999800,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000d",
+            "replaced_at": 1792999800,
+            "set_at": 1792999700,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000e",
+            "replaced_at": 1792999700,
+            "set_at": 1792999600,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000f",
+            "replaced_at": 1792999600,
+            "set_at": 1792999500,
+            "set_by": "changed"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "key_id": "c6a61f7b07a418120d40e90a25fe8ed8",
+        "public_key": "5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=",
+        "reset_at": null,
+        "reset_authority": null,
+        "set_at": 1793003000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    "migrated": {
+      "canonical": "{\"history\":[],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"BfnztYdAAw/QThAuUDxPCw==\",\"time_cost\":1},\"key_id\":\"e3ba969d65478dd7ae40f8b17db26353\",\"public_key\":\"gYtrSmpBGJnoH1HOb+t1Pyjlp7S7A+seA3s837zoWFc=\",\"reset_at\":null,\"reset_authority\":null,\"set_at\":1793004000,\"set_by\":\"migrated\",\"v\":1}",
+      "inputs": {
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "BfnztYdAAw/QThAuUDxPCw==",
+          "time_cost": 1
+        },
+        "now": 1793004000,
+        "password": "fixture backup password 2026",
+        "reset_authority": null
+      },
+      "record": {
+        "history": [],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "BfnztYdAAw/QThAuUDxPCw==",
+          "time_cost": 1
+        },
+        "key_id": "e3ba969d65478dd7ae40f8b17db26353",
+        "public_key": "gYtrSmpBGJnoH1HOb+t1Pyjlp7S7A+seA3s837zoWFc=",
+        "reset_at": null,
+        "reset_authority": null,
+        "set_at": 1793004000,
+        "set_by": "migrated",
+        "v": 1
+      }
+    },
+    "reset": {
+      "canonical": "{\"history\":[{\"key_id\":\"fcff6ece0e50fc1f9e31dbc981a4ab4a\",\"replaced_at\":1793003000,\"set_at\":1793002000,\"set_by\":\"changed\"},{\"key_id\":\"7678d5726806d21391294214bb01eb01\",\"replaced_at\":1793002000,\"set_at\":1793001000,\"set_by\":\"set\"}],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"ErfGQpn+8xeJl8MNWUwJKw==\",\"time_cost\":1},\"key_id\":\"c6a61f7b07a418120d40e90a25fe8ed8\",\"public_key\":\"5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=\",\"reset_at\":1793003000,\"reset_authority\":{\"kind\":\"recovery-key-mac-v1\",\"mac\":\"pebNSJe2pMSB2CTtw+lYCqcb2kv6CAeQurDO8OTLAbA=\",\"salt\":\"jYK3HJan3KP3p+96/Sh1Tw==\"},\"set_at\":1793003000,\"set_by\":\"reset\",\"v\":1}",
+      "inputs": {
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "now": 1793003000,
+        "password": "third fixture backup password",
+        "previous": "changed",
+        "reset_authority": "recovery-key-mac-v1 from authority.json mac.salt and mac.phrase_key, bound to this record's key_id"
+      },
+      "record": {
+        "history": [
+          {
+            "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+            "replaced_at": 1793003000,
+            "set_at": 1793002000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "key_id": "c6a61f7b07a418120d40e90a25fe8ed8",
+        "public_key": "5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=",
+        "reset_at": 1793003000,
+        "reset_authority": {
+          "kind": "recovery-key-mac-v1",
+          "mac": "pebNSJe2pMSB2CTtw+lYCqcb2kv6CAeQurDO8OTLAbA=",
+          "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+        },
+        "set_at": 1793003000,
+        "set_by": "reset",
+        "v": 1
+      }
+    },
+    "set": {
+      "canonical": "{\"history\":[],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"YJn8P7Dx5Py3xX3+xj+TQQ==\",\"time_cost\":1},\"key_id\":\"7678d5726806d21391294214bb01eb01\",\"public_key\":\"ItJxd18v9FNCSkP9FoozP3aFiDwDD+Fv83GN+gCOLG0=\",\"reset_at\":null,\"reset_authority\":{\"aad\":\"bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==\",\"ciphertext\":\"NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur\",\"kind\":\"recovery-wrapper-v1\",\"nonce\":\"xUfVmleeI65ixGIT\",\"salt\":\"tArr0vQOdwFbFgx1X32xzA==\"},\"set_at\":1793001000,\"set_by\":\"set\",\"v\":1}",
+      "inputs": {
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+          "time_cost": 1
+        },
+        "now": 1793001000,
+        "password": "fixture café password 2026",
+        "reset_authority": "authority.json windows.old_snapshot"
+      },
+      "record": {
+        "history": [],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+          "time_cost": 1
+        },
+        "key_id": "7678d5726806d21391294214bb01eb01",
+        "public_key": "ItJxd18v9FNCSkP9FoozP3aFiDwDD+Fv83GN+gCOLG0=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793001000,
+        "set_by": "set",
+        "v": 1
+      }
+    }
+  },
+  "rejected": [
+    {
+      "error": "The backup key record is damaged: not an object",
+      "name": "not an object",
+      "record": [
+        {
+          "history": [
+            {
+              "key_id": "7678d5726806d21391294214bb01eb01",
+              "replaced_at": 1793002000,
+              "set_at": 1793001000,
+              "set_by": "set"
+            }
+          ],
+          "kdf": {
+            "memory_cost_kib": 8192,
+            "name": "argon2id",
+            "parallelism": 1,
+            "salt": "Slb465iWfFVeEOfUGNDIyA==",
+            "time_cost": 1
+          },
+          "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+          "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+          "reset_at": null,
+          "reset_authority": {
+            "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+            "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+            "kind": "recovery-wrapper-v1",
+            "nonce": "xUfVmleeI65ixGIT",
+            "salt": "tArr0vQOdwFbFgx1X32xzA=="
+          },
+          "set_at": 1793002000,
+          "set_by": "changed",
+          "v": 1
+        }
+      ]
+    },
+    {
+      "error": "The backup key record is damaged: unsupported version",
+      "name": "v 2",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 2
+      }
+    },
+    {
+      "error": "The backup key record is damaged: unsupported version",
+      "name": "v true",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": true
+      }
+    },
+    {
+      "error": "The backup key record is damaged: unexpected or missing fields",
+      "name": "extra field",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "password": "second fixture backup password",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: unexpected or missing fields",
+      "name": "missing history",
+      "record": {
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad key id",
+      "name": "key_id uppercase",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "FCFF6ECE0E50FC1F9E31DBC981A4AB4A",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad key id",
+      "name": "key_id short",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: the key id does not match the public key",
+      "name": "key_id mismatch (other public key)",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "jMrgBr1KAooj7wW0ytYDGwvRKljykS/iUk09hS0sckI=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad public key",
+      "name": "public_key 31 bytes",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad public key",
+      "name": "public_key not canonical base64 (padding bits set)",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFx=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad key derivation parameters",
+      "name": "kdf extra hash_len",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "hash_len": 32,
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad key derivation parameters",
+      "name": "kdf time_cost 11",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 11
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad key derivation parameters",
+      "name": "kdf salt 15 bytes",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "AAAAAAAAAAAAAAAAAAAA",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad set time",
+      "name": "set_at negative",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": -1,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad set time",
+      "name": "set_at 2^53",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 9007199254740992,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad set time",
+      "name": "set_at float",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000.0,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad set time",
+      "name": "set_at string",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": "1793002000",
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad operation",
+      "name": "set_by unknown",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "imported",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: a reset time on a key that was not reset",
+      "name": "reset_at on a changed key",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": 1793002000,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad reset time",
+      "name": "reset without reset_at",
+      "record": {
+        "history": [
+          {
+            "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+            "replaced_at": 1793003000,
+            "set_at": 1793002000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "key_id": "c6a61f7b07a418120d40e90a25fe8ed8",
+        "public_key": "5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=",
+        "reset_at": null,
+        "reset_authority": {
+          "kind": "recovery-key-mac-v1",
+          "mac": "pebNSJe2pMSB2CTtw+lYCqcb2kv6CAeQurDO8OTLAbA=",
+          "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+        },
+        "set_at": 1793003000,
+        "set_by": "reset",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad reset authority (unknown kind)",
+      "name": "reset_authority unknown kind",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "kind": "other",
+          "mac": "pebNSJe2pMSB2CTtw+lYCqcb2kv6CAeQurDO8OTLAbA=",
+          "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad reset authority (bad ciphertext)",
+      "name": "reset_authority wrapper ciphertext 47 bytes",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad history",
+      "name": "history not a list",
+      "record": {
+        "history": {},
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad history",
+      "name": "history 17 entries",
+      "record": {
+        "history": [
+          {
+            "key_id": "00000000000000000000000000000001",
+            "replaced_at": 1793001000,
+            "set_at": 1793000900,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000002",
+            "replaced_at": 1793000900,
+            "set_at": 1793000800,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000003",
+            "replaced_at": 1793000800,
+            "set_at": 1793000700,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000004",
+            "replaced_at": 1793000700,
+            "set_at": 1793000600,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000005",
+            "replaced_at": 1793000600,
+            "set_at": 1793000500,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000006",
+            "replaced_at": 1793000500,
+            "set_at": 1793000400,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000007",
+            "replaced_at": 1793000400,
+            "set_at": 1793000300,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000008",
+            "replaced_at": 1793000300,
+            "set_at": 1793000200,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000009",
+            "replaced_at": 1793000200,
+            "set_at": 1793000100,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000a",
+            "replaced_at": 1793000100,
+            "set_at": 1793000000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000b",
+            "replaced_at": 1793000000,
+            "set_at": 1792999900,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000c",
+            "replaced_at": 1792999900,
+            "set_at": 1792999800,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000d",
+            "replaced_at": 1792999800,
+            "set_at": 1792999700,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000e",
+            "replaced_at": 1792999700,
+            "set_at": 1792999600,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "0000000000000000000000000000000f",
+            "replaced_at": 1792999600,
+            "set_at": 1792999500,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000010",
+            "replaced_at": 1792999500,
+            "set_at": 1792999400,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "00000000000000000000000000000001",
+            "replaced_at": 1793001000,
+            "set_at": 1793000900,
+            "set_by": "changed"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad history entry",
+      "name": "history entry with public_key",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad history entry",
+      "name": "history entry bad key_id",
+      "record": {
+        "history": [
+          {
+            "key_id": "xyz",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad history entry",
+      "name": "history entry set_by unknown",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "removed"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    },
+    {
+      "error": "The backup key record is damaged: bad history entry",
+      "name": "history entry replaced_at null",
+      "record": {
+        "history": [
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": null,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "Slb465iWfFVeEOfUGNDIyA==",
+          "time_cost": 1
+        },
+        "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+        "public_key": "GMatJthAXzf/Jz1aF0dOOOtplpzxT1FrVwyZ4RrpWFw=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793002000,
+        "set_by": "changed",
+        "v": 1
+      }
+    }
+  ]
+}

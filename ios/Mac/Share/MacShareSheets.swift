@@ -18,6 +18,8 @@ struct MacShareSheet: View {
     @State private var share: OutgoingShare?
     @State private var error: String?
     @State private var saving = false
+    @State private var options = ShareOptions()
+    @State private var making = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -29,7 +31,7 @@ struct MacShareSheet: View {
                     .accessibilityLabel("Code: \(share.code)")
                 Text(ShareText.codeHint).font(.callout).foregroundStyle(theme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
-                if let text = share.packageQRText, let image = SyncPageModel.qrImage(text, side: 240) {
+                if let text = share.packageQRText, let image = QRImage.make(text, side: 240) {
                     HStack {
                         Spacer()
                         Image(nsImage: image).interpolation(.none).accessibilityLabel("Shared item QR")
@@ -37,7 +39,7 @@ struct MacShareSheet: View {
                     }
                     Text(ShareText.qrHint).font(.system(size: 12)).foregroundStyle(theme.textMuted)
                 }
-                Text(ShareText.expiresHint).font(.system(size: 12)).foregroundStyle(theme.textMuted)
+                Text(options.expiresHint).font(.system(size: 12)).foregroundStyle(theme.textMuted)
                 HStack(spacing: 8) {
                     ShareLink(item: share.fileURL) { Text("AirDrop or share…") }
                         .buttonStyle(PillButtonStyle(primary: true))
@@ -50,23 +52,40 @@ struct MacShareSheet: View {
             } else if let error {
                 MessageLine(text: error)
                 HStack { Spacer(); Button("Close", action: onClose).buttonStyle(PillButtonStyle(primary: false)) }
-            } else {
+            } else if making {
                 ProgressView().controlSize(.small)
+            } else {
+                Picker(ShareText.expiresIn, selection: $options.expiry) {
+                    ForEach(ShareOptions.Expiry.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Toggle(ShareText.oneUse, isOn: $options.oneUse)
+                Text(ShareText.oneUseHint).font(.system(size: 12)).foregroundStyle(theme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Spacer()
+                    Button("Cancel", action: onClose).buttonStyle(PillButtonStyle(primary: false))
+                        .keyboardShortcut(.cancelAction)
+                    Button(ShareText.makeCode) { Task { await prepare() } }
+                        .buttonStyle(PillButtonStyle(primary: true))
+                        .keyboardShortcut(.defaultAction)
+                }
             }
         }
         .padding(22)
         .frame(width: 440)
-        .task { await prepare() }
         .onDisappear { if let share { ShareOutbox.remove(share) } }
         .fileExporter(isPresented: $saving, document: share.map { ShareFileDocument(url: $0.fileURL) },
                       contentType: ShareFileDocument.type, defaultFilename: ShareOutbox.fileName) { _ in }
     }
 
     private func prepare() async {
-        guard share == nil else { return }
-        let item = item, sender = MacShareText.senderName
+        guard share == nil, !making else { return }
+        making = true
+        defer { making = false }
+        let item = item, sender = MacShareText.senderName, options = options
         let made = await Task.detached(priority: .userInitiated) { () -> Result<OutgoingShare, ShareError> in
-            do { return .success(try ShareOutbox.make(item: item, sender: sender, now: SystemClock().now)) }
+            do { return .success(try ShareOutbox.make(item: item, sender: sender, now: SystemClock().now, options: options)) }
             catch let e as ShareError { return .failure(e) }
             catch { return .failure(ShareError("too-large", String(localized: "The shared file could not be made on this Mac."))) }
         }.value

@@ -30,6 +30,9 @@ sealed interface LanMessage {
      * format 2, zero records, at most [app.localgatekeys.core.sync.Witness.MAX_WITNESS_BYTES]).
      */
     data class Witness(val groupId: String, val epoch: Long, val view: String) : LanMessage
+
+    /** Personal collections (sub-plan 07): what the sender reads ([LanFeatures]), after a view exchange. */
+    data class Features(val features: List<String>) : LanMessage
 }
 
 object LanMessages {
@@ -55,6 +58,7 @@ object LanMessages {
         "ack" to setOf("type", "transfer", "seq"),
         "error" to setOf("type", "reason"),
         "witness" to setOf("type", "group_id", "epoch", "view"),
+        "features" to setOf("type", "features"),
     )
 
     /** Longest `view` text of a `witness` message (base64 of [app.localgatekeys.core.sync.Witness.MAX_WITNESS_BYTES]). */
@@ -74,6 +78,9 @@ object LanMessages {
             is LanMessage.Witness -> mapOf(
                 "type" to JsonValue.Str("witness"), "group_id" to JsonValue.Str(m.groupId), "epoch" to JsonValue.Int(m.epoch),
                 "view" to JsonValue.Str(m.view),
+            )
+            is LanMessage.Features -> mapOf(
+                "type" to JsonValue.Str("features"), "features" to JsonValue.Arr(m.features.map { JsonValue.Str(it) }),
             )
         }
         return CanonicalJson.encode(JsonValue.Obj(o), Dialect.ASCII)
@@ -110,6 +117,7 @@ object LanMessages {
             if (view.length > MAX_WITNESS_CHARS) throw LanSyncException("too-large")
             return LanMessage.Witness(group, epoch, view)
         }
+        if (type == "features") return LanMessage.Features(LanFeatures.names(o["features"]))
         val transfer = (o["transfer"] as? JsonValue.Str)?.v ?: throw bad()
         val tb = transfer.toByteArray(Charsets.UTF_8)
         if (tb.size != 32 || !tb.all { (it >= 0x30 && it <= 0x39) || (it >= 0x61 && it <= 0x66) }) throw bad()

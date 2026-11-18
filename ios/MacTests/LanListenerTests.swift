@@ -192,8 +192,11 @@ final class LanListenerTests: XCTestCase {
         XCTAssertNil(peers[0].endpoint)
         XCTAssertEqual(host.pairing.stage, .paired)
         XCTAssertEqual(host.pairing.paired?.message.hasSuffix("If you don't recognise it, choose Undo."), true)
-        XCTAssertEqual(host.pairing.paired?.name, SyncWording.shortID(peers[0].deviceID))
-        XCTAssertTrue(host.pairing.paired?.message.hasPrefix("Paired: Device ") == true)
+        // The name the prompt showed, then the short id (the name is not authenticated).
+        let label = SyncWording.labeled(request.name, peers[0].deviceID)
+        XCTAssertEqual(host.pairing.paired?.name, label)
+        XCTAssertTrue(label.hasSuffix(" · " + SyncWording.shortID(peers[0].deviceID)))
+        XCTAssertTrue(host.pairing.paired?.message.hasPrefix("Paired: \(label) (key ") == true)
         // The first sync ran over loopback both ways: each side has the other's item.
         XCTAssertEqual(phoneStore.snapshot.sync?.groupID, group.groupID)
         XCTAssertNotNil(phoneStore.snapshot.records[macID])

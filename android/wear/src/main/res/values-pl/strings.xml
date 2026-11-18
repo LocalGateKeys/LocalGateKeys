@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">Przypięte kody</string>
+    <string name="tile_description">Twoje przypięte kody dwuskładnikowe z LocalGateKeys na telefonie.</string>
+    <string name="tile_no_data">Otwórz LocalGateKeys na telefonie</string>
+    <string name="tile_locked">Odblokuj LocalGateKeys na telefonie, aby zobaczyć kody</string>
+    <string name="tile_locked_immediately">Ustaw automatyczną blokadę na telefonie na 1 minutę lub dłużej, aby widzieć tu kody</string>
+    <string name="tile_empty">Przypnij kod w LocalGateKeys</string>
+    <string name="tile_watch_locked">Odblokuj zegarek, aby zobaczyć kody</string>
+    <string name="tile_updated_now">Zaktualizowano przed chwilą</string>
+    <string name="tile_updated_minutes">Zaktualizowano %1$d min temu</string>
+    <string name="tile_updated_hours">Zaktualizowano %1$d godz. temu</string>
+    <string name="tile_updated_days">Zaktualizowano %1$d dni temu</string>
+</resources>

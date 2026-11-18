@@ -21,7 +21,19 @@ import app.localgatekeys.core.primitives.SystemRandomSource
 import app.localgatekeys.core.group.GroupKey
 import app.localgatekeys.core.group.ViewFile
 import app.localgatekeys.core.group.ViewSignature
+import app.localgatekeys.core.engine.ItemState
+import app.localgatekeys.android.trash.InMemoryLocalData
+import app.localgatekeys.android.trash.LocalData
+import app.localgatekeys.core.json.CanonicalJson
+import app.localgatekeys.core.json.Dialect
+import app.localgatekeys.core.json.JsonValue
+import app.localgatekeys.core.sync.CollectionCatalog
+import app.localgatekeys.core.sync.CollectionStates
+import app.localgatekeys.core.sync.FolderAccess
+import app.localgatekeys.core.sync.ShareGroups
+import app.localgatekeys.core.sync.SyncIssue
 import app.localgatekeys.core.sync.FolderLayout
+import app.localgatekeys.core.keyring.Keyring
 import app.localgatekeys.core.sync.ItemStore
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
@@ -42,6 +54,7 @@ import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -90,8 +103,12 @@ class SyncCoordinatorTest {
         return SyncCoordinator(store, deps, scope, EnglishTxt()).also { created.add(it) }
     }
 
+    /** The "Sync automatically" setting the coordinators under test read. */
+    private var autoSync = true
+
     private fun deps(identity: DeviceIdentity? = null): SyncDependencies {
         var d = SyncDependencies(
+            autoSync = { autoSync },
             slots = slots, folders = folders, lan = lan, autoFill = autoFill, random = SystemRandomSource(), clock = clock,
             licenseKeys = emptyMap(), sleep = sleeper.fn, deviceName = SyncVectors.DEVICE_NAME,
         )
@@ -316,6 +333,158 @@ class SyncCoordinatorTest {
         assertNull(c.verificationCode.value)
     }
 
+    // MARK: LAN sync v3 (a version-2 offer: commit-then-reveal, docs/formats/LAN_SYNC_V3.md 3)
+
+    private val refusedText = "The other device refused the pairing. Show a new code and try again."
+
+    private fun v3Enroll(): Map<String, JsonValue> = SyncVectors.json("lan/v3/enroll.json")
+
+    private fun v3QrText(): String = String(SyncVectors.data("lan/v3/qr_payload.txt"), Charsets.UTF_8)
+
+    private fun v3Reveal(): ByteArray = SyncVectors.hex(SyncVectors.str(v3Enroll()["reveal_hex"]))
+
+    /** The inviter's own offer: the QR's bundle plus the reveal only the inviter holds. */
+    private fun v3InviterOffer(): PairingOffer {
+        val o = PairingOffer.parseQr(v3QrText())
+        return PairingOffer(
+            o.version, o.offerId, o.groupId, o.endpoint, o.inviterDeviceId, o.inviterSigningPublic, o.inviterExchangePublic,
+            o.certificateFingerprint, o.expiresAt, o.transcriptNonce, o.pairingSecret, o.code, o.commit, v3Reveal(),
+        )
+    }
+
+    private fun v3GroupKey(): GroupKey {
+        val r = SyncVectors.obj(v3Enroll()["reply"])
+        return GroupKey(SyncVectors.str(r["group_id"]), (r["epoch"] as JsonValue.Int).v, SyncVectors.hex(SyncVectors.str(r["key_hex"])))
+    }
+
+    /** Desktop `seal_enrollment_reply` (the inviter's key reply for an accepted request), for a live phone request. */
+    private fun sealReply(offer: PairingOffer, inviter: DeviceIdentity, request: Enrollment.Request, gk: GroupKey): ByteArray {
+        fun canon(m: Map<String, JsonValue>) = CanonicalJson.encode(JsonValue.Obj(m), Dialect.ASCII)
+        val random = SystemRandomSource()
+        val bound = java.security.MessageDigest.getInstance("SHA-256").digest(request.transcript)
+        val ephPrivate = random.bytes(32)
+        val shared = app.localgatekeys.core.primitives.X25519.agree(ephPrivate, request.exchangePublic)
+        val secret = app.localgatekeys.core.primitives.CryptoBox.hkdf(
+            shared, bound, "localgatekeys|sync|enroll-reply|v1|".toByteArray() + offer.offerId.toByteArray(), 32,
+        )
+        val nonce = random.bytes(12)
+        val header = mapOf(
+            "eph" to JsonValue.Str(Base64Std.encode(app.localgatekeys.core.primitives.X25519.publicKey(ephPrivate))),
+            "nonce" to JsonValue.Str(Base64Std.encode(nonce)),
+        )
+        val body = mapOf(
+            "group_id" to JsonValue.Str(gk.groupId), "epoch" to JsonValue.Int(gk.epoch), "key" to JsonValue.Str(Base64Std.encode(gk.key)),
+            "device_id" to JsonValue.Str(request.deviceId), "signing_public" to JsonValue.Str(Base64Std.encode(request.signingPublic)),
+        )
+        val ct = app.localgatekeys.core.primitives.CryptoBox.sealGcm(secret, nonce, canon(body), canon(header) + bound)
+        val sig = inviter.sign("localgatekeys|sync|enroll-reply-sig|v1|".toByteArray() + bound + canon(header) + ct)
+        return Enrollment.REPLY_MAGIC + canon(header + mapOf("ct" to JsonValue.Str(Base64Std.encode(ct)), "sig" to JsonValue.Str(Base64Std.encode(sig))))
+    }
+
+    /**
+     * A (the inviter) for the version-2 offer: the request must verify, then [reveals] go out before the reply (the
+     * real inviter sends its one reveal), then [reply] (default: the key reply). [replies] counts asked replies.
+     */
+    private fun v3InviterAnswers(
+        reveals: () -> List<ByteArray> = { listOf(Enrollment.revealFrame(v3InviterOffer())!!) },
+        replies: java.util.concurrent.atomic.AtomicInteger = java.util.concurrent.atomic.AtomicInteger(),
+        beforeReply: () -> Unit = {},
+    ) {
+        val a = SyncVectors.identity("A")
+        lan.enrollInterims = { request ->
+            Enrollment.openRequest(v3InviterOffer(), a, request) // the reveal goes out only after a request verifies
+            reveals()
+        }
+        lan.enrollReply = { request ->
+            replies.incrementAndGet()
+            beforeReply()
+            val inviter = v3InviterOffer()
+            sealReply(inviter, a, Enrollment.openRequest(inviter, a, request), v3GroupKey())
+        }
+    }
+
+    private fun pinEntry(): Map<String, JsonValue> = (CanonicalJson.parse(slots.read(Slot.PAIRED_PEER)!!) as JsonValue.Obj).fields
+
+    @Test fun a_version_2_offer_shows_the_code_only_after_the_reveal_and_pins_the_sealed_hello() = test {
+        clock.now = (v3Enroll()["now"] as JsonValue.Int).v
+        val a = SyncVectors.identity("A")
+        val b = SyncVectors.identity("B")
+        val revealGate = AsyncGate()
+        val replyGate = AsyncGate()
+        lan.connectsBeforeHold = true
+        lan.enrollHold = { revealGate.await() } // connected; the PC has not verified the request yet
+        v3InviterAnswers(beforeReply = { replyGate.await() })
+        val store = LockedStore()
+        val c = coordinator(store, deps(b))
+        val join = async { c.joinByQr(v3QrText()) }
+        until("connected hop") { lan.enrolls == 1 && c.connecting.value == null }
+        settle()
+        assertNull("no code before the reveal checked out", c.verificationCode.value)
+        revealGate.open()
+        until("code") { c.verificationCode.value != null }
+        val offer = PairingOffer.parseQr(v3QrText())
+        assertEquals(Enrollment.verificationCode(offer, b, null, SyncVectors.DEVICE_NAME, v3Reveal()), c.verificationCode.value)
+        replyGate.open()
+        assertTrue(c.actionError.value ?: "", join.await())
+        assertNull(c.verificationCode.value)
+        assertEquals(v3GroupKey().groupId, store.snapshot.sync!!.groupId)
+        assertArrayEquals(v3GroupKey().key, store.snapshot.sync!!.key)
+        // Spec 2.5: pairing through a version-2 offer pins the sealed hello at once, in the vault entry and in memory.
+        assertEquals(offer.inviterPeer, slots.pairedPeer())
+        assertEquals(JsonValue.Int(3), pinEntry()["hello"])
+        assertTrue(slots.pairedPeerSealed(a.deviceId))
+    }
+
+    @Test fun a_reveal_that_does_not_match_the_qr_is_refused_and_no_code_shows() = test {
+        clock.now = (v3Enroll()["now"] as JsonValue.Int).v
+        val replies = java.util.concurrent.atomic.AtomicInteger()
+        val wrong = Enrollment.REVEAL_MAGIC + """{"reveal":"${Base64Std.encode(ByteArray(32) { 5 })}"}""".toByteArray()
+        val shown = ArrayList<String?>()
+        for (frames in listOf(listOf(wrong), listOf(Enrollment.REVEAL_MAGIC + "{}".toByteArray()))) {
+            v3InviterAnswers(reveals = { frames }, replies = replies)
+            val store = LockedStore()
+            val c = coordinator(store, deps(SyncVectors.identity("B")))
+            assertFalse(c.joinByQr(v3QrText()))
+            assertEquals(refusedText, c.actionError.value)
+            shown.add(c.verificationCode.value)
+            assertEquals(0, store.commits); assertNull(slots.pairedPeer())
+        }
+        assertEquals(listOf<String?>(null, null), shown)
+        assertEquals("the reply is never read after a bad reveal", 0, replies.get())
+    }
+
+    @Test fun a_key_reply_without_the_reveal_or_after_a_second_reveal_is_refused() = test {
+        clock.now = (v3Enroll()["now"] as JsonValue.Int).v
+        val reveal = Enrollment.revealFrame(v3InviterOffer())!!
+        for (frames in listOf(emptyList(), listOf(reveal, reveal))) {
+            v3InviterAnswers(reveals = { frames })
+            val store = LockedStore()
+            val c = coordinator(store, deps(SyncVectors.identity("B")))
+            assertFalse(c.joinByQr(v3QrText()))
+            assertEquals(refusedText, c.actionError.value)
+            assertEquals(0, store.commits); assertNull(slots.pairedPeer())
+            assertNull(c.verificationCode.value)
+        }
+    }
+
+    @Test fun a_version_1_offer_keeps_the_old_flow_and_the_first_sealed_sync_pins() = test {
+        val a = SyncVectors.identity("A")
+        // The first sync fails: the pairing alone does not pin a version-1 offer's peer.
+        lan.exchange = { throw LanSyncException("unreachable", "x") }
+        val c = qrJoined(LockedStore())
+        assertEquals(1, lan.exchanges)
+        assertNull(pinEntry()["hello"])
+        assertFalse(slots.pairedPeerSealed(a.deviceId))
+        // The next sync (always sealed) succeeds: now the peer is pinned and the pin survives a reload of the slots.
+        lan.exchange = { emptyList() }
+        c.sync(Trigger.MANUAL)
+        assertEquals(2, lan.exchanges)
+        assertEquals(JsonValue.Int(3), pinEntry()["hello"])
+        assertEquals(PairingOffer.parseQr(SyncVectors.qrText()).inviterPeer, slots.pairedPeer())
+        val reloaded = SecretSlots(java.io.File(tmp.root, "secrets.bin"), ByteArray(32) { 3 }, SystemRandomSource())
+        assertTrue(reloaded.pairedPeerSealed(a.deviceId))
+    }
+
     // MARK: M-7 (the Wi-Fi-paired peer's signing key for its folder view)
 
     @Test fun paired_keys_name_only_the_trusted_paired_peer() = test {
@@ -493,6 +662,21 @@ class SyncCoordinatorTest {
         assertNull(c.actionError.value)
     }
 
+    /** Paired over Wi-Fi, then a folder with no group is picked: the copy must not say "Create one". */
+    @Test fun attach_to_an_empty_folder_says_where_to_add_one() = test {
+        val x = SyncVectors.json("expected.json")
+        val existing = SyncVectors.obj(x["existing_group"])
+        val gid = SyncVectors.str(existing["group_id"])
+        val key = SyncVectors.hex(SyncVectors.str(SyncVectors.obj(SyncVectors.obj(existing["epochs"])["1"])["group_key_hex"]))
+        val me = DeviceIdentity.generate(random = SystemRandomSource())
+        val store = LockedStore(StoreSnapshot(sync = SyncGroupState(gid, 1, key, me, slots.installId(), hasFolder = false)))
+        val c = coordinator(store)
+        c.refreshMembership()
+        assertFalse(c.joinFolder("content://f/7", "anything"))
+        assertEquals(SyncWording(EnglishTxt()).errorText("no-group-paired"), c.actionError.value)
+        assertFalse(c.membership.value.hasFolder)
+    }
+
     @Test fun attach_after_qr_keeps_the_pairing() = test {
         // QR-joined to the existing-group vector group (A created it; the phone holds the epoch-1 key).
         val x = SyncVectors.json("expected.json")
@@ -571,6 +755,25 @@ class SyncCoordinatorTest {
         assertEquals(Phase.IDLE, c.phase.value)
     }
 
+    @Test fun sync_automatically_off_holds_back_the_unlock_the_return_and_edits_but_not_the_person() = test {
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val base = lan.exchanges
+        autoSync = false
+        c.sync(Trigger.APP_OPEN)
+        c.sync(Trigger.FOREGROUND)
+        c.noteLocalEdit()
+        settle()
+        assertEquals("nothing runs by itself", base, lan.exchanges)
+        c.sync(Trigger.MANUAL)
+        assertEquals(base + 1, lan.exchanges)
+        c.sync(Trigger.PULL_TO_REFRESH)
+        assertEquals(base + 2, lan.exchanges)
+        autoSync = true // read at each trigger: no new unlock needed
+        c.sync(Trigger.FOREGROUND)
+        assertEquals(base + 3, lan.exchanges)
+    }
+
     @Test fun edits_trigger_one_debounced_sync() = test {
         val store = LockedStore()
         val c = qrJoined(store)
@@ -601,8 +804,10 @@ class SyncCoordinatorTest {
         for (failure in failures) {
             lan.exchange = { throw failure }
             c.sync(Trigger.MANUAL)
-            assertEquals(before, store.snapshot)
-            assertEquals(commits, store.commits)
+            // Only the published vector bump is saved before the exchange (review H-1); records and group state stay.
+            assertEquals(before.records, store.snapshot.records)
+            assertEquals(before.sync, store.snapshot.sync)
+            assertEquals(commits + 1, store.commits)
             assertFalse(c.issues.value.isEmpty())
         }
         // A folder group whose folder URI is gone: reported, store untouched.
@@ -612,6 +817,96 @@ class SyncCoordinatorTest {
         c.sync(Trigger.MANUAL)
         assertTrue(c.issues.value.any { it.kind == "folder-missing" })
         assertEquals(folderBefore, store.snapshot)
+    }
+
+    // MARK: vector bumps are saved before they are sent (mobile sync review H-1)
+
+    /** A joined phone holding item X, synced once, then edited; returns X's id and the edit's state the host kept. */
+    private suspend fun CoroutineScope.editedAndInterrupted(store: LockedStore): Triple<SyncCoordinator, String, ItemState> {
+        val c = qrJoined(store)
+        val (id, first) = noteRecord(7, title = "First")
+        var s = store.snapshot
+        store.commit(StoreChange(s.revision, s.records + (id to first), s.meta, s.sync))
+        lan.exchange = { emptyList() }
+        c.sync(Trigger.MANUAL)
+        assertNotNull(store.snapshot.meta[id])
+        // Edit X, then a run whose exchange reaches the host (it keeps the states) but whose reply is lost.
+        val (_, second) = noteRecord(7, title = "Second")
+        s = store.snapshot
+        store.commit(StoreChange(s.revision, s.records + (id to second), s.meta, s.sync))
+        var held: ItemState? = null
+        lan.exchange = { sent ->
+            held = sent.first { it.itemId == id }
+            throw LanSocketException("read timed out")
+        }
+        c.sync(Trigger.MANUAL)
+        assertTrue(c.issues.value.isNotEmpty())
+        return Triple(c, id, held!!)
+    }
+
+    @Test fun a_delete_after_an_interrupted_exchange_is_not_undone() = test {
+        val store = LockedStore()
+        val (c, id, held) = editedAndInterrupted(store)
+        // The published bump is on disk although the run failed.
+        assertEquals(held.vv, store.snapshot.meta[id]!!.vv)
+        // Delete X, then sync with the host answering the edit it kept.
+        val s = store.snapshot
+        store.commit(StoreChange(s.revision, s.records - id, s.meta, s.sync))
+        var tomb: ItemState? = null
+        lan.exchange = { sent ->
+            tomb = sent.first { it.itemId == id }
+            listOf(held)
+        }
+        c.sync(Trigger.MANUAL)
+        val sentTomb = tomb!!
+        assertTrue(sentTomb.deleted)
+        val phone = SyncVectors.identity("B").deviceId
+        assertTrue("the delete's vector is newer than the edit the host kept", sentTomb.vv.getValue(phone) > held.vv.getValue(phone))
+        assertNull("the deleted item does not come back", store.snapshot.records[id])
+        assertTrue(store.snapshot.meta[id]!!.deleted)
+    }
+
+    @Test fun an_edit_after_an_interrupted_exchange_makes_no_conflict_copy() = test {
+        val store = LockedStore()
+        val (c, id, held) = editedAndInterrupted(store)
+        val (_, third) = noteRecord(7, title = "Third")
+        val s = store.snapshot
+        store.commit(StoreChange(s.revision, s.records + (id to third), s.meta, s.sync))
+        var edit: ItemState? = null
+        lan.exchange = { sent ->
+            edit = sent.first { it.itemId == id }
+            listOf(held)
+        }
+        c.sync(Trigger.MANUAL)
+        val phone = SyncVectors.identity("B").deviceId
+        assertTrue(edit!!.vv.getValue(phone) > held.vv.getValue(phone))
+        assertEquals("no (sync conflict) copy", setOf(id), store.snapshot.records.keys)
+        assertEquals(third, store.snapshot.records[id])
+    }
+
+    @Test fun a_lost_save_of_the_view_sends_nothing() = test {
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val (id, wrapper) = noteRecord(8)
+        val s = store.snapshot
+        store.commit(StoreChange(s.revision, s.records + (id to wrapper), s.meta, s.sync))
+        val base = lan.exchanges
+        val before = store.snapshot
+        // A local save lands between the run's read and its view save: the base revision no longer matches.
+        assertNull(saveLocalView(object : ItemStore {
+            override fun load(): StoreSnapshot = store.load()
+            override fun commit(change: StoreChange) = throw IllegalStateException("stale")
+        }, before, before.sync!!.deviceId, clock.now))
+        // Through the coordinator: a store that refuses every commit ends the run with busy before any exchange.
+        val refusing = object : ItemStore {
+            override fun load(): StoreSnapshot = store.load()
+            override fun commit(change: StoreChange) = throw IllegalStateException("stale")
+        }
+        val report = SyncCoordinator.lanRun(refusing, deps(), slots.installId(), slots.pairedPeer()!!)
+        assertEquals(listOf("busy"), report.issues.map { it.kind })
+        assertEquals(base, lan.exchanges)
+        assertEquals(before, store.snapshot)
+        c.shutdown()
     }
 
     @Test fun lan_refuses_a_non_lan_peer_address() = test {
@@ -858,6 +1153,135 @@ class SyncCoordinatorTest {
         assertEquals(1234L, counters.persistedHelloCounter())
         assertNull(slots.read(Slot.PEER_COUNTERS))
         assertNotNull(slots.read(Slot.INSTALL_ID))
+    }
+
+    // MARK: keeping the device id on rejoin (design 2026-11-17 keep-device-id-on-rejoin)
+
+    private val rejoinText = "The other device could not pair this device under its earlier name. Show a new code there and scan it again."
+
+    private fun vectorGroupId(): String = PairingOffer.parseQr(SyncVectors.qrText()).groupId
+
+    @Test fun leave_keeps_the_identity_and_pairing_the_same_group_again_reuses_it_with_its_counters() = test {
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val b = SyncVectors.identity("B")
+        // Counters peers check: they must continue after the rejoin, never restart lower.
+        val snap = store.snapshot
+        store.commit(StoreChange(snap.revision, snap.records, snap.meta, snap.sync!!.copy(ownCounter = 41, generationOffset = 7)))
+        c.leave()
+        assertNull(store.snapshot.sync)
+        val kept = slots.keptIdentity()!!
+        assertEquals(b, kept.identity)
+        assertEquals(vectorGroupId(), kept.groupId)
+        assertEquals(41L, kept.ownCounter); assertEquals(7L, kept.generationOffset)
+
+        // The same group again: the kept identity is used, not a new one.
+        var asked: String? = null
+        val offer = PairingOffer.parseQr(SyncVectors.qrText())
+        val reply = SyncVectors.data("lan/enroll_reply_no_endpoint.bin")
+        lan.enrollReply = { r -> asked = Enrollment.openRequest(offer, SyncVectors.identity("A"), r).deviceId; reply }
+        val again = coordinator(store, deps(SyncVectors.identity("C")))
+        assertTrue(again.actionError.value ?: "", again.joinByQr(SyncVectors.qrText()))
+        assertEquals(b.deviceId, asked)
+        val state = store.snapshot.sync!!
+        assertEquals(b, state.identity)
+        assertTrue(state.ownCounter >= 41); assertEquals(7L, state.generationOffset)
+        assertNull("a join that used it drops it: it is the live identity again", slots.keptIdentity())
+    }
+
+    @Test fun reset_drops_the_kept_identity_and_another_group_leaves_it_alone() = test {
+        val store = LockedStore()
+        val c = qrJoined(store)
+        c.leave()
+        assertNotNull(slots.keptIdentity())
+        c.reset()
+        assertNull(slots.keptIdentity())
+
+        // Kept for another group: this pairing gets a new identity and the kept one stays.
+        val other = app.localgatekeys.core.sync.KeptIdentity("7c1d8e4f-0000-4000-8000-000000000001", SyncVectors.identity("C"), 3, 0)
+        slots.setKeptIdentity(other)
+        val again = qrJoined(LockedStore())
+        assertEquals(SyncVectors.identity("B").deviceId, again.membership.value.deviceId)
+        assertEquals(other.deviceId, slots.keptIdentity()?.deviceId)
+    }
+
+    @Test fun the_plain_refusal_of_the_kept_id_drops_it_and_says_to_scan_a_new_code() = test {
+        // A host on a released build refuses every known id with the plain refusal.
+        val c = SyncVectors.identity("C")
+        val requests = ArrayList<String>()
+        val offer = PairingOffer.parseQr(SyncVectors.qrText())
+        fun answer(reason: String) {
+            lan.enrollReply = { r ->
+                requests.add(Enrollment.openRequest(offer, SyncVectors.identity("A"), r).deviceId)
+                Enrollment.REFUSED_MAGIC + """{"reason":"$reason"}""".toByteArray()
+            }
+        }
+        val store = LockedStore()
+        val coord = coordinator(store, deps(SyncVectors.identity("B")))
+        slots.setKeptIdentity(app.localgatekeys.core.sync.KeptIdentity(offer.groupId, c, 5, 0))
+        // Declined, full and update-needed are not that refusal: the kept identity stays.
+        for (reason in listOf("declined", "full", "update-needed", "used-or-expired")) {
+            answer(reason)
+            assertFalse(coord.joinByQr(SyncVectors.qrText()))
+            assertNotEquals(rejoinText, coord.actionError.value)
+            assertEquals(c.deviceId, slots.keptIdentity()?.deviceId)
+        }
+        answer("refused")
+        assertFalse(coord.joinByQr(SyncVectors.qrText()))
+        assertEquals(rejoinText, coord.actionError.value)
+        assertNull(slots.keptIdentity())
+        assertTrue(requests.all { it == c.deviceId })
+        // The next pairing uses a new identity, as before.
+        inviterAnswers()
+        assertTrue(coord.actionError.value ?: "", coord.joinByQr(SyncVectors.qrText()))
+        assertEquals(SyncVectors.identity("B").deviceId, store.snapshot.sync!!.deviceId)
+    }
+
+    @Test fun leave_then_join_the_same_folder_again_keeps_one_member_entry_and_the_id() = test {
+        seedEpoch1Folder()
+        val store = LockedStore()
+        val c = coordinator(store)
+        assertTrue(c.actionError.value ?: "", c.joinFolder("content://picked/bm", SyncVectors.PASSWORD))
+        val first = store.snapshot.sync!!
+        fun members(): List<String> = (SyncVectors.obj(Keyring.parse(folder.get(FolderLayout.KEYRING_PATH)!!))["members"] as JsonValue.Arr)
+            .items.map { SyncVectors.str(SyncVectors.obj(it)["device_id"]) }
+        val members = members()
+        assertEquals(1, members.count { it == first.deviceId })
+        c.leave()
+        assertEquals(first.deviceId, slots.keptIdentity()!!.deviceId)
+        assertTrue(c.actionError.value ?: "", c.joinFolder("content://picked/bm", SyncVectors.PASSWORD))
+        val again = store.snapshot.sync!!
+        assertEquals(first.deviceId, again.deviceId)
+        assertTrue("the own file's counter continues", again.ownCounter >= first.ownCounter && first.ownCounter > 0)
+        assertEquals(members, members())
+        assertNull(slots.keptIdentity())
+        assertTrue(c.issues.value.toString(), c.issues.value.none { it.kind in setOf("rollback", "own-file-rewritten", "suspicious-rewrite") })
+    }
+
+    @Test fun a_backup_or_export_after_leave_holds_nothing_of_the_kept_identity() = test {
+        val store = LockedStore()
+        val (id, wrapper) = noteRecord(4)
+        lan.exchange = { emptyList() }
+        val c = qrJoined(store)
+        val snap = store.snapshot
+        store.commit(StoreChange(snap.revision, snap.records + (id to wrapper), snap.meta, snap.sync))
+        c.sync(Trigger.MANUAL)
+        c.leave()
+        val kept = slots.keptIdentity()!!
+        // Backups and exports read the vault's store only: it holds no group state and no key of the kept identity.
+        val after = store.snapshot
+        assertNull(after.sync)
+        val secrets = listOf(kept.identity.signingPrivateKey, kept.identity.exchangePrivateKey).map { Base64Std.encode(it) }
+        val stored = (after.records.values.map { CanonicalJson.encode(it, Dialect.UTF8).toString(Charsets.UTF_8) } + after.meta.toString())
+        for (secret in secrets) assertTrue(stored.none { it.contains(secret) })
+        val backup = app.localgatekeys.core.backup.PhoneBackupFormat.read(
+            app.localgatekeys.android.backup.BackupExporter(
+                store, clock, SystemRandomSource(), "1.0.0", installId = { slots.installId() },
+                kdf = mapOf("time_cost" to 1, "memory_cost_kib" to 8192, "parallelism" to 1),
+            ).export("correct horse battery staple 42"),
+            "correct horse battery staple 42",
+        )
+        assertNotEquals("a backup after Leave is written under the install's id, not the kept one", kept.deviceId, backup.deviceId)
     }
 
     @Test fun failures_never_escape_to_the_caller() = test {
@@ -1199,5 +1623,475 @@ class SyncCoordinatorTest {
             }
             assertEquals("find-again-mismatch", e?.reason)
         }
+    }
+
+    // MARK: collections and shared collections (sub-plan 07 Task 5m; ports of the iPhone's 5g tests)
+
+    /** A share test's phone, its coordinator on this test's event loop (shut down after the test). */
+    private fun CoroutineScope.shareDevice(shared: MemoryFolder, folders: FolderOpening? = null, lan: FakeLan = FakeLan()): ShareDevice {
+        val scope = CoroutineScope(coroutineContext.minusKey(Job) + SupervisorJob())
+        scopes.add(scope)
+        val d = ShareDevice(shared, clock, tmp.newFile(), scope, folders ?: FakeFolders(shared), lan)
+        created.add(d.coordinator)
+        return d
+    }
+
+    /** Puts [d]'s vault in a personal Wi-Fi group paired with a PC at a LAN address (its FakeLan answers with nothing). */
+    private fun personalWifi(d: ShareDevice) {
+        val me = DeviceIdentity.generate(random = SystemRandomSource())
+        val pc = DeviceIdentity.generate(random = SystemRandomSource())
+        val gid = java.util.UUID.randomUUID().toString()
+        val state = SyncGroupState(gid, 1, ByteArray(32) { 9 }, me, d.slots.installId(), hasFolder = false)
+        val s = d.store.snapshot
+        d.store.commit(StoreChange(s.revision, s.records, s.meta, state))
+        d.slots.setPairedPeer(PinnedPeer(pc.deviceId, gid, pc.signingPublicKey, pc.exchangePublicKey, LanEndpoint("192.168.1.20", 47821)))
+    }
+
+    private class SharedPair(val owner: ShareDevice, val member: ShareDevice, val cid: String, val itemId: String, val gid: String)
+
+    /** The owner shares Family (one note) through [shared]; the member joins; the owner's run adopts and approves it. */
+    private suspend fun CoroutineScope.sharedPair(shared: MemoryFolder, memberWifi: Boolean = false): SharedPair {
+        val owner = shareDevice(shared)
+        val member = shareDevice(shared)
+        if (memberWifi) personalWifi(member)
+        val (cid, itemId) = sharedNote(owner.store, clock.now)
+        val created = owner.coordinator.createShare(cid, "content://share/owner", SharePasswords.FIRST, "Owner", membersCanEdit = true)
+        assertNotNull(owner.coordinator.shareActionReason.value ?: "", created)
+        val gid = created!!.groupId
+        clock.now += 1
+        val joined = member.coordinator.joinShare("content://share/member", SharePasswords.FIRST, "Member")
+        assertEquals(member.coordinator.shareActionReason.value ?: "", gid, joined?.groupId)
+        clock.now += 1
+        owner.coordinator.sync(Trigger.MANUAL) // adopts the join: the member waits for approval
+        val waiting = ShareGroups.pendingMembers(owner.store.snapshot, gid)
+        assertEquals(listOf("Member"), waiting.map { it.name })
+        val approved = owner.coordinator.approveShare(gid, waiting.map { it.deviceId })
+        assertEquals(owner.coordinator.shareActionReason.value ?: "", waiting.map { it.deviceId }, approved?.map { it.deviceId })
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL)
+        assertNotNull("the shared note arrived: ${member.coordinator.shareIssues.value}", member.store.snapshot.records[itemId])
+        return SharedPair(owner, member, cid, itemId, gid)
+    }
+
+    private fun fullTrash() = LocalData(trash = List(LocalData.MAX_TRASH) { LocalData.TrashRow("{}", 0) })
+
+    @Test fun the_personal_folder_run_writes_its_collections_capability() = test {
+        seedEpoch1Folder()
+        val store = LockedStore()
+        val c = coordinator(store)
+        assertTrue(c.actionError.value ?: "", c.joinFolder("content://picked/bm", SyncVectors.PASSWORD))
+        val me = store.snapshot.sync!!.deviceId
+        fun cap() = folder.snapshot().keys.filter { it.endsWith("/$me.lgkcol") || it.endsWith("/$me.lgkcol.lgksig") }
+        assertEquals("the join's run wrote it: ${folder.snapshot().keys.sorted()}", 2, cap().size)
+        // Gone from the folder (a cloud app lost it): the next ordinary run writes it again.
+        for (path in cap()) folder.remove(path)
+        clock.now += 1
+        c.sync(Trigger.APP_OPEN)
+        // This device's signed `.lgkcol` (and its signature): the other members learn it reads collections.
+        assertEquals(folder.snapshot().keys.sorted().toString(), 2, cap().size)
+        assertNull(store.snapshot.shares)
+    }
+
+    @Test fun wifi_asks_features_once_then_sends_collection_states() = test {
+        lan.features = true
+        val store = LockedStore()
+        val c = qrJoined(store)
+        val pc = slots.pairedPeer()!!.deviceId
+        // The first exchange sent no collection state, then asked and recorded the answer after the merge.
+        assertEquals(1, lan.featureAsks)
+        assertEquals(listOf(pc), store.snapshot.sync?.collectionPeers)
+        val (change, cid) = CollectionCatalog.create("Family", snapshot = store.snapshot, now = clock.now)
+        store.commit(change)
+        c.sync(Trigger.MANUAL)
+        assertEquals("a listed peer is not asked again", 1, lan.featureAsks)
+        assertTrue(lan.sent.last().any { it.itemId == CollectionStates.CATALOG_PREFIX + cid })
+    }
+
+    @Test fun wifi_records_an_older_peer_and_asks_again_after_no_answer() = test {
+        lan.features = null // no answer: nothing recorded, asked again
+        val store = LockedStore()
+        val c = qrJoined(store)
+        assertEquals(1, lan.featureAsks)
+        assertEquals(emptyList<String>(), store.snapshot.sync?.collectionPeers)
+        val (change, cid) = CollectionCatalog.create("Family", snapshot = store.snapshot, now = clock.now)
+        store.commit(change)
+        c.sync(Trigger.MANUAL)
+        assertEquals(2, lan.featureAsks)
+        lan.features = false // an older app: never sent collection states
+        c.sync(Trigger.MANUAL)
+        assertEquals(3, lan.featureAsks)
+        assertEquals(emptyList<String>(), store.snapshot.sync?.collectionPeers)
+        assertTrue(lan.sent.none { sent -> sent.any { CollectionStates.isStateId(it.itemId) } })
+        assertNotNull(store.snapshot.records[CollectionStates.CATALOG_PREFIX + cid])
+    }
+
+    @Test fun share_runs_come_after_the_personal_run_and_a_free_device_only_checks_the_keyring() = test {
+        val order = RunOrder()
+        lan.exchange = { order.add("personal"); emptyList() }
+        inviterAnswers()
+        val shared = MemoryFolder()
+        val ordered = OrderedFolders(FakeFolders(shared), order)
+        val store = LockedStore()
+        val local = InMemoryLocalData()
+        var pro = true
+        val c = coordinator(store, deps(SyncVectors.identity("B")).copy(folders = ordered))
+        c.shareTrash = local
+        c.isPro = { pro }
+        assertTrue(c.actionError.value ?: "", c.joinByQr(SyncVectors.qrText()))
+        val (cid, itemId) = sharedNote(store, clock.now)
+
+        val group = c.createShare(cid, "content://share/9", SharePasswords.FIRST, "Phone", membersCanEdit = true)
+        assertNotNull(c.shareActionReason.value ?: "", group)
+        val gid = group!!.groupId
+        assertEquals(emptyList<SyncIssue>(), c.shareIssues.value[gid])
+        val own = ShareGroups.records(store.snapshot)[gid]!!.state.deviceId
+        assertNotNull("the share run wrote its view", shared.get("LocalGateKeys Sync/devices/$own.lgksync"))
+        assertNotNull(store.snapshot.records[itemId])
+
+        order.clear()
+        c.sync(Trigger.MANUAL)
+        assertEquals(listOf("personal", "share"), order.events)
+        assertEquals(emptyList<SyncIssue>(), c.shareIssues.value[gid])
+
+        // Free: the share run does its keyring step only (it would repair a damaged keyring; final review A2), so the
+        // folder is read but, with a current keyring, not changed and no view is written; the status says why. Personal
+        // sync goes on.
+        pro = false
+        val before = shared.snapshot()
+        order.clear()
+        c.sync(Trigger.MANUAL)
+        assertEquals(listOf("personal", "share"), order.events)
+        assertEquals(before, shared.snapshot())
+        assertEquals(listOf(SyncIssue("pro-required", gid)), c.shareIssues.value[gid])
+        val status = c.shareStatus(gid)!!
+        assertEquals(SyncWording.Severity.WARNING, status.severity)
+        assertEquals(SyncWording(EnglishTxt()).shareCopy(SyncIssue("pro-required")), status.text)
+        // Nor can it share another collection (refused before any key derivation or folder access).
+        val (other, otherId) = CollectionCatalog.create("Work", snapshot = store.snapshot, now = clock.now)
+        store.commit(other)
+        order.clear()
+        assertNull(c.createShare(otherId, "content://share/8", SharePasswords.FIRST, "Phone", membersCanEdit = false))
+        assertEquals("pro-required", c.shareActionReason.value)
+        assertFalse(order.events.contains("share"))
+        assertEquals(1, ShareGroups.records(store.snapshot).size)
+    }
+
+    @Test fun a_refused_join_leaves_no_share_record_and_a_used_folder_is_refused() = test {
+        val shared = MemoryFolder()
+        val owner = shareDevice(shared)
+        val (cid, _) = sharedNote(owner.store, clock.now)
+        assertNotNull(
+            owner.coordinator.shareActionReason.value ?: "",
+            owner.coordinator.createShare(cid, "content://share/1", SharePasswords.FIRST, "Owner", membersCanEdit = true),
+        )
+        // The folder already holds a share: sharing another collection there is refused and changes nothing.
+        val (more, moreId) = CollectionCatalog.create("More", snapshot = owner.store.snapshot, now = clock.now)
+        owner.store.commit(more)
+        val ring = shared.get(FolderLayout.KEYRING_PATH)!!.toList()
+        assertNull(owner.coordinator.createShare(moreId, "content://share/1", SharePasswords.FIRST, "Owner", membersCanEdit = true))
+        assertEquals("folder-in-use", owner.coordinator.shareActionReason.value)
+        assertEquals(1, owner.shares.size)
+        assertEquals(ring, shared.get(FolderLayout.KEYRING_PATH)!!.toList())
+        // A folder that cannot be checked counts as used (fails closed): nothing is shared over it.
+        val unchecked = object : FolderAccess by shared {
+            override fun exists(path: String): Boolean = throw java.io.IOException("provider gone")
+        }
+        val broken = shareDevice(shared, folders = FolderOpening { unchecked })
+        val (made, madeId) = CollectionCatalog.create("Elsewhere", snapshot = broken.store.snapshot, now = clock.now)
+        broken.store.commit(made)
+        assertNull(broken.coordinator.createShare(madeId, "content://share/x", SharePasswords.FIRST, "B", membersCanEdit = false))
+        assertEquals("folder-in-use", broken.coordinator.shareActionReason.value)
+        assertNull(broken.store.snapshot.shares)
+
+        val member = shareDevice(shared)
+        val commits = member.store.commits
+        assertNull(member.coordinator.joinShare("content://share/2", "not the share password at all 9", "Member"))
+        assertEquals("password", member.coordinator.shareActionReason.value)
+        assertNull(member.store.snapshot.shares)
+        assertEquals(commits, member.store.commits)
+        assertEquals(ring, shared.get(FolderLayout.KEYRING_PATH)!!.toList())
+        // A free device is refused before the folder is read.
+        member.pro = false
+        assertNull(member.coordinator.joinShare("content://share/2", SharePasswords.FIRST, "Member"))
+        assertEquals("pro-required", member.coordinator.shareActionReason.value)
+        assertNull(member.store.snapshot.shares)
+        assertEquals(0, CollectionCatalog.collections(member.store.snapshot).size)
+    }
+
+    @Test fun a_removal_notice_moves_the_items_to_recently_deleted_and_is_reported_on_the_collection() = test {
+        val p = sharedPair(MemoryFolder())
+        assertEquals(listOf(p.cid), CollectionCatalog.memberships(p.itemId, p.member.store.snapshot))
+
+        // The owner removes the member: a new password, the notice, the rotated keyring.
+        clock.now += 1
+        val memberId = p.member.shares[p.gid]!!.state.deviceId
+        assertFalse(p.owner.coordinator.removeShareMember(p.gid, memberId, SharePasswords.SECOND, "typo"))
+        assertEquals("password-mismatch", p.owner.coordinator.shareActionReason.value)
+        assertTrue(
+            p.owner.coordinator.shareActionReason.value ?: "",
+            p.owner.coordinator.removeShareMember(p.gid, memberId, SharePasswords.SECOND, SharePasswords.SECOND),
+        )
+        assertTrue(p.owner.coordinator.shareRemovalWritten.value)
+
+        clock.now += 1
+        p.member.coordinator.sync(Trigger.MANUAL)
+        // The shared note left the vault for Recently deleted (with its collection); the group is forgotten.
+        assertNull(p.member.store.snapshot.records[p.itemId])
+        assertEquals(listOf(p.itemId), p.member.trashIds())
+        val row = p.member.local.localData!!.trash.single().record() as JsonValue.Obj
+        assertEquals(JsonValue.Arr(listOf(JsonValue.Str(p.cid))), row.fields["collection_ids"])
+        assertEquals(0, p.member.shares.size)
+        // Reported on the collection, which stays (the group is gone).
+        val issue = p.member.coordinator.removedShares.value[p.cid]
+        assertEquals(SyncIssue("share-removed", p.cid), issue)
+        assertEquals(listOf(issue), p.member.coordinator.shareIssues.value[p.gid])
+        val status = SyncWording(EnglishTxt()).shareStatus(issue!!)
+        assertEquals("You were removed from this shared collection. Its items on this phone were moved to the trash.", status.text)
+        assertFalse(status.joinAgain)
+        assertEquals(listOf(p.cid), CollectionCatalog.collections(p.member.store.snapshot).map { it.id })
+        // The owner keeps everything.
+        assertNotNull(p.owner.store.snapshot.records[p.itemId])
+    }
+
+    @Test fun a_removal_with_a_full_trash_waits_and_says_so() = test {
+        val p = sharedPair(MemoryFolder())
+        clock.now += 1
+        val memberId = p.member.shares[p.gid]!!.state.deviceId
+        assertTrue(p.owner.coordinator.removeShareMember(p.gid, memberId, SharePasswords.SECOND, SharePasswords.SECOND))
+        p.member.local.commitLocalData(fullTrash())
+        clock.now += 1
+        p.member.coordinator.sync(Trigger.MANUAL)
+        // Nothing moved, nothing lost: the item and the group stay until Recently deleted has room.
+        assertNotNull(p.member.store.snapshot.records[p.itemId])
+        assertEquals(1, p.member.shares.size)
+        assertEquals(listOf("trash-full"), p.member.coordinator.shareIssues.value[p.gid]?.map { it.kind })
+        assertEquals(
+            "You were removed from this shared collection, but the trash is full. Empty the trash so its items can be moved there.",
+            p.member.coordinator.shareStatus(p.gid)?.text,
+        )
+        p.member.local.commitLocalData(LocalData())
+        clock.now += 1
+        p.member.coordinator.sync(Trigger.MANUAL)
+        assertNull(p.member.store.snapshot.records[p.itemId])
+        assertEquals(listOf(p.itemId), p.member.trashIds())
+    }
+
+    @Test fun share_passwords_are_never_stored() = test {
+        val shared = MemoryFolder()
+        val owner = shareDevice(shared)
+        val member = shareDevice(shared)
+        val (cid, _) = sharedNote(owner.store, clock.now)
+        val gid = owner.coordinator.createShare(cid, "content://share/1", SharePasswords.FIRST, "Owner", membersCanEdit = false)!!.groupId
+        clock.now += 1
+        assertNotNull(member.coordinator.shareActionReason.value ?: "", member.coordinator.joinShare("content://share/2", SharePasswords.FIRST, "Member"))
+        val memberId = member.shares[gid]!!.state.deviceId
+        clock.now += 1
+        owner.coordinator.sync(Trigger.MANUAL)
+        assertTrue(
+            owner.coordinator.shareActionReason.value ?: "",
+            owner.coordinator.removeShareMember(gid, memberId, SharePasswords.SECOND, SharePasswords.SECOND),
+        )
+        fun ByteArray.has(needle: String): Boolean {
+            val n = needle.toByteArray(Charsets.UTF_8)
+            return (0..(size - n.size)).any { i -> n.indices.all { this[i + it] == n[it] } }
+        }
+        for (d in listOf(owner, member)) {
+            val s = d.store.snapshot
+            var bytes = CanonicalJson.encode(JsonValue.Obj(s.records), Dialect.UTF8)
+            s.shares?.let { bytes += CanonicalJson.encode(it, Dialect.UTF8) }
+            for (slot in Slot.values()) {
+                bytes += try {
+                    d.slots.read(slot) ?: ByteArray(0)
+                } catch (e: Exception) {
+                    ByteArray(0)
+                }
+            }
+            val described = ShareGroups.records(s).toString() + s.toString() + d.coordinator.toString()
+            for (password in listOf(SharePasswords.FIRST, SharePasswords.SECOND)) {
+                assertFalse(bytes.has(password))
+                assertFalse(described.contains(password))
+            }
+        }
+        for ((_, file) in shared.files) {
+            assertFalse(file.has(SharePasswords.FIRST))
+            assertFalse(file.has(SharePasswords.SECOND))
+        }
+    }
+
+    @Test fun an_item_a_share_brings_back_leaves_recently_deleted_in_a_vault_with_a_personal_group() = test {
+        val p = sharedPair(MemoryFolder(), memberWifi = true)
+        val member = p.member
+        member.coordinator.sync(Trigger.MANUAL) // the personal run now holds the shared note live
+        assertNotNull(member.store.snapshot.records[p.itemId])
+
+        // The owner takes the note out of the share while the member's Recently deleted is full: the share's delete waits,
+        // and says why (never `busy`).
+        member.local.commitLocalData(fullTrash())
+        setCollections(p.owner.store, p.itemId, emptyList())
+        clock.now += 1
+        p.owner.coordinator.sync(Trigger.MANUAL)
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL)
+        val refused = member.coordinator.shareIssues.value[p.gid]!!
+        assertTrue(refused.toString(), SyncIssue("trash-full", ShareRuns.RUN_DETAIL) in refused)
+        assertFalse(refused.any { it.kind == "busy" })
+        val words = SyncWording(EnglishTxt())
+        assertEquals(words.text(SyncIssue("trash-full")), member.coordinator.shareStatus(p.gid)?.text)
+        assertNotNull(member.store.snapshot.records[p.itemId])
+
+        // Room again: the note goes to Recently deleted, and the next personal run makes its personal meta a tombstone.
+        member.local.commitLocalData(LocalData())
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL)
+        assertNull(member.store.snapshot.records[p.itemId])
+        assertEquals(listOf(p.itemId), member.trashIds())
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL)
+        assertEquals(true, member.store.snapshot.meta[p.itemId]?.deleted)
+
+        // The owner puts it back in the share: it comes back live here and leaves Recently deleted.
+        setCollections(p.owner.store, p.itemId, listOf(p.cid))
+        clock.now += 1
+        p.owner.coordinator.sync(Trigger.MANUAL)
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL)
+        assertNotNull(member.coordinator.shareIssues.value.toString(), member.store.snapshot.records[p.itemId])
+        assertEquals(emptyList<String>(), member.trashIds())
+
+        // Without Recently deleted no share runs, and the share says so rather than looking synced.
+        member.coordinator.shareTrash = null
+        member.coordinator.sync(Trigger.MANUAL)
+        assertTrue(member.coordinator.shareRan(p.gid))
+        assertEquals(listOf(SyncIssue("item-error", ShareRuns.RUN_DETAIL)), member.coordinator.shareIssues.value[p.gid])
+        assertEquals(words.text(SyncIssue("apply-failed")), member.coordinator.shareStatus(p.gid)?.text)
+        assertFalse(member.coordinator.shareRan("00000000-0000-4000-8000-0000000000ff"))
+        // A free device says it needs Pro, as its runs would (5g review R4), not that Recently deleted failed.
+        member.pro = false
+        member.coordinator.sync(Trigger.MANUAL)
+        assertEquals(listOf(SyncIssue("pro-required", p.gid)), member.coordinator.shareIssues.value[p.gid])
+    }
+
+    @Test fun choosing_a_shared_collections_folder_again_is_not_a_damaged_key_file() = test {
+        val me = DeviceIdentity.generate(random = SystemRandomSource())
+        val state = SyncGroupState(java.util.UUID.randomUUID().toString(), 1, ByteArray(32) { 1 }, me, slots.installId(), hasFolder = true)
+        val store = LockedStore(StoreSnapshot(sync = state))
+        // Any keyring with the share fields is a shared collection's (`Keyring.parse` refuses it as `share-group`).
+        folder.put(FolderLayout.KEYRING_PATH, """{"metadata":{},"owner_sig":"x"}""".toByteArray())
+        val c = coordinator(store)
+        assertFalse(c.joinFolder("content://picked/again", SyncVectors.PASSWORD))
+        val words = SyncWording(EnglishTxt())
+        assertEquals(words.errorText("share-group"), c.actionError.value)
+        assertTrue(c.actionError.value != words.errorText("keyring-corrupt"))
+        assertNull(slots.read(Slot.FOLDER_URI))
+        assertEquals(0, store.commits)
+    }
+
+    @Test fun a_damaged_share_store_fails_closed_and_runs_no_share() = test {
+        val shared = MemoryFolder()
+        val d = shareDevice(shared)
+        // A share store that does not decode: no share runs, no folder opened, the status says so.
+        d.store.commit(StoreChange(0, emptyMap(), emptyMap(), null, StoreChange.Shares.Replace(JsonValue.Str("damaged"))))
+        d.coordinator.sync(Trigger.MANUAL)
+        assertEquals(listOf("state-corrupt"), d.coordinator.shareIssues.value[""]?.map { it.kind })
+        assertTrue(shared.files.isEmpty())
+        // The personal Wi-Fi run still runs, with no share link published (links unknown: they wait).
+        personalWifi(d)
+        d.lan.features = true
+        val (change, _) = CollectionCatalog.create("Family", snapshot = d.store.snapshot, now = clock.now)
+        d.store.commit(change)
+        d.coordinator.sync(Trigger.MANUAL)
+        d.coordinator.sync(Trigger.MANUAL)
+        assertTrue(d.lan.exchanges >= 2)
+        assertTrue(d.lan.sent.last().any { it.itemId.startsWith(CollectionStates.CATALOG_PREFIX) })
+        assertTrue(d.lan.sent.none { sent -> sent.any { it.itemId.startsWith(CollectionStates.LINK_PREFIX) } })
+    }
+
+    @Test fun a_damaged_store_holding_a_real_share_runs_no_share_and_changes_nothing() = test {
+        // Final wave (5m review finding 2): damage a store that holds a created and synced share, with an edit of the
+        // shared item waiting, so a share run would have something to write.
+        val shared = MemoryFolder()
+        val owner = shareDevice(shared)
+        val (cid, itemId) = sharedNote(owner.store, clock.now)
+        val gid = checkNotNull(
+            owner.coordinator.createShare(cid, "content://share/owner", SharePasswords.FIRST, "Owner", membersCanEdit = true),
+        ) { owner.coordinator.shareActionReason.value ?: "" }.groupId
+        clock.now += 1
+        owner.coordinator.sync(Trigger.MANUAL)
+        assertEquals(emptyList<SyncIssue>(), owner.coordinator.shareIssues.value[gid])
+        var s = owner.store.snapshot
+        val (_, edited) = noteRecord(7, "Edited")
+        owner.store.commit(StoreChange(s.revision, s.records + (itemId to edited), s.meta, s.sync))
+        s = owner.store.snapshot
+        owner.store.commit(StoreChange(s.revision, s.records, s.meta, s.sync, StoreChange.Shares.Replace(JsonValue.Str("damaged"))))
+        val folderBefore = shared.snapshot()
+        val recordsBefore = owner.store.snapshot.records
+        val metaBefore = owner.store.snapshot.meta
+        clock.now += 1
+        owner.coordinator.sync(Trigger.MANUAL)
+        assertEquals(listOf("state-corrupt"), owner.coordinator.shareIssues.value[""]?.map { it.kind })
+        assertEquals("no share run wrote the edit", folderBefore, shared.snapshot())
+        assertEquals(recordsBefore, owner.store.snapshot.records)
+        assertEquals(metaBefore, owner.store.snapshot.meta)
+    }
+
+    @Test fun a_personal_folder_peer_never_changes_an_item_of_a_view_only_share() = test {
+        // Final wave (5m review finding 1): the personal folder run gets this device's share records
+        // (`collectionShares`); without them a personal peer could change an item of a view-only share here.
+        seedEpoch1Folder()
+        val shared = MemoryFolder()
+        val personal = FakeFolders(folder)
+        val share = FakeFolders(shared)
+        val routed = FolderOpening { uri -> if (uri == "content://picked/bm") personal.open(uri) else share.open(uri) }
+        val owner = shareDevice(shared)
+        val member = shareDevice(shared, folders = routed)
+        assertTrue(member.coordinator.actionError.value ?: "", member.coordinator.joinFolder("content://picked/bm", SyncVectors.PASSWORD))
+        val (cid, itemId) = sharedNote(owner.store, clock.now)
+        val gid = checkNotNull(
+            owner.coordinator.createShare(cid, "content://share/owner", SharePasswords.FIRST, "Owner", membersCanEdit = false),
+        ) { owner.coordinator.shareActionReason.value ?: "" }.groupId
+        clock.now += 1
+        assertEquals(member.coordinator.shareActionReason.value ?: "", gid,
+            member.coordinator.joinShare("content://share/member", SharePasswords.FIRST, "Member")?.groupId)
+        clock.now += 1
+        owner.coordinator.sync(Trigger.MANUAL)
+        assertNotNull(owner.coordinator.approveShare(gid, ShareGroups.pendingMembers(owner.store.snapshot, gid).map { it.deviceId }))
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL)
+        clock.now += 1
+        member.coordinator.sync(Trigger.MANUAL) // the personal run now holds the shared item too
+        assertEquals(setOf(cid), ShareGroups.readOnlyCollectionIds(member.store.snapshot))
+        val before = checkNotNull(member.store.snapshot.records[itemId])
+        val vv = checkNotNull(member.store.snapshot.meta[itemId]) { "the personal run published it" }.vv
+
+        // Personal peer A (the vectors' device) publishes an edit of that item, a version above this device's.
+        val state = checkNotNull(member.store.snapshot.sync)
+        val gk = GroupKey(state.groupId, state.epoch, state.key)
+        val a = SyncVectors.identity("A")
+        val path = "LocalGateKeys Sync/devices/${a.deviceId}.lgksync"
+        val (header, states) = ViewFile.decode(folder.get(path)!!, gk, a.deviceId)
+        val (_, changed) = noteRecord(7, "Changed by a personal peer")
+        val edit = ItemState(itemId, vv + (a.deviceId to 1_000L), false, null, changed)
+        clock.now += 60
+        val next = ViewFile.encode(gk, a.deviceId, header.counter + 1, states + edit, clock, SystemRandomSource())
+        folder.put(path, next)
+        folder.put(FolderLayout.signatureFile(a.deviceId)!!, ViewSignature.sign(next, ViewFile.decodeHeader(next), a))
+        member.coordinator.sync(Trigger.MANUAL)
+        assertEquals(header.counter + 1, member.store.snapshot.sync!!.lastSeen[a.deviceId])
+        assertEquals("the view-only item is not changed by a personal peer", before, member.store.snapshot.records[itemId])
+    }
+
+    @Test fun share_folders_keep_their_permission_and_lose_it_once_left() = test {
+        val shared = MemoryFolder()
+        val folders = FakeFolders(shared)
+        val owner = shareDevice(shared, folders = folders)
+        val (cid, _) = sharedNote(owner.store, clock.now)
+        val gid = owner.coordinator.createShare(cid, "content://share/kept", SharePasswords.FIRST, "Owner", membersCanEdit = true)!!.groupId
+        // A personal pick cancelled meanwhile gives up every other folder, but never the share's.
+        owner.coordinator.releaseUnusedFolders()
+        assertEquals(setOf("content://share/kept"), folders.keptAll.last())
+        // Stopped sharing: its folder is given up too.
+        assertTrue(owner.coordinator.leaveShare(gid))
+        assertEquals(0, owner.shares.size)
+        assertNull(folders.kept.last())
     }
 }

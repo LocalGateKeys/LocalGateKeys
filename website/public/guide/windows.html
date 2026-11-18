@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys for Windows: user guide</title>
+  <meta name="description" content="How to set up, unlock, fill, import, back up and sync LocalGateKeys on Windows 10 and 11, step by step.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/windows">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/windows">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/windows">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/windows">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/windows">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/windows">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys for Windows: user guide">
+  <meta property="og:description" content="How to set up, unlock, fill, import, back up and sync LocalGateKeys on Windows 10 and 11, step by step.">
+  <meta property="og:url" content="https://localgatekeys.app/guide/windows">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The LocalGateKeys logo: a password manager for Windows, Mac and iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys for Windows: user guide">
+  <meta name="twitter:description" content="How to set up, unlock, fill, import, back up and sync LocalGateKeys on Windows 10 and 11, step by step.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Main">
+        <ul class="nav">
+          <li><a href="../features">Features</a></li>
+          <li><a href="../get-started">Get started</a></li>
+          <li><a href="../help">Guide</a></li>
+          <li><a href="../security">Security</a></li>
+          <li><a href="../pricing">Pricing</a></li>
+          <li><a href="../support">Support</a></li>
+          <li><a class="nav-cta" href="../download">Download</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Main">
+          <ul class="nav nav-stack">
+            <li><a href="../features">Features</a></li>
+          <li><a href="../get-started">Get started</a></li>
+          <li><a href="../help">Guide</a></li>
+          <li><a href="../security">Security</a></li>
+          <li><a href="../pricing">Pricing</a></li>
+          <li><a href="../support">Support</a></li>
+          <li><a class="nav-cta" href="../download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Language</span></summary>
+        <ul class="lang-menu-list"><li><a href="../guide/windows" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys for Windows</h1>
+  <p class="lead">Step-by-step help for every screen and feature on this device. Every heading is a link you can share.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platforms">
+    <ul><li><a class="help-tab" href="../guide/windows" aria-current="page">Windows</a></li><li><a class="help-tab" href="../guide/mac">Mac</a></li><li><a class="help-tab" href="../guide/iphone">iPhone and iPad</a></li><li><a class="help-tab" href="../guide/android">Android</a></li><li><a class="help-tab" href="../guide/extension">Browser extension</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Good to know on every device</h2>
+    <ul>
+      <li><strong>Your vault stays on your devices.</strong> There is no account and no LocalGateKeys server holding your passwords.</li>
+      <li><strong>Nobody can reset your master password or app password.</strong> Set up a recovery phrase and keep it on paper.</li>
+      <li><strong>Free</strong> holds up to 7 items. <strong>Pro</strong> (US$29.99, paid once) adds unlimited items, two-factor codes, files and sync. Editing, deleting and filling items you already have are never blocked.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Windows topics</h2>
+    <p class="panel-lead">Windows 10 (version 2004 or later) and Windows 11, 64-bit. Install it from the Microsoft Store or the <a href="../download">download page</a>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Windows topics">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#win-setup">First start and profiles</a></li>
+            <li><a href="#win-unlock">Unlocking and locking</a></li>
+            <li><a href="#win-screen">The main window</a></li>
+            <li><a href="#win-items">Adding and editing items</a></li>
+            <li><a href="#win-trash">Deleting, trash and undo</a></li>
+            <li><a href="#win-search">Search, palette, Quick access</a></li>
+            <li><a href="#win-generator">Password generator</a></li>
+            <li><a href="#win-security">Security center</a></li>
+            <li><a href="#win-2fa">Two-factor codes and QR</a></li>
+            <li><a href="#win-import">Import</a></li>
+            <li><a href="#win-export">Export and transfer</a></li>
+            <li><a href="#win-backups">Backups and restore</a></li>
+            <li><a href="#win-sync">Sync</a></li>
+            <li><a href="#win-share">Sharing an item</a></li>
+            <li><a href="#win-apps">Filling Windows apps</a></li>
+            <li><a href="#win-shared">Shared collections</a></li>
+            <li><a href="#win-safety">Emergency access and duress password</a></li>
+            <li><a href="#win-dev">Developer tools and AI agents</a></li>
+            <li><a href="#win-settings">Settings</a></li>
+            <li><a href="#win-pro">Pro licence</a></li>
+            <li><a href="#win-updates">Updates</a></li>
+            <li><a href="#win-keys">Keyboard shortcuts</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">First start and profiles</a></h3>
+          <ol>
+            <li>Open LocalGateKeys. Enter a <strong>Master password</strong> of at least 12 characters, type it again in <strong>Confirm password</strong>, and choose <strong>Create vault</strong>.</li>
+            <li>The <strong>Set up LocalGateKeys</strong> guide follows, in five steps: create the vault, <strong>Set up Windows Hello</strong>, <strong>Import</strong> your passwords, <strong>Open recovery phrase</strong> (you retype three of its words to prove you saved it), and <strong>Test connection</strong> for the browser extension.</li>
+            <li>You can <strong>Skip</strong> any step. Skipped steps wait on a <em>Finish setting up</em> card in the vault, with <strong>Continue setup</strong> and <strong>Hide</strong>.</li>
+          </ol>
+          <p class="tip"><strong>Tip.</strong> To see the guide again: Settings › Help &amp; diagnostics › <strong>Show setup again</strong>.</p>
+          <h4>Profiles</h4>
+          <p>Each profile is a separate vault with its own master password, for example one for work and one for home.</p>
+          <ul>
+            <li>On the unlock screen choose <strong>Use another profile</strong>, then <strong>Create profile</strong> and type a <strong>Profile name</strong>.</li>
+            <li>To edit a profile, press Ctrl+K and run <strong>Switch profile</strong>. There you can <strong>Add profile</strong>, <strong>Edit</strong>, set a <strong>Photo…</strong> and <strong>Accent colour</strong>, or <strong>Remove</strong> it.</li>
+            <li>The tray menu's <strong>Lock &amp; switch person</strong> locks and goes straight to the profile chooser.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">Unlocking and locking</a></h3>
+          <h4>Ways to unlock</h4>
+          <ul>
+            <li><strong>Master password</strong>, then <strong>Unlock</strong>. Always works.</li>
+            <li><strong>Unlock with Windows Hello</strong>: fingerprint, face or PIN. Set it up in Settings › Unlocking › Windows Hello › <strong>Set up</strong>. <strong>Start Windows Hello automatically</strong> (on by default) shows the prompt as soon as the window opens.</li>
+            <li><strong>Use camera instead</strong>: face matching with an ordinary webcam, done on the PC. It is less secure than Windows Hello. Set it up with <strong>Set up camera verification</strong>.</li>
+          </ul>
+          <h4>Forgot your master password?</h4>
+          <ol>
+            <li>On the unlock screen choose <strong>Forgot it? Use recovery phrase</strong>.</li>
+            <li>Type the 24 words, separated by spaces.</li>
+            <li>Choose a new master password (12 characters or more), type it twice and choose <strong>Recover vault</strong>.</li>
+          </ol>
+          <p class="note"><strong>Afterwards</strong> set up Windows Hello and camera verification again. The recovery phrase keeps working.</p>
+          <h4>Change the master password</h4>
+          <p>Settings › Unlocking › Master password › <strong>Change…</strong>. Enter the current one and the new one twice. To keep your recovery phrase working, also enter its 24 words; otherwise create a new phrase afterwards. Backups you already made keep the password they were made with.</p>
+          <h4>Locking</h4>
+          <ul>
+            <li><strong>Lock</strong> button in the top bar, or <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
+            <li><strong>Emergency lock</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> anywhere in Windows. It locks at once and cancels any fill in progress.</li>
+            <li>Settings › Locking:
+              <ul>
+                <li><strong>Lock after inactivity</strong>: Never, or 1 minute up to 24 hours.</li>
+                <li><strong>Lock when Windows locks</strong> (Win+L, switching user, signing out) and <strong>Lock on sleep</strong> (lid closed, sleep, hibernate).</li>
+                <li><strong>Never stay unlocked longer than</strong>: a hard limit, whatever you are doing.</li>
+                <li><strong>Count activity from</strong>: Computer activity or Vault activity.</li>
+                <li><strong>Ask before releasing 2FA codes</strong> to the browser extension.</li>
+              </ul>
+            </li>
+          </ul>
+          <p>The tray icon menu has <strong>Open LocalGateKeys</strong>, <strong>Unlock vault</strong>, <strong>Lock vault</strong>, <strong>Lock &amp; switch person</strong>, <strong>Quick access</strong>, <strong>Check for updates</strong>, switches for <strong>Browser integration</strong> and <strong>Desktop fill icons</strong>, and <strong>Exit</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">The main window</a></h3>
+          <dl class="defs">
+            <dt>Sidebar · Vault</dt><dd><strong>All items</strong>, <strong>Favorites</strong>, <strong>Recently used</strong>.</dd>
+            <dt>Sidebar · Types</dt><dd>One entry per kind you have, such as Logins, Cards, Identities, Secure notes, Documents, Wi-Fi or Passkeys.</dd>
+            <dt>Sidebar · Collections &amp; views</dt><dd>Your collections and pinned views.</dd>
+            <dt>Sidebar · Tools</dt><dd>Security center, Generator, Sync &amp; devices, Devices &amp; connections, Import &amp; export, Trash. <strong>Settings</strong> is at the bottom. Reminders open from the <em>Coming up</em> card on Home, Activity from the Security center, Scan QR code with <kbd>Ctrl</kbd>+<kbd>K</kbd>, and Licence from Settings › Plan &amp; sync. <kbd>Ctrl</kbd>+<kbd>K</kbd> reaches every page.</dd>
+            <dt>Top bar</dt><dd>Search box, <strong>New item</strong>, <strong>Lock</strong>, and <strong>Ctrl K</strong> for the command palette.</dd>
+            <dt>Home</dt><dd>Cards for Password health, Backup &amp; recovery, Coming up and Generator, plus <strong>One-time codes</strong> (click a code to copy it).</dd>
+          </dl>
+          <h4>The item list</h4>
+          <ul>
+            <li>Filter chips: <strong>All</strong>, <strong>Needs attention</strong>, <strong>No 2FA</strong>, <strong>Expiring</strong>.</li>
+            <li><strong>Sort</strong>: Title A–Z, Title Z–A, Date modified, Date created.</li>
+            <li>Flags on a row show a password that is Breached, Weak or Reused.</li>
+            <li>Right-click a row (or <kbd>Shift</kbd>+<kbd>F10</kbd>) for Edit, Copy username, Copy password, Copy 2FA code, Open website, Share…, Add to favorites and Move to trash….</li>
+          </ul>
+          <h4>The detail pane</h4>
+          <p>Shows the fields of the selected item. Passwords stay hidden until you click them. Buttons copy the username, password or 2FA code, open the website, <strong>Edit</strong>, <strong>Share</strong> or <strong>Move to trash</strong>. Documents add <strong>Open file</strong>, <strong>Safe preview</strong>, <strong>Save a copy…</strong> and <strong>Replace file…</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">Adding and editing items</a></h3>
+          <ol>
+            <li>Choose <strong>New item</strong> or press <kbd>Ctrl</kbd>+<kbd>N</kbd>.</li>
+            <li>Pick a kind (click it, press its number, or start typing its name):
+              <ul>
+                <li><em>Sign-ins</em>: Website login, Desktop app login, Passkey</li>
+                <li><em>Money</em>: Payment card, Bank account · <em>Personal</em>: Identity, Secure note, Document</li>
+                <li><em>Tech</em>: SSH key, API key, Wi-Fi network, Bookmark · <em>Things you own</em>: License, Subscription, Warranty, Purchase</li>
+              </ul>
+            </li>
+            <li>Fill in the fields and choose <strong>Save</strong>. If you leave with unsaved changes you are asked <em>Discard your changes?</em></li>
+          </ol>
+          <h4>Logins in detail</h4>
+          <ul>
+            <li><strong>Title</strong>, <strong>Website</strong>, <strong>Username</strong>, <strong>Password</strong> and <strong>Notes</strong>.</li>
+            <li><strong>Change</strong> next to the password lets you type a new one, or choose <strong>Passphrase</strong>, <strong>Random</strong> or <strong>PIN</strong> to make one. Change it on the website too, then save.</li>
+            <li><strong>Two-factor</strong>: paste the site's setup key here (Pro). See <a href="#win-2fa">Two-factor codes</a>.</li>
+            <li><strong>Custom fields</strong>: <strong>Add field</strong> for anything else. Mark a field Hidden to treat it like a password.</li>
+            <li><strong>Password history</strong>: up to 5 old passwords are kept, encrypted, for a year. <strong>Copy previous password</strong> or <strong>Restore this password</strong>.</li>
+            <li><strong>Recovery codes</strong>: one per line. <strong>Copy and use next code</strong> copies one and removes it from the list.</li>
+            <li><strong>Autofill rules</strong>: Filling (On click or Off), Sign in after filling (Default, Never or Always), Always ask for the master password, and Offer to save changes from the browser.</li>
+          </ul>
+          <h4>Other kinds</h4>
+          <p>Each kind has its own fields. Dates are written as YYYY-MM-DD. Every item can be a <strong>Favorite</strong> and carry <strong>Tags</strong> (separate them with commas). Documents use <strong>Choose file and save</strong> (Pro).</p>
+          <h4>Collections and reminders</h4>
+          <ul>
+            <li>Collections group items your way: <strong>Add collection</strong>, <strong>Rename</strong>, <strong>Archive</strong>. They sync with your other devices, and you can share one with other people (see <a href="#win-shared">Shared collections</a>).</li>
+            <li><strong>Reminders</strong> lists items that expire soon or are overdue, with <strong>Complete</strong> and <strong>Snooze 1 day</strong>.</li>
+            <li><strong>Activity</strong> shows a history of what happened in the vault.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">Deleting, trash and undo</a></h3>
+          <ol>
+            <li>Select an item and choose <strong>Move to trash</strong> or press <kbd>Delete</kbd>.</li>
+            <li>A message appears with <strong>Undo</strong>: click it to bring the item straight back.</li>
+            <li>Later, open Tools › <strong>Trash</strong> and use <strong>Restore selected</strong>, <strong>Delete selected</strong> or <strong>Empty trash</strong>. Deleting from the trash cannot be undone.</li>
+          </ol>
+          <p>Settings › Privacy › <strong>Keep deleted items for</strong> sets 7, 14, 30 or 90 days, and <strong>Empty trash automatically</strong> clears it for you.</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">Search, command palette and Quick access</a></h3>
+          <ul>
+            <li><strong>Search</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>, type, and press <kbd>Enter</kbd> to open the top result or <kbd>↓</kbd> to move into the list.</li>
+            <li><strong>Command palette</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd> finds items and actions. Start with <code>&gt;</code> for actions only (Back up now, Generate password, Lock now, Sync status…), <code>#</code> for tags and <code>@</code> for collections.</li>
+            <li><strong>Quick access</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> anywhere in Windows opens LocalGateKeys on the Quick access page, to find a login, note or bookmark. Change the shortcut in Settings › Autofill › Quick access.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">Password generator</a></h3>
+          <p>Open it from the <strong>Generator</strong> card on Home or with Ctrl+K › Generate password.</p>
+          <ul>
+            <li><strong>Random</strong>: choose the length and which characters to use: A–Z, a–z, 0–9 and symbols.</li>
+            <li><strong>Passphrase</strong>: choose the number of words. Easier to type, just as strong when long enough.</li>
+            <li><strong>Generate again</strong> for a new one, <strong>Copy</strong> to copy it.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">Security center and password health</a></h3>
+          <p>Tools › <strong>Security center</strong> lists what to fix first: weak, reused, old and breached passwords, and logins that could have 2FA.</p>
+          <ul>
+            <li><strong>Check all for breaches</strong> compares your passwords with the Have I Been Pwned list. Only the first 5 characters of a hash leave your PC, never the password.</li>
+            <li>Breach checks need two changes in Settings › Privacy: turn off <strong>Strict offline mode</strong> (on by default) and turn on <strong>Breach checks</strong>. Strict offline mode blocks breach checks, website icons and every other network request.</li>
+            <li>On <strong>Password health</strong> use <strong>Open entry</strong> or <strong>Change password</strong> to fix an item.</li>
+          </ul>
+          <p><strong>Network activity</strong>, at the bottom of the Security center, lists each time LocalGateKeys went online and why: update checks, breach checks, website icons and sync with your own devices.</p>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">Two-factor codes and QR scanning</a> <span class="badge-pro">Pro</span></h3>
+          <p>LocalGateKeys can show the 6-digit codes a site asks for after the password, so you don't need a separate authenticator app.</p>
+          <ol>
+            <li>On the website, turn on two-factor / authenticator-app sign-in so it shows a QR code.</li>
+            <li>In LocalGateKeys choose Ctrl+K › <strong>Scan QR code</strong>. Bring the picture in one of three ways:
+              <ul>
+                <li><strong>Paste screenshot</strong>: press <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, select the QR code, then <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+                <li><strong>Choose image…</strong> (PNG, JPEG, BMP) or drag the image in.</li>
+                <li><strong>Use webcam</strong> and hold a phone screen showing the code up to it.</li>
+              </ul>
+            </li>
+            <li>Pick the login it belongs to, or <strong>New login</strong>, then <strong>Open in editor</strong> and <strong>Save</strong>.</li>
+            <li>Type the current code on the website to finish turning on 2FA there.</li>
+          </ol>
+          <p>You can also paste the setup key or an <code>otpauth://</code> link straight into the login's <strong>Two-factor</strong> section.</p>
+          <h4>Moving from Google Authenticator</h4>
+          <ol>
+            <li>In Google Authenticator choose <strong>Transfer accounts › Export</strong>.</li>
+            <li>Scan the QR code it shows (for several codes, scan each one: "Code 1 of 3 scanned").</li>
+            <li>Tick the accounts, choose <strong>Add to existing login</strong> or New login, then <strong>Add</strong>. Duplicates are skipped.</li>
+          </ol>
+          <p class="note">New logins made this way get the tag <code>needs-password</code>: fill in the real password later. Pictures are read in memory and never saved. On Free, codes you already have keep working; adding or changing them needs Pro.</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">Import from another password manager</a></h3>
+          <ol>
+            <li>Export your passwords from the old app (see the list below).</li>
+            <li>In LocalGateKeys open Tools › Import &amp; export › <strong>Import passwords &amp; items…</strong> and choose the file. The format is recognised automatically. Encrypted files ask for their <strong>Import password</strong>.</li>
+            <li>A plain CSV from an unknown app shows <strong>Choose columns</strong>: tell it which column is the title, username, password and so on.</li>
+            <li>Review every row: Add, Skip, Replace, Merge or Keep both. Use <strong>Add all new</strong>, <strong>Replace all conflicts</strong> or <strong>Skip everything</strong> for all at once.</li>
+            <li>Choose <strong>Import</strong>. It all goes in at once; if anything fails, nothing is written.</li>
+            <li><strong>Delete the export file</strong>: it holds your passwords unencrypted.</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">From</th><th scope="col">File</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux or CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (also password-protected) or CSV</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip or CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (opened directly), XML or CSV</td></tr>
+              <tr><td>Proton Pass</td><td>JSON zip or CSV (export without PGP)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Apple Passwords</td><td>CSV</td></tr>
+              <tr><td>Anything else</td><td>CSV, with column choice</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Not imported: trash, password history, passkeys and attachments. <code>http://</code> sites are saved as https. Entries with no website or password become secure notes. On Free, the 7-item limit applies. Credential Exchange (CXF) files (<code>.json</code> or <code>.cxf</code>) from other password managers are recognised too, and bring passkeys along.</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">Export and encrypted transfer</a></h3>
+          <p>Tools › Import &amp; export › <strong>Export…</strong> offers:</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong>: encrypted with a password you choose (12+ characters). The safe choice.</li>
+            <li>Bitwarden-compatible CSV, Bitwarden JSON, KeePass 2 XML: <em>unencrypted</em>. Delete them after use.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: the logins, notes and passkeys you pick, for another password manager. <em>Unencrypted</em>; passkey private keys are included only if you agree.</li>
+            <li>Tick <strong>Include one-time password (2FA) secrets</strong> to take your 2FA codes along.</li>
+          </ul>
+          <p><strong>Encrypted transfer…</strong> moves chosen items (by favourites, kinds, tags) to another profile or PC in a password-protected package. On the other side choose <strong>Import a package</strong>, <strong>Inspect</strong>, <strong>Preview</strong>, then import.</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">Backups and restore</a></h3>
+          <h4>Scheduled backups (recommended)</h4>
+          <ol>
+            <li>Settings › Backups › <strong>Backup password</strong> › <strong>Set…</strong>. Use 12+ characters and <strong>write it down</strong>.</li>
+            <li><strong>Scheduled backups</strong>: Daily or Weekly, with <strong>Time of day</strong> and <strong>Day of the week</strong>.</li>
+            <li><strong>Cloud copy</strong> › <strong>Choose…</strong> a folder, such as a USB drive or a second disk, for a second copy.</li>
+            <li><strong>Old scheduled backups</strong>: keep only the latest, or the latest and previous.</li>
+            <li><strong>Weekly restore test</strong>: each week LocalGateKeys proves that a scheduled backup restores. Nothing is stored. <strong>Automatic backups to keep</strong> sets how many automatic backups are kept.</li>
+          </ol>
+          <p class="note">Backups run only while the vault is unlocked. One missed while the app was closed runs at the next unlock.</p>
+          <h4>Backup &amp; restore page</h4>
+          <p>Open it from the Backup &amp; recovery card, Ctrl+K, or <strong>Backup &amp; restore</strong> on the unlock screen.</p>
+          <ul>
+            <li><strong>Create a backup</strong>: an encrypted <code>.lgk</code> file with its own password.</li>
+            <li><strong>Verify a backup</strong>: checks a file opens, without touching your vault.</li>
+            <li><strong>Restore backup</strong>: needs the backup password and the master password from when it was made. You can restore it as a new profile.</li>
+            <li><strong>Test a restore</strong>: opens a temporary copy to prove your backup works, then <strong>Discard the test copy</strong>.</li>
+            <li><strong>Recovery phrase</strong> (Set up / Replace…) and <strong>Write recovery kit</strong>, a printable sheet.</li>
+          </ul>
+          <h4>Restoring a phone backup</h4>
+          <p>Import &amp; export › <strong>Restore phone backup…</strong>, choose the <code>.lgkm</code> file from the iPhone app, enter its password, <strong>Preview</strong>, then <strong>Restore</strong>. Items are added to your vault; nothing is wiped.</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">Sync between devices</a> <span class="badge-pro">Pro</span></h3>
+          <p>Sync runs only while unlocked: when you unlock, every 5 minutes, and a few seconds after a change. Two ways, and you can use both:</p>
+          <h4>Wi-Fi (phone or another PC on the same network)</h4>
+          <ol>
+            <li>Sync &amp; devices › <strong>Turn on Wi-Fi sync…</strong>. Keep the suggested address and port (47821), and choose <strong>Allow through Windows Firewall</strong> if asked.</li>
+            <li>Choose <strong>Show QR code…</strong>. The code works once, for 120 seconds.</li>
+            <li>Scan it with the phone app's Sync tab. For another PC, choose <strong>Copy code text</strong> and use <strong>Join by QR text…</strong> there.</li>
+            <li>Both devices show a 6-digit code. Choose <strong>Accept</strong> only if they match, otherwise <strong>Decline</strong>.</li>
+            <li>Right after pairing, <strong>Undo</strong> removes the new device if it was a mistake.</li>
+          </ol>
+          <p>If the PC's address changes, choose <strong>Find again</strong> on the phone.</p>
+          <h4>Cloud folder (Dropbox, iCloud Drive…)</h4>
+          <ol>
+            <li>On the first device: <strong>Create sync group…</strong>, choose a folder your cloud app syncs, and set a strong sync password (12+ characters).</li>
+            <li>On each other device: <strong>Join a folder…</strong>, choose the folder holding <em>LocalGateKeys Sync</em>, enter the sync password.</li>
+          </ol>
+          <p>The cloud only ever sees encrypted files.</p>
+          <p class="note">OneDrive and Google Drive are unavailable for sync for now, until an issue with Apple is resolved. Use Dropbox, iCloud Drive or Wi-Fi sync instead.</p>
+          <h4>Managing sync</h4>
+          <ul>
+            <li><strong>Sync now</strong> on the Sync status page (click the sync pill in the sidebar).</li>
+            <li><strong>Remove a device…</strong> (sets a new sync password), <strong>Change sync password…</strong>.</li>
+            <li><strong>Leave sync…</strong> keeps your items and forgets the group. <strong>Reset sync on this PC…</strong> also forgets its keys (asks twice).</li>
+            <li>If an item changed on two devices at once, the extra copy gets <em>(sync conflict)</em> in its title.</li>
+          </ul>
+          <p class="note">Every device in the group needs Pro. A free PC paired with an iPhone that has Pro takes the licence over sync and becomes Pro (see <a href="#win-pro">Pro licence</a>). Up to 16 devices per group.</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">Sharing an item with someone</a></h3>
+          <ol>
+            <li>Select the item, choose <strong>Share</strong>, then <strong>Create share</strong>.</li>
+            <li>LocalGateKeys shows a six-word <strong>Share code</strong>. Choose <strong>Save as file…</strong> (a <code>.lgkshare</code>) or <strong>Show QR code</strong>.</li>
+            <li>Send the file, then tell the person the six words <em>another way</em>, such as by phone or in person.</li>
+          </ol>
+          <p><strong>Receiving:</strong> double-click the <code>.lgkshare</code> file, or Ctrl+K › Incoming shared items › <strong>Open a shared item…</strong>. Enter the six words, check the <strong>Preview</strong>, then <strong>Save to vault</strong>, <strong>Keep both</strong> or <strong>Reject</strong>. Passkeys, documents and items with an attached file cannot be shared.</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">Filling Windows apps</a></h3>
+          <p>LocalGateKeys can fill sign-in windows of ordinary Windows programs, not just websites.</p>
+          <ol>
+            <li>Open the program's sign-in window.</li>
+            <li>Press <kbd>Ctrl</kbd>+<kbd>N</kbd>, choose <strong>Desktop app login</strong>, then <strong>Inspect the app…</strong>.</li>
+            <li><strong>Map login fields</strong>: point at the username and password boxes. Optionally <strong>Map sign-in button…</strong>.</li>
+            <li><strong>Save login</strong>.</li>
+            <li>Next time, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> in that program or click the fill button next to its password box.</li>
+          </ol>
+          <p>If the program changes after an update, open the login and choose <strong>App binding…</strong> › <strong>Refresh binding…</strong>. LocalGateKeys reads only the window layout, never what you type.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Shared collections</a> <span class="badge-pro">Pro</span></h3>
+          <p>Share one collection with family or a team through a folder you all can reach, such as a shared OneDrive folder. Open the collection, choose <strong>Share collection</strong>, pick the folder, choose whether members can edit or only view, and set a share password.</p>
+          <p>The others choose <strong>Join a shared collection</strong>, pick the folder and type the share password; you then choose <strong>Let them in</strong>. Only that collection goes through the folder: your other items stay private. You can remove a person, <strong>Stop sharing</strong> or leave at any time.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Emergency access and duress password</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Emergency access</strong> (Pro): on the Backup &amp; restore page choose <strong>Set up emergency access</strong>. Your recovery phrase is split into shards for people you trust; you choose how many shards are needed and a waiting period. Give each holder their sheet or shard file.</li>
+            <li>When enough holders ask for access through the shared folder, your devices show the request and you can <strong>Deny</strong> it until the waiting period ends. A holder chooses <strong>I was given access</strong>, adds the shards and chooses <strong>Ask for access</strong>; once access is granted, the vault opens as a new profile.</li>
+            <li><strong>Estate pack</strong>, on the same page, creates a note for your heirs (where the will is, accounts to close, devices and who holds a shard), then the <strong>Emergency kit</strong> to print.</li>
+            <li><strong>Duress password</strong> (Pro): Settings › Unlocking › <strong>Duress password</strong> › <strong>Set up</strong>. It is a second master password for when someone forces you to unlock. It opens a separate vault with only the items you choose, and your real vault then refuses its master password for the hours you set. It is on Windows, Mac, iPhone and Android.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Developer tools and AI agents</a></h3>
+          <p>Settings › <strong>Developer</strong> offers SSH keys from your vault to ssh and Git on this PC, for sign-in and commit signing. Every signature asks for your approval. <strong>Generate</strong> creates a new Ed25519 key in the vault.</p>
+          <p><strong>Allow AI agents to use LocalGateKeys</strong> lets agents such as Claude Code connect over MCP. You approve each sign-in or read once; the agent never sees a password, and every request is logged. In the Microsoft Store version, add it with <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">Settings</a></h3>
+          <p>Use the <strong>Search settings</strong> box at the top (<kbd>Ctrl</kbd>+<kbd>F</kbd>) to find any option. Changes save at once.</p>
+          <dl class="defs">
+            <dt>Unlocking</dt><dd>Windows Hello, security key, camera check, key file, YubiKey, master password, recovery phrase.</dd>
+            <dt>Locking</dt><dd>Auto-lock timings and triggers (see <a href="#win-unlock">Unlocking and locking</a>).</dd>
+            <dt>Autofill</dt><dd>Browser autofill, <strong>Offer LocalGateKeys for passkeys</strong>, desktop app autofill, sign in after filling, Quick access shortcut. <strong>Use LocalGateKeys for Windows passkeys</strong> offers your passkeys in every app and browser on Windows 11, with your approval each time.</dd>
+            <dt>Privacy</dt><dd><strong>Clear clipboard after</strong> (5 seconds to 5 minutes), breach checks, strict offline mode, hide from screenshots and screen sharing, trash timing, opening documents in other apps.</dd>
+            <dt>Backups</dt><dd>See <a href="#win-backups">Backups and restore</a>.</dd>
+            <dt>Appearance &amp; app</dt><dd><strong>Theme</strong> System, Light or Dark; <strong>Language</strong>; <strong>Start with Windows</strong> (starts locked); <strong>Keep running in the tray</strong>; Updates.</dd>
+            <dt>Plan &amp; sync</dt><dd>Your licence, device sync, and <strong>Erase this device if it is removed from sync</strong>.</dd>
+            <dt>Developer</dt><dd>SSH agent and Git signing, and AI agents (see <a href="#win-dev">Developer tools and AI agents</a>).</dd>
+            <dt>Help &amp; diagnostics</dt><dd>Keyboard shortcuts, Show setup again, Devices &amp; connections, Error log, legal pages.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Pro licence</a></h3>
+          <ol>
+            <li>Buy Pro on the <a href="../pricing">pricing page</a>. Your key (starting <code>LGK1-</code>) arrives by email.</li>
+            <li>Open Settings › Plan &amp; sync › <strong>Licence</strong>, paste the key and choose <strong>Install</strong>, or <strong>Open file…</strong> for a <code>.lgklicense</code> file.</li>
+          </ol>
+          <p>Bought Pro in the iPhone app? Pair the PC with the iPhone (see <a href="#win-sync">Sync</a>) and a free PC becomes Pro over sync. Or, in the iPhone's Settings, choose <strong>Copy key</strong> and install it on the PC the same way. The Licence page shows how many of the 7 free items you use. More in <a href="../licence">Your Pro licence</a>.</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">Updates</a></h3>
+          <p>LocalGateKeys from the Microsoft Store updates itself through the Store. Still using the old installer version? Its last update is 0.4.12: uninstall it in Windows Settings › Apps › Installed apps, then install LocalGateKeys from the Microsoft Store. Your vault stays where it is and opens with the same master password.</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">Keyboard shortcuts</a></h3>
+          <p>Press <kbd>F1</kbd> or <kbd>?</kbd> in the app for this list.</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>Command palette</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>Search</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>New item</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Lock</td></tr>
+              <tr><th scope="row"><kbd>Esc</kbd></th><td>Back</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>Open the selected item</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Copy password (asks first)</td></tr>
+              <tr><th scope="row"><kbd>Delete</kbd></th><td>Move to trash</td></tr>
+              <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>Item menu</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>Emergency lock, anywhere in Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>Quick access, anywhere in Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd></th><td>Fill a bound Windows app</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../help">The whole user guide on one page</a></p>
+</div>
+
+<script src="../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>A password manager for Windows, Mac and iPhone that keeps your vault on your own devices.</p>
+        <p class="quiet">This website uses Cloudflare Web Analytics, which is cookieless, to count page visits. It uses no advertising trackers and sets no cookies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../features">Features</a></li>
+          <li><a href="../pricing">Pricing</a></li>
+          <li><a href="../download">Download</a></li>
+          <li><a href="../get-started">Get started</a></li>
+          <li><a href="../switch/">Switch</a></li>
+          <li><a href="../buy">Buy Pro</a></li>
+          <li><a href="../licence">Your Pro licence</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recover your licence</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Help">
+        <h2>Help</h2>
+        <ul>
+          <li><a href="../help">User guide</a></li>
+          <li><a href="../support">Support and FAQ</a></li>
+          <li><a href="../security">Security</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Report a vulnerability</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        <ul>
+          <li><a href="../legal/eula">Licence agreement</a></li>
+          <li><a href="../legal/privacy">Privacy policy</a></li>
+          <li><a href="../legal/terms-of-sale">Terms of sale</a></li>
+          <li><a href="../legal/refunds">Refund policy</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID and Safari are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <nav class="lang-switch" aria-label="Language"><ul><li><a href="../guide/windows" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

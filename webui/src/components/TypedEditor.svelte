@@ -1,10 +1,12 @@
 <script>
   /** Schema-driven editor for every typed item kind. Protected fields are write-only. */
+  import { dialog } from '../lib/dialog.js';
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call } from '../lib/api.js';
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
+  import AgentExposureNotice from './AgentExposureNotice.svelte';
 
   let { kind, ref = null, onclose } = $props();
 
@@ -19,6 +21,8 @@
   let revision = $state(null);
   let busy = $state(false);
   let error = $state('');
+  // "AI agents may use this item": a device setting (not item data), saved at once; only for kinds with secrets.
+  let agents = $state(null);
 
   $effect(() => {
     (async () => {
@@ -35,9 +39,20 @@
         values = { ...item.values };
         present = { ...item.protected_present };
         revision = item.revision;
+        if (ref.id) {
+          const state = await call('developer_agent_item_get', ref.id);
+          agents = state.ok && state.available ? { allowed: state.allowed === true } : null;
+        }
       }
     })();
   });
+
+  async function setAgents(control) {
+    const on = control.checked;
+    const result = await call('developer_agent_item_set', ref.id, on);
+    if (!okOrToast(result, t('settings.error.notSaved'))) { control.checked = agents.allowed; return; }
+    agents = { allowed: result.allowed === true };
+  }
 
   const tagList = () => tags.split(',').map((t) => t.trim()).filter(Boolean);
 
@@ -66,9 +81,10 @@
   }
 </script>
 
-<div class="sheet glass" role="dialog" aria-modal="true" aria-label={ref ? t('typedEditor.editItem') : t('typedEditor.newItem')} tabindex="-1" onkeydown={keys}>
+<div class="sheet glass" role="dialog" aria-modal="true" use:dialog aria-label={ref ? t('typedEditor.editItem') : t('typedEditor.newItem')} tabindex="-1" onkeydown={keys}>
   {#if schema}
     <header><h2>{(ref ? schema.edit_title : schema.new_title) ?? t(ref ? 'typedEditor.editTitle' : 'typedEditor.newTitle', { kind: schema.label })}</h2></header>
+    {#if ref?.id}<AgentExposureNotice id={ref.id} />{/if}
     {#if schema.note}<p class="note">{schema.note}</p>{/if}
     <div class="group">
       <label class="field"><span class="k">{t('typedEditor.title')}</span><input bind:value={title} /></label>
@@ -100,8 +116,17 @@
         </label>
       {/each}
     </div>
+    {#if agents}
+      <div class="group">
+        <label class="field"><span class="k">{t('typedEditor.aiAgents')}</span>
+          <input type="checkbox" role="switch" aria-label={t('typedEditor.aiAgents')} checked={agents.allowed}
+            onchange={(e) => setAgents(e.currentTarget)} /></label>
+      </div>
+      <p class="note hint">{t('typedEditor.aiAgentsHint')}</p>
+    {/if}
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
+      <span class="keys" aria-hidden="true">{t('loginEditor.keysHint')}</span>
       <Button label={t('common.cancel')} onclick={() => { secrets = {}; onclose(null); }} />
       <Button label={kind === 'document' && !ref ? t('typedEditor.chooseSave') : t('typedEditor.save')} variant="primary" busy={busy} busyLabel={t('typedEditor.saving')} onclick={save} />
     </footer>
@@ -116,6 +141,7 @@
   }
   h2 { margin: 0 0 6px; font: 600 17px var(--font-display); }
   .note { color: var(--text-muted); margin: 0 0 8px; font-size: 12.5px; }
+  .note.hint { margin: 6px 4px 0; }
   .field { display: flex; align-items: center; gap: 10px; padding: 9px 14px; min-height: 42px; }
   .field + .field { border-top: 1px solid var(--separator); }
   .field.tall { align-items: flex-start; }
@@ -126,5 +152,6 @@
   textarea { min-height: 90px; resize: vertical; }
   .text-btn { background: none; border: none; color: var(--link); cursor: pointer; }
   .error { color: var(--danger); margin: 8px 2px 0; }
-  footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  footer { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 12px; }
+  .keys { margin-right: auto; color: var(--text-muted); font-size: 12px; }
 </style>

@@ -1,5 +1,6 @@
 <script>
   /** Two prompt kinds from Python: pick one account ("choose"), or confirm with an optional "remember" box. */
+  import { dialog } from '../lib/dialog.js';
   import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
@@ -26,7 +27,7 @@
 <svelte:window onkeydown={keys} />
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={request.title}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog aria-label={request.title}>
     <h2>{request.title}</h2>
     {#if request.message}<p class="body">{request.message}</p>{/if}
     {#if choosing}

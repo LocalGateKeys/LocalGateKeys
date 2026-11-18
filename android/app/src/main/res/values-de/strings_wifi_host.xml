@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">QR-Code anzeigen</string>
+    <string name="sync_host_copy_code">Codetext kopieren</string>
+    <string name="sync_host_code">Code: %1$s</string>
+    <string name="sync_host_expires_in">Läuft ab in %1$s</string>
+    <string name="sync_host_expired">Abgelaufen</string>
+    <string name="sync_host_accept_hint">Wählen Sie „Annehmen“ nur, wenn das andere Gerät denselben Code anzeigt.</string>
+    <string name="sync_host_decline_hint">Wählen Sie andernfalls „Ablehnen“.</string>
+    <string name="sync_host_undo_hint">Wenn Sie es nicht erkennen, wählen Sie „Rückgängig“.</string>
+    <string name="sync_host_other_pc_hint">Verwenden Sie auf einem anderen PC „Mit einem Code beitreten“ und fügen Sie stattdessen den Codetext ein.</string>
+    <string name="sync_host_copied">Codetext kopiert.</string>
+    <string name="sync_host_closed">Dieser Kopplungscode wurde geschlossen.</string>
+    <string name="sync_host_not_waiting">Diese Anfrage wartet nicht mehr. Zeigen Sie einen neuen Code an, um es erneut zu versuchen.</string>
+    <string name="sync_host_declined">Abgelehnt. Das Gerät wurde nicht hinzugefügt. Zeigen Sie einen neuen Code an, um es erneut zu versuchen.</string>
+    <string name="sync_host_not_listening">Schalten Sie zuerst WLAN-Sync ein.</string>
+    <string name="sync_host_confirm">%1$s möchte beitreten. Wählen Sie „Annehmen“ nur, wenn es den Code %2$s anzeigt.</string>
+    <string name="sync_host_adding">%1$s wird hinzugefügt…</string>
+    <string name="sync_host_adding_button">Wird hinzugefügt…</string>
+    <string name="sync_host_paired_key">Gekoppelt: %1$s (Schlüssel %2$s). %3$s</string>
+    <string name="sync_host_paired_plain">Gekoppelt: %1$s. %2$s</string>
+    <string name="sync_host_paired_title">Gekoppelt: %1$s</string>
+    <string name="sync_host_declines_in">Wird in %1$d s automatisch abgelehnt.</string>
+    <string name="sync_host_stopped">Die WLAN-Synchronisierung wurde beendet. Prüfen Sie das Netzwerk und schalten Sie sie wieder ein.</string>
+    <string name="sync_host_accept">Annehmen</string>
+    <string name="sync_host_decline">Ablehnen</string>
+    <string name="sync_host_undo">Rückgängig</string>
+    <string name="sync_host_keep">Behalten</string>
+    <string name="sync_host_followed">Lauscht jetzt auf %1$s (Adresse geändert).</string>
+    <string name="sync_host_scan_title">Scannen Sie diesen Code mit LocalGateKeys auf dem anderen Gerät</string>
+    <string name="sync_host_qr_description">Kopplungs-QR-Code</string>
+    <string name="sync_host_add_named">%1$s hinzufügen?</string>
+    <string name="sync_host_add_device">Dieses Gerät hinzufügen?</string>
+    <string name="sync_host_fingerprint">Schlüssel-Fingerabdruck: %1$s</string>
+    <string name="sync_host_paired_heading">Gekoppelte Geräte</string>
+    <string name="sync_host_no_peers">Noch keine Geräte gekoppelt.</string>
+    <string name="sync_host_remove">Entfernen …</string>
+    <string name="sync_host_toggle">WLAN-Sync auf diesem Telefon hosten</string>
+    <string name="sync_host_intro">Andere Geräte im selben WLAN können sich mit diesem Telefon koppeln und mit ihm synchronisieren, solange LocalGateKeys hier geöffnet und entsperrt ist.</string>
+    <string name="sync_host_listens">Dieses Telefon lauscht auf %1$s.</string>
+    <string name="sync_host_free">Im kostenlosen Tarif lauscht dieses Telefon nur, solange ein Kopplungscode angezeigt wird, und 2 Minuten nach „Jetzt synchronisieren“.</string>
+    <string name="sync_host_no_wifi">Verbinden Sie dieses Telefon mit einem WLAN, um WLAN-Sync zu hosten.</string>
+    <string name="sync_host_pair_hint">Beide Geräte müssen im selben WLAN sein.</string>
+    <string name="sync_host_this_phone">Dieses Telefon</string>
+    <string name="sync_host_remove_confirm">%1$s aus dem WLAN-Sync entfernen? Es synchronisiert nicht mehr mit diesem Telefon, behält aber, was es bereits hat.</string>
+    <string name="sync_host_could_not_listen">WLAN-Sync konnte auf diesem Telefon nicht starten. Prüfen Sie das Netzwerk und versuchen Sie es erneut.</string>
+</resources>

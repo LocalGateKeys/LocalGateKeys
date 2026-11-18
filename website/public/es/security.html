@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Seguridad | LocalGateKeys</title>
-  <meta name="description" content="Cómo protege LocalGateKeys tu bóveda y contra qué no la protege.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Seguridad de LocalGateKeys: Argon2id y AES-256-GCM</title>
+  <meta name="description" content="Cómo protege LocalGateKeys tu bóveda con Argon2id y AES-256-GCM, por qué no hay cuenta ni servidor y contra qué no protege el diseño.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/es/security">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Seguridad de LocalGateKeys: Argon2id y AES-256-GCM">
+  <meta property="og:description" content="Cómo protege LocalGateKeys tu bóveda con Argon2id y AES-256-GCM, por qué no hay cuenta ni servidor y contra qué no protege el diseño.">
+  <meta property="og:url" content="https://localgatekeys.app/es/security">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="El logotipo de LocalGateKeys: un gestor de contraseñas para Windows, Mac y iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Seguridad de LocalGateKeys: Argon2id y AES-256-GCM">
+  <meta name="twitter:description" content="Cómo protege LocalGateKeys tu bóveda con Argon2id y AES-256-GCM, por qué no hay cuenta ni servidor y contra qué no protege el diseño.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,22 +44,39 @@
   <a class="skip" href="#main">Saltar al contenido</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../es/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../es/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Principal">
+      <nav class="nav-wide" aria-label="Principal">
         <ul class="nav">
-          <li><a href="../es/features.html">Funciones</a></li>
-          <li><a href="../es/pricing.html">Precios</a></li>
-          <li><a href="../es/security.html" aria-current="page">Seguridad</a></li>
-          <li><a href="../es/get-started.html">Primeros pasos</a></li>
-          <li><a href="../es/help.html">Guía</a></li>
-          <li><a href="../es/download.html">Descargar</a></li>
-          <li><a href="../es/support.html">Soporte</a></li>
-          <li><a href="../buy.html">Comprar Pro</a></li>
+          <li><a href="../es/features">Funciones</a></li>
+          <li><a href="../es/get-started">Primeros pasos</a></li>
+          <li><a href="../es/help">Guía</a></li>
+          <li><a href="../es/security" aria-current="page">Seguridad</a></li>
+          <li><a href="../es/pricing">Precios</a></li>
+          <li><a href="../es/support">Soporte</a></li>
+          <li><a class="nav-cta" href="../es/download">Descargar</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menú</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../es/features">Funciones</a></li>
+          <li><a href="../es/get-started">Primeros pasos</a></li>
+          <li><a href="../es/help">Guía</a></li>
+          <li><a href="../es/security" aria-current="page">Seguridad</a></li>
+          <li><a href="../es/pricing">Precios</a></li>
+          <li><a href="../es/support">Soporte</a></li>
+          <li><a class="nav-cta" href="../es/download">Descargar</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Idioma</span></summary>
+        <ul class="lang-menu-list"><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es" aria-current="true">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -62,13 +93,14 @@
   </div>
   <dl class="spec">
     <dt>Cifrado de la bóveda</dt><dd>AES-256-GCM con un nonce aleatorio nuevo en cada guardado</dd>
-    <dt>Contraseña maestra</dt><dd>Argon2id, 64 MiB de memoria, 3 pasadas, paralelismo 4, sal aleatoria por envoltorio</dd>
+    <dt>Contraseña maestra</dt><dd>Argon2id, 3 pasadas, paralelismo 4, sal aleatoria por envoltorio; 256 MiB de memoria en la aplicación de Windows (64 MiB en un PC con menos de 4 GB de memoria) y 64 MiB en las aplicaciones de Mac, iPhone y Android</dd>
     <dt>Frase de recuperación</dt><dd>Frase BIP39 opcional de 24 palabras (256 bits), expandida con HKDF-SHA256</dd>
-    <dt>Windows Hello</dt><dd>Envuelve la clave de la bóveda, nunca la contraseña maestra</dd>
+    <dt>Windows Hello, Touch ID, Face ID y huella digital</dt><dd>Liberan la clave de la bóveda desde un almacenamiento que protege el dispositivo; la contraseña maestra nunca se guarda</dd>
     <dt>Copias de seguridad y transferencias</dt><dd>Argon2id y AES-256-GCM con los parámetros guardados en la cabecera autenticada</dd>
     <dt>Sincronización entre dispositivos</dt><dd>Una clave de grupo aleatoria, entregada a cada dispositivo con X25519 y HKDF-SHA256 y, en el caso de una carpeta en la nube, envuelta también por tu contraseña de sincronización con Argon2id; cada registro sellado con AES-256-GCM y ligado a su elemento, versión y época de clave; cada archivo de dispositivo ligado al dispositivo que lo escribió</dd>
-    <dt>Claves de acceso</dt><dd>Claves ES256 (P-256) guardadas dentro de la bóveda cifrada; la aplicación construye los datos firmados a partir del origen que informa el navegador, nunca a partir de la página</dd>
+    <dt>Claves de acceso</dt><dd>Claves ES256 (P-256) guardadas dentro de la bóveda cifrada; la aplicación construye los datos firmados a partir del origen que informa el navegador, nunca a partir de la página. La aplicación de Microsoft Store también puede ser el proveedor de llaves de acceso de Windows 11 (desactivado por defecto); entonces Windows guarda en su propia lista los nombres de tus sitios y cuentas con llave de acceso, nunca las claves</dd>
     <dt>Escrituras en el disco</dt><dd>Archivo temporal, vaciado y después reemplazo atómico, para que un fallo no pueda dejar una bóveda a medias</dd>
+    <dt>Agentes de IA</dt><dd>Desactivado por defecto (Pro). Un agente solo llega a la aplicación a través de lgk mcp en tu propio dispositivo y solo ve los inicios de sesión y elementos que hayas permitido. Apruebas cada solicitud; la aplicación rellena el inicio de sesión por sí misma y ninguna respuesta al agente contiene una contraseña. Cada solicitud queda en un registro de acceso cuyas entradas están encadenadas con hashes SHA-256, y la comprobación de seguridad indica si esa cadena está intacta</dd>
   </dl>
 
   <div class="ledger">
@@ -82,6 +114,8 @@
         <li>Contraseñas sin cifrar en el disco</li>
         <li>Formularios enviados sin ti</li>
         <li>Que tu proveedor de nube lea los datos sincronizados: solo almacena texto cifrado</li>
+        <li>Una página web que lea las cuentas que LocalGateKeys te ofrece: en Chrome, Edge y Firefox la lista se dibuja en un marco aparte de la extensión que la página no puede leer</li>
+        <li>Un agente de IA que obtenga una contraseña de LocalGateKeys: ninguna respuesta al agente contiene una, y solo ve los inicios de sesión que hayas permitido</li>
       </ul>
     </section>
     <section class="not" aria-labelledby="not-protects">
@@ -93,6 +127,7 @@
         <li>Alguien que use tu PC mientras la bóveda está desbloqueada</li>
         <li>Suplantación de identidad (phishing) dentro de una aplicación legítima que muestra contenido controlado por un atacante</li>
         <li>Perder tu bóveda, tus copias de seguridad y tu contraseña maestra sin una frase de recuperación: nadie, nosotros incluidos, puede abrirla</li>
+        <li>Un agente de IA que controle tu navegador y lea una contraseña después de que LocalGateKeys la haya rellenado en la página, o un comando que aprobaste y que transmita los secretos que recibió</li>
       </ul>
     </section>
   </div>
@@ -110,28 +145,34 @@
       <li>envío de un inicio de sesión que no iniciaste tú</li>
     </ul>
 
-    <h2>La red, con franqueza</h2>
+    <h2 id="network">La red, con franqueza</h2>
     <p>No hay una cuenta de LocalGateKeys ni un servidor que guarde bóvedas. La aplicación se conecta a internet solo en estos casos:</p>
     <ul>
-      <li><strong>Búsqueda de actualizaciones.</strong> Cuando eliges Buscar actualizaciones, la aplicación descarga un pequeño archivo y verifica su firma con una clave integrada en la aplicación. Nunca descarga ni ejecuta un instalador por sí sola.</li>
-      <li><strong>Lista de revocación de licencias.</strong> Junto con cada búsqueda de actualizaciones, la aplicación descarga una lista firmada de licencias reembolsadas y comprueba tu licencia con ella en tu PC. No envía nada sobre tu licencia.</li>
+      <li><strong>Actualizaciones.</strong> Microsoft Store actualiza la aplicación de Windows y App Store actualiza las aplicaciones de Mac e iPhone; LocalGateKeys nunca descarga ni ejecuta un instalador por sí sola. Las antiguas versiones con instalador para Windows (hasta la 0.4.12, la última) descargan un pequeño archivo de nuestro servidor cuando eliges Buscar actualizaciones y verifican su firma con una clave integrada en la aplicación.</li>
+      <li><strong>Lista de revocación de licencias.</strong> Con cada búsqueda de actualizaciones en las versiones con instalador, y cuando eliges Buscar actualizaciones en la aplicación de Microsoft Store con el modo sin conexión estricto desactivado, la aplicación descarga una lista firmada de licencias reembolsadas y comprueba tu licencia con ella en tu PC. No envía nada sobre tu licencia.</li>
       <li><strong>Iconos de sitios web.</strong> Para mostrar el icono de un sitio, la aplicación lo descarga de la propia dirección de ese sitio. No se envía ningún nombre de usuario, contraseña ni dato de la bóveda, pero cada descarga le indica a ese sitio, y a cualquiera que vigile la red, que tu bóveda tiene una cuenta allí. Está desactivado por defecto y solo ocurre si activas "Mostrar iconos de sitios web" en Ajustes; el modo estrictamente sin conexión lo bloquea.</li>
       <li><strong>Comprobaciones de filtraciones, si las activas.</strong> Cuando inicias una comprobación, la aplicación envía a Have I Been Pwned los cinco primeros caracteres del hash SHA-1 de cada contraseña. El servicio ve tu dirección IP, nunca la contraseña, el hash completo, el nombre de usuario ni el sitio web.</li>
       <li><strong>Sincronización, si la configuras.</strong> En tu red doméstica, los dispositivos hablan directamente entre sí. Con una carpeta en la nube, la sube tu aplicación de almacenamiento en la nube.</li>
+      <li><strong>Comprar Pro en la aplicación de Mac, iPhone o Android.</strong> La aplicación envía el comprobante de compra firmado de la tienda a nuestro servidor de licencias, que responde con tu clave de licencia. No se envía ninguna dirección de correo ni datos del dispositivo.</li>
+      <li><strong>Sitio verificado.</strong> La comprobación de direcciones parecidas se hace en su dispositivo. Sus sitios guardados nunca salen de la app y no se envía nada a ningún servidor.</li>
     </ul>
-    <p>El modo estrictamente sin conexión está activado por defecto. Bloquea las solicitudes de internet en segundo plano, los iconos de sitios web y las comprobaciones de filtraciones, y una búsqueda de actualizaciones te pregunta antes. La <a href="../legal/privacy.html">política de privacidad</a> enumera exactamente lo que ven nuestros servidores cuando buscas actualizaciones.</p>
+    <p>En la aplicación de Windows, Centro de seguridad › Actividad de red muestra cada una de estas conexiones con la hora, el host y el resultado. Los nombres de los sitios web que guardaste solo se muestran mientras la aplicación está abierta y nunca se escriben en el disco, y los dispositivos de tu propia red aparecen como «Red local».</p>
+    <p>El modo estrictamente sin conexión está activado por defecto. Bloquea las solicitudes de internet en segundo plano, los iconos de sitios web y las comprobaciones de filtraciones, y una búsqueda de actualizaciones te pregunta antes. La <a href="../legal/privacy">política de privacidad</a> enumera exactamente lo que ven nuestros servidores cuando buscas actualizaciones.</p>
 
     <h2>Limitaciones conocidas</h2>
     <ul>
-      <li>La contraseña maestra se traslada a un búfer borrable en cuanto llega a la aplicación y se borra cuando termina la operación que la necesitaba. La página en la que la escribes se ejecuta en Microsoft Edge WebView2, y el traspaso de esa página a la aplicación genera una copia de corta duración; la aplicación no puede borrar ninguna de las dos copias.</li>
-      <li>El desbloqueo con la cámara es una comprobación de comodidad, no una protección certificada contra fotos o máscaras. Windows Hello es la opción más sólida.</li>
+      <li>La contraseña maestra se traslada a un búfer borrable en cuanto llega a la aplicación y se borra cuando termina la operación que la necesitaba. La página en la que la escribes se ejecuta en Microsoft Edge WebView2. La página vacía su campo y la aplicación libera la copia hecha en el traspaso antes de calcular tu clave, pero ninguna de esas dos copias se puede sobrescribir en la memoria, así que pueden quedar rastros allí durante un breve tiempo.</li>
+      <li>El desbloqueo con la cámara pide un movimiento de cabeza aleatorio, así que una foto sostenida plana delante de la cámara o una imagen fija en una pantalla no lo supera. Aun así, es una comprobación de comodidad, no una protección certificada: una foto doblada o curvada, un vídeo que siga las indicaciones o una máscara pueden pasar. Windows Hello es la opción más sólida.</li>
       <li>El relleno de aplicaciones de Windows no funciona con programas que se ejecutan como administrador, interfaces de juegos dibujadas a medida ni vistas web incrustadas que no puede verificar.</li>
-      <li>La bóveda detecta que se la devuelve a una copia más antigua. Si usas la sincronización, tus otros dispositivos también recuerdan lo reciente que era tu bóveda, así que eliminar la bóveda y su archivo ancla juntos se detecta en la siguiente sincronización (por ahora en los PC con Windows; las aplicaciones de iPhone, Mac y Android lo seguirán). Sin sincronización, quien pueda reemplazar ambos archivos aún puede burlar la comprobación.</li>
-      <li>Las claves de acceso funcionan solo en Chrome y Edge, y solo para la propia página: un inicio de sesión dentro del marco de otro sitio usa el diálogo de claves de acceso del propio navegador. Si un sitio cancela después de que apruebes una clave de acceso nueva, la clave puede quedarse en tu bóveda; elimínala en la aplicación.</li>
+      <li>La bóveda detecta que se la devuelve a una copia más antigua. Si usas la sincronización, tus otros dispositivos recuerdan lo reciente que era tu bóveda, así que una copia más antigua devuelta a un dispositivo se avisa en la siguiente sincronización, en todas las aplicaciones. Sin sincronización, un PC con Windows guarda un segundo registro fuera de la carpeta de la bóveda, así que se rechaza una bóveda antigua restaurada junto con su archivo ancla; quien pueda cambiar los ajustes de tu cuenta de Windows también puede eliminar ese registro. Las aplicaciones de iPhone, Mac y Android mantienen sus archivos cerrados a otras aplicaciones, pero sin sincronización no notan una copia más antigua puesta en su lugar.</li>
+      <li>Las claves de acceso funcionan en Chrome, Edge y Firefox. Iniciar sesión con una clave de acceso dentro del marco de otro sitio funciona en Chrome y Edge cuando el sitio que lo rodea lo permite; en Firefox, y cuando creas una clave de acceso dentro del marco de otro sitio, se usa el diálogo de claves de acceso del propio navegador. Si un sitio cancela después de que apruebes una clave de acceso nueva, la aplicación la elimina de nuevo; cuando la aplicación no puede saber si el sitio la conservó, la clave de acceso se queda en tu bóveda y puedes eliminarla en la aplicación.</li>
+      <li>El aviso de direcciones parecidas es una pista, no un muro: el propio script de una página puede evitarlo, por ejemplo enviando una contraseña sin enviar el formulario. Compruebe usted mismo la dirección.</li>
+      <li>El acceso de emergencia no tiene servidor, así que solo las apps hacen cumplir el plazo y su veto. Quien reúna suficientes fragmentos puede recuperar su copia de seguridad al instante, sin esperar. Elija titulares que no actuarían juntos y guarde los fragmentos por separado.</li>
+      <li>La contraseña de coacción protege contra la obligación de desbloquear la app. No protege contra quien examine los archivos de su disco, y una persona atenta puede descubrir que existe una segunda caja fuerte. Está en Windows, el Mac, iPhone y Android.</li>
     </ul>
 
     <h2>Informar de una vulnerabilidad</h2>
-    <p>Escribe a <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. La <a href="../legal/vulnerability-disclosure.html">política de divulgación de vulnerabilidades</a> explica qué entra en el alcance, con qué rapidez respondemos y cómo reconocemos a los investigadores.</p>
+    <p>Escribe a <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. La <a href="../legal/vulnerability-disclosure">política de divulgación de vulnerabilidades</a> explica qué entra en el alcance, con qué rapidez respondemos y cómo reconocemos a los investigadores.</p>
   </div>
 </div>
   </main>
@@ -139,43 +180,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Un gestor de contraseñas para Windows que guarda tu bóveda en tus propios dispositivos.</p>
-        <p class="quiet">Este sitio no usa cookies, no ejecuta analíticas y no carga nada de otras empresas.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestor de contraseñas para Windows, Mac y iPhone que mantiene tu bóveda en tus propios dispositivos.</p>
+        <p class="quiet">Este sitio cuenta las visitas con Cloudflare Web Analytics, que no usa cookies. No usa rastreadores publicitarios y no instala cookies.</p>
       </div>
       <nav aria-label="Producto">
         <h2>Producto</h2>
         <ul>
-          <li><a href="../es/features.html">Funciones</a></li>
-          <li><a href="../es/pricing.html">Precios</a></li>
-          <li><a href="../es/download.html">Descargar</a></li>
-          <li><a href="../es/licence.html">Tu licencia Pro</a></li>
+          <li><a href="../es/features">Funciones</a></li>
+          <li><a href="../es/pricing">Precios</a></li>
+          <li><a href="../es/download">Descargar</a></li>
+          <li><a href="../es/get-started">Primeros pasos</a></li>
+          <li><a href="../es/switch/">Cambiar</a></li>
+          <li><a href="../buy">Comprar Pro</a></li>
+          <li><a href="../es/licence">Tu licencia Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recuperar tu licencia</a></li>
         </ul>
       </nav>
       <nav aria-label="Ayuda">
         <h2>Ayuda</h2>
         <ul>
-          <li><a href="../es/help.html">Guía de usuario</a></li>
-          <li><a href="../es/support.html">Soporte y preguntas frecuentes</a></li>
-          <li><a href="../es/security.html">Seguridad</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Informar de una vulnerabilidad</a></li>
+          <li><a href="../es/help">Guía de usuario</a></li>
+          <li><a href="../es/support">Soporte y preguntas frecuentes</a></li>
+          <li><a href="../es/security">Seguridad</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Informar de una vulnerabilidad</a></li>
         </ul>
       </nav>
       <nav aria-label="Legal">
         <h2>Legal</h2>
         <p class="quiet">Estos documentos están en inglés, y la versión en inglés es la que se aplica y la vinculante.</p>
         <ul>
-          <li><a href="../legal/eula.html">Contrato de licencia</a></li>
-          <li><a href="../legal/privacy.html">Política de privacidad</a></li>
-          <li><a href="../legal/terms-of-sale.html">Condiciones de venta</a></li>
-          <li><a href="../legal/refunds.html">Política de reembolsos</a></li>
+          <li><a href="../legal/eula">Contrato de licencia</a></li>
+          <li><a href="../legal/privacy">Política de privacidad</a></li>
+          <li><a href="../legal/terms-of-sale">Condiciones de venta</a></li>
+          <li><a href="../legal/refunds">Política de reembolsos</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contacto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows es una marca comercial del grupo de empresas Microsoft. Chrome es una marca comercial de Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Idioma"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es" aria-current="true">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows es una marca comercial del grupo de empresas Microsoft. Chrome es una marca comercial de Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID y Safari son marcas comerciales de Apple Inc., registradas en EE. UU. y en otros países.</p>
+      <nav class="lang-switch" aria-label="Idioma"><ul><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es" aria-current="true">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

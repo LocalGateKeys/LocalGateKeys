@@ -1,0 +1,58 @@
+{
+  "commit_hex": "8b08b9a0e493a535580680bd9cc7fda8fd9e51688e423bdd834a1e62e869918d",
+  "commit_label": "localgatekeys|sync|enroll-commit|v3|",
+  "description": "QR enrollment with a version-2 offer (commit-then-reveal, docs/formats/LAN_SYNC_V3.md) of device B by device A at epoch 1. The QR carries commit = SHA-256(commit_label + reveal); the request body and transcript have version 3; after the request verifies, A sends the reveal frame (lan/v3/enroll_reveal.bin, no length prefix, like the other enrollment frames) on the same connection and then the usual reply. The code covers the reveal; B shows it only after the reveal matches the commitment and refuses a reply without it. Request and reply encryption are as in lan/expected_lan.json.",
+  "now": 1790000030,
+  "offer_bundle": {
+    "certificate_fingerprint": "5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee",
+    "code": "27364918",
+    "commit": "iwi5oOSTpTVYBoC9nMf9qP2eUWiOQjvdg0oeYuhpkY0=",
+    "endpoint": {
+      "host": "192.168.1.20",
+      "port": 48201
+    },
+    "expires_at": 1790000120,
+    "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+    "inviter_device_id": "a1111111-0000-4000-8000-00000000000a",
+    "inviter_exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+    "inviter_signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+    "offer_id": "e5f6a7b8-1c2d-4e3f-9a41-526374859607",
+    "pairing_secret": "3Ohn918rOmsD4FrMQ306NK+gCkszD43U2i3hkRx9Ukk=",
+    "transcript_nonce": "/lcI5NO9GOCknqIugIFgVf9tWARXs5qx10tDzGX0bMw=",
+    "version": 2
+  },
+  "qr_payload": "lgk-pair:eyJjZXJ0aWZpY2F0ZV9maW5nZXJwcmludCI6IjVjNjQzOTE1NjRkNmY5MzA4ZWJkYTliNGNhNTE2MjkyZTM1NDY4NGI4NzBjMzMwMzI2ZmUxM2E0MTUzYjcxZWUiLCJjb2RlIjoiMjczNjQ5MTgiLCJjb21taXQiOiJpd2k1b09TVHBUVllCb0M5bk1mOXFQMmVVV2lPUWp2ZGcwb2VZdWhwa1kwPSIsImVuZHBvaW50Ijp7Imhvc3QiOiIxOTIuMTY4LjEuMjAiLCJwb3J0Ijo0ODIwMX0sImV4cGlyZXNfYXQiOjE3OTAwMDAxMjAsImdyb3VwX2lkIjoiNWIwYzdkM2UtOWE0MS00ZjZiLThjMmQtM2UxYTdmOTA1YjY0IiwiaW52aXRlcl9kZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJpbnZpdGVyX2V4Y2hhbmdlX3B1YmxpYyI6IlNzTlZjSGZlS0R2aEJqcVBSZU0vNG94dm8zb3lxNWFvdW43WWJwU3RvRk09IiwiaW52aXRlcl9zaWduaW5nX3B1YmxpYyI6IjlDQUVxZ1JRWE1hbDFPMW4rdHFNZnF4OWlkSW11MzRpc2ZYZkpjZStJUlU9Iiwib2ZmZXJfaWQiOiJlNWY2YTdiOC0xYzJkLTRlM2YtOWE0MS01MjYzNzQ4NTk2MDciLCJwYWlyaW5nX3NlY3JldCI6IjNPaG45MThyT21zRDRGck1RMzA2TksrZ0Nrc3pENDNVMmkzaGtSeDlVa2s9IiwidHJhbnNjcmlwdF9ub25jZSI6Ii9sY0k1Tk85R09Da25xSXVnSUZnVmY5dFdBUlhzNXF4MTB0RHpHWDBiTXc9IiwidmVyc2lvbiI6Mn0",
+  "refusals": {
+    "version_2_body_on_version_2_offer": "LGKENROLLNO1\n{\"reason\":\"update-needed\"}"
+  },
+  "reply": {
+    "ephemeral_private_hex": "a2eb8a045adf5b73d48c880dbba25b362826844ea346835e5c6c90f35b3f5284",
+    "epoch": 1,
+    "group_id": "5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64",
+    "key_hex": "92bf049e425ddc225cfcb024b4bd5737c0cc10dacd434777407d366b802d7d71",
+    "nonce_b64": "aEnxJKEKSOvybEOp"
+  },
+  "request": {
+    "device_id": "b2222222-0000-4000-8000-00000000000b",
+    "ephemeral_private_hex": "bf2516744096e29750a14f5b9280338625e78f59cd658395f979bd73717b0d27",
+    "invitee_endpoint": {
+      "host": "192.168.1.31",
+      "port": 48202
+    },
+    "name": "Laptop (Windows)",
+    "nonce_b64": "KXsN7taKjVLjG1Uo",
+    "plaintext": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"endpoint\":{\"host\":\"192.168.1.31\",\"port\":48202},\"exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"mac\":\"fkoYWWEzrBCuCN0N2kI2epl3hYPlsjoSKRTnos0dAbM=\",\"name\":\"Laptop (Windows)\",\"offer_id\":\"e5f6a7b8-1c2d-4e3f-9a41-526374859607\",\"signature\":\"/3j8yUvpHNCIGendCGvQTzUgx+L4IPv8U4AejSmUoRt0osluZivsA/f5nQX1E9B833X2kiWJqCpHolZc41MnBw==\",\"signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"version\":3}",
+    "transcript": "{\"code\":\"27364918\",\"invitee_device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"invitee_endpoint\":{\"host\":\"192.168.1.31\",\"port\":48202},\"invitee_exchange_public\":\"/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=\",\"invitee_name\":\"Laptop (Windows)\",\"invitee_signing_public\":\"hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=\",\"offer\":{\"certificate_fingerprint\":\"5c64391564d6f9308ebda9b4ca516292e354684b870c330326fe13a4153b71ee\",\"commit\":\"iwi5oOSTpTVYBoC9nMf9qP2eUWiOQjvdg0oeYuhpkY0=\",\"endpoint\":{\"host\":\"192.168.1.20\",\"port\":48201},\"expires_at\":1790000120,\"group_id\":\"5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64\",\"inviter_device_id\":\"a1111111-0000-4000-8000-00000000000a\",\"inviter_exchange_public\":\"SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=\",\"inviter_signing_public\":\"9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=\",\"offer_id\":\"e5f6a7b8-1c2d-4e3f-9a41-526374859607\",\"transcript_nonce\":\"/lcI5NO9GOCknqIugIFgVf9tWARXs5qx10tDzGX0bMw=\",\"version\":2},\"protocol\":\"localgatekeys-sync-enrollment\",\"version\":3}"
+  },
+  "reveal_frame": {
+    "magic": "LGKENROLLRV1\\n",
+    "magic_hex": "4c474b454e524f4c4c5256310a",
+    "text": "LGKENROLLRV1\n{\"reveal\":\"q1BHy6VGNZDcuHxmFXVwu7Nsj5S64y1QJLRjKDjCFac=\"}"
+  },
+  "reveal_hex": "ab5047cba5463590dcb87c66157570bbb36c8f94bae32d5024b4632838c215a7",
+  "verification_code": {
+    "code": "375941",
+    "label": "localgatekeys|sync|enroll-verify|v3|",
+    "recipe": "SHA-256(label + transcript + reveal), first 4 bytes big-endian mod 10^6, 6 digits"
+  }
+}

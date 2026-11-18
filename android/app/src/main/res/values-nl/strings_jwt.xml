@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">Token</string>
+    <string name="jwt_alg">Algoritme</string>
+    <string name="jwt_iss">Uitgever</string>
+    <string name="jwt_sub">Onderwerp</string>
+    <string name="jwt_aud">Doelgroep</string>
+    <string name="jwt_iat">Uitgegeven</string>
+    <string name="jwt_nbf">Niet vóór</string>
+    <string name="jwt_exp">Verloopt</string>
+    <string name="jwt_expired">Verlopen</string>
+    <string name="jwt_unchecked">Handtekening niet gecontroleerd</string>
+    <string name="jwt_setExpiry">Vervaldatum uit token instellen</string>
+    <string name="jwt_expirySet">Vervaldatum ingesteld op %1$s.</string>
+    <string name="jwt_notSaved">De vervaldatum kon niet worden ingesteld.</string>
+</resources>

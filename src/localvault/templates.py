@@ -12,6 +12,15 @@ from .vault import VaultLockedError
 BUILTIN_TEMPLATES: tuple[dict[str, Any], ...] = (
     {"id": "builtin.note", "kind": "note", "name": "Note", "description": "A private plain-text note.",
      "fields": [{"name": "body", "label": "Body", "type": "multiline", "required": False, "secret": False}]},
+    # Estate pack (sub-plan 12, Task 6): what an executor needs, beside the emergency kit and shard holders (08).
+    {"id": "builtin.estate", "kind": "note", "name": "Estate pack",
+     "description": "Where the will is, who the executor is, accounts to close, devices and their unlock, and who "
+                    "holds an emergency-access share.",
+     "fields": [{"name": "will_location", "label": "Where the will is", "type": "multiline", "required": False, "secret": False},
+                {"name": "executor", "label": "Executor", "type": "text", "required": False, "secret": False},
+                {"name": "accounts_to_close", "label": "Accounts to close", "type": "multiline", "required": False, "secret": False},
+                {"name": "devices_unlock", "label": "Devices and their unlock", "type": "multiline", "required": False, "secret": True},
+                {"name": "shard_holders", "label": "Shard holders", "type": "multiline", "required": False, "secret": False}]},
     {"id": "builtin.bookmark", "kind": "bookmark", "name": "Bookmark", "description": "A local HTTPS bookmark opened only by explicit user action.",
      "fields": [{"name": "url", "label": "HTTPS URL", "type": "url", "required": True, "secret": False},
                 {"name": "notes", "label": "Notes", "type": "multiline", "required": False, "secret": False}]},

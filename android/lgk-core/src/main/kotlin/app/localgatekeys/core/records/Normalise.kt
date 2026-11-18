@@ -55,7 +55,7 @@ object Normalise {
     fun normalForm(ns: Namespace, record: JsonValue): JsonValue = when (ns) {
         Namespace.ENTRY -> entry(record)
         Namespace.ITEM -> item(record)
-        Namespace.LICENSE -> throw NormaliseException(NormaliseException.Kind.NOT_PHONE_KIND)
+        Namespace.LICENSE, Namespace.HEIR -> throw NormaliseException(NormaliseException.Kind.NOT_PHONE_KIND)
     }
 
     // MARK: helpers

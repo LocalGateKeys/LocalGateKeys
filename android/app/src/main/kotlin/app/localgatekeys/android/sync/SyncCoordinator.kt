@@ -1,7 +1,14 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.history.CommitOrigin
 import app.localgatekeys.android.R
+import app.localgatekeys.core.sync.PeerSeenAt
 import app.localgatekeys.android.i18n.Txt
+import app.localgatekeys.android.trash.LocalDataHosting
+import app.localgatekeys.core.lan.LanFeatures
+import app.localgatekeys.core.lan.LanPeer
+import app.localgatekeys.core.sync.ShareGroups
+import app.localgatekeys.core.sync.CollectionShares
 import app.localgatekeys.core.lan.BlobFetch
 import app.localgatekeys.core.sync.AttachmentRef
 import app.localgatekeys.core.sync.AttachmentSync
@@ -25,12 +32,15 @@ import app.localgatekeys.core.lan.PinnedPeer
 import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.primitives.Scalars
 import app.localgatekeys.core.records.SyncMeta
+import app.localgatekeys.core.recovery.Heir
 import app.localgatekeys.core.sync.FolderAccess
 import app.localgatekeys.core.sync.FolderAccessException
 import app.localgatekeys.core.sync.FolderLayout
 import app.localgatekeys.core.sync.FolderSync
 import app.localgatekeys.core.sync.FolderSyncException
 import app.localgatekeys.core.sync.ItemStore
+import app.localgatekeys.core.sync.KeptIdentity
+import app.localgatekeys.core.sync.Removal
 import app.localgatekeys.core.sync.RunReport
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
@@ -69,13 +79,26 @@ data class SyncRunResult(
     val ran: Boolean = false,
     /** The run ended with the store still open: republish the autofill identities (through the ordered chain). */
     val publish: Boolean = false,
+    /**
+     * The share groups' runs after the personal group (sub-plan 07); null when none ran (no share, or no Recently
+     * deleted to put a share's deletes in yet: then each group says so).
+     */
+    val shares: ShareRuns.Runs? = null,
 )
+
+/**
+ * What share runs need from the app for one coordinator run (sub-plan 07): Pro (read once, when the run starts) and
+ * Recently deleted, which takes every live item a share commit removes.
+ */
+class ShareHost(val isPro: Boolean, val local: LocalDataHosting) {
+    override fun toString(): String = "ShareHost(pro=$isPro)"
+}
 
 /**
  * The Sync screen's state machine (port of `ios/App/Sync/SyncCoordinator.swift`): `IDLE` -> `SYNCING` -> `IDLE`, or
  * `IDLE` -> `JOINING` -> (`SYNCING`) -> `IDLE`.
  *
- * * Sync runs on unlock (APP_OPEN), on pull-to-refresh, 2 s after the last local edit, and on "Sync now".
+ * * Sync runs on unlock (APP_OPEN), on coming back to the app (FOREGROUND), on pull-to-refresh, 2 s after the last local edit, and on "Sync now".
  * * Never two runs at once: a request while one runs is folded into ONE more run after it.
  * * The store is only ever written through [ItemStore.commit] inside the core folder transport, or after a complete
  *   LAN exchange; a failed run leaves it untouched. No failure escapes to the caller: runs report through [issues],
@@ -92,7 +115,15 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
     private val words = SyncWording(t)
 
     enum class Phase { IDLE, SYNCING, JOINING }
-    enum class Trigger { APP_OPEN, PULL_TO_REFRESH, LOCAL_EDIT, MANUAL }
+    enum class Trigger {
+        APP_OPEN, FOREGROUND, PULL_TO_REFRESH, LOCAL_EDIT, MANUAL,
+
+        /** The run a join or leave asked for while it was working: part of that action, so never held back. */
+        AFTER_ACTION;
+
+        /** Started by the app, not the person: held back while "Sync automatically" is off. */
+        val isAutomatic: Boolean get() = this == APP_OPEN || this == FOREGROUND || this == LOCAL_EDIT
+    }
 
     /** What the Sync screen shows about this vault's group. [hasFolderUri]: the picked folder's URI is stored. */
     data class Membership(
@@ -105,6 +136,12 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         val members: List<String> = emptyList(),
         /** Peer id -> when this device last accepted its changes (Unix seconds; workstream 6). */
         val peerSyncedAt: Map<String, Long> = emptyMap(),
+        /** Member id -> its name in the stored keyring (null: unreadable). Names come from peers: sanitize before showing. */
+        val names: Map<String, String?> = emptyMap(),
+        /** Members added by another device that this phone has not confirmed ("These are my devices"); sorted. */
+        val unconfirmed: List<String> = emptyList(),
+        /** Devices paired with this phone as a Wi-Fi host (revoked ones too; names come from peers: sanitize). */
+        val lanPeers: List<LanPeer> = emptyList(),
     ) {
         /** The peer's public keys are not shown either. */
         override fun toString(): String =
@@ -192,6 +229,64 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
     private val _verificationCode = MutableStateFlow<String?>(null)
     val verificationCode: StateFlow<String?> = _verificationCode.asStateFlow()
 
+    // Shared collections (sub-plan 07): each share group syncs through its own folder after the personal group.
+
+    /** The last run's issues of each share group (group id -> issues; empty: it synced). Words: [SyncWording.shareStatus]. */
+    private val _shareIssues = MutableStateFlow<Map<String, List<SyncIssue>>>(emptyMap())
+    val shareIssues: StateFlow<Map<String, List<SyncIssue>>> = _shareIssues.asStateFlow()
+
+    /**
+     * Collections this device was removed from since unlock (collection id -> the `share-removed` issue): the share group
+     * is gone, so the status stays with the collection, whose items went to Recently deleted.
+     */
+    private val _removedShares = MutableStateFlow<Map<String, SyncIssue>>(emptyMap())
+    val removedShares: StateFlow<Map<String, SyncIssue>> = _removedShares.asStateFlow()
+
+    /** The reason code of the last refused share action ([ShareRuns.reason]); null after one that worked. */
+    private val _shareActionReason = MutableStateFlow<String?>(null)
+    val shareActionReason: StateFlow<String?> = _shareActionReason.asStateFlow()
+
+    /** After a member removal: false when the removal notice or the rotated keyring could not be written to the folder. */
+    private val _shareRemovalWritten = MutableStateFlow(true)
+    val shareRemovalWritten: StateFlow<Boolean> = _shareRemovalWritten.asStateFlow()
+
+    /** After a share upgrade: false when the upgraded keyring could not be written to the folder yet. */
+    private val _shareUpgradeWritten = MutableStateFlow(true)
+    val shareUpgradeWritten: StateFlow<Boolean> = _shareUpgradeWritten.asStateFlow()
+
+    /**
+     * Pro on this device, read on the coordinator's thread when a run or a share action starts: creating, joining and
+     * syncing a shared collection need Pro. The app sets it at unlock; the default runs no share.
+     */
+    var isPro: () -> Boolean = { false }
+
+    /**
+     * Recently deleted for shared collections (this unlock's local data). Null: no share runs, since a share's deletes
+     * and a removal would have nowhere to go (each share group says so).
+     */
+    var shareTrash: LocalDataHosting? = null
+
+    /**
+     * This unlock's Wi-Fi host (the phone listens for its paired devices); null when the app made none. Stopped by
+     * [shutdown]; a person-started run opens a free host's listen window, and each run reports what it served.
+     */
+    var host: WifiHost? = null
+
+    /** The host served a peer outside a run (a merge may have changed the vault): lists reload, membership is re-read. */
+    fun hostServed() {
+        assertConfined()
+        if (!gate.isOpen) return
+        _completedRuns.value += 1
+        refreshIdentities()
+        scope.launch { refreshMembership() }
+    }
+
+    /** The status of share group [groupId]'s last run: null when it synced or has not run since unlock ([shareRan]). */
+    fun shareStatus(groupId: String): SyncWording.ShareStatus? = words.shareStatus(_shareIssues.value[groupId] ?: emptyList())
+
+    /** Whether share group [groupId] was run (or held back, with its reason) since unlock. */
+    fun shareRan(groupId: String): Boolean = _shareIssues.value[groupId] != null
+
     val isBusy: Boolean get() = _phase.value != Phase.IDLE
 
     private var syncAfterAction = false
@@ -238,6 +333,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         assertConfined()
         for (j in listOfNotNull(joinJob, actionJob, runner, identityJob)) if (stopping.none { it === j }) stopping.add(j)
         gate.close()
+        host?.shutdown()
         editJob?.cancel(); editJob = null
         joinJob?.cancel()
         runner?.cancel()
@@ -301,7 +397,10 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 peer = trustedPeerOrNull(deps, state),
                 deviceId = state?.deviceId,
                 members = state?.members?.filter { it != state.deviceId }?.sorted() ?: emptyList(),
-                peerSyncedAt = state?.peerSyncedAt ?: emptyMap(),
+                peerSyncedAt = state?.let { PeerSeenAt.merged(it.groupId, it.peerSyncedAt) } ?: emptyMap(),
+                names = state?.let { FolderSync.storedMemberNames(it) } ?: emptyMap(),
+                unconfirmed = state?.unackedMembers?.filter { it != state.deviceId } ?: emptyList(),
+                lanPeers = state?.lanPeers ?: emptyList(),
             )
         }
         if (gate.isOpen && serial > appliedSerial) {
@@ -315,6 +414,9 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
     /** Runs one sync, or joins the one in flight and asks it for one more run. */
     suspend fun sync(trigger: Trigger = Trigger.MANUAL): Unit = onConfined {
         if (!gate.isOpen) return@onConfined
+        if (trigger.isAutomatic && !deps.autoSync()) return@onConfined
+        // A person-started run: a free host listens for a while, so a paired device can connect.
+        if (trigger == Trigger.MANUAL || trigger == Trigger.PULL_TO_REFRESH) host?.syncNow()
         if (_phase.value == Phase.JOINING) { // run once the join/leave has finished
             syncAfterAction = true
             return@onConfined
@@ -347,7 +449,10 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             do {
                 rerun = false
                 _phase.value = Phase.SYNCING
-                val result = runAll(store, deps, witnessMemory)
+                val ran = runAll(store, deps, witnessMemory, shareHost(), proNow())
+                // What the host saw while serving peers since the last run (reported once), as the Mac's host issues.
+                val served = host?.afterRun() ?: emptyList()
+                val result = if (served.isEmpty()) ran else ran.copy(issues = ran.issues + served)
                 apply(result)
                 publish(result)
             } while (rerun && gate.isOpen && currentCoroutineContext().isActive)
@@ -366,6 +471,8 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
 
     private suspend fun apply(result: SyncRunResult) {
         if (!gate.isOpen) return
+        // A verified signed removal notice: the app checks the erase setting (it may erase, which ends this coordinator).
+        if (result.issues.any { it.kind == SyncWording.REMOVAL_NOTICE_KIND }) deps.onRemovalNotice()
         refreshMembership()
         if (!gate.isOpen) return
         if (result.ran) {
@@ -376,7 +483,26 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         } else {
             _issues.value = emptyList()
         }
+        result.shares?.let { shares ->
+            if (!result.ran) _conflictCopies.value += shares.conflicts // a joined run counted them in `conflicts`
+            _shareIssues.value = shares.issues
+            // The group of a removal is gone: its status stays with the collection.
+            val removed = shares.issues.values.flatten().filter { it.kind == "share-removed" }
+            if (removed.isNotEmpty()) _removedShares.value = _removedShares.value + removed.associateBy { it.detail }
+        }
         _completedRuns.value += 1
+    }
+
+    /** The share host of one run: null without Recently deleted (no share runs then; each group reports `item-error`). */
+    private fun shareHost(): ShareHost? {
+        val local = shareTrash ?: return null
+        return ShareHost(proNow(), local)
+    }
+
+    private fun proNow(): Boolean = try {
+        isPro()
+    } catch (e: Exception) {
+        false
     }
 
     // MARK: joining
@@ -510,7 +636,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
     }
 
     private suspend fun releaseUnusedFoldersNow() {
-        if (gate.isOpen) withContext(deps.io) { keepOnlyStoredFolder(deps) }
+        if (gate.isOpen) withContext(deps.io) { keepOnlyStoredFolder(deps, store) }
     }
 
     private suspend fun joinFolderAndReport(uri: String, password: String, now: Long): Boolean = try {
@@ -546,6 +672,41 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             fail(e)
             return false
         }
+    }
+
+    /**
+     * Cloud folder: start a NEW group in the picked folder with this vault as its first member (iOS `createFolder`).
+     * Only for a vault in no group. Refusals (`folder-in-use`, `weak-password`, `already-joined`, ...) show in
+     * [actionError]; on success the same message as a join.
+     *
+     * [add]: give this vault's Wi-Fi-only group the folder instead (desktop "Add a cloud folder to this group…"), with a
+     * new sync password; [freshKey] after the user confirmed a new key because a Wi-Fi device was removed (audit M9).
+     */
+    suspend fun createFolder(uri: String, password: String, add: Boolean = false, freshKey: Boolean = false): Boolean = onConfined {
+        var started = false
+        val ok = runAction {
+            started = true
+            try {
+                try {
+                    val result = withContext(deps.io) { createFolderWork(uri, password, store, deps, add, freshKey) }
+                    _phase.value = Phase.IDLE
+                    apply(result)
+                    publish(result)
+                    _actionInfo.value = t.s(R.string.sync_now_cloud_info)
+                    runPendingSync()
+                    true
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    fail(e)
+                    false
+                }
+            } finally {
+                withContext(NonCancellable) { releaseUnusedFoldersNow() }
+            }
+        }
+        if (!started) releaseUnusedFoldersNow()
+        ok
     }
 
     // MARK: rollback warnings (ios/App/Sync/SyncCoordinator.swift acknowledgeRollback / dismissPeerRollback)
@@ -595,14 +756,206 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         }
     }
 
+    // MARK: removing devices (cloud folder; desktop `remove_device` / `remove_orphans`)
+
+    /**
+     * Removes [deviceIds] from the cloud-folder group in ONE rotation with a NEW sync password ([newPassword], which the
+     * screen had entered twice): epoch + 1, the new key goes only to this phone and the confirmed members kept, and
+     * each removed device gets a signed removal notice (it erases itself if it comes online with its setting on).
+     * Unconfirmed members lose access too, without a notice. The screen checks Pro first. Refusals (`weak-password`,
+     * `password-reused`, `keyring-changed`, `stale-trust`, ...) leave everything as it was and show in [actionError].
+     */
+    suspend fun removeDevices(deviceIds: List<String>, newPassword: String, keep: List<String>? = null): Boolean = onConfined {
+        runAction { removeDevicesWork(deviceIds, newPassword, keep) }
+    }
+
+    /** Drops the last action's message (the Remove sheet opens without a stale error). */
+    fun clearActionError() {
+        _actionError.value = null
+    }
+
+    private suspend fun removeDevicesWork(deviceIds: List<String>, newPassword: String, keep: List<String>?): Boolean {
+        val names = _membership.value.names
+        try {
+            val result = withContext(deps.io) { rotateWork(store, deps, deviceIds, newPassword, keep) }
+            _phase.value = Phase.IDLE
+            apply(result)
+            publish(result)
+            val shown = deviceIds.map { words.deviceLabel(it, names) }
+            _actionInfo.value = if (shown.size == 1) {
+                t.s(R.string.sync_device_removed_from_sync, shown[0])
+            } else {
+                t.s(R.string.sync_removed_list, shown.joinToString(", "))
+            }
+            runPendingSync()
+            return true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            fail(e)
+            return false
+        }
+    }
+
+    /** "These are my devices": the members added by another device that the screen showed ([deviceIds]) are confirmed. */
+    suspend fun confirmMembers(deviceIds: List<String>): Boolean = onConfined {
+        if (!gate.isOpen) return@onConfined false
+        val ok = withContext(deps.io) {
+            try {
+                FolderSync.acknowledgeMembers(store, deps.slots.installId(), deviceIds) > 0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
+            }
+        }
+        refreshMembership()
+        ok
+    }
+
+    // MARK: shared collections (sub-plan 07; desktop `CollectionShareService`, the iPhone's share actions)
+    //
+    // Each action runs under the coordinator's action lock (never beside a sync run, so never interleaved with a run's
+    // store writes), on the I/O dispatcher (Argon2id and the folder block). Create, join and join again need Pro (checked
+    // before any folder access or key derivation); approve, remove and leave do not. A refusal sets
+    // [shareActionReason] and changes nothing. Share passwords are only passed through, never kept.
+
+    /**
+     * Share [collectionId] through the picked folder [folderUri], with this device as its owner named [deviceName].
+     * [password] is what the other people type to join; [membersCanEdit] is fixed for the life of the share.
+     */
+    suspend fun createShare(
+        collectionId: String,
+        folderUri: String,
+        password: String,
+        deviceName: String,
+        membersCanEdit: Boolean,
+    ): ShareGroups.Group? {
+        val mode = if (membersCanEdit) "edit" else "read"
+        return shareAction { store, deps, pro ->
+            ShareRuns.create(store, deps, pro, collectionId, folderUri, password, deviceName, mode)
+        }
+    }
+
+    /** Join the shared collection in the picked folder [folderUri] as [deviceName]; it waits for the owner's approval. */
+    suspend fun joinShare(folderUri: String, password: String, deviceName: String): ShareGroups.Group? =
+        shareAction { store, deps, pro -> ShareRuns.join(store, deps, pro, folderUri, password, deviceName) }
+
+    /** Join again after someone else's join at the same moment won (`superseded`: the status offers Join again). */
+    suspend fun rejoinShare(groupId: String, password: String, deviceName: String): ShareGroups.Group? =
+        shareAction { store, deps, pro -> ShareRuns.rejoin(store, deps, pro, groupId, password, deviceName) }
+
+    /** The owner lets the waiting [deviceIds] in (each shown by name first). Returns the members approved. */
+    suspend fun approveShare(groupId: String, deviceIds: List<String>): List<ShareGroups.Member>? =
+        shareAction { store, deps, _ -> ShareRuns.approve(store, deps, groupId, deviceIds) }
+
+    /**
+     * The owner upgrades share v1 [groupId] to share v2 (approval gating) with a share password typed twice ([again] must
+     * match). Works without Pro. True once upgraded, false when refused ([shareActionReason]); [shareUpgradeWritten]
+     * says whether the folder got the new keyring now.
+     */
+    suspend fun upgradeShare(groupId: String, password: String, again: String): Boolean = onConfined {
+        if (password != again) {
+            _shareActionReason.value = "password-mismatch"
+            return@onConfined false
+        }
+        val written = shareAction { store, deps, _ -> ShareRuns.upgrade(store, deps, groupId, password) }
+            ?: return@onConfined false
+        _shareUpgradeWritten.value = written
+        true
+    }
+
+    /**
+     * The owner removes [deviceId] with a new share password ([again] must match; the removed person knows the old one).
+     * True once removed; [shareRemovalWritten] says whether the folder got the notice and the new keyring.
+     */
+    suspend fun removeShareMember(groupId: String, deviceId: String, newPassword: String, again: String): Boolean = onConfined {
+        if (newPassword != again) {
+            _shareActionReason.value = "password-mismatch"
+            return@onConfined false
+        }
+        val written = shareAction { store, deps, _ -> ShareRuns.removeMember(store, deps, groupId, deviceId, newPassword) }
+            ?: return@onConfined false
+        _shareRemovalWritten.value = written
+        true
+    }
+
+    /** Leave a shared collection (a member), or stop sharing it (the owner): the collection and its items stay here. */
+    suspend fun leaveShare(groupId: String): Boolean = onConfined {
+        shareAction(syncAfter = false) { store, _, _ -> ShareRuns.leave(store, groupId) } ?: return@onConfined false
+        _shareIssues.value = _shareIssues.value - groupId
+        // The share's folder is no longer used: the app gives up its permission to it.
+        releaseUnusedFoldersNow()
+        true
+    }
+
+    /**
+     * Forget the share link of [collectionId] that another of this person's devices published (final review finding 4):
+     * for a device that was lost or reset. The run after it publishes the link's tombstone; a device that still holds the
+     * share publishes its link again. Works without Pro.
+     */
+    suspend fun forgetShareLink(collectionId: String): Boolean = onConfined {
+        shareAction { store, _, _ -> ShareRuns.forgetLink(store, collectionId) } ?: return@onConfined false
+        true
+    }
+
+    /**
+     * One share action: the action lock, the work on the I/O dispatcher, then ([syncAfter]) a run so the share's folder
+     * is read and written now. Null when refused ([shareActionReason]).
+     */
+    private suspend fun <T : Any> shareAction(
+        syncAfter: Boolean = true,
+        work: (ItemStore, SyncDependencies, Boolean) -> T,
+    ): T? = onConfined {
+        _shareActionReason.value = null
+        _shareRemovalWritten.value = true
+        _shareUpgradeWritten.value = true
+        var value: T? = null
+        var started = false
+        runAction {
+            started = true
+            val pro = try {
+                isPro()
+            } catch (e: Exception) {
+                false
+            }
+            val store = store
+            val deps = deps
+            val done = try {
+                // Not interruptible: a share action's store commit and folder writes are never cut short.
+                value = withContext(deps.io) { work(store, deps, pro) }
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _shareActionReason.value = ShareRuns.reason(e)
+                false
+            }
+            _phase.value = Phase.IDLE
+            refreshMembership()
+            if (done && syncAfter) {
+                syncAfterAction = false // the run below includes any edit made meanwhile
+                sync(Trigger.MANUAL)
+            } else {
+                runPendingSync()
+            }
+            done
+        }
+        if (!started) _shareActionReason.value = "busy"
+        value
+    }
+
     // MARK: leave and reset (each after two confirmations in the UI)
 
-    /** Stops syncing and forgets the paired device and folder; items and their sync history stay. */
+    /**
+     * Stops syncing and forgets the paired device and folder; items and their sync history stay. This device's identity
+     * is kept, so joining the same group again shows it under its old id ([clear]).
+     */
     suspend fun leave() {
         onConfined { runAction { clearAction(history = false) } }
     }
 
-    /** Forgets the group, its keys and the sync history; items stay. */
+    /** Forgets the group, its keys, the sync history and any kept identity; items stay. */
     suspend fun reset() {
         onConfined { runAction { clearAction(history = true) } }
     }
@@ -676,7 +1029,7 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
     private fun runPendingSync() {
         if (!syncAfterAction) return
         syncAfterAction = false
-        scope.launch { sync(Trigger.LOCAL_EDIT) }
+        scope.launch { sync(Trigger.AFTER_ACTION) }
     }
 
     /** The join's own job was cancelled (its result, not its caller's). */
@@ -688,6 +1041,9 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
     companion object {
         const val MAX_PASSWORD_ATTEMPTS = 5
         const val PASSWORD_BACKOFF_SECONDS = 30L
+
+        /** Rule 5's refusal: the other device could not pair this device under its kept id; a new one is used next time. */
+        const val REJOIN_REFUSED = "rejoin-refused"
 
         private fun readSlotOrNull(deps: SyncDependencies, slot: Slot): ByteArray? = try {
             deps.slots.read(slot)
@@ -702,15 +1058,33 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             false
         }
 
-        /** Keeps only the permission of the folder in the slot. A slot that cannot be read keeps everything. */
-        fun keepOnlyStoredFolder(deps: SyncDependencies) {
+        /**
+         * Keeps only the permission of the folder in the slot and those of the shared collections' folders ([store]'s
+         * share records, sub-plan 07). A slot or share store that cannot be read keeps everything.
+         */
+        fun keepOnlyStoredFolder(deps: SyncDependencies, store: ItemStore? = null) {
             val raw = try {
                 deps.slots.read(Slot.FOLDER_URI)
             } catch (e: Exception) {
                 return
             }
+            keepFolders(deps, store, raw?.toString(Charsets.UTF_8))
+        }
+
+        /** Gives up every folder permission but [personal]'s (null: none) and the share folders' of [store]. */
+        private fun keepFolders(deps: SyncDependencies, store: ItemStore?, personal: String?) {
+            val shared = if (store == null) {
+                emptySet()
+            } else {
+                val snap = try {
+                    store.load()
+                } catch (e: Exception) {
+                    return
+                }
+                ShareRuns.folderUris(snap) ?: return
+            }
             try {
-                deps.folders.keepOnly(raw?.toString(Charsets.UTF_8))
+                if (shared.isEmpty()) deps.folders.keepOnly(personal) else deps.folders.keepOnlyAll(shared + listOfNotNull(personal))
             } catch (e: Exception) {
                 // best effort: a permission that stays is released at the next join, leave or reset
             }
@@ -766,10 +1140,18 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             currentCoroutineContext().isActive && ((store as? GatedStore)?.gate?.isOpen ?: true)
 
         /**
-         * One full run off the coordinator's thread: the folder (when the group uses one), then the paired LAN peer.
-         * Between steps it stops as soon as the vault locks, so nothing is read, refreshed or committed after.
+         * One full run off the coordinator's thread: the personal group (the folder when the group uses one, then the
+         * paired LAN peer), then every share group ([shareHost]; sub-plan 07), whether or not this vault is in a personal
+         * group. Between steps it stops as soon as the vault locks, so nothing is read, refreshed or committed after.
          */
-        suspend fun runAll(store: ItemStore, deps: SyncDependencies, memory: WitnessMemory? = null): SyncRunResult = withContext(deps.io) {
+        suspend fun runAll(
+            store: ItemStore,
+            deps: SyncDependencies,
+            memory: WitnessMemory? = null,
+            shareHost: ShareHost? = null,
+            /** Pro now, for the shares' status when they cannot run ([ShareRuns.notRun]). */
+            isPro: Boolean = shareHost?.isPro ?: true,
+        ): SyncRunResult = withContext(deps.io) {
             val snapshot = try {
                 store.load()
             } catch (e: CancellationException) {
@@ -777,21 +1159,43 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             } catch (e: Exception) {
                 return@withContext SyncRunResult(issues = listOf(SyncIssue("local-data", detail(e))), ran = true)
             }
-            // Not joined: nothing to sync, but unlock (app open) still publishes the identities.
-            val state = snapshot.sync ?: return@withContext SyncRunResult(publish = stillOpen(store))
+            // Not joined: no personal run, but unlock (app open) still publishes the identities. A watch file left from a
+            // group this vault left must not erase it later (desktop `run_once`).
+            val state = snapshot.sync
+            var out = if (state != null) {
+                personalRun(store, deps, state, memory)
+            } else {
+                deps.removalWatch?.delete()
+                SyncRunResult()
+            }
+            if (snapshot.shares != null && stillOpen(store)) {
+                out = if (shareHost == null) {
+                    out.copy(shares = ShareRuns.notRun(snapshot, isPro))
+                } else {
+                    val shares = ShareRuns.runAll(store, deps, shareHost.isPro, shareHost.local)
+                    out.copy(conflicts = out.conflicts + shares.conflicts, shares = shares)
+                }
+            }
+            out.copy(publish = stillOpen(store))
+        }
+
+        /** The personal group's run ([runAll]): the folder, then the paired LAN peer, then the witness flush. */
+        private suspend fun personalRun(store: ItemStore, deps: SyncDependencies, state: SyncGroupState, memory: WitnessMemory?): SyncRunResult {
             val issues = ArrayList<SyncIssue>()
             var conflicts = 0
             val installId = try {
                 deps.slots.installId()
             } catch (e: Exception) {
                 issues.add(SyncIssue("state-corrupt", detail(e)))
-                return@withContext SyncRunResult(issues, ran = true, publish = stillOpen(store))
+                return SyncRunResult(issues, ran = true)
             }
             if (state.hasFolder) {
-                if (!stillOpen(store)) return@withContext SyncRunResult(issues, conflicts, ran = true)
+                if (!stillOpen(store)) return SyncRunResult(issues, conflicts, ran = true)
                 // Blocking (SAF, cloud providers): already on the I/O dispatcher.
                 val report = folderRun(store, deps, installId, state, memory)
                 issues.addAll(report.issues); conflicts += report.conflicts
+                // Rule 2: a verified removal notice for this id: its identity is never kept for a rejoin.
+                if (report.issues.any { it.kind == SyncWording.REMOVAL_NOTICE_KIND }) dropKeptIdentity(deps, state.deviceId)
             }
             val peer = try {
                 // Ruling 16: a peer pinned for another group (a join stopped between pin and commit) is ignored.
@@ -801,14 +1205,14 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 null
             }
             if (peer != null) {
-                if (!stillOpen(store)) return@withContext SyncRunResult(issues, conflicts, ran = true)
+                if (!stillOpen(store)) return SyncRunResult(issues, conflicts, ran = true)
                 val report = lanRun(store, deps, installId, peer, memory)
                 issues.addAll(report.issues); conflicts += report.conflicts
             }
             // Peer generations the LAN save throttle held back are saved at the end of every run (desktop service
             // `flush_witness`), so a lock loses no checked value.
             if (memory != null && stillOpen(store)) flushWitness(store, memory, peer?.deviceId, deps.clock.now)
-            SyncRunResult(issues, conflicts, ran = true, publish = stillOpen(store))
+            return SyncRunResult(issues, conflicts, ran = true)
         }
 
         /** Desktop `lan_sync.flush_witness`: commit every in-memory peer generation above the stored one. */
@@ -840,6 +1244,13 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             } catch (e: Exception) {
                 return RunReport(issues = listOf(SyncIssue("folder-missing", detail(e))))
             } ?: return RunReport(issues = listOf(SyncIssue("folder-missing", "no folder chosen on this device")))
+            // Personal collections on every personal run, with this vault's share records (sub-plan 07): no run without
+            // them (a share store that cannot be read still gives its fail-closed read-only set).
+            val shares = try {
+                ShareRuns.collectionShares(store)
+            } catch (e: Exception) {
+                return RunReport(issues = listOf(SyncIssue("local-data", detail(e))))
+            }
             return try {
                 val folder = deps.folders.open(raw.toString(Charsets.UTF_8))
                 val start = state ?: try {
@@ -847,8 +1258,13 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 } catch (e: Exception) {
                     null
                 }
-                FolderSync(folder, installId, deps.licenseKeys, pairedKeys(deps, start), attachments = deps.attachments)
-                    .runOnce(store, deps.random, deps.clock, memory)
+                val uri = raw.toString(Charsets.UTF_8)
+                CommitOrigin.with("sync") {
+                    FolderSync(
+                        folder, installId, deps.licenseKeys, pairedKeys(deps, start), attachments = deps.attachments,
+                        removalWatch = deps.removalWatch?.store(uri), collections = true, collectionShares = shares,
+                    ).runOnce(store, deps.random, deps.clock, memory)
+                }
             } catch (e: Exception) {
                 RunReport(issues = listOf(SyncIssue("folder-missing", detail(e))))
             }
@@ -867,14 +1283,14 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         ): RunReport {
             fun fail(kind: String, detail: String = "") = RunReport(issues = listOf(SyncIssue(kind, detail)))
             val now = deps.clock.now
-            val snapshot = try {
+            val loaded = try {
                 store.load()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 return fail("local-data", detail(e))
             }
-            val state = snapshot.sync ?: return fail("not-joined")
+            val state = loaded.sync ?: return fail("not-joined")
             if (state.installId != installId) return fail("rejoin-required", "install-mismatch")
             if (peer.groupId != state.groupId || peer.deviceId == state.deviceId) return fail("peer-mismatch", peer.deviceId)
             // Only the paired peer, only at a private LAN address.
@@ -885,13 +1301,25 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             // Attachment sync: documents go only to a peer that answered a `blob-get` (desktop `attachment_peers`).
             val vault = deps.attachments
             val documents = vault != null && peer.deviceId in state.attachmentPeers
+            // Personal collections (sub-plan 07): collection states only with a peer that listed `collections` (decided
+            // from the state read before the exchange); this vault's share records apply on every run (read-only share
+            // items are never changed by another of this person's devices).
+            val collections = peer.deviceId in state.collectionPeers
+            val shares = ShareGroups.collectionShares(loaded)
+            // Desktop `_local_view` (mobile sync review H-1): the vector bumps and tombstones this view publishes are saved
+            // before anything is sent. The peer may keep the states even when this run fails afterwards, so a vector it
+            // holds must never be handed out again for other content (a later delete would come back, or an edit would
+            // turn into a conflict copy). A commit that loses to a local save ends the run with `busy`.
+            val snapshot = try {
+                saveLocalView(store, loaded, state.deviceId, now, collections, shares)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                return fail("local-data", detail(e))
+            } ?: return fail("busy", "items changed while syncing")
             try {
                 groupKey = GroupKey(state.groupId, state.epoch, state.key)
-                local = Documents.publishable(
-                    SyncMeta.localView(snapshot.records, snapshot.meta, state.deviceId, now).states.values
-                        .sortedWith { a, b -> Scalars.compare(a.itemId, b.itemId) },
-                    documents,
-                )
+                local = lanLocalView(snapshot, state, peer.deviceId, documents, now, collections, shares)
             } catch (e: Exception) {
                 return fail("local-data", detail(e))
             }
@@ -908,7 +1336,11 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             var moved: LanEndpoint? = null
             val exchange: LanExchange = try {
                 runInterruptible {
-                    deps.lan.exchangeWitnessing(peer, state.identity, groupKey, local, state.ownCounter, publish) { moved = it }
+                    // A peer not known to read collection states is asked once per exchange, after the views and before
+                    // the witness (desktop `_exchange_features`).
+                    deps.lan.exchangeWitnessing(peer, state.identity, groupKey, local, state.ownCounter, publish, askFeatures = !collections) {
+                        moved = it
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -920,6 +1352,12 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             }
             // The host answered at a new address with its pinned keys: dial it there next time (only while the same
             // peer is still paired; a Leave or a new pairing during the run wins).
+            // Every LAN session of this device is sealed (protocol version 3, it never sends a clear-text hello): pin the
+            // peer once (`"hello":3` in its entry, spec 2.5). A failed save never costs the finished exchange.
+            try {
+                deps.slots.markPairedPeerSealed(peer.deviceId)
+            } catch (_: Exception) {
+            }
             moved?.let { e ->
                 try {
                     if (deps.slots.pairedPeer() == peer) deps.slots.setPairedPeer(peer.copy(endpoint = e))
@@ -950,9 +1388,24 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                     null -> {}
                 }
             }
+            // Emergency access (sub-plan 08): ask a peer not yet known to read the plan once (desktop `_probe_heir`).
+            var heirPeers = state.heirPeers
+            if (peer.deviceId !in heirPeers) {
+                val reached = moved?.let { peer.copy(endpoint = it) } ?: peer
+                val answer = try {
+                    runInterruptible { deps.lan.probeHeir(reached, state.identity, groupKey) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    null
+                }
+                // Pruned on each add (review M3): devices that left the group are dropped, so the cap never keeps a new one out.
+                if (answer == true) heirPeers = (heirPeers.filter { it in state.members } + peer.deviceId).sorted()
+            }
             val present: ((AttachmentRef) -> Boolean)? = vault?.let { v -> { ref: AttachmentRef -> v.has(ref) } }
             var report = SyncRunner.run(
                 snapshot, listOf(PeerView(peer.deviceId, peerStates)), state.deviceId, now, deps.licenseKeys, documents = present,
+                collections = collections, shares = shares,
             )
             report = report.copy(issues = fileIssues + report.issues)
             if (inline) memory?.clearRefusals(peer.deviceId) // a format-2 exchange went through
@@ -968,19 +1421,26 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             report = report.copy(issues = report.issues + witnessIssues)
             val records = report.records ?: snapshot.records
             val meta = report.meta ?: snapshot.meta
-            val peersChanged = attachmentPeers != state.attachmentPeers
+            val peersChanged = attachmentPeers != state.attachmentPeers || heirPeers != state.heirPeers
             if (records != snapshot.records || meta != snapshot.meta || witnessState != null || peersChanged) {
                 // Workstream 6: the peer's changes were accepted now (local only; no extra commit when nothing changed).
                 val merged = records != snapshot.records || meta != snapshot.meta
-                val base = (witnessState ?: snapshot.sync)?.let { if (peersChanged) it.copy(attachmentPeers = attachmentPeers) else it }
+                val base = (witnessState ?: snapshot.sync)?.let {
+                    if (peersChanged) it.copy(attachmentPeers = attachmentPeers, heirPeers = heirPeers) else it
+                }
                 val synced = if (merged) base?.syncedWith(listOf(peer.deviceId), now) else base
                 try {
-                    store.commit(StoreChange(snapshot.revision, records, meta, synced))
+                    CommitOrigin.with("sync") { store.commit(StoreChange(snapshot.revision, records, meta, synced)) }
                     if (witnessState != null) memory?.markSaved(witnessState.peerGenerations.keys, now)
                 } catch (e: Exception) {
                     report = report.copy(issues = report.issues + SyncIssue("busy", detail(e)))
                 }
             }
+            // The peer's `features` answer is recorded after the merge commit: true or false; no answer records nothing
+            // (asked again next time).
+            val reads = exchange.collections
+            if (!collections && reads != null && stillOpen(store)) LanFeatures.setPeer(peer.deviceId, reads, store)
+            PeerSeenAt.note(state.groupId, peer.deviceId, now)
             return report.copy(wrote = true)
         }
 
@@ -1005,8 +1465,9 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
 
         /**
          * The enrollment of a scanned offer, then the inviter pinned and the group state committed (I/O thread).
-         * [onCode] receives the 6-digit verification code before the request is sent (desktop `on_code`): the inviting
-         * device shows the same code next to Accept and answers only after Accept (or `declined`).
+         * [onCode] receives the 6-digit verification code (desktop `on_code`): for a version-1 offer before the request is
+         * sent; for a version-2 offer (`LAN_SYNC_V3.md` 3) only once the inviter's reveal matched the QR's commitment.
+         * The inviting device shows the same code next to Accept and answers only after Accept (or `declined`).
          */
         suspend fun enroll(
             text: String,
@@ -1023,14 +1484,18 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 throw SyncActionException("bad-offer")
             }
             if (!LanAddress.isLan(offer.endpoint.host)) throw SyncActionException("bad-offer")
-            val identity = deps.newIdentity(deps.random)
+            // Rule 3: the identity Leave kept, when this offer is of its group; any other group gets a new one.
+            val kept = keptIdentityOrNull(deps)?.takeIf { it.groupId == offer.groupId && it.deviceId != offer.inviterDeviceId }
+            val identity = kept?.identity ?: deps.newIdentity(deps.random)
             val request: ByteArray
-            val code: String
+            val code: String?
+            val sealed = offer.commit != null
             try {
                 // A phone never listens: it announces no endpoint and always initiates. The name is the generic one it also
                 // gives itself in the keyring; the inviting device shows it on its Accept prompt.
                 request = Enrollment.buildRequest(offer, identity, deps.deviceName, null, deps.random, deps.clock)
-                code = Enrollment.verificationCode(offer, identity, null, deps.deviceName)
+                // A version-2 offer: the code needs the inviter's reveal, which comes only after the request.
+                code = if (sealed) null else Enrollment.verificationCode(offer, identity, null, deps.deviceName)
             } catch (e: PairingException) {
                 throw SyncActionException(if (e.kind == PairingException.Kind.EXPIRED) "offer-used-or-expired" else "bad-offer")
             } catch (e: Exception) {
@@ -1039,19 +1504,42 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             // Read before dialling: an address outside this Wi-Fi is still tried (it may be routed), but if the dial
             // fails the message says which address the PC should put in its code.
             val offSubnet = IPv4Subnet.mismatch(offer.endpoint.host, deps.localSubnet())
-            onCode(code)
+            code?.let(onCode)
+            // Version-2 offer: the one reveal frame is checked against the QR's commitment; only then the code shows.
+            var reveal: ByteArray? = null
+            var revealRefused = false
+            val onInterim: (ByteArray) -> Unit = { frame ->
+                try {
+                    if (!sealed || reveal != null) throw PairingException(PairingException.Kind.MALFORMED, "Unexpected enrollment reveal")
+                    val opened = Enrollment.openReveal(offer, frame)
+                    val shown = Enrollment.verificationCode(offer, identity, null, deps.deviceName, opened)
+                    reveal = opened
+                    onCode(shown)
+                } catch (e: Exception) {
+                    revealRefused = true
+                    throw e
+                }
+            }
             // The reply comes once the user chose Accept on the inviting device: the connection waits up to
             // Enrollment.ENROLL_REPLY_SECONDS for it (ChannelLanDialer.enrollReplyMs, Ruling 17 amended).
             val reply = try {
-                runInterruptible { deps.lan.enroll(offer.endpoint, request, onConnected) }
+                runInterruptible { deps.lan.enroll(offer.endpoint, request, onConnected, onInterim) }
             } catch (e: Exception) {
+                // A reveal that does not match the QR (or a second one): refused, like desktop `enroll_from_qr`.
+                if (revealRefused && e !is CancellationException) throw SyncActionException("refused")
                 val cancelled = e is CancellationException || !currentCoroutineContext().isActive
                 val kind = (e as? LanSocketException)?.kind ?: LanFailure.OTHER
                 throw EnrollConnectException(if (cancelled) LanFailure.CANCELLED else kind, offer.endpoint, offSubnet)
             }
             val groupKey = try {
-                Enrollment.openReply(offer, identity, reply, deps.deviceName, null)
+                Enrollment.openReply(offer, identity, reply, deps.deviceName, null, reveal)
             } catch (e: PairingException) {
+                if (kept != null && e.kind == PairingException.Kind.REFUSED && e.detail == "refused") {
+                    // Rule 5: the plain refusal to a pairing under the kept id (a host on a released build refuses every
+                    // known id). The kept identity goes; the next pairing makes a new one, as before.
+                    dropKeptIdentity(deps, kept.deviceId)
+                    throw SyncActionException(REJOIN_REFUSED)
+                }
                 throw SyncActionException(
                     when {
                         e.kind != PairingException.Kind.REFUSED -> "refused"
@@ -1068,12 +1556,15 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             // Cancelled meanwhile (the lock): nothing of the join is stored.
             currentCoroutineContext().ensureActive()
             val installId = deps.slots.installId()
-            val state = SyncGroupState(groupKey.groupId, groupKey.epoch, groupKey.key, identity, installId, hasFolder = false)
+            val joined = SyncGroupState(groupKey.groupId, groupKey.epoch, groupKey.key, identity, installId, hasFolder = false)
+            // The kept id continues its counters, so peers take nothing from it for a replay or a rollback.
+            val state = if (kept != null && joined.groupId == kept.groupId) kept.continuing(joined) else joined
             // Ruling 16: never pin after the lock (a pin without its commit would be a stale peer).
             if (!stillOpen(store)) throw SyncActionException("locked")
             synchronized(PIN_LOCK) {
                 if ((store as? GatedStore)?.gate?.isOpen == false) throw SyncActionException("locked")
-                deps.slots.setPairedPeer(offer.inviterPeer)
+                // A version-2 offer pins the sealed hello at once (spec 2.5); a version-1 offer: the first sealed sync does.
+                deps.slots.setPairedPeer(offer.inviterPeer, sealed = sealed, fresh = true)
                 try {
                     val now = store.load()
                     if (now.sync != null) throw SyncActionException("already-joined")
@@ -1086,6 +1577,8 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                     throw e
                 }
             }
+            // Rule 2: it is the live identity again.
+            if (kept != null) dropKeptIdentity(deps, kept.deviceId)
         }
 
         /** True when [joinFolderWork] would take the "choose the folder again" branch (no password). Never creates the slot. */
@@ -1110,7 +1603,10 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             val installId = deps.slots.installId()
             val snapshot: StoreSnapshot = store.load()
             val state = snapshot.sync
-            val fs = FolderSync(folder, installId, deps.licenseKeys, pairedKeys(deps, state))
+            val fs = FolderSync(
+                folder, installId, deps.licenseKeys, pairedKeys(deps, state), removalWatch = deps.removalWatch?.store(uri),
+                collections = true, collectionShares = ShareRuns.collectionShares(store),
+            )
             val uriBytes = uri.toByteArray(Charsets.UTF_8)
             val report = if (state != null && state.hasFolder && state.installId == installId) {
                 // Already syncing through a folder (e.g. the URI was lost): the picked folder must hold this group's key
@@ -1122,8 +1618,11 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                 } catch (e: Exception) {
                     throw SyncActionException("keyring-unreadable")
                 }
+                // A shared collection's keyring is not this group's (and not a damaged one): `share-group`.
                 val ring = try {
                     Keyring.parse(raw)
+                } catch (e: KeyringException) {
+                    throw SyncActionException(if (e.reason == "share-group") "share-group" else "keyring-corrupt")
                 } catch (e: Exception) {
                     throw SyncActionException("keyring-corrupt")
                 }
@@ -1131,11 +1630,21 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
                     throw SyncActionException("folder-has-other-group")
                 }
                 deps.slots.write(Slot.FOLDER_URI, uriBytes)
-                fs.runOnce(store, deps.random, deps.clock)
+                CommitOrigin.with("sync") { fs.runOnce(store, deps.random, deps.clock) }
             } else if (state != null && !state.hasFolder && state.installId == installId) {
-                fs.attach(store, password, deps.deviceName, deps.random, deps.clock)
+                // Already in the group over Wi-Fi: an empty folder gets the copy that fits ("Create one" is not offered here).
+                try {
+                    fs.attach(store, password, deps.deviceName, deps.random, deps.clock)
+                } catch (e: FolderSyncException) {
+                    throw if (e.reason == "no-group") SyncActionException("no-group-paired") else e
+                }
             } else {
-                fs.join(store, password, deps.deviceName, deps.random, deps.clock)
+                // Rules 3 and 6: a kept identity of this folder's group rejoins under its id when it may; either way it
+                // is used up once this group is joined (a fresh identity is the live one then).
+                val kept = if (state == null) keptIdentityOrNull(deps) else null
+                fs.join(store, password, deps.deviceName, deps.random, deps.clock, kept).also {
+                    if (kept != null && joinedGroupOrNull(store) == kept.groupId) dropKeptIdentity(deps, kept.deviceId)
+                }
             }
             // After a join the group already uses the folder; if this write fails, "Choose the folder again" (the
             // branch above) stores it without joining.
@@ -1159,24 +1668,146 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
             return SyncRunResult(issues, conflicts, ran = true, publish = stillOpen(store))
         }
 
-        /** Leave (history false) or reset (true); items always stay. True when there was something to clear. */
+        /** A new group in the picked folder (I/O thread); throws a refusal. The URI is stored once the group exists. */
+        suspend fun createFolderWork(
+            uri: String, password: String, store: ItemStore, deps: SyncDependencies, add: Boolean = false, freshKey: Boolean = false,
+        ): SyncRunResult {
+            if (!add && store.load().sync != null) throw SyncActionException("already-joined")
+            val folder: FolderAccess = try {
+                deps.folders.open(uri)
+            } catch (e: Exception) {
+                throw SyncActionException("folder-missing")
+            }
+            val installId = deps.slots.installId()
+            val fs = FolderSync(
+                folder, installId, deps.licenseKeys, emptyMap(), removalWatch = deps.removalWatch?.store(uri),
+                collections = true, collectionShares = ShareRuns.collectionShares(store),
+            )
+            val report = if (add) {
+                fs.addFolderToGroup(store, password, deps.deviceName, freshKey, deps.random, deps.clock, deps.strongSyncPassword)
+            } else {
+                fs.create(store, password, deps.deviceName, deps.random, deps.clock, deps.strongSyncPassword)
+            }
+            deps.slots.write(Slot.FOLDER_URI, uri.toByteArray(Charsets.UTF_8))
+            return SyncRunResult(report.issues, report.conflicts, ran = true, publish = stillOpen(store))
+        }
+
+        /** The rotation of [removeDevices] (I/O thread): the folder in the slot, then one [FolderSync.rotate]. */
+        suspend fun rotateWork(store: ItemStore, deps: SyncDependencies, deviceIds: List<String>, newPassword: String, keep: List<String>? = null): SyncRunResult {
+            val raw = deps.slots.read(Slot.FOLDER_URI) ?: throw SyncActionException("folder-missing")
+            val uri = raw.toString(Charsets.UTF_8)
+            val folder: FolderAccess = try {
+                deps.folders.open(uri)
+            } catch (e: Exception) {
+                throw SyncActionException("folder-missing")
+            }
+            val installId = deps.slots.installId()
+            val state = store.load().sync ?: throw SyncActionException("not-joined")
+            if (!state.hasFolder) throw SyncActionException("folder-missing")
+            val fs = FolderSync(
+                folder, installId, deps.licenseKeys, pairedKeys(deps, state), attachments = deps.attachments,
+                removalWatch = deps.removalWatch?.store(uri), collections = true, collectionShares = ShareRuns.collectionShares(store),
+            )
+            val report = try {
+                fs.rotate(store, newPassword, deviceIds, keep, deps.random, deps.clock, deps.strongSyncPassword)
+            } finally {
+                forgetDroppedPeer(store, deps)
+            }
+            return SyncRunResult(report.issues, report.conflicts, ran = true, publish = stillOpen(store))
+        }
+
+        /** The paired Wi-Fi peer is forgotten once it is no longer a member (removed, or dropped unconfirmed). */
+        private fun forgetDroppedPeer(store: ItemStore, deps: SyncDependencies) {
+            try {
+                val state = store.load().sync ?: return
+                if (state.membersEpoch != state.epoch || state.members.isEmpty()) return // member list not current
+                val members = state.members
+                val peer = deps.slots.pairedPeer() ?: return
+                if (peer.deviceId !in members) deps.slots.delete(Slot.PAIRED_PEER)
+            } catch (e: Exception) {
+                // best effort: a stale peer only shows peer-epoch-behind
+            }
+        }
+
+        /**
+         * Leave (history false) or reset (true); items always stay. True when there was something to clear. Leave keeps
+         * this device's identity first ([keepIdentity], rule 1); Reset drops any kept one (rule 2).
+         */
         fun clear(store: ItemStore, deps: SyncDependencies, history: Boolean): Boolean {
             val snap = store.load()
+            if (history) deps.slots.delete(Slot.KEPT_IDENTITY) else snap.sync?.let { keepIdentity(it, deps) }
             val had = snap.sync != null || (history && snap.meta.isNotEmpty())
             if (had) store.commit(StoreChange(snap.revision, snap.records, if (history) emptyMap() else snap.meta, null))
+            // Left sync: a removal notice written later must never erase this vault.
+            deps.removalWatch?.delete()
             deps.slots.delete(Slot.PAIRED_PEER)
             deps.slots.delete(Slot.FOLDER_URI)
-            // The folder is no longer used: the app gives up its permission to it.
-            try {
-                deps.folders.keepOnly(null)
-            } catch (e: Exception) {
-                // best effort (the slot is gone, so the next join releases it)
-            }
+            // The folder is no longer used: the app gives up its permission to it (the shared collections' stay).
+            keepFolders(deps, store, null)
             // Peer counters are per pinned peer and that pairing is gone, so they are dropped. The hello counter is this
             // device's own monotonic counter: it is kept, because resetting it would let a re-paired peer (or a recorded
             // old session) see a counter it already accepted (replay window).
             deps.slots.delete(Slot.PEER_COUNTERS)
             return had
+        }
+
+        /**
+         * Leave sync (design 2026-11-17, rule 1): keeps [state]'s identity and counters ([KeptIdentity]) in the vault's
+         * sealed slots before the group state is cleared, replacing one kept before. Nothing is kept (and an older one is
+         * dropped) for a state of another installation (a restored vault gets a new id) or one that says this device was
+         * removed ([removedFrom], rule 2). Best effort: a Leave never fails over it; the next join then makes a new
+         * identity, as before.
+         */
+        private fun keepIdentity(state: SyncGroupState, deps: SyncDependencies) {
+            try {
+                val installId = deps.slots.installId()
+                if (state.installId != installId || removedFrom(state, deps, installId)) {
+                    deps.slots.delete(Slot.KEPT_IDENTITY)
+                } else {
+                    deps.slots.setKeptIdentity(KeptIdentity.of(state))
+                }
+            } catch (e: Exception) {
+                // best effort (see above)
+            }
+        }
+
+        /**
+         * True when [state] says this device was removed from its group: the accepted keyring's member list (current)
+         * no longer names it, or the folder holds a removal notice for it that verifies against the watch file (as the
+         * removal guard checks it). A check that cannot be made says false; a rejoin checks the folder again.
+         */
+        private fun removedFrom(state: SyncGroupState, deps: SyncDependencies, installId: String): Boolean {
+            if (state.hasFolder && state.membersEpoch == state.epoch && state.members.isNotEmpty() && state.deviceId !in state.members) {
+                return true
+            }
+            val watch = deps.removalWatch?.load() ?: return false
+            if (watch.groupId != state.groupId || watch.deviceId != state.deviceId) return false
+            return try {
+                Removal.check(watch, installId, deps.folders.open(watch.folder)) != null
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        private fun keptIdentityOrNull(deps: SyncDependencies): KeptIdentity? = try {
+            deps.slots.keptIdentity()
+        } catch (e: Exception) {
+            null
+        }
+
+        /** Drops the kept identity when it is [deviceId]'s (rule 2). Best effort: never throws. */
+        private fun dropKeptIdentity(deps: SyncDependencies, deviceId: String) {
+            try {
+                if (deps.slots.keptIdentity()?.deviceId == deviceId) deps.slots.delete(Slot.KEPT_IDENTITY)
+            } catch (e: Exception) {
+                // a kept identity that stays is only used for its own group, where a later join or Leave replaces it
+            }
+        }
+
+        private fun joinedGroupOrNull(store: ItemStore): String? = try {
+            store.load().sync?.groupId
+        } catch (e: Exception) {
+            null
         }
 
         /**
@@ -1217,3 +1848,57 @@ class SyncCoordinator(store: ItemStore, val deps: SyncDependencies, scope: Corou
         else -> words.stepFailedText
     }
 }
+
+/**
+ * Saves the meta [SyncMeta.localView] builds for [snapshot] (each local edit's vector bump and each delete's tombstone;
+ * records and group state unchanged) under the snapshot's revision, before the view is sent anywhere (desktop
+ * `_local_view`; mobile sync review H-1). Returns the snapshot to send and merge from: [snapshot] itself when the view
+ * changes no meta, else the reloaded store. Null when a local save got in between (the commit lost the base-revision
+ * race, or the store changed again before the reload): the run stops with `busy` and nothing is sent. A view that
+ * cannot be built throws (`local-data`).
+ */
+internal fun saveLocalView(
+    store: ItemStore,
+    snapshot: StoreSnapshot,
+    device: String,
+    now: Long,
+    collections: Boolean = false,
+    shares: CollectionShares = CollectionShares.NONE,
+): StoreSnapshot? {
+    val view = SyncMeta.localView(snapshot.records, snapshot.meta, device, now, collections, shares)
+    if (view.meta == snapshot.meta) return snapshot
+    try {
+        store.commit(StoreChange(snapshot.revision, snapshot.records, view.meta, snapshot.sync))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        return null
+    }
+    val saved = store.load()
+    // Another save landed between the commit and the reload: its own bumps are not saved yet, so this run stops.
+    if (saved.records != snapshot.records || saved.meta != view.meta || saved.sync != snapshot.sync) return null
+    return saved
+}
+
+/**
+ * What one Wi-Fi run offers [peerId]: this store's local view, documents only when [documents], and the emergency
+ * access plan only to a peer that answered `heir-hello` (desktop `heir_peers`); collection states only with
+ * [collections] (sub-plan 07), [shares] naming the links this device speaks for.
+ */
+internal fun lanLocalView(
+    snapshot: StoreSnapshot,
+    state: SyncGroupState,
+    peerId: String,
+    documents: Boolean,
+    now: Long,
+    collections: Boolean = false,
+    shares: CollectionShares = CollectionShares.NONE,
+): List<ItemState> =
+    Heir.publishable(
+        Documents.publishable(
+            SyncMeta.localView(snapshot.records, snapshot.meta, state.deviceId, now, collections, shares).states.values
+                .sortedWith { a, b -> Scalars.compare(a.itemId, b.itemId) },
+            documents,
+        ),
+        peerId in state.heirPeers,
+    )

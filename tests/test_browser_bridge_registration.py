@@ -67,15 +67,6 @@ def test_repair_registers_chromium_and_firefox_manifests(monkeypatch, tmp_path: 
     ]
 
 
-def test_personal_installer_repairs_before_launch_and_unregisters_on_uninstall() -> None:
-    root = Path(__file__).resolve().parents[1]
-    text = (root / "build-personal" / "LocalGateKeys-Personal.iss").read_text(encoding="utf-8-sig")
-    assert 'Parameters: "--repair-browser-bridge"' in text
-    assert 'Flags: runhidden waituntilterminated' in text
-    assert '[UninstallRun]' in text
-    assert 'Parameters: "--unregister-browser-bridge"' in text
-
-
 def test_packaged_agent_has_native_bridge_maintenance_cli() -> None:
     root = Path(__file__).resolve().parents[1]
     text = (root / "src" / "localvault" / "agent.py").read_text(encoding="utf-8")

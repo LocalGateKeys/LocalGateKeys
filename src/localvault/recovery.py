@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from .backup import (
+    VAULT_PROMPT_ERRORS,
     FULL_BACKUP_FORMAT,
     FULL_BACKUP_VERSION,
     BackupCancelled,
@@ -31,10 +32,12 @@ from .backup import (
     export_full_backup,
     preflight_full_backup,
     restore_full_backup,
+    without_share_records,
 )
 from .config import atomic_write_json
 from .secret_text import SecretText, secrets_match
 from .session_guard import StaleSession
+from .vault import FactorSecrets
 from .version import APP_VERSION
 from .i18n import t
 
@@ -339,20 +342,32 @@ def _preflight(
     attachment_quota_bytes: int = 1024 * 1024 * 1024,
     cancel: Any = None,
     progress: Callable[..., Any] | None = None,
+    factors: FactorSecrets | None = None,
+    recovery_phrase: str | None = None,
 ) -> dict[str, Any]:
     # The backup API needs a profile-shaped destination even for dry-run. It
     # removes its own staging directory and never creates this probe path.
     # Use best-effort manual cleanup because some Windows workspaces have
     # restrictive inherited ACLs that make TemporaryDirectory.__exit__ fail
     # after an otherwise successful read-only preflight.
-    directory = Path(tempfile.mkdtemp(prefix=".lgk-recovery-probe-", dir=str(source.parent)))
+    # The probe and the stage live in the owner-only private temporary folder, never beside the backup: it may
+    # sit in a mirror (cloud) folder or on read-only media, and the stage holds the inner layer with the backup
+    # password removed (scan core 3, M1).
+    from .backup import private_temp_root
+    try:
+        directory = Path(tempfile.mkdtemp(prefix="lgk-recovery-probe-", dir=str(private_temp_root())))
+    except OSError as exc:
+        raise BackupError("Could not create the private staging folder") from exc
     try:
         probe = directory / "profile"
         return preflight_full_backup(
             source,
             profile_dir=probe,
+            _stage_parent=directory / "stage",
             backup_password=backup_password,
             vault_password=vault_password,
+            factors=factors,
+            recovery_phrase=recovery_phrase,
             validate_vault_password=vault_password is not None,
             validate_master_password=vault_password is not None,
             attachment_quota_bytes=attachment_quota_bytes,
@@ -381,8 +396,13 @@ def create_recovery_backup(
     cancel: Any = None,
     progress: Callable[..., Any] | None = None,
     reserve_bytes: int = 0,
+    factors: FactorSecrets | None = None,
 ) -> dict[str, Any]:
-    """Create and immediately authenticate a full encrypted v2 recovery backup."""
+    """Create and immediately authenticate a full encrypted v2 recovery backup.
+
+    A v4 vault is checked with its key file / YubiKey (``factors``); without them the check raises
+    ``FactorRequired`` and the selected path is left as it was.
+    """
     backup_password = _password(backup_password, label=t("backupPasswordSheet.title"))
     confirmation = backup_password_confirmation if backup_password_confirmation is not None else confirm_backup_password
     if confirmation is not None and not secrets_match(confirmation, backup_password):
@@ -420,7 +440,11 @@ def create_recovery_backup(
     )
     os.close(descriptor)
     staging_path = Path(staging_name)
+    source_session = None
     try:
+        if vault_password is not None:
+            # Opened to leave the shares out of the backup (sub-plan 07, ruling F3: share keys never go into one).
+            source_session = _open_source_copy(source_vault, vault_password, factors=factors)
         info = export_full_backup(
             staging_path,
             profile_dir=profile_dir,
@@ -431,6 +455,7 @@ def create_recovery_backup(
             backup_password=backup_password,
             cancel=cancel,
             progress=progress,
+            vault_filter=without_share_records(source_session) if source_session is not None else None,
         )
         # Authenticate every encrypted member before reporting success.  If a
         # master password was supplied, validate that layer too.
@@ -440,6 +465,7 @@ def create_recovery_backup(
             vault_password=vault_password,
             cancel=cancel,
             progress=progress,
+            factors=factors,
         )
         from .vault import recovery_phrase_enrolled
         inventory = _inventory_from_info(
@@ -472,7 +498,31 @@ def create_recovery_backup(
     except (OSError, ValueError, TypeError) as exc:
         raise RecoveryError(t("recovery.couldNotCreateTheRecovery")) from exc
     finally:
+        if source_session is not None:
+            source_session.lock()
         staging_path.unlink(missing_ok=True)
+
+
+def _open_source_copy(source_vault: Path, vault_password: str | SecretText, *,
+                      factors: FactorSecrets | None = None) -> Any:
+    """The profile's vault opened from a private copy (no unlock attempt counts against the live vault).
+
+    A v4 vault's key file / YubiKey prompt passes up unchanged; any other failure is a ``RecoveryError``.
+    """
+    from .backup import private_temporary_directory
+    from .config import read_json
+    from .vault import unlock_vault
+
+    with private_temporary_directory("lgk-backup-check-") as directory:
+        probe = Path(directory) / "vault.json"
+        try:
+            atomic_write_json(probe, read_json(source_vault))
+            return unlock_vault(probe, vault_password, factors=factors, upgrade_envelope=False)
+        except VAULT_PROMPT_ERRORS:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a wrong master password or a damaged vault
+            # The same words as the check of the written backup gave before (``_full_validate_staged_vault``).
+            raise RecoveryError("Backup vault could not be unlocked with the supplied master password") from exc
 
 
 def inspect_recovery_backup(
@@ -484,6 +534,7 @@ def inspect_recovery_backup(
     attachment_quota_bytes: int = 1024 * 1024 * 1024,
     cancel: Any = None,
     progress: Callable[..., Any] | None = None,
+    factors: FactorSecrets | None = None,
 ) -> dict[str, Any]:
     """Return safe inventory metadata after authenticating the v2 container."""
     backup = _regular_source(source, label=t("recovery.recoveryBackup"))
@@ -502,6 +553,7 @@ def inspect_recovery_backup(
             attachment_quota_bytes=attachment_quota_bytes,
             cancel=cancel,
             progress=progress,
+            factors=factors,
         )
     except BackupCancelled as exc:
         raise RecoveryCancelled(str(exc)) from exc
@@ -532,8 +584,9 @@ def verify_recovery_backup(
     attachment_quota_bytes: int = 1024 * 1024 * 1024,
     cancel: Any = None,
     progress: Callable[..., Any] | None = None,
+    factors: FactorSecrets | None = None,
 ) -> dict[str, Any]:
-    """Verify checksum, backup password, vault master password, and sidecars.
+    """Verify checksum, backup password, vault master password (+ key file / YubiKey), and sidecars.
 
     Only temporary encrypted staging data is used; the live profile is not
     opened, rewritten, or replaced.
@@ -555,6 +608,7 @@ def verify_recovery_backup(
         attachment_quota_bytes=attachment_quota_bytes,
         cancel=cancel,
         progress=progress,
+        factors=factors,
     )
     result.update({"operation": "verify", "verified": True, "verified_at": int(time.time()), "dry_run": True})
     return result
@@ -571,8 +625,15 @@ def plan_restore_as_new_profile(
     attachment_quota_bytes: int = 1024 * 1024 * 1024,
     cancel: Any = None,
     progress: Callable[..., Any] | None = None,
+    factors: FactorSecrets | None = None,
+    recovery_phrase: str | None = None,
 ) -> dict[str, Any]:
-    """Authenticate and stage a restore preview without touching destination."""
+    """Authenticate and stage a restore preview without touching destination.
+
+    A v4 vault needs ``factors`` (``FactorRequired`` / ``FactorMismatch`` pass through for the prompt).
+    With ``recovery_phrase`` the vault opens with its phrase instead and ``vault_password`` is the new
+    master password the restored vault will get.
+    """
     backup = _regular_source(source, label=t("recovery.recoveryBackup"))
     destination_path = _destination_profile(destination)
     backup_password = _password(backup_password, label=t("backupPasswordSheet.title"))
@@ -596,6 +657,8 @@ def plan_restore_as_new_profile(
             attachment_quota_bytes=attachment_quota_bytes,
             cancel=cancel,
             progress=progress,
+            factors=factors,
+            recovery_phrase=recovery_phrase,
         )
     except BackupCancelled as exc:
         raise RecoveryCancelled(str(exc)) from exc
@@ -632,8 +695,15 @@ def plan_restore_as_new_profile(
     }
 
 
-def _sanitize_restored_profile(profile: Path, vault_password: str | SecretText) -> None:
-    """Disable machine-specific release/trust state in an isolated restored copy."""
+def _sanitize_restored_profile(profile: Path, vault_password: str | SecretText, *,
+                               factors: FactorSecrets | None = None,
+                               publish: Callable[[], Path] | None = None, mark: bool = True) -> None:
+    """Disable machine-specific release/trust state in an isolated restored copy.
+
+    ``publish`` moves the sanitised copy into place and returns its vault file there; the vault's rollback marks
+    are then set for that path (``VaultSession.mark_restored``), never for the staging folder; ``mark=False``
+    sets none (a throwaway test copy).
+    """
     from .access_policy import normalized_policy
     from .settings import AppSettings
     from .vault import unlock_vault
@@ -646,18 +716,23 @@ def _sanitize_restored_profile(profile: Path, vault_password: str | SecretText) 
     settings.strict_offline_mode = True
     settings.save(settings_path)
 
-    session = unlock_vault(profile / "vault.json", vault_password)
+    session = unlock_vault(profile / "vault.json", vault_password, factors=factors)
     try:
         with session.transaction():
             session.set_fill_and_sign_in_enabled(False)
             session.set_hello_binding(None)
             session.set_face_binding(None)
+            session.set_fido_binding(None)
             for entry in session.all_entries():
                 policy = normalized_policy(entry.get("policy"))
                 policy["sign_in"] = "never"
                 session.set_entry_extras(entry["id"], policy=policy)
                 if entry.get("kind") == "desktop":
                     session.set_desktop_embedded_fill_approval(entry["id"], False)
+        if publish is not None:
+            placed = publish()
+            if mark:
+                session.mark_restored(placed)
     finally:
         session.lock()
 
@@ -674,8 +749,18 @@ def restore_as_new_profile(
     attachment_quota_bytes: int = 1024 * 1024 * 1024,
     cancel: Any = None,
     progress: Callable[..., Any] | None = None,
+    factors: FactorSecrets | None = None,
+    recovery_phrase: str | None = None,
+    mark: bool = True,
 ) -> dict[str, Any]:
-    """Return a preview unless ``confirm=True``; then publish a safe new profile."""
+    """Return a preview unless ``confirm=True``; then publish a safe new profile.
+
+    ``mark=False`` (the "test restore" drill, a throwaway copy): no rollback marks are set for it.
+
+    A v4 vault keeps its key file / YubiKey and needs them (``factors``).  A ``recovery_phrase``
+    restore opens it with the phrase instead, sets ``vault_password`` as its new master password and
+    drops the factors; ``factors_removed`` in the result lists them.
+    """
     plan = plan_restore_as_new_profile(
         source,
         destination,
@@ -686,6 +771,8 @@ def restore_as_new_profile(
         attachment_quota_bytes=attachment_quota_bytes,
         cancel=cancel,
         progress=progress,
+        factors=factors,
+        recovery_phrase=recovery_phrase,
     )
     if not confirm:
         return plan
@@ -704,22 +791,32 @@ def restore_as_new_profile(
                 profile_dir=stage,
                 backup_password=_password(backup_password, label=t("backupPasswordSheet.title")),
                 vault_password=_password(vault_password, label=t("recovery.vaultMasterPassword")),
+                factors=factors,
+                recovery_phrase=recovery_phrase,
                 validate_vault_password=True,
                 validate_master_password=True,
                 replace=False,
                 attachment_quota_bytes=attachment_quota_bytes,
                 cancel=cancel,
                 progress=progress,
+                _mark_destination=False,  # a staging folder: the profile is marked where it ends up
             )
         except BackupCancelled as exc:
             raise RecoveryCancelled(str(exc)) from exc
         except BackupError as exc:
             raise RecoveryError(str(exc)) from exc
-        _sanitize_restored_profile(stage, vault_password)
-        if destination_path.exists():
-            raise RecoveryError(t("recovery.restoreDestinationAppearedWhileThe"))
-        os.rename(stage, destination_path)
-        published = True
+
+        def publish() -> Path:
+            nonlocal published
+            if destination_path.exists():
+                raise RecoveryError(t("recovery.restoreDestinationAppearedWhileThe"))
+            os.rename(stage, destination_path)
+            published = True
+            return destination_path / "vault.json"
+
+        # After a phrase restore the new master password alone opens the copy (its factors were dropped).
+        _sanitize_restored_profile(stage, vault_password, factors=None if recovery_phrase is not None else factors,
+                                   publish=publish, mark=mark)
         result = dict(info)
         result.update({
             "operation": "restore",
@@ -732,7 +829,7 @@ def restore_as_new_profile(
             "warnings": plan["warnings"],
         })
         return result
-    except RecoveryError:
+    except (RecoveryError, *VAULT_PROMPT_ERRORS):
         raise
     except Exception as exc:  # noqa: BLE001 - normalize isolated restore failures
         # The stage is disposable, so parser/schema/sanitization failures must

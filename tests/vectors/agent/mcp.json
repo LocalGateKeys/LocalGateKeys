@@ -1,0 +1,1696 @@
+{
+ "protocol_versions": [
+  "2025-06-18",
+  "2025-03-26",
+  "2024-11-05"
+ ],
+ "max_line": 1048576,
+ "cases": [
+  {
+   "name": "initialize_known_version",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-03-26\", \"clientInfo\": {\"name\": \"Claude Code\", \"version\": \"2\"}}}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {
+       "tools": {
+        "listChanged": false
+       }
+      },
+      "serverInfo": {
+       "name": "localgatekeys",
+       "version": "$version"
+      },
+      "instructions": "$instructions"
+     }
+    }
+   ]
+  },
+  {
+   "name": "initialize_unknown_version",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": \"a\", \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"1999-01-01\"}}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": "a",
+     "result": {
+      "protocolVersion": "2025-06-18",
+      "capabilities": {
+       "tools": {
+        "listChanged": false
+       }
+      },
+      "serverInfo": {
+       "name": "localgatekeys",
+       "version": "$version"
+      },
+      "instructions": "$instructions"
+     }
+    }
+   ]
+  },
+  {
+   "name": "initialize_no_params",
+   "lines": [
+    "{\"jsonrpc\":\"2.0\",\"id\":0,\"method\":\"initialize\"}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 0,
+     "result": {
+      "protocolVersion": "2025-06-18",
+      "capabilities": {
+       "tools": {
+        "listChanged": false
+       }
+      },
+      "serverInfo": {
+       "name": "localgatekeys",
+       "version": "$version"
+      },
+      "instructions": "$instructions"
+     }
+    }
+   ]
+  },
+  {
+   "name": "client_name_is_cut_to_80",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {\"clientInfo\": {\"name\": \"NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\", \"arguments\": {}}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "sites": []
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "protocolVersion": "2025-06-18",
+      "capabilities": {
+       "tools": {
+        "listChanged": false
+       }
+      },
+      "serverInfo": {
+       "name": "localgatekeys",
+       "version": "$version"
+      },
+      "instructions": "$instructions"
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"sites\": []}"
+       }
+      ],
+      "structuredContent": {
+       "sites": []
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "client_name_not_text",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {\"clientInfo\": {\"name\": 7}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\"}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "sites": []
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": ""
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "protocolVersion": "2025-06-18",
+      "capabilities": {
+       "tools": {
+        "listChanged": false
+       }
+      },
+      "serverInfo": {
+       "name": "localgatekeys",
+       "version": "$version"
+      },
+      "instructions": "$instructions"
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"sites\": []}"
+       }
+      ],
+      "structuredContent": {
+       "sites": []
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "ping_and_notification",
+   "lines": [
+    "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}",
+    "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"ping\"}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 5,
+     "result": {}
+    }
+   ]
+  },
+  {
+   "name": "tools_list",
+   "lines": [
+    "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 2,
+     "result": {
+      "tools": [
+       {
+        "name": "list_sites",
+        "description": "List the sites the user saved logins for (titles and domains only, never usernames or passwords). The user approves this once per session in LocalGateKeys. Use it to find the site to pass to request_login.",
+        "inputSchema": {
+         "type": "object",
+         "properties": {
+          "query": {
+           "type": "string",
+           "description": "Optional text to filter titles and domains."
+          }
+         },
+         "additionalProperties": false
+        }
+       },
+       {
+        "name": "request_login",
+        "description": "Ask the user to approve one sign-in to a site. The user must click Approve once in LocalGateKeys; nothing you write can approve it. Returns a grant id that is valid for 5 minutes, for one fill, only on the exact sign-in host and logins the user approved, and 'method': 'password' (fill_login fills it) or 'passkey' (no password is filled; use the site's passkey sign-in, which the user confirms in LocalGateKeys).",
+        "inputSchema": {
+         "type": "object",
+         "properties": {
+          "site": {
+           "type": "string",
+           "description": "The sign-in page's host or URL, for example login.example.com; a bare domain means the hosts its saved logins are for."
+          },
+          "purpose": {
+           "type": "string",
+           "description": "Why you need to sign in, shown to the user verbatim."
+          }
+         },
+         "required": [
+          "site",
+          "purpose"
+         ],
+         "additionalProperties": false
+        }
+       },
+       {
+        "name": "fill_login",
+        "description": "Offer the approved login on the site's sign-in page in the user's browser. Call it with the grant from request_login while the sign-in page is open; the user must click the LocalGateKeys icon in the sign-in field and pick the login within 60 seconds. The result says only whether the page took the grant and does not contain the password, but the password is written into the page, where the page and browser automation can read it. With a passkey grant it fills nothing and waits up to 60 seconds for the site's passkey sign-in, then says whether it went through.",
+        "inputSchema": {
+         "type": "object",
+         "properties": {
+          "grant": {
+           "type": "string",
+           "description": "The grant id from request_login."
+          },
+          "tab_hint": {
+           "type": "string",
+           "description": "Optional: the page title or URL you opened."
+          }
+         },
+         "required": [
+          "grant"
+         ],
+         "additionalProperties": false
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_method",
+   "lines": [
+    "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 3,
+     "error": {
+      "code": -32601,
+      "message": "Method not found: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     }
+    }
+   ]
+  },
+  {
+   "name": "invalid_requests",
+   "lines": [
+    "{\"jsonrpc\":\"1.0\",\"id\":1,\"method\":\"ping\"}",
+    "{\"jsonrpc\":\"2.0\",\"id\":2}",
+    "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":4}",
+    "[1, \"x\"]",
+    "\"just text\"",
+    "{\"jsonrpc\":\"2.0\",\"id\":null,\"method\":\"ping\"}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "error": {
+      "code": -32600,
+      "message": "Invalid request"
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 2,
+     "error": {
+      "code": -32600,
+      "message": "Invalid request"
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 3,
+     "error": {
+      "code": -32600,
+      "message": "Invalid request"
+     }
+    },
+    [
+     {
+      "jsonrpc": "2.0",
+      "id": null,
+      "error": {
+       "code": -32600,
+       "message": "Invalid request"
+      }
+     },
+     {
+      "jsonrpc": "2.0",
+      "id": null,
+      "error": {
+       "code": -32600,
+       "message": "Invalid request"
+      }
+     }
+    ],
+    {
+     "jsonrpc": "2.0",
+     "id": null,
+     "error": {
+      "code": -32600,
+      "message": "Invalid request"
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": null,
+     "result": {}
+    }
+   ]
+  },
+  {
+   "name": "parse_error_and_blank_lines",
+   "lines": [
+    "{not json",
+    "",
+    "   ",
+    "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"ping\"}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": null,
+     "error": {
+      "code": -32700,
+      "message": "Parse error"
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 9,
+     "result": {}
+    }
+   ]
+  },
+  {
+   "name": "batch",
+   "lines": [
+    "[{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"},{\"jsonrpc\":\"2.0\",\"method\":\"notifications/x\"},{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"nope\"}]",
+    "[{\"jsonrpc\":\"2.0\",\"method\":\"notifications/x\"}]",
+    "[]"
+   ],
+   "forwarded": [],
+   "output": [
+    [
+     {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {}
+     },
+     {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "error": {
+       "code": -32601,
+       "message": "Method not found: nope"
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "name": "params_not_object",
+   "lines": [
+    "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":[1]}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"unknown_tool\", \"message\": \"Unknown tool.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "unknown_tool",
+       "message": "Unknown tool."
+      },
+      "isError": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "unknown_tool",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"reveal_password\", \"arguments\": {\"site\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"copy_password\", \"arguments\": {}}}"
+   ],
+   "forwarded": [],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"unknown_tool\", \"message\": \"Unknown tool.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "unknown_tool",
+       "message": "Unknown tool."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"unknown_tool\", \"message\": \"Unknown tool.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "unknown_tool",
+       "message": "Unknown tool."
+      },
+      "isError": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "list_sites_filters_rows",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\", \"arguments\": {\"query\": \"pay\"}}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "sites": [
+      {
+       "title": "PayPal",
+       "domain": "paypal.com",
+       "username": "alice",
+       "password": "P@ss"
+      },
+      {
+       "title": 5,
+       "domain": true
+      },
+      "not a row",
+      {
+       "title": null
+      },
+      {
+       "domain": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+       "title": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+      }
+     ],
+     "password": "LEAK",
+     "username": "alice"
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": "",
+     "query": "pay"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"sites\": [{\"title\": \"PayPal\", \"domain\": \"paypal.com\"}, {\"title\": \"5\", \"domain\": \"True\"}, {\"title\": \"None\", \"domain\": \"\"}, {\"title\": \"tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\", \"domain\": \"ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}]}"
+       }
+      ],
+      "structuredContent": {
+       "sites": [
+        {
+         "title": "PayPal",
+         "domain": "paypal.com"
+        },
+        {
+         "title": "5",
+         "domain": "True"
+        },
+        {
+         "title": "None",
+         "domain": ""
+        },
+        {
+         "title": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+         "domain": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+       ]
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "list_sites_caps_at_50",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\"}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "sites": [
+      {
+       "title": "T0",
+       "domain": "d0.example"
+      },
+      {
+       "title": "T1",
+       "domain": "d1.example"
+      },
+      {
+       "title": "T2",
+       "domain": "d2.example"
+      },
+      {
+       "title": "T3",
+       "domain": "d3.example"
+      },
+      {
+       "title": "T4",
+       "domain": "d4.example"
+      },
+      {
+       "title": "T5",
+       "domain": "d5.example"
+      },
+      {
+       "title": "T6",
+       "domain": "d6.example"
+      },
+      {
+       "title": "T7",
+       "domain": "d7.example"
+      },
+      {
+       "title": "T8",
+       "domain": "d8.example"
+      },
+      {
+       "title": "T9",
+       "domain": "d9.example"
+      },
+      {
+       "title": "T10",
+       "domain": "d10.example"
+      },
+      {
+       "title": "T11",
+       "domain": "d11.example"
+      },
+      {
+       "title": "T12",
+       "domain": "d12.example"
+      },
+      {
+       "title": "T13",
+       "domain": "d13.example"
+      },
+      {
+       "title": "T14",
+       "domain": "d14.example"
+      },
+      {
+       "title": "T15",
+       "domain": "d15.example"
+      },
+      {
+       "title": "T16",
+       "domain": "d16.example"
+      },
+      {
+       "title": "T17",
+       "domain": "d17.example"
+      },
+      {
+       "title": "T18",
+       "domain": "d18.example"
+      },
+      {
+       "title": "T19",
+       "domain": "d19.example"
+      },
+      {
+       "title": "T20",
+       "domain": "d20.example"
+      },
+      {
+       "title": "T21",
+       "domain": "d21.example"
+      },
+      {
+       "title": "T22",
+       "domain": "d22.example"
+      },
+      {
+       "title": "T23",
+       "domain": "d23.example"
+      },
+      {
+       "title": "T24",
+       "domain": "d24.example"
+      },
+      {
+       "title": "T25",
+       "domain": "d25.example"
+      },
+      {
+       "title": "T26",
+       "domain": "d26.example"
+      },
+      {
+       "title": "T27",
+       "domain": "d27.example"
+      },
+      {
+       "title": "T28",
+       "domain": "d28.example"
+      },
+      {
+       "title": "T29",
+       "domain": "d29.example"
+      },
+      {
+       "title": "T30",
+       "domain": "d30.example"
+      },
+      {
+       "title": "T31",
+       "domain": "d31.example"
+      },
+      {
+       "title": "T32",
+       "domain": "d32.example"
+      },
+      {
+       "title": "T33",
+       "domain": "d33.example"
+      },
+      {
+       "title": "T34",
+       "domain": "d34.example"
+      },
+      {
+       "title": "T35",
+       "domain": "d35.example"
+      },
+      {
+       "title": "T36",
+       "domain": "d36.example"
+      },
+      {
+       "title": "T37",
+       "domain": "d37.example"
+      },
+      {
+       "title": "T38",
+       "domain": "d38.example"
+      },
+      {
+       "title": "T39",
+       "domain": "d39.example"
+      },
+      {
+       "title": "T40",
+       "domain": "d40.example"
+      },
+      {
+       "title": "T41",
+       "domain": "d41.example"
+      },
+      {
+       "title": "T42",
+       "domain": "d42.example"
+      },
+      {
+       "title": "T43",
+       "domain": "d43.example"
+      },
+      {
+       "title": "T44",
+       "domain": "d44.example"
+      },
+      {
+       "title": "T45",
+       "domain": "d45.example"
+      },
+      {
+       "title": "T46",
+       "domain": "d46.example"
+      },
+      {
+       "title": "T47",
+       "domain": "d47.example"
+      },
+      {
+       "title": "T48",
+       "domain": "d48.example"
+      },
+      {
+       "title": "T49",
+       "domain": "d49.example"
+      },
+      {
+       "title": "T50",
+       "domain": "d50.example"
+      },
+      {
+       "title": "T51",
+       "domain": "d51.example"
+      },
+      {
+       "title": "T52",
+       "domain": "d52.example"
+      },
+      {
+       "title": "T53",
+       "domain": "d53.example"
+      },
+      {
+       "title": "T54",
+       "domain": "d54.example"
+      },
+      {
+       "title": "T55",
+       "domain": "d55.example"
+      },
+      {
+       "title": "T56",
+       "domain": "d56.example"
+      },
+      {
+       "title": "T57",
+       "domain": "d57.example"
+      },
+      {
+       "title": "T58",
+       "domain": "d58.example"
+      },
+      {
+       "title": "T59",
+       "domain": "d59.example"
+      }
+     ]
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": ""
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"sites\": [{\"title\": \"T0\", \"domain\": \"d0.example\"}, {\"title\": \"T1\", \"domain\": \"d1.example\"}, {\"title\": \"T2\", \"domain\": \"d2.example\"}, {\"title\": \"T3\", \"domain\": \"d3.example\"}, {\"title\": \"T4\", \"domain\": \"d4.example\"}, {\"title\": \"T5\", \"domain\": \"d5.example\"}, {\"title\": \"T6\", \"domain\": \"d6.example\"}, {\"title\": \"T7\", \"domain\": \"d7.example\"}, {\"title\": \"T8\", \"domain\": \"d8.example\"}, {\"title\": \"T9\", \"domain\": \"d9.example\"}, {\"title\": \"T10\", \"domain\": \"d10.example\"}, {\"title\": \"T11\", \"domain\": \"d11.example\"}, {\"title\": \"T12\", \"domain\": \"d12.example\"}, {\"title\": \"T13\", \"domain\": \"d13.example\"}, {\"title\": \"T14\", \"domain\": \"d14.example\"}, {\"title\": \"T15\", \"domain\": \"d15.example\"}, {\"title\": \"T16\", \"domain\": \"d16.example\"}, {\"title\": \"T17\", \"domain\": \"d17.example\"}, {\"title\": \"T18\", \"domain\": \"d18.example\"}, {\"title\": \"T19\", \"domain\": \"d19.example\"}, {\"title\": \"T20\", \"domain\": \"d20.example\"}, {\"title\": \"T21\", \"domain\": \"d21.example\"}, {\"title\": \"T22\", \"domain\": \"d22.example\"}, {\"title\": \"T23\", \"domain\": \"d23.example\"}, {\"title\": \"T24\", \"domain\": \"d24.example\"}, {\"title\": \"T25\", \"domain\": \"d25.example\"}, {\"title\": \"T26\", \"domain\": \"d26.example\"}, {\"title\": \"T27\", \"domain\": \"d27.example\"}, {\"title\": \"T28\", \"domain\": \"d28.example\"}, {\"title\": \"T29\", \"domain\": \"d29.example\"}, {\"title\": \"T30\", \"domain\": \"d30.example\"}, {\"title\": \"T31\", \"domain\": \"d31.example\"}, {\"title\": \"T32\", \"domain\": \"d32.example\"}, {\"title\": \"T33\", \"domain\": \"d33.example\"}, {\"title\": \"T34\", \"domain\": \"d34.example\"}, {\"title\": \"T35\", \"domain\": \"d35.example\"}, {\"title\": \"T36\", \"domain\": \"d36.example\"}, {\"title\": \"T37\", \"domain\": \"d37.example\"}, {\"title\": \"T38\", \"domain\": \"d38.example\"}, {\"title\": \"T39\", \"domain\": \"d39.example\"}, {\"title\": \"T40\", \"domain\": \"d40.example\"}, {\"title\": \"T41\", \"domain\": \"d41.example\"}, {\"title\": \"T42\", \"domain\": \"d42.example\"}, {\"title\": \"T43\", \"domain\": \"d43.example\"}, {\"title\": \"T44\", \"domain\": \"d44.example\"}, {\"title\": \"T45\", \"domain\": \"d45.example\"}, {\"title\": \"T46\", \"domain\": \"d46.example\"}, {\"title\": \"T47\", \"domain\": \"d47.example\"}, {\"title\": \"T48\", \"domain\": \"d48.example\"}, {\"title\": \"T49\", \"domain\": \"d49.example\"}]}"
+       }
+      ],
+      "structuredContent": {
+       "sites": [
+        {
+         "title": "T0",
+         "domain": "d0.example"
+        },
+        {
+         "title": "T1",
+         "domain": "d1.example"
+        },
+        {
+         "title": "T2",
+         "domain": "d2.example"
+        },
+        {
+         "title": "T3",
+         "domain": "d3.example"
+        },
+        {
+         "title": "T4",
+         "domain": "d4.example"
+        },
+        {
+         "title": "T5",
+         "domain": "d5.example"
+        },
+        {
+         "title": "T6",
+         "domain": "d6.example"
+        },
+        {
+         "title": "T7",
+         "domain": "d7.example"
+        },
+        {
+         "title": "T8",
+         "domain": "d8.example"
+        },
+        {
+         "title": "T9",
+         "domain": "d9.example"
+        },
+        {
+         "title": "T10",
+         "domain": "d10.example"
+        },
+        {
+         "title": "T11",
+         "domain": "d11.example"
+        },
+        {
+         "title": "T12",
+         "domain": "d12.example"
+        },
+        {
+         "title": "T13",
+         "domain": "d13.example"
+        },
+        {
+         "title": "T14",
+         "domain": "d14.example"
+        },
+        {
+         "title": "T15",
+         "domain": "d15.example"
+        },
+        {
+         "title": "T16",
+         "domain": "d16.example"
+        },
+        {
+         "title": "T17",
+         "domain": "d17.example"
+        },
+        {
+         "title": "T18",
+         "domain": "d18.example"
+        },
+        {
+         "title": "T19",
+         "domain": "d19.example"
+        },
+        {
+         "title": "T20",
+         "domain": "d20.example"
+        },
+        {
+         "title": "T21",
+         "domain": "d21.example"
+        },
+        {
+         "title": "T22",
+         "domain": "d22.example"
+        },
+        {
+         "title": "T23",
+         "domain": "d23.example"
+        },
+        {
+         "title": "T24",
+         "domain": "d24.example"
+        },
+        {
+         "title": "T25",
+         "domain": "d25.example"
+        },
+        {
+         "title": "T26",
+         "domain": "d26.example"
+        },
+        {
+         "title": "T27",
+         "domain": "d27.example"
+        },
+        {
+         "title": "T28",
+         "domain": "d28.example"
+        },
+        {
+         "title": "T29",
+         "domain": "d29.example"
+        },
+        {
+         "title": "T30",
+         "domain": "d30.example"
+        },
+        {
+         "title": "T31",
+         "domain": "d31.example"
+        },
+        {
+         "title": "T32",
+         "domain": "d32.example"
+        },
+        {
+         "title": "T33",
+         "domain": "d33.example"
+        },
+        {
+         "title": "T34",
+         "domain": "d34.example"
+        },
+        {
+         "title": "T35",
+         "domain": "d35.example"
+        },
+        {
+         "title": "T36",
+         "domain": "d36.example"
+        },
+        {
+         "title": "T37",
+         "domain": "d37.example"
+        },
+        {
+         "title": "T38",
+         "domain": "d38.example"
+        },
+        {
+         "title": "T39",
+         "domain": "d39.example"
+        },
+        {
+         "title": "T40",
+         "domain": "d40.example"
+        },
+        {
+         "title": "T41",
+         "domain": "d41.example"
+        },
+        {
+         "title": "T42",
+         "domain": "d42.example"
+        },
+        {
+         "title": "T43",
+         "domain": "d43.example"
+        },
+        {
+         "title": "T44",
+         "domain": "d44.example"
+        },
+        {
+         "title": "T45",
+         "domain": "d45.example"
+        },
+        {
+         "title": "T46",
+         "domain": "d46.example"
+        },
+        {
+         "title": "T47",
+         "domain": "d47.example"
+        },
+        {
+         "title": "T48",
+         "domain": "d48.example"
+        },
+        {
+         "title": "T49",
+         "domain": "d49.example"
+        }
+       ]
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "list_sites_no_sites_key",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\"}}"
+   ],
+   "replies": [
+    {
+     "ok": true
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": ""
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"sites\": []}"
+       }
+      ],
+      "structuredContent": {
+       "sites": []
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "request_login_reply_keys",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"paypal.com\", \"purpose\": \"Pay the bill\", \"extra\": \"dropped\"}}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "grant": "g-1",
+     "site": "paypal.com",
+     "expires_in": 300,
+     "method": "password",
+     "password": "LEAK",
+     "username": "alice",
+     "hosts": [
+      "www.paypal.com"
+     ]
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "paypal.com",
+     "purpose": "Pay the bill"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"grant\": \"g-1\", \"site\": \"paypal.com\", \"expires_in\": 300, \"method\": \"password\"}"
+       }
+      ],
+      "structuredContent": {
+       "grant": "g-1",
+       "site": "paypal.com",
+       "expires_in": 300,
+       "method": "password"
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "request_login_passkey",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"github.com\", \"purpose\": \"PR\"}}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "grant": "g-2",
+     "site": "github.com",
+     "expires_in": 300,
+     "method": "passkey",
+     "note": "Use the passkey."
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "github.com",
+     "purpose": "PR"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"grant\": \"g-2\", \"site\": \"github.com\", \"expires_in\": 300, \"method\": \"passkey\", \"note\": \"Use the passkey.\"}"
+       }
+      ],
+      "structuredContent": {
+       "grant": "g-2",
+       "site": "github.com",
+       "expires_in": 300,
+       "method": "passkey",
+       "note": "Use the passkey."
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "arguments_are_cut_to_2000",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss\", \"purpose\": \"pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\"}}}"
+   ],
+   "replies": [
+    {
+     "ok": false,
+     "error": "invalid"
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+     "purpose": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"invalid\", \"message\": \"invalid\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "invalid",
+       "message": "invalid"
+      },
+      "isError": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "argument_not_text",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": 5, \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"fill_login\", \"arguments\": {\"grant\": [\"g\"]}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\", \"arguments\": {\"query\": null}}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "sites": []
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": ""
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"bad_request\", \"message\": \"'site' must be text.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "bad_request",
+       "message": "'site' must be text."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"bad_request\", \"message\": \"'grant' must be text.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "bad_request",
+       "message": "'grant' must be text."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"sites\": []}"
+       }
+      ],
+      "structuredContent": {
+       "sites": []
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "arguments_not_object",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"fill_login\", \"arguments\": \"grant\"}}"
+   ],
+   "replies": [
+    {
+     "ok": false,
+     "error": "invalid",
+     "message": "The request is malformed."
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_fill_login",
+     "session": "S1",
+     "client_name": ""
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"invalid\", \"message\": \"The request is malformed.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "invalid",
+       "message": "The request is malformed."
+      },
+      "isError": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "fill_login_reply_keys",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"fill_login\", \"arguments\": {\"grant\": \"g-1\", \"tab_hint\": \"Sign in\"}}}"
+   ],
+   "replies": [
+    {
+     "ok": true,
+     "filled": true,
+     "site": "paypal.com",
+     "method": "password",
+     "password": "LEAK",
+     "credential": {
+      "password": "LEAK"
+     }
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_fill_login",
+     "session": "S1",
+     "client_name": "",
+     "grant": "g-1",
+     "tab_hint": "Sign in"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"filled\": true, \"site\": \"paypal.com\", \"method\": \"password\"}"
+       }
+      ],
+      "structuredContent": {
+       "filled": true,
+       "site": "paypal.com",
+       "method": "password"
+      },
+      "isError": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "refusals",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 3, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 4, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 5, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 6, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 7, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 8, \"method\": \"tools/call\", \"params\": {\"name\": \"request_login\", \"arguments\": {\"site\": \"a.com\", \"purpose\": \"x\"}}}"
+   ],
+   "replies": [
+    {
+     "ok": false,
+     "error": "denied",
+     "message": "The user did not approve this request."
+    },
+    {
+     "ok": false,
+     "error": "agent_state_missing",
+     "message": "internal"
+    },
+    {
+     "ok": false,
+     "error": "agent_unavailable"
+    },
+    {
+     "ok": false,
+     "error": "unauthorized",
+     "message": "x"
+    },
+    {
+     "ok": false
+    },
+    {
+     "ok": "yes",
+     "error": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+     "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+    },
+    {
+     "ok": false,
+     "error": "",
+     "message": ""
+    },
+    {
+     "ok": false,
+     "error": 0,
+     "message": null
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    },
+    {
+     "action": "agent_request_login",
+     "session": "S1",
+     "client_name": "",
+     "site": "a.com",
+     "purpose": "x"
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"denied\", \"message\": \"The user did not approve this request.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "denied",
+       "message": "The user did not approve this request."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 2,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"agent_state_missing\", \"message\": \"LocalGateKeys is not running. Start it and unlock your vault.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "agent_state_missing",
+       "message": "LocalGateKeys is not running. Start it and unlock your vault."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 3,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"agent_unavailable\", \"message\": \"LocalGateKeys is not running. Start it and unlock your vault.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "agent_unavailable",
+       "message": "LocalGateKeys is not running. Start it and unlock your vault."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 4,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"unauthorized\", \"message\": \"LocalGateKeys is not running. Start it and unlock your vault.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "unauthorized",
+       "message": "LocalGateKeys is not running. Start it and unlock your vault."
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 5,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"failed\", \"message\": \"failed\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "failed",
+       "message": "failed"
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 6,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\", \"message\": \"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+       "message": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 7,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"failed\", \"message\": \"failed\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "failed",
+       "message": "failed"
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 8,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"failed\", \"message\": \"failed\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "failed",
+       "message": "failed"
+      },
+      "isError": true
+     }
+    }
+   ]
+  },
+  {
+   "name": "app_failures",
+   "lines": [
+    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\"}}",
+    "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"list_sites\"}}"
+   ],
+   "replies": [
+    {
+     "$raise": true
+    },
+    {
+     "$value": [
+      "not",
+      "a",
+      "dict"
+     ]
+    }
+   ],
+   "forwarded": [
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": ""
+    },
+    {
+     "action": "agent_list_sites",
+     "session": "S1",
+     "client_name": ""
+    }
+   ],
+   "output": [
+    {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"not_running\", \"message\": \"LocalGateKeys did not answer. Is it running?\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "not_running",
+       "message": "LocalGateKeys did not answer. Is it running?"
+      },
+      "isError": true
+     }
+    },
+    {
+     "jsonrpc": "2.0",
+     "id": 2,
+     "result": {
+      "content": [
+       {
+        "type": "text",
+        "text": "{\"error\": \"failed\", \"message\": \"LocalGateKeys sent an unreadable reply.\"}"
+       }
+      ],
+      "structuredContent": {
+       "error": "failed",
+       "message": "LocalGateKeys sent an unreadable reply."
+      },
+      "isError": true
+     }
+    }
+   ]
+  }
+ ]
+}

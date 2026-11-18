@@ -16,11 +16,18 @@ enum ShareText {
     static let codeHint = String(localized: "Tell the other person these six words, in person or by phone. Never send them with the file.")
     static let qrHint = String(localized: "Or let them scan this code with LocalGateKeys › Receive a shared item.")
     static let expiresHint = String(localized: "The shared copy can be opened once, within 24 hours.")
+    static let expiresHourHint = String(localized: "The shared copy can be opened once, within 1 hour.")
+    static let expiresIn = String(localized: "Expires in")
+    static let oneHour = String(localized: "1 hour")
+    static let oneDay = String(localized: "1 day")
+    static let oneUse = String(localized: "One use only")
+    static let oneUseHint = String(localized: "Asks the receiving device to delete the item after it is opened.")
+    static let makeCode = String(localized: "Make the code")
     static let cannotShare = String(localized: "Passkeys and items with attached files cannot be shared.")
     static let notAShare = String(localized: "This is not a shared LocalGateKeys item.")
     static let threeWrong = String(localized: "Three wrong codes. The shared item was deleted. Ask for it to be shared again.")
     static let saved = String(localized: "The shared item was added to your vault.")
-    static let needsPro = String(localized: "The free plan holds 4 items. Upgrade to Pro to add this shared item.")
+    static let needsPro = String(localized: "The free plan holds \(ItemLimit.freeItems) items. Upgrade to Pro to add this shared item.")
     static let cannotSave = String(localized: "This item can't be saved on this device.")
     static let enterCode = String(localized: "Enter the six words the sender gave you.")
 
@@ -29,6 +36,21 @@ enum ShareText {
     static func wrongCode(left: Int) -> String {
         String(localized: "That code does not open this item. Check the six words. \(left) tries left.")
     }
+}
+
+/// The sender's v1.1 choices (LGKSHARE_V1.md): a shorter expiry and "one use only".
+struct ShareOptions: Equatable, Sendable {
+    enum Expiry: Int64, CaseIterable, Identifiable, Sendable {
+        case oneHour = 3600
+        case oneDay = 86400
+        var id: Int64 { rawValue }
+        var label: String { self == .oneHour ? ShareText.oneHour : ShareText.oneDay }
+    }
+
+    var expiry: Expiry = .oneDay
+    var oneUse = false
+
+    var expiresHint: String { expiry == .oneHour ? ShareText.expiresHourHint : ShareText.expiresHint }
 }
 
 /// A sealed package ready to send: the file in a private temporary folder, deleted when the sheet closes.
@@ -52,10 +74,12 @@ enum ShareOutbox {
         FileManager.default.temporaryDirectory.appendingPathComponent("LocalGateKeys share", isDirectory: true)
     }
 
-    static func make(item: VaultItem, sender: String, now: Int64, random: any RandomSource = SystemRandomSource(),
+    static func make(item: VaultItem, sender: String, now: Int64, options: ShareOptions = ShareOptions(),
+                     random: any RandomSource = SystemRandomSource(),
                      directory: URL = ShareOutbox.directory()) throws -> OutgoingShare {
         let code = try Share.generateCode(random: random)
-        let data = try Share.seal(item: Share.withoutLocalRefs(item.record), code: code, sender: sender, now: now, random: random)
+        let data = try Share.seal(item: Share.withoutLocalRefs(item.record), code: code, sender: sender, now: now,
+                                  expires: now + options.expiry.rawValue, oneUse: options.oneUse, random: random)
         let header = try Share.readHeader(data)
         let folder = directory.appendingPathComponent(header.id, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -103,8 +127,25 @@ final class ShareInbox {
     private(set) var message: String?
     private(set) var wrongCodes = 0
 
-    @ObservationIgnored let directory: URL
+    @ObservationIgnored let baseDirectory: URL
+    /// The real vault's folder, or in a duress-password session the second vault's own (sub-plan 08 review M2: its
+    /// packages and opened list never mix with the real vault's).
+    var directory: URL {
+        #if os(iOS)
+        if DuressSession.shared.isOpen, let duress = PhoneDuress.shared() {
+            return duress.files.dir.appendingPathComponent("incoming shares", isDirectory: true)
+        }
+        #else
+        if DuressSession.shared.isOpen, let dir = DuressSession.shared.secondDir {
+            return dir.appendingPathComponent("incoming shares", isDirectory: true)
+        }
+        #endif
+        return baseDirectory
+    }
     @ObservationIgnored let clock: any UnixClock
+    /// Package ids of verified revoke notices in the sync folder (`ShareRevokedReader`); set by the app root once a
+    /// vault is open. Best effort: empty without sync.
+    @ObservationIgnored var revokedIDs: () -> Set<String> = { [] }
     /// The app's own folders: a delivered copy inside them (iOS `Documents/Inbox`) is deleted after it is read.
     @ObservationIgnored let ownedFolders: [URL]
 
@@ -124,7 +165,7 @@ final class ShareInbox {
 
     init(directory: URL = ShareInbox.defaultDirectory(), clock: any UnixClock = SystemClock(),
          ownedFolders: [URL] = ShareInbox.defaultOwnedFolders()) {
-        self.directory = directory; self.clock = clock; self.ownedFolders = ownedFolders
+        self.baseDirectory = directory; self.clock = clock; self.ownedFolders = ownedFolders
         purgeExpired()
     }
 
@@ -195,7 +236,8 @@ final class ShareInbox {
         } catch { message = ShareText.enterCode; return false }
         guard let data = try? Data(contentsOf: pending.file) else { discard(); message = ShareText.notAShare; return false }
         do {
-            let opened = try Share.open(Array(data), code: words, now: clock.now, opened: openedIDs())
+            let revoked: Set<String> = DuressSession.shared.isOpen ? [] : revokedIDs()
+            let opened = try Share.open(Array(data), code: words, now: clock.now, opened: openedIDs(), revoked: revoked)
             recordOpened(opened.id)
             // A kind this device can't store is refused before any preview (the kind is inside the encryption).
             if (try? Share.vaultForm(opened.item, id: "00000000-0000-4000-8000-000000000000", now: clock.now)) == nil {
@@ -262,6 +304,11 @@ final class ShareInbox {
     func reject() { discard() }
 
     func clearMessage() { message = nil }
+
+    /// The open vault changed (real or the duress password's): nothing received for the other one stays on screen.
+    func vaultChanged() {
+        pending = nil; preview = nil; message = nil; wrongCodes = 0
+    }
 
     private func discard() {
         if let pending { try? FileManager.default.removeItem(at: pending.file) }

@@ -23,7 +23,7 @@ CATALOGS = ROOT / "src" / "localvault" / "assets" / "i18n"
 
 FOLDERS = {
     "es": "es", "it": "it", "pl": "pl", "zh-Hans": "b+zh+Hans", "ja": "ja",
-    "de": "de", "pt-BR": "pt-rBR", "ko": "ko", "nl": "nl",
+    "de": "de", "pt-BR": "pt-rBR", "ko": "ko", "nl": "nl", "fr": "fr",
 }
 ORDER = ("zero", "one", "two", "few", "many", "other")
 _PH = re.compile(r"\{([^{}]*)\}")
@@ -60,6 +60,8 @@ def parse(path: Path, *, translatable_only: bool = True) -> dict:
     out: dict = {}
     if not path.exists():
         return out
+    # Semgrep: developer script that reads this repository's own strings.xml files.
+    # nosemgrep
     for el in ET.parse(path).getroot():
         if translatable_only and el.get("translatable") == "false":
             continue

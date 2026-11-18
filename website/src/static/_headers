@@ -1,12 +1,13 @@
-# Cloudflare Pages response headers. The site uses no scripts, so scripts,
-# frames, forms and every third-party origin are blocked outright, except on
-# /buy (rules at the end), which loads Paddle's checkout. Pages adds
+# Cloudflare Pages response headers. Only the site's own files are allowed on
+# site pages, plus Cloudflare Web Analytics (cookieless, injected by Cloudflare).
+# The /buy page loads Paddle's
+# checkout under its own narrowly scoped rules. Pages adds
 # "Access-Control-Allow-Origin: *" to every static file by default; nothing
 # reads this site cross-origin (the update feed and licences are separate
 # workers, and Paddle only shows /brand/ images in <img>), so it is removed.
 /*
   ! Access-Control-Allow-Origin
-  Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'none'; script-src 'self' https://static.cloudflareinsights.com; connect-src https://cloudflareinsights.com; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
@@ -17,6 +18,14 @@
 
 /*.css
   Cache-Control: public, max-age=3600
+
+# Scripts like the stylesheet. buy.js detaches this and keeps its own shorter value below.
+/*.js
+  Cache-Control: public, max-age=3600
+
+# Screenshots are replaced under new names when they change; a week is safe.
+/screenshots/*
+  Cache-Control: public, max-age=604800
 
 # Paddle's checkout (buy.paddle.com) shows icon-256.png as the product icon,
 # so the logos may be embedded cross-origin.
@@ -34,10 +43,11 @@
   ! Referrer-Policy
   ! Permissions-Policy
   ! Cross-Origin-Opener-Policy
-  Content-Security-Policy: default-src 'none'; script-src 'self' https://cdn.paddle.com; style-src 'self' 'unsafe-inline' https://cdn.paddle.com; img-src 'self' data: https://*.paddle.com; connect-src https://*.paddle.com; frame-src https://buy.paddle.com; font-src https://cdn.paddle.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'none'; script-src 'self' https://cdn.paddle.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.paddle.com; img-src 'self' data: https://*.paddle.com; connect-src https://*.paddle.com https://cloudflareinsights.com; frame-src https://buy.paddle.com; font-src https://cdn.paddle.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), usb=(), interest-cohort=(), browsing-topics=(), payment=(self "https://buy.paddle.com")
   Cross-Origin-Opener-Policy: same-origin-allow-popups
 
 /buy.js
+  ! Cache-Control
   Cache-Control: public, max-age=300

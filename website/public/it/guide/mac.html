@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys per Mac: guida utente</title>
+  <meta name="description" content="Come usare LocalGateKeys sul Mac: la cassaforte, compilazione automatica, passkey, codici 2FA, importazione, backup e sincronizzazione.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/it/guide/mac">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/mac">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/mac">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/mac">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/mac">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/mac">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/mac">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/mac">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/mac">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/mac">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/mac">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/mac">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/mac">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys per Mac: guida utente">
+  <meta property="og:description" content="Come usare LocalGateKeys sul Mac: la cassaforte, compilazione automatica, passkey, codici 2FA, importazione, backup e sincronizzazione.">
+  <meta property="og:url" content="https://localgatekeys.app/it/guide/mac">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Il logo di LocalGateKeys: un password manager per Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys per Mac: guida utente">
+  <meta name="twitter:description" content="Come usare LocalGateKeys sul Mac: la cassaforte, compilazione automatica, passkey, codici 2FA, importazione, backup e sincronizzazione.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Vai al contenuto</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../it/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principale">
+        <ul class="nav">
+          <li><a href="../../it/features">Funzionalità</a></li>
+          <li><a href="../../it/get-started">Per iniziare</a></li>
+          <li><a href="../../it/help">Guida</a></li>
+          <li><a href="../../it/security">Sicurezza</a></li>
+          <li><a href="../../it/pricing">Prezzi</a></li>
+          <li><a href="../../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../../it/download">Download</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principale">
+          <ul class="nav nav-stack">
+            <li><a href="../../it/features">Funzionalità</a></li>
+          <li><a href="../../it/get-started">Per iniziare</a></li>
+          <li><a href="../../it/help">Guida</a></li>
+          <li><a href="../../it/security">Sicurezza</a></li>
+          <li><a href="../../it/pricing">Prezzi</a></li>
+          <li><a href="../../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../../it/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Lingua</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys per Mac</h1>
+  <p class="lead">Aiuto passo passo per ogni schermata e funzione su questo dispositivo. Ogni titolo è un link che puoi condividere.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Piattaforme">
+    <ul><li><a class="help-tab" href="../../it/guide/windows">Windows</a></li><li><a class="help-tab" href="../../it/guide/mac" aria-current="page">Mac</a></li><li><a class="help-tab" href="../../it/guide/iphone">iPhone e iPad</a></li><li><a class="help-tab" href="../../it/guide/android">Android</a></li><li><a class="help-tab" href="../../it/guide/extension">Estensione del browser</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Da sapere su ogni dispositivo</h2>
+    <ul>
+      <li><strong>La tua cassaforte resta sui tuoi dispositivi.</strong> Non c'è nessun account e nessun server LocalGateKeys che conservi le tue password.</li>
+      <li><strong>Nessuno può reimpostare la tua password principale o la password dell'app.</strong> Configura una frase di recupero e conservala su carta.</li>
+      <li><strong>Free</strong> contiene fino a 7 elementi. <strong>Pro</strong> (US$29.99, pagamento unico) aggiunge elementi illimitati, codici a due fattori, file e sincronizzazione. Modificare, eliminare e compilare gli elementi che hai già non viene mai bloccato.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="mac" aria-labelledby="mac-title">
+    <h2 class="panel-title" id="mac-title">Argomenti Mac</h2>
+
+    <p class="panel-lead">La barra laterale elenca i tuoi elementi (<strong>Tutti gli elementi</strong>, <strong>Preferiti</strong>, <strong>Usati di recente</strong>, ogni tipo e le tue raccolte) e gli strumenti <strong>Centro sicurezza</strong>, <strong>Generatore</strong>, <strong>Sync e dispositivi</strong>, <strong>Importa ed esporta</strong> e <strong>Cestino</strong>, con <strong>Impostazioni</strong> in fondo. Il <strong>Centro di recupero</strong> si apre da Impostazioni › Backup, e <strong>Dispositivi e connessioni</strong> da Sync e dispositivi.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Argomenti Mac">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">In questa scheda</summary>
+          <ol>
+            <li><a href="#mac-setup">Creare la cassaforte</a></li>
+            <li><a href="#mac-unlock">Sblocco e blocco</a></li>
+            <li><a href="#mac-items">Elementi</a></li>
+            <li><a href="#mac-2fa">Codici a due fattori</a></li>
+            <li><a href="#mac-security">Centro sicurezza</a></li>
+            <li><a href="#mac-autofill">Inserimento automatico e Safari</a></li>
+            <li><a href="#mac-import">Importazione ed esportazione</a></li>
+            <li><a href="#mac-backups">Backup</a></li>
+            <li><a href="#mac-sync">Sincronizzazione</a></li>
+            <li><a href="#mac-share">Condivisione</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">Impostazioni</a></li>
+            <li><a href="#mac-keys">Scorciatoie da tastiera</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="mac-setup">
+          <h3><a href="#mac-setup">Creare la cassaforte</a></h3>
+          <ol>
+            <li>Apri LocalGateKeys, scrivi due volte una password principale e scegli <strong>Crea cassaforte</strong>.</li>
+            <li>Segue la configurazione: <strong>Configura Touch ID</strong>, <strong>Importa…</strong> le tue password, <strong>Apri frase di recupero</strong> e <strong>Apri Dispositivi e connessioni</strong> per Safari e Inserimento automatico.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="mac-unlock">
+          <h3><a href="#mac-unlock">Sblocco e blocco</a></h3>
+          <ul>
+            <li><strong>Touch ID</strong>: Impostazioni › Sicurezza › Sblocco › <strong>Touch ID</strong>. Se cambi le impronte, usa una volta la password principale.</li>
+            <li><strong>Cambia password principale</strong>: Impostazioni › Sblocco. I tuoi elementi restano come sono.</li>
+            <li><strong>Frase di recupero</strong>: configurala nel <strong>Centro recupero</strong> e conferma tre parole. Se dimentichi la password principale, scegli <strong>Hai dimenticato la password principale?</strong> › <strong>Recupera con la frase di recupero</strong> nella schermata di blocco.</li>
+            <li><strong>Blocca</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Impostazioni › Blocco imposta il blocco per inattività, con lo schermo, in stop e una durata massima della sessione. Puoi anche scegliere che cosa conta come attività per il blocco per inattività.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-items">
+          <h3><a href="#mac-items">Elementi</a></h3>
+          <ul>
+            <li><strong>Nuovo elemento</strong> (<kbd>⌘</kbd><kbd>N</kbd>) offre gli stessi tipi dell'iPhone, più <strong>Allega un file…</strong> (Pro).</li>
+            <li>Copia con <kbd>⌘</kbd><kbd>C</kbd> (password), <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> (nome utente), <kbd>⌘</kbd><kbd>T</kbd> (codice 2FA).</li>
+            <li><strong>Aggiungi campo</strong> per i campi personalizzati, <strong>Tag</strong> e <strong>Raccolte</strong> (si sincronizzano con gli altri tuoi dispositivi).</li>
+            <li><kbd>⌫</kbd> sposta un elemento in Eliminati di recente. Apri <strong>Cestino</strong> nella barra laterale e usa <strong>Ripristina selezionati</strong> o <strong>Svuota cestino</strong>.</li>
+            <li>I file allegati si aprono con Quick Look dopo Touch ID o la password principale.</li>
+            <li><strong>Generatore</strong>: password casuale (scegli i set di caratteri, evita quelli simili) o passphrase (iniziali maiuscole, aggiungi un numero, separatore).</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-2fa">
+          <h3><a href="#mac-2fa">Codici a due fattori</a> <span class="badge-pro">Pro</span></h3>
+          <p>Scegli <strong>Scansiona codice QR…</strong>, poi <strong>Scegli immagine…</strong>, incolla uno screenshot con <kbd>⌘</kbd><kbd>V</kbd> (copialo con <kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>) o trascina dentro un'immagine. I codici si inseriscono in Safari tramite Inserimento automatico.</p>
+        </article>
+
+        <article class="topic" id="mac-security">
+          <h3><a href="#mac-security">Centro sicurezza</a></h3>
+          <p>Mostra password deboli, riutilizzate e vecchie. <strong>Controlla tutte le password</strong> cerca violazioni dopo che attivi Impostazioni › Privacy › <strong>Controlli delle violazioni</strong> (e la modalità offline rigorosa è disattivata).</p>
+        </article>
+
+        <article class="topic" id="mac-autofill">
+          <h3><a href="#mac-autofill">Inserimento automatico, passkey e Safari</a></h3>
+          <ol>
+            <li>Apri <strong>Dispositivi e connessioni</strong>.</li>
+            <li><strong>Apri impostazioni di Inserimento automatico</strong> e attiva LocalGateKeys in Impostazioni di Sistema › Inserimento automatico e password.</li>
+            <li><strong>Apri impostazioni di Safari</strong> e attiva l'estensione LocalGateKeys in Safari › Impostazioni › Estensioni.</li>
+          </ol>
+          <p>Per compilare un accesso in Safari, fai clic nel campo del nome utente o della password. Safari elenca sotto i tuoi accessi di LocalGateKeys: scegline uno e conferma con Touch ID o la password principale. Passkey e codici 2FA vengono proposti allo stesso modo, e l'inserimento automatico funziona anche nelle altre app del Mac.</p>
+          <p>L'estensione per Safari propone di salvare un nuovo accesso dopo che hai effettuato l'accesso. Controlla ciò che ha raccolto al prossimo sblocco di LocalGateKeys. Altri browser non sono ancora supportati sul Mac.</p>
+          <p>Nessun accesso nell'elenco? Apri <strong>Dispositivi e connessioni</strong> e verifica che l'inserimento automatico sia attivo. Nella stessa pagina di Impostazioni di Sistema puoi disattivare Password, così solo LocalGateKeys propone gli accessi.</p>
+          <p>Se LocalGateKeys si chiude quando apri <strong>Dispositivi e connessioni</strong>, aggiornala dal Mac App Store.</p>
+        </article>
+
+        <article class="topic" id="mac-import">
+          <h3><a href="#mac-import">Importazione ed esportazione</a></h3>
+          <ul>
+            <li><strong>Password di Apple</strong> (macOS 26): accessi, 2FA e passkey, controllati prima dell'importazione.</li>
+            <li>File: <code>.json</code> di Bitwarden (anche protetto da password), <code>.1pux</code> di 1Password, <code>.kdbx</code> di KeePass e CSV con <strong>Scegli colonne</strong>.</li>
+            <li>Backup <code>.lgkm</code> di iPhone e Android: scegli <strong>Aggiungi tutti i nuovi</strong>, <strong>Mantieni entrambi per i duplicati</strong> o <strong>Salta tutti</strong>. Non viene cancellato nulla.</li>
+            <li>Esporta un backup cifrato, o un CSV (non cifrato, chiede prima).</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-backups">
+          <h3><a href="#mac-backups">Backup</a></h3>
+          <p>Nel <strong>Centro recupero</strong>:</p>
+          <ul>
+            <li><strong>Backup completo</strong>: <strong>Crea…</strong> un file <code>.lgk</code>, o <strong>Ripristina…</strong> uno (sostituisce la cassaforte). Funziona tra Mac e Windows. Viene conservata una copia di sicurezza, così <strong>Rimetti com'era…</strong> annulla un ripristino.</li>
+            <li><strong>Backup pianificati</strong>: frequenza, giorno della settimana, ora, quanti conservarne, cartella e cartella speculare, e una password di backup (12+ caratteri).</li>
+            <li><strong>Kit di recupero…</strong>: un file che descrive il tuo ultimo backup, da tenere insieme a esso. <strong>Stampa kit di emergenza…</strong> stampa una pagina che indica dove si trovano la cassaforte e i backup e come ripristinarli.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-sync">
+          <h3><a href="#mac-sync">Sincronizzazione</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Wi-Fi (questa rete)</strong>: <strong>Attiva la sincronizzazione Wi-Fi</strong>, poi <strong>Mostra codice QR…</strong>. Quando un dispositivo si unisce, controlla il suo codice e scegli <strong>Accetta</strong> o <strong>Rifiuta</strong>. Se poi non lo riconosci, scegli <strong>Annulla</strong>.</li>
+            <li><strong>Unisciti con un codice</strong>: sull'altro dispositivo scegli <strong>Mostra codice QR</strong>, poi <strong>Copia testo del codice</strong>, e incolla qui il testo.</li>
+            <li><strong>Cartella cloud</strong>: unisciti a un gruppo o creane uno in una cartella come Dropbox o iCloud Drive, con la password di sincronizzazione. OneDrive e Google Drive per ora non sono disponibili, finché non si risolve un problema con Apple.</li>
+            <li><strong>Esci dalla sincronizzazione…</strong> / <strong>Reimposta la sincronizzazione su questo Mac…</strong>.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-share">
+          <h3><a href="#mac-share">Condivisione</a></h3>
+          <p>Seleziona un elemento e scegli <strong>Condividi…</strong>. Per ricevere, scegli Modifica › <strong>Ricevi un elemento condiviso…</strong> (o trovalo con <kbd>⌘</kbd><kbd>K</kbd>), apri o trascina il file (o incolla il testo QR) e scrivi le sei parole. Passkey ed elementi con un file allegato non si possono condividere.</p>
+        </article>
+
+        <article class="topic" id="mac-pro">
+          <h3><a href="#mac-pro">Pro</a></h3>
+          <p>Acquista Pro in Impostazioni › Piano. Un acquisto vale per le app iPhone e Mac; usa <strong>Ripristina acquisti</strong> sull'altro dispositivo. Un Mac gratuito sincronizzato con un iPhone Pro mostra <em>Pro dai tuoi dispositivi sincronizzati</em>.</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">Impostazioni</a></h3>
+          <p>Le impostazioni sono uguali nella finestra principale e con <kbd>⌘</kbd><kbd>,</kbd>, e gli strumenti restano visibili in fondo alla barra laterale. Impostazioni › Backup contiene la pianificazione, la <strong>Prova di ripristino settimanale</strong> e quanti backup automatici conservare; Centro di recupero, Licenza e Mostra di nuovo la configurazione si aprono da entrambe le finestre. Altre impostazioni: cosa conta come attività per il blocco automatico, chiedere prima di copiare un codice 2FA, aprire in altre app i documenti salvati nella cassaforte, una scorciatoia personale per l’accesso rapido e link di aiuto.</p>
+          <p><strong>Password di coercizione</strong> (Pro), in Impostazioni › Password di coercizione: una seconda password principale per quando qualcuno ti costringe a sbloccare. Apre una cassaforte separata con solo gli elementi che scegli, e la tua cassaforte rifiuta poi la password principale per le ore impostate.</p>
+        </article>
+
+        <article class="topic" id="mac-keys">
+          <h3><a href="#mac-keys">Scorciatoie da tastiera</a></h3>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>K</kbd></th><td>Cerca ovunque</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>N</kbd></th><td>Nuovo elemento</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>L</kbd></th><td>Blocca</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>C</kbd></th><td>Copia password</td></tr>
+              <tr><th scope="row"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd></th><td>Copia nome utente</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>T</kbd></th><td>Copia codice 2FA</td></tr>
+              <tr><th scope="row"><kbd>⌫</kbd></th><td>Sposta in Eliminati di recente</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>/</kbd></th><td>Tutte le scorciatoie da tastiera</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../it/help">Tutta la guida utente in una pagina</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestore di password per Windows, Mac e iPhone che tiene la tua cassaforte sui tuoi dispositivi.</p>
+        <p class="quiet">Questo sito conta le visite con Cloudflare Web Analytics, che non usa cookie. Non usa tracker pubblicitari e non imposta cookie.</p>
+      </div>
+      <nav aria-label="Prodotto">
+        <h2>Prodotto</h2>
+        <ul>
+          <li><a href="../../it/features">Funzionalità</a></li>
+          <li><a href="../../it/pricing">Prezzi</a></li>
+          <li><a href="../../it/download">Download</a></li>
+          <li><a href="../../it/get-started">Per iniziare</a></li>
+          <li><a href="../../it/switch/">Cambia</a></li>
+          <li><a href="../../buy">Acquista Pro</a></li>
+          <li><a href="../../it/licence">La tua licenza Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recupera la licenza</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Aiuto">
+        <h2>Aiuto</h2>
+        <ul>
+          <li><a href="../../it/help">Guida utente</a></li>
+          <li><a href="../../it/support">Supporto e FAQ</a></li>
+          <li><a href="../../it/security">Sicurezza</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Segnala una vulnerabilità</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Note legali">
+        <h2>Note legali</h2>
+        <p class="quiet">Questi documenti sono in inglese, e si applica la versione inglese, che è quella vincolante.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contratto di licenza</a></li>
+          <li><a href="../../legal/privacy">Informativa sulla privacy</a></li>
+          <li><a href="../../legal/terms-of-sale">Condizioni di vendita</a></li>
+          <li><a href="../../legal/refunds">Politica di rimborso</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contatto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows è un marchio del gruppo di società Microsoft. Chrome è un marchio di Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari sono marchi di Apple Inc., registrati negli Stati Uniti e in altri paesi.</p>
+      <nav class="lang-switch" aria-label="Lingua"><ul><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

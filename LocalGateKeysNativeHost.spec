@@ -17,6 +17,9 @@ NATIVE_MODULES = [
     'localvault.pipe_transport', 'localvault.bridge_status', 'localvault.browser_ancestry',
     'localvault.config', 'localvault.distribution', 'localvault.signature', 'localvault.winpaths',
     'localvault.process_hardening',
+    # `LocalGateKeysNativeHost.exe lgk ...` / `... mcp`: the lgk CLI in the Store package (one alias only).
+    'localvault.cli', 'localvault.cli.main', 'localvault.cli.run', 'localvault.cli.inject',
+    'localvault.cli.mcp_server',
 ]
 hiddenimports = NATIVE_MODULES + [
     'win32api', 'win32con', 'win32crypt', 'win32file', 'win32pipe', 'win32security',

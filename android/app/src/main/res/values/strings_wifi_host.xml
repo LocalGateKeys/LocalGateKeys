@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">Show QR code</string>
+    <string name="sync_host_copy_code">Copy code text</string>
+    <string name="sync_host_code">Code: %1$s</string>
+    <string name="sync_host_expires_in">Expires in %1$s</string>
+    <string name="sync_host_expired">Expired</string>
+    <string name="sync_host_accept_hint">Choose Accept only if the other device shows this same code.</string>
+    <string name="sync_host_decline_hint">Otherwise choose Decline.</string>
+    <string name="sync_host_undo_hint">If you don\'t recognise it, choose Undo.</string>
+    <string name="sync_host_other_pc_hint">On another PC, use Join with a code and paste the code text instead.</string>
+    <string name="sync_host_copied">Code text copied.</string>
+    <string name="sync_host_closed">This pairing code has closed.</string>
+    <string name="sync_host_not_waiting">That request is no longer waiting. Show a new code to try again.</string>
+    <string name="sync_host_declined">Declined. The device was not added. Show a new code to try again.</string>
+    <string name="sync_host_not_listening">Turn on Wi-Fi sync first.</string>
+    <string name="sync_host_confirm">%1$s wants to join. Choose Accept only if it shows the code %2$s.</string>
+    <string name="sync_host_adding">Adding %1$s…</string>
+    <string name="sync_host_adding_button">Adding…</string>
+    <string name="sync_host_paired_key">Paired: %1$s (key %2$s). %3$s</string>
+    <string name="sync_host_paired_plain">Paired: %1$s. %2$s</string>
+    <string name="sync_host_paired_title">Paired: %1$s</string>
+    <string name="sync_host_declines_in">Declines by itself in %1$d s.</string>
+    <string name="sync_host_stopped">Wi-Fi sync stopped. Check the network and turn it on again.</string>
+    <string name="sync_host_accept">Accept</string>
+    <string name="sync_host_decline">Decline</string>
+    <string name="sync_host_undo">Undo</string>
+    <string name="sync_host_keep">Keep</string>
+    <string name="sync_host_followed">Now listening on %1$s (address changed).</string>
+    <string name="sync_host_scan_title">Scan this code with LocalGateKeys on the other device</string>
+    <string name="sync_host_qr_description">Pairing QR code</string>
+    <string name="sync_host_add_named">Add %1$s?</string>
+    <string name="sync_host_add_device">Add this device?</string>
+    <string name="sync_host_fingerprint">Key fingerprint: %1$s</string>
+    <string name="sync_host_paired_heading">Paired devices</string>
+    <string name="sync_host_no_peers">No devices paired yet.</string>
+    <string name="sync_host_remove">Remove…</string>
+    <string name="sync_host_toggle">Host Wi-Fi sync on this phone</string>
+    <string name="sync_host_intro">Other devices on the same Wi-Fi can pair with this phone and sync with it while LocalGateKeys is open and unlocked here.</string>
+    <string name="sync_host_listens">This phone listens on %1$s.</string>
+    <string name="sync_host_free">On the free plan this phone listens only while a pairing code is shown and for 2 minutes after Sync now.</string>
+    <string name="sync_host_no_wifi">Connect this phone to Wi-Fi to host Wi-Fi sync.</string>
+    <string name="sync_host_pair_hint">Both devices must be on the same Wi-Fi.</string>
+    <string name="sync_host_this_phone">This phone</string>
+    <string name="sync_host_remove_confirm">Remove %1$s from Wi-Fi sync? It stops syncing with this phone but keeps what it already has.</string>
+    <string name="sync_host_could_not_listen">Wi-Fi sync could not start on this phone. Check the network and try again.</string>
+</resources>

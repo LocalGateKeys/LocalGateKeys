@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import ImportSheet from '../components/ImportSheet.svelte';
 import ExportSheet from '../components/ExportSheet.svelte';
 import TransferSheet from '../components/TransferSheet.svelte';
+import SwitchReport from '../components/SwitchReport.svelte';
 import { fakeApi } from '../test/fakeApi.js';
 
 afterEach(() => { delete window.pywebview; });
@@ -62,6 +63,59 @@ describe('ExportSheet', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     await waitFor(() => expect(api.export_run).toHaveBeenCalledWith('kdbx', false, 'kdbx password 123', 'kdbx password 123'));
     await waitFor(() => expect(onclose).toHaveBeenCalled());
+  });
+
+  it('exports only the ticked items to CXF', async () => {
+    const api = fakeApi({
+      export_formats: vi.fn().mockResolvedValue({ ok: true, intro: 'Writes a copy.', min_password: 12,
+        formats: [{ key: 'kdbx', label: 'KeePass (.kdbx)' }, { key: 'cxf', label: 'CXF' }], warnings: ['Plain text.'] }),
+      export_items: vi.fn().mockResolvedValue({ ok: true, items: [{ id: 'a', title: 'Alpha', kind: 'Login' },
+        { id: 'p', title: 'Passkey site', kind: 'Passkey' }] }),
+      export_run: vi.fn().mockResolvedValue({ ok: true, title: 'Export complete', message: 'done', status: 'Exported 1 record.' }),
+    });
+    render(ExportSheet, { onclose: vi.fn() });
+    await fireEvent.change(await screen.findByLabelText('Format'), { target: { value: 'cxf' } });
+    const pick = await screen.findByRole('checkbox', { name: /Passkey site/ });
+    expect(screen.getByRole('button', { name: 'Export' })).toBeDisabled();
+    await fireEvent.click(pick);
+    await fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    await waitFor(() => expect(api.export_run).toHaveBeenCalledWith('cxf', false, '', '', ['p']));
+  });
+});
+
+describe('SwitchReport', () => {
+  const REPORT = { source: 'Chrome', total: 3, written: 2, added: 2, updated: 0, toast: 'Imported 2 of 3, 1 skipped (already in the vault: 1).',
+    kinds: [{ kind: 'web', label: 'Website login', count: 2 }], passkeys: { total: 0, imported: 0, skipped: 0 }, attachments: 0,
+    fields: { kept: 1, split: 0, moved: 0, dropped: 0 }, duplicates: 1, unreadable_rows: 0, notes: [],
+    not_carried: [{ row: 3, name: 'Site2', reason: 'already in the vault' }], undo: 'u1' };
+
+  it('lists what landed, a check list, and undoes the whole import', async () => {
+    const api = fakeApi({ import_undo: vi.fn().mockResolvedValue({ ok: true, message: 'Import undone.', trashed: 2, restored: 0, missed: [] }) });
+    const ondone = vi.fn();
+    render(SwitchReport, { report: REPORT, ondone });
+    expect(screen.getByText('Imported 2 of 3, 1 skipped (already in the vault: 1).')).toBeInTheDocument();
+    expect(screen.getByText('Website login')).toBeInTheDocument();
+    const check = screen.getByRole('checkbox', { name: /Site2/ });
+    await fireEvent.click(check);
+    expect(check).toBeChecked();
+    await fireEvent.click(screen.getByRole('button', { name: 'Undo this import' }));
+    await waitFor(() => expect(api.import_undo).toHaveBeenCalledWith('u1'));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo this import' })).toBeNull());
+    await fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(ondone).toHaveBeenCalled();
+  });
+});
+
+describe('ExportSheet coverage', () => {
+  it('lists what the export leaves out per kind', async () => {
+    fakeApi({
+      export_formats: vi.fn().mockResolvedValue({ ok: true, intro: 'Writes a copy.', min_password: 12,
+        formats: [{ key: 'csv', label: 'CSV' }], warnings: [] }),
+      export_coverage: vi.fn().mockResolvedValue({ ok: true, left_out: { passkey: 2 }, partial: {},
+        lines: ['Passkey: 2 item(s) will be left out (this format cannot hold them).'] }),
+    });
+    render(ExportSheet, { onclose: vi.fn() });
+    expect(await screen.findByText(/Passkey: 2 item/)).toBeInTheDocument();
   });
 });
 

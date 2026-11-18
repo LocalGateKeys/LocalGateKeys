@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Markdown formatting in notes (Quick Wins Task 6). -->
+<resources>
+    <string name="notes_show_formatting">Afficher la mise en forme</string>
+    <string name="notes_todo_done">Fait</string>
+    <string name="notes_todo_not_done">Pas fait</string>
+</resources>

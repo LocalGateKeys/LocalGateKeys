@@ -102,6 +102,11 @@ function resolve(pathname) {
 // Releases older than MIN_RELEASE (a wrangler var, "x.y.z") are no longer
 // offered: they lack later security fixes. The objects stay in R2, so raising
 // or removing the var brings them back. Without the var every release is served.
+//
+// LocalGateKeys for Windows ships only through the Microsoft Store from 0.4.12
+// on, the last installer release. Releases newer than LAST_INSTALLER_RELEASE
+// (a wrangler var) are refused too, so an installer uploaded by mistake is
+// never offered; stable.json stays at that release for good.
 function compareVersions(a, b) {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);
@@ -111,9 +116,18 @@ function compareVersions(a, b) {
   return 0;
 }
 
+const DOWNLOAD_URL = "https://localgatekeys.app/download";
+const STORE_URL = "https://apps.microsoft.com/detail/9PNWCNLQ6597";
+const VERSION_VAR = /^\d+\.\d+\.\d+$/;
+
 function retired(target, env) {
   const floor = env.MIN_RELEASE;
-  return typeof floor === "string" && /^\d+\.\d+\.\d+$/.test(floor) && compareVersions(target.version, floor) < 0;
+  return typeof floor === "string" && VERSION_VAR.test(floor) && compareVersions(target.version, floor) < 0;
+}
+
+function pastLastInstaller(target, env) {
+  const ceiling = env.LAST_INSTALLER_RELEASE;
+  return typeof ceiling === "string" && VERSION_VAR.test(ceiling) && compareVersions(target.version, ceiling) > 0;
 }
 
 function objectHeaders(target, object) {
@@ -200,24 +214,42 @@ export default {
     }
 
     if (target.filename !== undefined) {
-      if (retired(target, env)) {
-        return plain(410, "This release is no longer offered. Download the current version from https://localgatekeys.app/download");
+      if (retired(target, env) || pastLastInstaller(target, env)) {
+        // Only Windows installers ever lived here; anything else gets the general download page (W3).
+        const windows = /\.(exe|msi|msix)$/i.test(target.filename);
+        return plain(
+          410,
+          windows
+            ? `This release is not offered. LocalGateKeys for Windows is now on the Microsoft Store: ${STORE_URL}`
+            : `This release is not offered. Get the current version at ${DOWNLOAD_URL}`,
+        );
       }
       return serveRelease(request, env, target);
     }
 
+    // Conditional requests go to R2 so a client that has the feed gets 304 (W1).
     const object =
-      request.method === "HEAD" ? await env.RELEASES.head(target.key) : await env.RELEASES.get(target.key);
+      request.method === "HEAD"
+        ? await env.RELEASES.head(target.key)
+        : await env.RELEASES.get(target.key, { onlyIf: request.headers });
     if (object === null) {
       return plain(404, "Not found");
     }
     if (target.maxBytes !== null && object.size > target.maxBytes) {
       // Refuse rather than truncate: a truncated feed would fail signature
       // checks with a less obvious error.
-      return plain(500, "Feed object is larger than clients accept");
+      // 503 + Retry-After: a broken upload, not a fault in the Worker; clients retry later (W2).
+      console.error(`update-feed: ${target.key} is ${object.size} bytes, over the ${target.maxBytes} limit`);
+      return plain(503, "Feed object is larger than clients accept", { "Retry-After": "3600" });
     }
 
     const headers = objectHeaders(target, object);
+    if (request.method !== "HEAD" && (!("body" in object) || object.body === undefined || object.body === null)) {
+      delete headers["Content-Length"];
+      const strict = request.headers.has("If-Match") || request.headers.has("If-Unmodified-Since");
+      if (strict) return plain(412, "Precondition failed", { ETag: object.httpEtag });
+      return new Response(null, { status: 304, headers });
+    }
     return new Response(request.method === "HEAD" ? null : object.body, { status: 200, headers });
   },
 };

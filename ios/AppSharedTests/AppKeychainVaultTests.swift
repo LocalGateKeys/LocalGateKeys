@@ -5,7 +5,7 @@ import LGKCore
 
 final class AppKeychainVaultTests: XCTestCase {
     func test_sync_only_slots_go_to_the_app_only_group() throws {
-        XCTAssertEqual(VaultSlot.appOnly, [.pairedPeer, .installID, .folderBookmark])
+        XCTAssertEqual(VaultSlot.appOnly, [.pairedPeer, .installID, .folderBookmark, .unlockKeyFile])
         let shared = InMemoryKeychainVault(), app = InMemoryKeychainVault()
         let v = AppKeychainVault(shared: shared, appOnly: app)
         for slot in VaultSlot.allCases { try v.write(slot, [1, 2]) }
@@ -87,6 +87,9 @@ final class AppKeychainVaultTests: XCTestCase {
         for slot in VaultSlot.allCases {
             if VaultSlot.deviceUnlocked.contains(slot) {
                 XCTAssertEqual(try safari.read(slot), [3], "\(slot)"); XCTAssertNil(try base.read(slot), "\(slot)")
+            } else if VaultSlot.fillMarker.contains(slot) {
+                // The "just filled" marker key: the same bytes in both groups (SafariFillMarkerTests).
+                XCTAssertEqual(try safari.read(slot), [3], "\(slot)"); XCTAssertEqual(try base.read(slot), [3], "\(slot)")
             } else {
                 XCTAssertEqual(try base.read(slot), [3], "\(slot)")
                 XCTAssertNil(try safari.read(slot), "\(slot) must not be readable by the Safari extension")

@@ -83,7 +83,7 @@ def summarize(view: Mapping[str, Any], status: Any = None, snapshot: Any = None,
             entry = devices.setdefault(device_id, {"id": device_id, "name": str(member.get("name") or device_id),
                                                    "routes": [], "warnings": [], "last_synced_at": None})
             entry["routes"].append(route)
-            if member.get("detail"):
+            if member.get("detail") and route == "folder":  # a Wi-Fi detail is its address, not a warning
                 entry["warnings"].append(str(member["detail"]))
             ts = peer_times.get(device_id) or (member_times.get(device_id) if route == "folder" else None)
             if isinstance(ts, (int, float)) and ts > 0 and (entry["last_synced_at"] or 0) < ts:
@@ -112,5 +112,6 @@ def summarize(view: Mapping[str, Any], status: Any = None, snapshot: Any = None,
                                                             if last else t("status.sync.never"))
     return {"state": state, "colour": colour, "text": f"{head} · {t('syncStatus.deviceCount', count=count)}", "devices": rows,
             "device_count": count, "this_device": {**(this_device or {"name": t("syncPage.thisPc")}),
-                                                   "last_text": _last_text(last, now)},
+                                                   "last_text": _last_text(last, now),
+                                                   "id_text": str(view.get("own_id") or "")},
             "last_synced_at": last, "pro": bool(view.get("pro", True))}

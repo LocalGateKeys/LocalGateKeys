@@ -49,6 +49,24 @@ class SearchCommandsTest {
     }
 
     @Test
+    fun the_iphones_actions_that_leave_the_vault_tab_are_there_in_its_order() {
+        assertEquals(listOf(SearchCommand.SecurityCheck), SearchCommand.parse(">audit", EnglishTxt()))
+        assertEquals(listOf(SearchCommand.SecurityCheck), SearchCommand.parse(">security check", EnglishTxt()))
+        assertEquals(listOf(SearchCommand.RecentlyDeleted), SearchCommand.parse(">trash", EnglishTxt()))
+        assertEquals(listOf(SearchCommand.RecentlyDeleted), SearchCommand.parse(">recently deleted", EnglishTxt()))
+        assertEquals(listOf(SearchCommand.AutofillSettings), SearchCommand.parse(">autofill", EnglishTxt()))
+        assertEquals(listOf(SearchCommand.SyncSettings), SearchCommand.parse(">sync settings", EnglishTxt()))
+        val all = SearchCommand.all
+        val order = listOf(
+            SearchCommand.Lock, SearchCommand.SyncNow, SearchCommand.SyncStatus, SearchCommand.SecurityCheck,
+            SearchCommand.RecentlyDeleted, SearchCommand.Settings, SearchCommand.Import, SearchCommand.AutofillSettings,
+            SearchCommand.SyncSettings, SearchCommand.ShowSetup,
+        )
+        assertEquals(order, all.filter { it in order })
+        assertEquals(all.size, all.toSet().size)
+    }
+
+    @Test
     fun ctrl_k_is_the_search_shortcut() {
         assertTrue(SearchShortcut.matches(39, 0, ctrl = true, alt = false, shift = false, repeat = 0))
         assertFalse(SearchShortcut.matches(39, 0, ctrl = false, alt = false, shift = false, repeat = 0))

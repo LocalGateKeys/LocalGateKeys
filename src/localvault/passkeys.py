@@ -12,6 +12,12 @@ builds ``clientDataJSON`` itself from that origin, so a page cannot choose
 the origin that gets signed.  The rpId must equal the origin's host or be a
 registrable suffix of it (WebAuthn §5.1.3/§5.1.4, Public Suffix List).
 
+The Windows plugin-authenticator path (``*_system`` / ``*_from_hash``) has no
+origin: Windows checks the RP ID against the caller and passes the 32-byte
+client data hash, which is signed as given.  Both paths store the same item
+fields and emit the same authenticator data, so either can use the other's
+passkeys.
+
 Counter policy: the signature counter is always 0 and the backup-eligible
 and backed-up flags are set.  These are synced-style passkeys: a changing
 counter would rewrite the vault item on every sign-in and fight with device
@@ -52,6 +58,8 @@ MAX_CREDENTIAL_ID = 1023
 MAX_NAME = 256
 MAX_RP_ID = 253
 USER_VERIFICATION = ("required", "preferred", "discouraged")
+CLIENT_DATA_HASH_BYTES = 32
+SYSTEM_USER_VERIFICATION = ("required", "discouraged")
 
 FLAG_UP = 0x01
 FLAG_UV = 0x04
@@ -92,6 +100,28 @@ class CreateOptions:
 class GetOptions:
     rp_id: str
     challenge: bytes
+    allow_ids: tuple[bytes, ...]
+    user_verification: str
+
+
+@dataclass(frozen=True)
+class SystemCreateOptions:
+    """A Windows plugin-authenticator create: no origin, the OS already hashed the client data."""
+    rp_id: str
+    rp_name: str
+    user_id: bytes
+    user_name: str
+    user_display_name: str
+    client_data_hash: bytes
+    exclude_ids: tuple[bytes, ...]
+    user_verification: str            # "required" | "discouraged"
+    algorithms: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class SystemGetOptions:
+    rp_id: str
+    client_data_hash: bytes
     allow_ids: tuple[bytes, ...]
     user_verification: str
 
@@ -144,11 +174,24 @@ def cbor_encode(value: Any) -> bytes:
     raise TypeError(f"cannot CBOR-encode {type(value).__name__}")
 
 
-def client_data_json(ceremony: str, challenge: bytes, origin: str) -> bytes:
+def client_data_json(ceremony: str, challenge: bytes, origin: str, *, top_origin: str | None = None) -> bytes:
+    """Serialize CollectedClientData in the order of WebAuthn L3 5.8.1.1: type, challenge, origin,
+    crossOrigin, then topOrigin. Without ``top_origin`` the bytes are exactly the same-origin form
+    (``"crossOrigin":false``, no topOrigin). ``top_origin`` (a get from a cross-origin frame; the
+    service worker read it from the browser's frame tree) must be a canonical origin; a create is never
+    cross-origin here. Origins are canonical ASCII, so json.dumps escapes nothing the spec writes raw."""
     if ceremony not in ("webauthn.create", "webauthn.get"):
         raise ValueError("unknown WebAuthn ceremony")
-    return json.dumps({"type": ceremony, "challenge": b64u_encode(challenge), "origin": origin,
-                       "crossOrigin": False}, separators=(",", ":")).encode("utf-8")
+    data: dict[str, Any] = {"type": ceremony, "challenge": b64u_encode(challenge), "origin": origin,
+                            "crossOrigin": False}
+    if top_origin is not None:
+        if ceremony != "webauthn.get":
+            raise ValueError("only a get may come from a cross-origin frame")
+        if not isinstance(top_origin, str) or canonicalize_origin(top_origin) != top_origin:
+            raise ValueError("topOrigin must be a canonical origin")
+        data["crossOrigin"] = True
+        data["topOrigin"] = top_origin
+    return json.dumps(data, separators=(",", ":")).encode("utf-8")
 
 
 def authenticator_data(rp_id: str, *, user_verified: bool,
@@ -210,7 +253,8 @@ def _mapping(value: Any, field: str) -> Mapping[str, Any]:
 # names. They are shown in the consent dialog, where a page could otherwise
 # add a fake "Site:" line or reorder the text.
 _NAME_BREAK_RE = re.compile("[\x00-\x1f\x7f-\x9f  ]+")
-_NAME_BIDI_RE = re.compile("[‎‏‪-‮⁦-⁩]")
+# Written as escapes: literal bidi control characters in source are a Trojan Source risk.
+_NAME_BIDI_RE = re.compile("[\u200e\u200f\u202a-\u202e\u2066-\u2069]")
 
 
 def _name(value: Any) -> str:
@@ -297,6 +341,139 @@ def parse_get_options(origin: str, raw: Any) -> GetOptions:
     )
 
 
+# -- system (Windows plugin authenticator) requests ------------------------------
+#
+# Windows hands the provider a CTAP2 request with the RP ID and a client data
+# hash, never an origin or clientDataJSON.  Windows checked the RP ID against
+# the caller; here it only has to be a well-formed canonical DNS name.  Every
+# rejection is ``invalid_request`` except a missing ES256 (``not_supported``).
+
+_RP_ID_CHARS_RE = re.compile(r"[a-z0-9.-]+")
+# WHATWG "ends in a number": such hosts parse as IPv4 (127.1, 0x7f.1), never as RP IDs.
+_NUMERIC_LABEL_RE = re.compile(r"[0-9]+|0x[0-9a-f]*")
+
+
+def validate_rp_id_syntax(rp_id: Any) -> str:
+    """Return ``rp_id`` if it is a canonical lower-case A-label DNS name, else raise."""
+    if not isinstance(rp_id, str) or not rp_id or len(rp_id) > MAX_RP_ID or not _RP_ID_CHARS_RE.fullmatch(rp_id):
+        raise PasskeyError("invalid_request", "rp_id is malformed")
+    try:
+        canonical = _ascii_host(rp_id)
+    except (OriginError, TypeError) as exc:
+        raise PasskeyError("invalid_request", "rp_id is malformed") from exc
+    if canonical != rp_id:
+        raise PasskeyError("invalid_request", "rp_id is not canonical")
+    labels = rp_id.split(".")
+    if any(not label or len(label) > 63 or label.startswith("-") or label.endswith("-") for label in labels):
+        raise PasskeyError("invalid_request", "rp_id is malformed")
+    if _NUMERIC_LABEL_RE.fullmatch(labels[-1]):
+        raise PasskeyError("invalid_request", "rp_id is an IP address")
+    return rp_id
+
+
+def validate_system_rp_id(rp_id: Any) -> str:
+    """:func:`validate_rp_id_syntax` plus the browser path's public-suffix refusal.
+
+    Windows checks the RP ID against its caller, but a passkey for a public
+    suffix (``com``, ``github.io``) would be shared by every site under it, so
+    it is refused here as :func:`validate_rp_id` refuses it for a page. A
+    missing suffix list fails closed.
+    """
+    rp_id = validate_rp_id_syntax(rp_id)
+    rules = suffix_rules()
+    if rules is None or public_suffix(rp_id, rules) == rp_id:
+        raise PasskeyError("invalid_request", "rp_id is a public suffix")
+    return rp_id
+
+
+def _system_bytes(value: Any, field: str, *, max_bytes: int) -> bytes:
+    try:
+        return b64u_decode(value, max_bytes=max_bytes)
+    except PasskeyError as exc:
+        raise PasskeyError("invalid_request", f"{field} is malformed") from exc
+
+
+def _system_hash(value: Any) -> bytes:
+    data = _system_bytes(value, "client_data_hash", max_bytes=CLIENT_DATA_HASH_BYTES)
+    if len(data) != CLIENT_DATA_HASH_BYTES:
+        raise PasskeyError("invalid_request", "client_data_hash must be 32 bytes")
+    return data
+
+
+def _system_ids(value: Any, field: str) -> tuple[bytes, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list) or len(value) > MAX_CREDENTIAL_LIST:
+        raise PasskeyError("invalid_request", f"{field} is malformed")
+    ids = []
+    for entry in value:
+        credential_id = _system_bytes(entry, field, max_bytes=MAX_CREDENTIAL_ID)
+        if not credential_id:
+            raise PasskeyError("invalid_request", f"{field} has an empty id")
+        ids.append(credential_id)
+    return tuple(ids)
+
+
+def _system_name(value: Any) -> str:
+    try:
+        return _name(value)
+    except PasskeyError as exc:
+        raise PasskeyError("invalid_request", "names must be text") from exc
+
+
+def _system_uv(value: Any) -> str:
+    if not isinstance(value, str) or value not in SYSTEM_USER_VERIFICATION:
+        raise PasskeyError("invalid_request", "user_verification is malformed")
+    return value
+
+
+def _system_mapping(raw: Any) -> Mapping[str, Any]:
+    if not isinstance(raw, Mapping):
+        raise PasskeyError("invalid_request", "request must be an object")
+    return raw
+
+
+def parse_system_create(raw: Mapping[str, Any]) -> SystemCreateOptions:
+    raw = _system_mapping(raw)
+    rp_id = validate_system_rp_id(raw.get("rp_id"))
+    client_data_hash = _system_hash(raw.get("client_data_hash"))
+    user_id = _system_bytes(raw.get("user_id"), "user_id", max_bytes=MAX_USER_ID)
+    if not user_id:
+        raise PasskeyError("invalid_request", "user_id is empty")
+    algorithms = raw.get("algorithms")
+    if (not isinstance(algorithms, list) or len(algorithms) > MAX_CREDENTIAL_LIST
+            or any(type(alg) is not int for alg in algorithms)):
+        raise PasskeyError("invalid_request", "algorithms is malformed")
+    resident_key = raw.get("resident_key")
+    if resident_key is not None and not isinstance(resident_key, bool):
+        raise PasskeyError("invalid_request", "resident_key is malformed")
+    opts = SystemCreateOptions(
+        rp_id=rp_id,
+        rp_name=_system_name(raw.get("rp_name")),
+        user_id=user_id,
+        user_name=_system_name(raw.get("user_name")),
+        user_display_name=_system_name(raw.get("user_display_name")),
+        client_data_hash=client_data_hash,
+        exclude_ids=_system_ids(raw.get("exclude_credentials"), "exclude_credentials"),
+        user_verification=_system_uv(raw.get("user_verification")),
+        algorithms=tuple(algorithms),
+    )
+    # Checked last, so a malformed request is invalid_request, never not_supported.
+    if ES256 not in opts.algorithms:
+        raise PasskeyError("not_supported", "ES256 was not offered")
+    return opts
+
+
+def parse_system_get(raw: Mapping[str, Any]) -> SystemGetOptions:
+    raw = _system_mapping(raw)
+    return SystemGetOptions(
+        rp_id=validate_system_rp_id(raw.get("rp_id")),
+        client_data_hash=_system_hash(raw.get("client_data_hash")),
+        allow_ids=_system_ids(raw.get("allow_credentials"), "allow_credentials"),
+        user_verification=_system_uv(raw.get("user_verification")),
+    )
+
+
 # -- keys and ceremonies --------------------------------------------------------
 
 def _load_private_key(text: Any) -> ec.EllipticCurvePrivateKey | None:
@@ -321,25 +498,28 @@ def usable_record(record: Mapping[str, Any]) -> bool:
     return _load_private_key(record.get("private_key")) is not None
 
 
-def create_credential(origin: str, opts: CreateOptions, *, user_verified: bool) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Generate a passkey. Returns ``(item_fields, response)``; bytes are base64url."""
+def _new_passkey(rp_id: str, rp_name: str, user_id: bytes, user_name: str, user_display_name: str, *,
+                 user_verified: bool) -> tuple[dict[str, Any], ec.EllipticCurvePublicKey, bytes, bytes]:
+    """Generate a key and the vault item fields shared by both create paths.
+
+    Returns ``(item_fields, public_key, authenticator_data, attestation_object)``.
+    """
     key = ec.generate_private_key(ec.SECP256R1())
     public_key = key.public_key()
     credential_id = secrets.token_bytes(CREDENTIAL_ID_BYTES)
-    auth_data = authenticator_data(opts.rp_id, user_verified=user_verified,
+    auth_data = authenticator_data(rp_id, user_verified=user_verified,
                                    attested=(credential_id, cose_es256_public_key(public_key)))
     attestation = cbor_encode({"fmt": "none", "attStmt": {}, "authData": auth_data})
-    client_data = client_data_json("webauthn.create", opts.challenge, origin)
-    title = opts.rp_name or opts.rp_id
-    if opts.user_name:
-        title = f"{title} ({opts.user_name})"
+    title = rp_name or rp_id
+    if user_name:
+        title = f"{title} ({user_name})"
     fields = {
         "title": title,
-        "relying_party_id": opts.rp_id,
-        "rp_name": opts.rp_name,
-        "user_handle": b64u_encode(opts.user_id),
-        "user_name": opts.user_name,
-        "user_display_name": opts.user_display_name,
+        "relying_party_id": rp_id,
+        "rp_name": rp_name,
+        "user_handle": b64u_encode(user_id),
+        "user_name": user_name,
+        "user_display_name": user_display_name,
         "credential_id": b64u_encode(credential_id),
         "private_key": b64u_encode(key.private_bytes(serialization.Encoding.DER,
                                                      serialization.PrivateFormat.PKCS8,
@@ -348,6 +528,15 @@ def create_credential(origin: str, opts: CreateOptions, *, user_verified: bool) 
         "created": _dt.date.today().isoformat(),
         "discoverable": True,
     }
+    return fields, public_key, auth_data, attestation
+
+
+def create_credential(origin: str, opts: CreateOptions, *, user_verified: bool) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Generate a passkey. Returns ``(item_fields, response)``; bytes are base64url."""
+    fields, public_key, auth_data, attestation = _new_passkey(
+        opts.rp_id, opts.rp_name, opts.user_id, opts.user_name, opts.user_display_name,
+        user_verified=user_verified)
+    client_data = client_data_json("webauthn.create", opts.challenge, origin)
     response: dict[str, Any] = {
         "credential_id": fields["credential_id"],
         "client_data_json": b64u_encode(client_data),
@@ -363,13 +552,17 @@ def create_credential(origin: str, opts: CreateOptions, *, user_verified: bool) 
     return fields, response
 
 
-def get_assertion(origin: str, opts: GetOptions, record: Mapping[str, Any], *, user_verified: bool) -> dict[str, Any]:
-    """Sign ``authenticatorData || SHA-256(clientDataJSON)`` with a stored passkey."""
+def get_assertion(origin: str, opts: GetOptions, record: Mapping[str, Any], *, user_verified: bool,
+                  top_origin: str | None = None) -> dict[str, Any]:
+    """Sign ``authenticatorData || SHA-256(clientDataJSON)`` with a stored passkey.
+
+    ``top_origin`` marks a get from a cross-origin frame (``crossOrigin``/``topOrigin`` in clientDataJSON);
+    ``opts.rp_id`` was still validated against the frame's own ``origin``."""
     key = _load_private_key(record.get("private_key"))
     if key is None or record.get("algorithm") != ALGORITHM_NAME:
         raise PasskeyError("fallback", "stored passkey cannot sign")
     auth_data = authenticator_data(opts.rp_id, user_verified=user_verified)
-    client_data = client_data_json("webauthn.get", opts.challenge, origin)
+    client_data = client_data_json("webauthn.get", opts.challenge, origin, top_origin=top_origin)
     signature = key.sign(auth_data + hashlib.sha256(client_data).digest(), ec.ECDSA(hashes.SHA256()))
     return {
         "credential_id": str(record.get("credential_id", "")),
@@ -377,4 +570,66 @@ def get_assertion(origin: str, opts: GetOptions, record: Mapping[str, Any], *, u
         "authenticator_data": b64u_encode(auth_data),
         "signature": b64u_encode(signature),
         "user_handle": str(record.get("user_handle", "")),
+    }
+
+
+def _check_system_hash(client_data_hash: Any) -> bytes:
+    if not isinstance(client_data_hash, bytes) or len(client_data_hash) != CLIENT_DATA_HASH_BYTES:
+        raise PasskeyError("invalid_request", "client_data_hash must be 32 bytes")
+    return client_data_hash
+
+
+def create_credential_from_hash(opts: SystemCreateOptions, *, user_verified: bool
+                                ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Generate a passkey for a Windows plugin request. Same item fields as :func:`create_credential`.
+
+    Attestation is "none", so nothing is signed and ``client_data_hash`` is only
+    checked; no client data is returned (Windows owns it).
+    """
+    _check_system_hash(opts.client_data_hash)
+    validate_system_rp_id(opts.rp_id)  # options can be built directly, bypassing the parser
+    if ES256 not in opts.algorithms:
+        raise PasskeyError("not_supported", "ES256 was not offered")
+    fields, _public_key, auth_data, attestation = _new_passkey(
+        opts.rp_id, opts.rp_name, opts.user_id, opts.user_name, opts.user_display_name,
+        user_verified=user_verified)
+    response: dict[str, Any] = {
+        "credential_id": fields["credential_id"],
+        "authenticator_data": b64u_encode(auth_data),
+        "attestation_object": b64u_encode(attestation),
+        "attestation_format": "none",
+        "public_key_algorithm": ES256,
+    }
+    return fields, response
+
+
+def get_assertion_from_hash(opts: SystemGetOptions, record: Mapping[str, Any], *, user_verified: bool
+                            ) -> dict[str, Any]:
+    """Sign ``authenticatorData || client_data_hash`` as given by Windows (no re-hashing).
+
+    ECDSA-SHA256 over this message is exactly the browser path's signature
+    over ``authenticatorData || SHA-256(clientDataJSON)``.
+    """
+    client_data_hash = _check_system_hash(opts.client_data_hash)
+    validate_system_rp_id(opts.rp_id)  # options can be built directly, bypassing the parser
+    key = _load_private_key(record.get("private_key"))
+    if key is None or record.get("algorithm") != ALGORITHM_NAME:
+        raise PasskeyError("invalid_request", "stored passkey cannot sign")
+    if record.get("relying_party_id") != opts.rp_id:
+        raise PasskeyError("invalid_request", "stored passkey belongs to another site")
+    try:
+        credential_id = b64u_decode(record.get("credential_id", ""), max_bytes=MAX_CREDENTIAL_ID)
+    except PasskeyError as exc:
+        raise PasskeyError("invalid_request", "stored passkey cannot sign") from exc
+    if not credential_id or (opts.allow_ids and credential_id not in opts.allow_ids):
+        raise PasskeyError("invalid_request", "stored passkey was not requested")
+    auth_data = authenticator_data(opts.rp_id, user_verified=user_verified)
+    signature = key.sign(auth_data + client_data_hash, ec.ECDSA(hashes.SHA256()))
+    return {
+        "credential_id": str(record.get("credential_id", "")),
+        "authenticator_data": b64u_encode(auth_data),
+        "signature": b64u_encode(signature),
+        "user_handle": str(record.get("user_handle", "")),
+        "user_name": str(record.get("user_name", "")),
+        "user_display_name": str(record.get("user_display_name", "")),
     }

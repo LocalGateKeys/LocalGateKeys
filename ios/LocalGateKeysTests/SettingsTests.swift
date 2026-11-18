@@ -6,13 +6,17 @@ import AppShared
 final class SettingsTests: XCTestCase {
     func test_acknowledgements_ship_both_licences() throws {
         let list = Acknowledgement.all
-        XCTAssertEqual(list.map(\.name), ["swift-crypto", "phc-winner-argon2"])
+        XCTAssertEqual(list.map(\.name), ["swift-crypto", "phc-winner-argon2", "yubikit-ios 4.7.0",
+                                         "2FA Directory (site data)"])
         let crypto = try XCTUnwrap(list.first)
         XCTAssertEqual(crypto.licence, "Apache-2.0")
         XCTAssertTrue(crypto.text.contains("Apache License"))
         XCTAssertTrue(crypto.text.contains("The SwiftCrypto Project"), "NOTICE included")
         XCTAssertEqual(list[1].licence, "CC0-1.0")
         XCTAssertTrue(list[1].text.contains("CC0 1.0"))
+        XCTAssertEqual(list[2].licence, "Apache-2.0")
+        XCTAssertTrue(list[2].text.contains("Apache License"))
+        XCTAssertTrue(list[3].text.contains("CC BY 4.0") && list[3].text.contains("2factorauth"))
     }
 
     func test_import_card_text() {

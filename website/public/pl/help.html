@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Przewodnik | LocalGateKeys</title>
-  <meta name="description" content="Jak działa każda funkcja LocalGateKeys w Windows, rozszerzeniu przeglądarki, na iPhonie, Macu, Apple Watch i Androidzie – z instrukcjami krok po kroku.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Przewodnik LocalGateKeys: Windows, Mac, iPhone, przeglądarka</title>
+  <meta name="description" content="Pomoc krok po kroku dla każdej funkcji LocalGateKeys na Windows, Mac, iPhone, Apple Watch i w rozszerzeniu przeglądarki: konfiguracja, uzupełnianie i kopie.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/pl/help">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/help">
@@ -20,32 +19,64 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/help">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/help">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/help">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/help">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/help">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Przewodnik LocalGateKeys: Windows, Mac, iPhone, przeglądarka">
+  <meta property="og:description" content="Pomoc krok po kroku dla każdej funkcji LocalGateKeys na Windows, Mac, iPhone, Apple Watch i w rozszerzeniu przeglądarki: konfiguracja, uzupełnianie i kopie.">
+  <meta property="og:url" content="https://localgatekeys.app/pl/help">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Logo LocalGateKeys: menedżer haseł na Windows, Mac i iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Przewodnik LocalGateKeys: Windows, Mac, iPhone, przeglądarka">
+  <meta name="twitter:description" content="Pomoc krok po kroku dla każdej funkcji LocalGateKeys na Windows, Mac, iPhone, Apple Watch i w rozszerzeniu przeglądarki: konfiguracja, uzupełnianie i kopie.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
   <link rel="stylesheet" href="../styles.css">
 </head>
-<body class="page">
+<body class="help-page">
   <a class="skip" href="#main">Przejdź do treści</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../pl/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../pl/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Główne">
+      <nav class="nav-wide" aria-label="Główne">
         <ul class="nav">
-          <li><a href="../pl/features.html">Funkcje</a></li>
-          <li><a href="../pl/pricing.html">Cennik</a></li>
-          <li><a href="../pl/security.html">Bezpieczeństwo</a></li>
-          <li><a href="../pl/get-started.html">Pierwsze kroki</a></li>
-          <li><a href="../pl/help.html" aria-current="page">Przewodnik</a></li>
-          <li><a href="../pl/download.html">Pobierz</a></li>
-          <li><a href="../pl/support.html">Wsparcie</a></li>
-          <li><a href="../buy.html">Kup Pro</a></li>
+          <li><a href="../pl/features">Funkcje</a></li>
+          <li><a href="../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../pl/help" aria-current="page">Przewodnik</a></li>
+          <li><a href="../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../pl/pricing">Cennik</a></li>
+          <li><a href="../pl/support">Wsparcie</a></li>
+          <li><a class="nav-cta" href="../pl/download">Pobierz</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Główne">
+          <ul class="nav nav-stack">
+            <li><a href="../pl/features">Funkcje</a></li>
+          <li><a href="../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../pl/help" aria-current="page">Przewodnik</a></li>
+          <li><a href="../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../pl/pricing">Cennik</a></li>
+          <li><a href="../pl/support">Wsparcie</a></li>
+          <li><a class="nav-cta" href="../pl/download">Pobierz</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Język</span></summary>
+        <ul class="lang-menu-list"><li><a href="../help" hreflang="en" lang="en">English</a></li><li><a href="../es/help" hreflang="es" lang="es">Español</a></li><li><a href="../it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/help" hreflang="pl" lang="pl" aria-current="true">Polski</a></li><li><a href="../zh-hans/help" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/help" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -53,11 +84,15 @@
 <div class="wrap page-head">
   <h1>Przewodnik</h1>
   <p class="lead">Pomoc krok po kroku do każdego ekranu i funkcji. Wybierz urządzenie, a potem przejdź do tematu. Każdy nagłówek to link, który możesz udostępnić.</p>
+  <nav class="guide-links" aria-labelledby="guide-links-title">
+    <p id="guide-links-title">Przewodnik dla każdego urządzenia</p>
+    <ul><li><a class="guide-link" href="../pl/guide/windows">Windows</a></li><li><a class="guide-link" href="../pl/guide/mac">Mac</a></li><li><a class="guide-link" href="../pl/guide/iphone">iPhone i iPad</a></li><li><a class="guide-link" href="../pl/guide/android">Android</a></li><li><a class="guide-link" href="../pl/guide/extension">Rozszerzenie przeglądarki</a></li></ul>
+  </nav>
 </div>
 
 <div class="wrap page-body help">
 
-  <nav class="help-tabs" aria-label="Platformy">
+  <nav class="help-tabs glass" aria-label="Platformy">
     <a class="help-tab" href="#windows" data-tab="windows">Windows</a>
     <a class="help-tab" href="#extension" data-tab="extension">Rozszerzenie przeglądarki</a>
     <a class="help-tab" href="#iphone" data-tab="iphone">iPhone</a>
@@ -66,44 +101,49 @@
     <a class="help-tab" href="#android" data-tab="android">Android</a>
   </nav>
 
-  <aside class="help-basics">
+  <aside class="help-basics glass">
     <h2>Warto wiedzieć na każdym urządzeniu</h2>
     <ul>
       <li><strong>Twój sejf zostaje na Twoich urządzeniach.</strong> Nie ma konta ani serwera LocalGateKeys, który przechowywałby Twoje hasła.</li>
       <li><strong>Nikt nie może zresetować Twojego hasła głównego ani hasła aplikacji.</strong> Ustaw frazę odzyskiwania i przechowuj ją na papierze.</li>
-      <li><strong>Free</strong> mieści do 4 elementów. <strong>Pro</strong> (US$4.99, płatność jednorazowa) dodaje nieograniczoną liczbę elementów, kody dwuskładnikowe, pliki i synchronizację. Edytowanie, usuwanie i wypełnianie elementów, które już masz, nigdy nie jest blokowane.</li>
+      <li><strong>Free</strong> mieści do 7 elementów. <strong>Pro</strong> (US$29.99, płatność jednorazowa) dodaje nieograniczoną liczbę elementów, kody dwuskładnikowe, pliki i synchronizację. Edytowanie, usuwanie i wypełnianie elementów, które już masz, nigdy nie jest blokowane.</li>
     </ul>
   </aside>
 
   <!-- ============================== WINDOWS ============================== -->
   <section class="help-panel" id="windows" aria-labelledby="windows-title">
     <h2 class="panel-title" id="windows-title">LocalGateKeys dla Windows</h2>
-    <p class="panel-lead">Windows 10 i 11, 64-bitowy. Zainstaluj ze sklepu Microsoft Store lub ze <a href="../pl/download.html">strony pobierania</a>.</p>
+    <p class="panel-lead">Windows 10 (wersja 2004 lub nowsza) i Windows 11, 64-bitowy. Zainstaluj ze sklepu Microsoft Store lub ze <a href="../pl/download">strony pobierania</a>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Tematy Windows">
-        <p class="help-toc-title">Na tej karcie</p>
-        <ol>
-          <li><a href="#win-setup">Pierwsze uruchomienie i profile</a></li>
-          <li><a href="#win-unlock">Odblokowywanie i blokowanie</a></li>
-          <li><a href="#win-screen">Okno główne</a></li>
-          <li><a href="#win-items">Dodawanie i edytowanie elementów</a></li>
-          <li><a href="#win-trash">Usuwanie, kosz i cofanie</a></li>
-          <li><a href="#win-search">Wyszukiwanie, paleta, Szybki dostęp</a></li>
-          <li><a href="#win-generator">Generator haseł</a></li>
-          <li><a href="#win-security">Centrum bezpieczeństwa</a></li>
-          <li><a href="#win-2fa">Kody dwuskładnikowe i QR</a></li>
-          <li><a href="#win-import">Import</a></li>
-          <li><a href="#win-export">Eksport i przenoszenie</a></li>
-          <li><a href="#win-backups">Kopie zapasowe i przywracanie</a></li>
-          <li><a href="#win-sync">Synchronizacja</a></li>
-          <li><a href="#win-share">Udostępnianie elementu</a></li>
-          <li><a href="#win-apps">Wypełnianie aplikacji Windows</a></li>
-          <li><a href="#win-settings">Ustawienia</a></li>
-          <li><a href="#win-pro">Licencja Pro</a></li>
-          <li><a href="#win-updates">Aktualizacje</a></li>
-          <li><a href="#win-keys">Skróty klawiszowe</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#win-setup">Pierwsze uruchomienie i profile</a></li>
+            <li><a href="#win-unlock">Odblokowywanie i blokowanie</a></li>
+            <li><a href="#win-screen">Okno główne</a></li>
+            <li><a href="#win-items">Dodawanie i edytowanie elementów</a></li>
+            <li><a href="#win-trash">Usuwanie, kosz i cofanie</a></li>
+            <li><a href="#win-search">Wyszukiwanie, paleta, Szybki dostęp</a></li>
+            <li><a href="#win-generator">Generator haseł</a></li>
+            <li><a href="#win-security">Centrum bezpieczeństwa</a></li>
+            <li><a href="#win-2fa">Kody dwuskładnikowe i QR</a></li>
+            <li><a href="#win-import">Import</a></li>
+            <li><a href="#win-export">Eksport i przenoszenie</a></li>
+            <li><a href="#win-backups">Kopie zapasowe i przywracanie</a></li>
+            <li><a href="#win-sync">Synchronizacja</a></li>
+            <li><a href="#win-share">Udostępnianie elementu</a></li>
+            <li><a href="#win-apps">Wypełnianie aplikacji Windows</a></li>
+            <li><a href="#win-shared">Udostępnione kolekcje</a></li>
+            <li><a href="#win-safety">Dostęp awaryjny i hasło przymusu</a></li>
+            <li><a href="#win-dev">Narzędzia programisty i agenci AI</a></li>
+            <li><a href="#win-settings">Ustawienia</a></li>
+            <li><a href="#win-pro">Licencja Pro</a></li>
+            <li><a href="#win-updates">Aktualizacje</a></li>
+            <li><a href="#win-keys">Skróty klawiszowe</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -130,7 +170,7 @@
           <h4>Sposoby odblokowania</h4>
           <ul>
             <li><strong>Hasło główne</strong>, potem <strong>Odblokuj</strong>. Zawsze działa.</li>
-            <li><strong>Odblokuj za pomocą Windows Hello</strong>: odcisk palca, twarz lub PIN. Skonfiguruj w Ustawienia › Odblokowywanie › Windows Hello › <strong>Skonfiguruj</strong>. Włącz <strong>Uruchamiaj Windows Hello automatycznie</strong>, aby monit pojawiał się zaraz po otwarciu okna.</li>
+            <li><strong>Odblokuj za pomocą Windows Hello</strong>: odcisk palca, twarz lub PIN. Skonfiguruj w Ustawienia › Odblokowanie › Windows Hello › <strong>Skonfiguruj</strong>. <strong>Uruchamiaj Windows Hello automatycznie</strong> (domyślnie włączone) pokazuje monit zaraz po otwarciu okna.</li>
             <li><strong>Użyj kamery</strong>: rozpoznawanie twarzy zwykłą kamerą internetową, wykonywane na komputerze. Jest mniej bezpieczne niż Windows Hello. Skonfiguruj przez <strong>Skonfiguruj weryfikację kamerą</strong>.</li>
           </ul>
           <h4>Nie pamiętasz hasła głównego?</h4>
@@ -141,7 +181,7 @@
           </ol>
           <p class="note"><strong>Potem</strong> ponownie skonfiguruj Windows Hello i weryfikację kamerą. Fraza odzyskiwania nadal działa.</p>
           <h4>Zmiana hasła głównego</h4>
-          <p>Ustawienia › Odblokowywanie › Hasło główne › <strong>Zmień…</strong>. Wpisz obecne hasło i dwa razy nowe. Istniejące kopie zapasowe zachowują hasło, z którym je utworzono.</p>
+          <p>Ustawienia › Odblokowanie › Hasło główne › <strong>Zmień…</strong>. Wpisz obecne hasło i dwa razy nowe. Aby fraza odzyskiwania dalej działała, wpisz też jej 24 słowa; w przeciwnym razie utwórz potem nową frazę. Istniejące kopie zapasowe zachowują hasło, z którym je utworzono.</p>
           <h4>Blokowanie</h4>
           <ul>
             <li>Przycisk <strong>Zablokuj</strong> na górnym pasku lub <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
@@ -156,7 +196,7 @@
               </ul>
             </li>
           </ul>
-          <p>Menu ikony w zasobniku ma <strong>Odblokuj sejf</strong>, <strong>Zablokuj sejf</strong>, <strong>Szybki dostęp</strong> i <strong>Zakończ</strong>.</p>
+          <p>Menu ikony w zasobniku ma <strong>Otwórz LocalGateKeys</strong>, <strong>Odblokuj sejf</strong>, <strong>Zablokuj sejf</strong>, <strong>Zablokuj i zmień osobę</strong>, <strong>Szybki dostęp</strong>, <strong>Sprawdź aktualizacje</strong>, przełączniki <strong>Integracja z przeglądarką</strong> i <strong>Ikony wypełniania na komputerze</strong> oraz <strong>Zakończ</strong>.</p>
         </article>
 
         <article class="topic" id="win-screen">
@@ -165,7 +205,7 @@
             <dt>Pasek boczny · Sejf</dt><dd><strong>Wszystkie elementy</strong>, <strong>Ulubione</strong>, <strong>Ostatnio używane</strong>.</dd>
             <dt>Pasek boczny · Typy</dt><dd>Jedna pozycja na każdy rodzaj, który masz, np. Loginy, Karty, Tożsamości, Bezpieczne notatki, Dokumenty, Wi-Fi lub Klucze dostępu.</dd>
             <dt>Pasek boczny · Kolekcje i widoki</dt><dd>Twoje kolekcje i przypięte widoki.</dd>
-            <dt>Pasek boczny · Narzędzia</dt><dd>Centrum bezpieczeństwa, Przypomnienia, Synchronizacja, Urządzenia i połączenia, Licencja, Import i eksport, Skanuj kod QR, Aktywność, Kosz. <strong>Ustawienia</strong> są na dole.</dd>
+            <dt>Pasek boczny · Narzędzia</dt><dd>Centrum bezpieczeństwa, Generator, Sync i urządzenia, Urządzenia i połączenia, Import i eksport, Kosz. <strong>Ustawienia</strong> są na dole. Przypomnienia otwierasz z karty <em>Wkrótce</em> na stronie głównej, Aktywność z Centrum bezpieczeństwa, Skanuj kod QR skrótem <kbd>Ctrl</kbd>+<kbd>K</kbd>, a Licencję z Ustawienia › Plan i synchronizacja. <kbd>Ctrl</kbd>+<kbd>K</kbd> otwiera każdą stronę.</dd>
             <dt>Górny pasek</dt><dd>Pole wyszukiwania, <strong>Nowy element</strong>, <strong>Zablokuj</strong> i <strong>Ctrl K</strong> dla palety poleceń.</dd>
             <dt>Start</dt><dd>Karty Kondycja haseł, Kopia i odzyskiwanie, Wkrótce i Generator oraz <strong>Kody jednorazowe</strong> (kliknij kod, aby go skopiować).</dd>
           </dl>
@@ -174,7 +214,7 @@
             <li>Filtry: <strong>Wszystkie</strong>, <strong>Wymaga uwagi</strong>, <strong>Bez 2FA</strong>, <strong>Wygasające</strong>.</li>
             <li><strong>Sortuj</strong>: Tytuł A–Z, Tytuł Z–A, Data modyfikacji, Data utworzenia.</li>
             <li>Oznaczenia w wierszu pokazują hasło, które wyciekło, jest słabe lub użyte ponownie.</li>
-            <li>Kliknij wiersz prawym przyciskiem (lub <kbd>Shift</kbd>+<kbd>F10</kbd>), aby wybrać Kopiuj hasło, Kopiuj nazwę użytkownika, Kopiuj kod 2FA, Otwórz stronę, Ulubione, Udostępnij… i Przenieś do kosza….</li>
+            <li>Kliknij wiersz prawym przyciskiem (lub <kbd>Shift</kbd>+<kbd>F10</kbd>), aby wybrać Edytuj, Kopiuj nazwę użytkownika, Kopiuj hasło, Kopiuj kod 2FA, Otwórz stronę, Udostępnij…, Dodaj do ulubionych i Przenieś do kosza….</li>
           </ul>
           <h4>Panel szczegółów</h4>
           <p>Pokazuje pola wybranego elementu. Hasła pozostają ukryte, dopóki ich nie klikniesz. Przyciski kopiują nazwę użytkownika, hasło lub kod 2FA, otwierają stronę, <strong>Edytuj</strong>, <strong>Udostępnij</strong> lub <strong>Przenieś do kosza</strong>. Dokumenty mają dodatkowo <strong>Otwórz plik</strong>, <strong>Bezpieczny podgląd</strong>, <strong>Zapisz kopię…</strong> i <strong>Zastąp plik…</strong>.</p>
@@ -187,8 +227,8 @@
             <li>Wybierz rodzaj (kliknij go, naciśnij jego numer lub zacznij wpisywać nazwę):
               <ul>
                 <li><em>Logowanie</em>: Login do strony, Login do aplikacji, Klucz dostępu</li>
-                <li><em>Osobiste</em>: Karta płatnicza, Konto bankowe, Tożsamość, Bezpieczna notatka, Dokument, Sieć Wi-Fi</li>
-                <li><em>Rzeczy, które masz</em>: Licencja, Zakup, Gwarancja, Subskrypcja, Zakładka</li>
+                <li><em>Finanse</em>: Karta płatnicza, Konto bankowe · <em>Osobiste</em>: Tożsamość, Bezpieczna notatka, Dokument</li>
+                <li><em>Technika</em>: Klucz SSH, Klucz API, Sieć Wi-Fi, Zakładka · <em>Twoje rzeczy</em>: Licencja, Subskrypcja, Gwarancja, Zakup</li>
               </ul>
             </li>
             <li>Wypełnij pola i wybierz <strong>Zapisz</strong>. Jeśli wyjdziesz z niezapisanymi zmianami, pojawi się pytanie <em>Odrzucić zmiany?</em></li>
@@ -196,18 +236,18 @@
           <h4>Loginy w szczegółach</h4>
           <ul>
             <li><strong>Tytuł</strong>, <strong>Strona</strong>, <strong>Nazwa użytkownika</strong>, <strong>Hasło</strong> i <strong>Notatki</strong>.</li>
-            <li><strong>Zmień</strong> obok hasła tworzy nowe za pomocą generatora. Zmień je też na stronie, a potem zapisz.</li>
+            <li><strong>Zmień</strong> obok hasła pozwala wpisać nowe albo wybrać <strong>Fraza hasłowa</strong>, <strong>Losowe</strong> lub <strong>PIN</strong>, aby je utworzyć. Zmień je też na stronie, a potem zapisz.</li>
             <li><strong>Dwuskładnikowe</strong>: wklej tu klucz konfiguracyjny strony (Pro). Zobacz <a href="#win-2fa">Kody dwuskładnikowe</a>.</li>
             <li><strong>Pola niestandardowe</strong>: <strong>Dodaj pole</strong> na wszystko inne. Oznacz pole jako Ukryte, aby traktować je jak hasło.</li>
-            <li><strong>Historia haseł</strong>: stare hasła są przechowywane, zaszyfrowane, przez rok. <strong>Kopiuj poprzednie hasło</strong> lub <strong>Przywróć to hasło</strong>.</li>
+            <li><strong>Historia haseł</strong>: do 5 starych haseł jest przechowywanych, zaszyfrowanych, przez rok. <strong>Kopiuj poprzednie hasło</strong> lub <strong>Przywróć to hasło</strong>.</li>
             <li><strong>Kody odzyskiwania</strong>: jeden w wierszu. <strong>Kopiuj i użyj następnego kodu</strong> kopiuje jeden i usuwa go z listy.</li>
-            <li><strong>Reguły autouzupełniania</strong>: Wypełnianie (Domyślnie, Po kliknięciu, Nigdy), Zaloguj po wypełnieniu, Zawsze pytaj o hasło główne i Proponuj zapisanie zmian z przeglądarki.</li>
+            <li><strong>Zasady autouzupełniania</strong>: Wypełnianie (Po kliknięciu lub Wyłączone), Zaloguj po wypełnieniu (Domyślnie, Nigdy lub Zawsze), Zawsze pytaj o hasło główne i Proponuj zapisanie zmian z przeglądarki.</li>
           </ul>
           <h4>Inne rodzaje</h4>
           <p>Każdy rodzaj ma własne pola. Daty zapisuje się jako RRRR-MM-DD. Każdy element może być <strong>Ulubionym</strong> i mieć <strong>Tagi</strong> (oddziel je przecinkami). Dokumenty używają <strong>Wybierz plik i zapisz</strong> (Pro).</p>
           <h4>Kolekcje i przypomnienia</h4>
           <ul>
-            <li>Kolekcje grupują elementy po Twojemu: <strong>Dodaj kolekcję</strong>, <strong>Zmień nazwę</strong>, <strong>Archiwizuj</strong>. Zostają na tym komputerze i nie są synchronizowane.</li>
+            <li>Kolekcje grupują elementy po Twojemu: <strong>Dodaj kolekcję</strong>, <strong>Zmień nazwę</strong>, <strong>Archiwizuj</strong>. Synchronizują się z innymi Twoimi urządzeniami, a jedną z nich możesz udostępnić innym osobom (zobacz <a href="#win-shared">Udostępnione kolekcje</a>).</li>
             <li><strong>Przypomnienia</strong> pokazują elementy, które wkrótce wygasają lub są po terminie, z przyciskami <strong>Ukończ</strong> i <strong>Odłóż o 1 dzień</strong>.</li>
             <li><strong>Aktywność</strong> pokazuje historię tego, co działo się w sejfie.</li>
           </ul>
@@ -228,15 +268,15 @@
           <ul>
             <li><strong>Wyszukiwanie</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>, wpisz tekst i naciśnij <kbd>Enter</kbd>, aby otworzyć pierwszy wynik, lub <kbd>↓</kbd>, aby przejść do listy.</li>
             <li><strong>Paleta poleceń</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd> znajduje elementy i akcje. Zacznij od <code>&gt;</code>, aby widzieć tylko akcje (Utwórz kopię teraz, Generuj hasło, Zablokuj teraz, Stan synchronizacji…), od <code>#</code> dla tagów i od <code>@</code> dla kolekcji.</li>
-            <li><strong>Szybki dostęp</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> w dowolnym miejscu Windows otwiera małe okno wyszukiwania loginów, notatek i zakładek. Skrót zmienisz w Ustawienia › Autouzupełnianie › Szybki dostęp.</li>
+            <li><strong>Szybki dostęp</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> w dowolnym miejscu Windows otwiera LocalGateKeys na stronie Szybki dostęp, gdzie znajdziesz login, notatkę lub zakładkę. Skrót zmienisz w Ustawienia › Autouzupełnianie › Szybki dostęp.</li>
           </ul>
         </article>
 
         <article class="topic" id="win-generator">
           <h3><a href="#win-generator">Generator haseł</a></h3>
-          <p>Otwórz go z karty <strong>Generator</strong> na stronie startowej, przez <strong>Zmień</strong> w loginie lub przez Ctrl+K › Generuj hasło.</p>
+          <p>Otwórz go z karty <strong>Generator</strong> na stronie startowej lub przez Ctrl+K › Generuj hasło.</p>
           <ul>
-            <li><strong>Losowe</strong>: wybierz długość i czy używać wielkich liter i symboli.</li>
+            <li><strong>Losowe</strong>: wybierz długość i znaki do użycia: A–Z, a–z, 0–9 i symbole.</li>
             <li><strong>Fraza hasła</strong>: wybierz liczbę słów. Łatwiej ją wpisać, a przy odpowiedniej długości jest równie silna.</li>
             <li><strong>Generuj ponownie</strong>, aby dostać nowe, <strong>Kopiuj</strong>, aby je skopiować.</li>
           </ul>
@@ -247,9 +287,10 @@
           <p>Narzędzia › <strong>Centrum bezpieczeństwa</strong> pokazuje, co poprawić najpierw: słabe, powtórzone, stare i wykradzione hasła oraz loginy, które mogłyby mieć 2FA.</p>
           <ul>
             <li><strong>Sprawdź wszystkie pod kątem wycieków</strong> porównuje Twoje hasła z listą Have I Been Pwned. Komputer opuszcza tylko 5 pierwszych znaków skrótu, nigdy hasło.</li>
-            <li>Sprawdzanie wycieków jest wyłączone, dopóki nie włączysz Ustawienia › Prywatność › <strong>Sprawdzanie wycieków</strong>. <strong>Ścisły tryb offline</strong> blokuje je, ikony stron i każde inne żądanie sieciowe.</li>
+            <li>Sprawdzanie wycieków wymaga dwóch zmian w Ustawienia › Prywatność: wyłącz <strong>Ścisły tryb offline</strong> (domyślnie włączony) i włącz <strong>Sprawdzanie wycieków</strong>. Ścisły tryb offline blokuje sprawdzanie wycieków, ikony stron i każde inne żądanie sieciowe.</li>
             <li>W <strong>Kondycji haseł</strong> użyj <strong>Otwórz wpis</strong> lub <strong>Zmień hasło</strong>, aby poprawić element.</li>
           </ul>
+          <p><strong>Aktywność sieciowa</strong> na dole Centrum bezpieczeństwa pokazuje każde połączenie LocalGateKeys z siecią i jego powód: sprawdzanie aktualizacji, sprawdzanie wycieków, ikony stron i synchronizację z Twoimi urządzeniami.</p>
         </article>
 
         <article class="topic" id="win-2fa">
@@ -257,7 +298,7 @@
           <p>LocalGateKeys może pokazywać 6-cyfrowe kody, o które strona prosi po haśle, więc nie potrzebujesz osobnej aplikacji uwierzytelniającej.</p>
           <ol>
             <li>Na stronie włącz logowanie dwuskładnikowe / przez aplikację uwierzytelniającą, aby pokazała kod QR.</li>
-            <li>W LocalGateKeys wybierz Narzędzia › <strong>Skanuj kod QR</strong>. Dodaj obraz na jeden z trzech sposobów:
+            <li>W LocalGateKeys wybierz Ctrl+K › <strong>Skanuj kod QR</strong>. Dodaj obraz na jeden z trzech sposobów:
               <ul>
                 <li><strong>Wklej zrzut ekranu</strong>: naciśnij <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, zaznacz kod QR, a potem <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
                 <li><strong>Wybierz obraz…</strong> (PNG, JPEG, BMP) lub przeciągnij obraz.</li>
@@ -291,7 +332,7 @@
             <thead><tr><th scope="col">Skąd</th><th scope="col">Plik</th></tr></thead>
             <tbody>
               <tr><td>1Password 8</td><td>.1pux lub CSV</td></tr>
-              <tr><td>Bitwarden</td><td>JSON, także chroniony hasłem</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (także chroniony hasłem) lub CSV</td></tr>
               <tr><td>LastPass</td><td>CSV</td></tr>
               <tr><td>Dashlane</td><td>zip lub CSV</td></tr>
               <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (otwierany bezpośrednio), XML lub CSV</td></tr>
@@ -301,7 +342,7 @@
               <tr><td>Cokolwiek innego</td><td>CSV z wyborem kolumn</td></tr>
             </tbody>
           </table>
-          <p class="note">Nie są importowane: kosz, historia haseł, klucze dostępu i załączniki. Strony <code>http://</code> są zapisywane jako https. Wpisy bez strony lub hasła stają się bezpiecznymi notatkami. W Free obowiązuje limit 4 elementów.</p>
+          <p class="note">Nie są importowane: kosz, historia haseł, klucze dostępu i załączniki. Strony <code>http://</code> są zapisywane jako https. Wpisy bez strony lub hasła stają się bezpiecznymi notatkami. W Free obowiązuje limit 7 elementów. Rozpoznawane są też pliki Credential Exchange (CXF, <code>.json</code> lub <code>.cxf</code>) z innych menedżerów haseł, razem z kluczami dostępu.</p>
         </article>
 
         <article class="topic" id="win-export">
@@ -310,6 +351,7 @@
           <ul>
             <li><strong>KeePass KDBX 4</strong>: zaszyfrowany wybranym hasłem (12+ znaków). Bezpieczny wybór.</li>
             <li>CSV zgodny z Bitwarden, JSON Bitwarden, XML KeePass 2: <em>niezaszyfrowane</em>. Usuń je po użyciu.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: wybrane loginy, notatki i klucze dostępu dla innego menedżera haseł. <em>Bez szyfrowania</em>; klucze prywatne kluczy dostępu trafiają do pliku tylko za Twoją zgodą.</li>
             <li>Zaznacz <strong>Dołącz sekrety haseł jednorazowych (2FA)</strong>, aby zabrać kody 2FA.</li>
           </ul>
           <p><strong>Szyfrowane przenoszenie…</strong> przenosi wybrane elementy (wg ulubionych, rodzajów, tagów) do innego profilu lub komputera w pakiecie chronionym hasłem. Po drugiej stronie wybierz <strong>Importuj pakiet</strong>, <strong>Sprawdź</strong>, <strong>Podgląd</strong>, a potem importuj.</p>
@@ -323,6 +365,7 @@
             <li><strong>Zaplanowane kopie</strong>: codziennie lub co tydzień, z <strong>Godziną</strong> i <strong>Dniem tygodnia</strong>.</li>
             <li><strong>Kopia w chmurze</strong> › <strong>Wybierz…</strong> folder, np. pendrive lub drugi dysk, na drugą kopię.</li>
             <li><strong>Stare zaplanowane kopie</strong>: zachowaj tylko najnowszą albo najnowszą i poprzednią.</li>
+            <li><strong>Cotygodniowy test przywracania</strong>: co tydzień LocalGateKeys sprawdza, czy zaplanowaną kopię da się przywrócić. Nic nie jest zapisywane. <strong>Liczba automatycznych kopii zapasowych do zachowania</strong> określa, ile kopii automatycznych zostaje.</li>
           </ol>
           <p class="note">Kopie są tworzone tylko przy odblokowanym sejfie. Kopia pominięta przy zamkniętej aplikacji jest tworzona przy następnym odblokowaniu.</p>
           <h4>Strona Kopia i przywracanie</h4>
@@ -335,7 +378,7 @@
             <li><strong>Fraza odzyskiwania</strong> (Skonfiguruj / Zastąp…) i <strong>Utwórz zestaw odzyskiwania</strong>, arkusz do wydruku.</li>
           </ul>
           <h4>Przywracanie kopii z telefonu</h4>
-          <p>Import i eksport › <strong>Przywróć kopię z telefonu…</strong>, wybierz plik <code>.lgkm</code> z aplikacji na iPhone'a lub Androida, wpisz jego hasło, <strong>Podgląd</strong>, potem <strong>Przywróć</strong>. Elementy są dodawane do sejfu; nic nie jest kasowane.</p>
+          <p>Import i eksport › <strong>Przywróć kopię zapasową z telefonu…</strong>, wybierz plik <code>.lgkm</code> z aplikacji na iPhone'a, wpisz jego hasło, <strong>Podgląd</strong>, potem <strong>Przywróć</strong>. Elementy są dodawane do sejfu; nic nie jest kasowane.</p>
         </article>
 
         <article class="topic" id="win-sync">
@@ -343,7 +386,7 @@
           <p>Synchronizacja działa tylko przy odblokowanym sejfie: przy odblokowaniu, co 5 minut i kilka sekund po zmianie. Są dwa sposoby i możesz używać obu:</p>
           <h4>Wi-Fi (telefon lub inny komputer w tej samej sieci)</h4>
           <ol>
-            <li>Narzędzia › Synchronizacja › <strong>Włącz synchronizację przez Wi-Fi…</strong>. Zostaw proponowany adres i port (47821) i wybierz <strong>Zezwól w Zaporze Windows</strong>, jeśli pojawi się pytanie.</li>
+            <li>Sync i urządzenia › <strong>Włącz synchronizację przez Wi-Fi…</strong>. Zostaw proponowany adres i port (47821) i wybierz <strong>Zezwól w Zaporze Windows</strong>, jeśli pojawi się pytanie.</li>
             <li>Wybierz <strong>Pokaż kod QR…</strong>. Kod działa raz, przez 120 sekund.</li>
             <li>Zeskanuj go na karcie Synchronizacja w aplikacji na telefonie. Dla innego komputera wybierz <strong>Kopiuj tekst kodu</strong> i tam użyj <strong>Dołącz przez tekst QR…</strong>.</li>
             <li>Oba urządzenia pokazują 6-cyfrowy kod. Wybierz <strong>Akceptuj</strong> tylko wtedy, gdy się zgadzają, w przeciwnym razie <strong>Odrzuć</strong>.</li>
@@ -364,7 +407,7 @@
             <li><strong>Opuść synchronizację…</strong> zachowuje elementy i zapomina grupę. <strong>Zresetuj synchronizację na tym komputerze…</strong> zapomina też klucze (pyta dwa razy).</li>
             <li>Jeśli element zmieniono na dwóch urządzeniach jednocześnie, dodatkowa kopia ma w tytule <em>(konflikt synchronizacji)</em>.</li>
           </ul>
-          <p class="note">Każdy komputer potrzebuje własnej licencji Pro; zakup Pro na telefonie może odblokować komputer (zobacz <a href="#win-pro">Licencja Pro</a>). Kolekcje nie są synchronizowane. Do 16 urządzeń w grupie.</p>
+          <p class="note">Każde urządzenie w grupie potrzebuje Pro. Darmowy komputer sparowany z iPhone'em z Pro przejmuje licencję przez synchronizację i staje się Pro (zobacz <a href="#win-pro">Licencja Pro</a>). Do 16 urządzeń w grupie.</p>
         </article>
 
         <article class="topic" id="win-share">
@@ -382,24 +425,48 @@
           <p>LocalGateKeys potrafi wypełniać okna logowania zwykłych programów Windows, nie tylko strony.</p>
           <ol>
             <li>Otwórz okno logowania programu.</li>
-            <li>Utwórz <strong>Login do aplikacji</strong> i wybierz <strong>Powiązanie aplikacji…</strong> › <strong>Zbadaj aplikację…</strong>.</li>
+            <li>Naciśnij <kbd>Ctrl</kbd>+<kbd>N</kbd>, wybierz <strong>Login aplikacji komputerowej</strong>, a potem <strong>Sprawdź aplikację…</strong>.</li>
             <li><strong>Przypisz pola logowania</strong>: wskaż pola nazwy użytkownika i hasła. Opcjonalnie <strong>Przypisz przycisk logowania…</strong>.</li>
-            <li><strong>Zapisz powiązanie</strong>.</li>
+            <li><strong>Zapisz login</strong>.</li>
             <li>Następnym razem naciśnij w tym programie <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Spacja</kbd> lub kliknij przycisk wypełniania obok pola hasła.</li>
           </ol>
-          <p>Jeśli program zmieni się po aktualizacji, wybierz <strong>Odśwież powiązanie</strong>. LocalGateKeys odczytuje tylko układ okna, nigdy to, co wpisujesz.</p>
+          <p>Jeśli program zmieni się po aktualizacji, otwórz login i wybierz <strong>Powiązanie aplikacji…</strong> › <strong>Odśwież powiązanie…</strong>. LocalGateKeys odczytuje tylko układ okna, nigdy to, co wpisujesz.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Udostępnione kolekcje</a> <span class="badge-pro">Pro</span></h3>
+          <p>Udostępnij kolekcję rodzinie lub zespołowi przez folder, do którego wszyscy mają dostęp, np. udostępniony folder OneDrive. Otwórz kolekcję, wybierz <strong>Udostępnij kolekcję</strong>, folder, czy członkowie mogą edytować, czy tylko przeglądać, i ustaw hasło udostępniania.</p>
+          <p>Pozostali wybierają <strong>Dołącz do udostępnionej kolekcji</strong>, folder i wpisują hasło; potem Ty wybierasz <strong>Wpuść</strong>. Przez folder przechodzi tylko ta kolekcja, a pozostałe elementy zostają prywatne. W każdej chwili możesz usunąć osobę, <strong>Zakończyć udostępnianie</strong> lub wyjść.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Dostęp awaryjny i hasło przymusu</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Dostęp awaryjny</strong> (Pro): na stronie Kopia zapasowa i przywracanie wybierz <strong>Skonfiguruj dostęp awaryjny</strong>. Fraza odzyskiwania zostaje podzielona na części dla zaufanych osób; wybierasz, ile części jest potrzebnych, i okres oczekiwania. Daj każdej osobie jej kartkę lub plik części.</li>
+            <li>Gdy wystarczająco wiele osób poprosi o dostęp przez udostępniony folder, Twoje urządzenia pokażą prośbę i do końca okresu oczekiwania możesz ją <strong>Odrzucić</strong>. Osoba z częścią wybiera <strong>Otrzymałem dostęp</strong>, dodaje części i wybiera <strong>Poproś o dostęp</strong>; po przyznaniu dostępu sejf otwiera się jako nowy profil.</li>
+            <li><strong>Pakiet spadkowy</strong> na tej samej stronie tworzy notatkę dla spadkobierców (gdzie jest testament, konta do zamknięcia, urządzenia i kto ma część), a potem <strong>Zestaw awaryjny</strong> do wydruku.</li>
+            <li><strong>Hasło przymusu</strong> (Pro): Ustawienia › Odblokowanie › <strong>Hasło przymusu</strong> › <strong>Ustaw</strong>. To drugie hasło główne na wypadek, gdy ktoś zmusza Cię do odblokowania. Otwiera osobny sejf tylko z wybranymi elementami, a Twój prawdziwy sejf odrzuca potem swoje hasło główne przez ustawioną liczbę godzin. Działa w Windows, na Macu, iPhonie i Androidzie.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Narzędzia programisty i agenci AI</a></h3>
+          <p>Ustawienia › <strong>Programista</strong> udostępnia klucze SSH z sejfu dla ssh i Git na tym komputerze, do logowania i podpisywania commitów. Każdy podpis wymaga Twojej zgody. <strong>Wygeneruj</strong> tworzy nowy klucz Ed25519 w sejfie.</p>
+          <p><strong>Pozwól agentom AI używać LocalGateKeys</strong> pozwala agentom takim jak Claude Code łączyć się przez MCP. Zatwierdzasz każde logowanie lub odczyt; agent nigdy nie widzi hasła, a każda prośba jest zapisywana. W wersji z Microsoft Store dodaj go poleceniem <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
         </article>
 
         <article class="topic" id="win-settings">
           <h3><a href="#win-settings">Ustawienia</a></h3>
           <p>Użyj pola <strong>Szukaj w ustawieniach</strong> u góry (<kbd>Ctrl</kbd>+<kbd>F</kbd>), aby znaleźć dowolną opcję. Zmiany zapisują się od razu.</p>
           <dl class="defs">
-            <dt>Odblokowywanie</dt><dd>Windows Hello, weryfikacja kamerą, hasło główne, fraza odzyskiwania.</dd>
+            <dt>Odblokowywanie</dt><dd>Windows Hello, klucz bezpieczeństwa, sprawdzenie kamerą, plik klucza, YubiKey, hasło główne, fraza odzyskiwania.</dd>
             <dt>Blokowanie</dt><dd>Czasy i wyzwalacze automatycznej blokady (zobacz <a href="#win-unlock">Odblokowywanie i blokowanie</a>).</dd>
-            <dt>Autouzupełnianie</dt><dd>Autouzupełnianie w przeglądarce, <strong>Proponuj LocalGateKeys dla kluczy dostępu</strong>, autouzupełnianie aplikacji, logowanie po wypełnieniu, skrót Szybkiego dostępu.</dd>
-            <dt>Prywatność</dt><dd><strong>Czyść schowek po</strong> (od 5 sekund do 5 minut), sprawdzanie wycieków, ścisły tryb offline, czas w koszu, otwieranie dokumentów w innych aplikacjach.</dd>
+            <dt>Autouzupełnianie</dt><dd>Autouzupełnianie w przeglądarce, <strong>Proponuj LocalGateKeys dla kluczy dostępu</strong>, autouzupełnianie aplikacji, logowanie po wypełnieniu, skrót Szybkiego dostępu. <strong>Używaj LocalGateKeys do kluczy dostępu Windows</strong> udostępnia Twoje klucze dostępu we wszystkich aplikacjach i przeglądarkach w Windows 11, za każdym razem za Twoją zgodą.</dd>
+            <dt>Prywatność</dt><dd><strong>Wyczyść schowek po</strong> (od 5 sekund do 5 minut), sprawdzanie wycieków, ścisły tryb offline, ukrywanie przed zrzutami i udostępnianiem ekranu, czas w koszu, otwieranie dokumentów w innych aplikacjach.</dd>
             <dt>Kopie zapasowe</dt><dd>Zobacz <a href="#win-backups">Kopie zapasowe i przywracanie</a>.</dd>
-            <dt>Wygląd i aplikacja</dt><dd><strong>Motyw</strong> Systemowy, Jasny lub Ciemny; <strong>Uruchamiaj z Windows</strong> (startuje zablokowana); <strong>Działaj w zasobniku</strong>; Aktualizacje.</dd>
+            <dt>Wygląd i aplikacja</dt><dd><strong>Motyw</strong> Systemowy, Jasny lub Ciemny; <strong>Język</strong>; <strong>Uruchamiaj z Windows</strong> (startuje zablokowana); <strong>Działaj w zasobniku</strong>; Aktualizacje.</dd>
+            <dt>Plan i synchronizacja</dt><dd>Twoja licencja, synchronizacja urządzeń i <strong>Wymaż to urządzenie, jeśli zostanie usunięte z synchronizacji</strong>.</dd>
+            <dt>Programista</dt><dd>Agent SSH i podpisywanie w Git oraz agenci AI (zobacz <a href="#win-dev">Narzędzia programisty i agenci AI</a>).</dd>
             <dt>Pomoc i diagnostyka</dt><dd>Skróty klawiszowe, Pokaż konfigurację ponownie, Urządzenia i połączenia, Dziennik błędów, strony prawne.</dd>
           </dl>
         </article>
@@ -407,15 +474,15 @@
         <article class="topic" id="win-pro">
           <h3><a href="#win-pro">Licencja Pro</a></h3>
           <ol>
-            <li>Kup Pro na <a href="../pl/pricing.html">stronie z cenami</a>. Klucz (zaczyna się od <code>LGK1-</code>) przychodzi e-mailem.</li>
-            <li>Otwórz Narzędzia › <strong>Licencja</strong>, wklej klucz i wybierz <strong>Zainstaluj</strong> albo <strong>Otwórz plik…</strong> dla pliku <code>.lgklicense</code>.</li>
+            <li>Kup Pro na <a href="../pl/pricing">stronie z cenami</a>. Klucz (zaczyna się od <code>LGK1-</code>) przychodzi e-mailem.</li>
+            <li>Otwórz Ustawienia › Plan i synchronizacja › <strong>Licencja</strong>, wklej klucz i wybierz <strong>Zainstaluj</strong> albo <strong>Otwórz plik…</strong> dla pliku <code>.lgklicense</code>.</li>
           </ol>
-          <p>Kupiono Pro w aplikacji na iPhone'a lub Androida? W ustawieniach telefonu wybierz <strong>Kopiuj klucz</strong> i zainstaluj go na komputerze w ten sam sposób. Strona Licencja pokazuje, ile z 4 darmowych elementów używasz. Więcej w <a href="../pl/licence.html">Twoja licencja Pro</a>.</p>
+          <p>Pro kupione w aplikacji na iPhone'a? Sparuj komputer z iPhone'em (zobacz <a href="#win-sync">Synchronizacja</a>), a darmowy komputer stanie się Pro przez synchronizację. Albo w Ustawieniach iPhone'a wybierz <strong>Kopiuj klucz</strong> i zainstaluj go na komputerze w ten sam sposób. Strona Licencja pokazuje, ile z 7 darmowych elementów używasz. Więcej w <a href="../pl/licence">Twojej licencji Pro</a>.</p>
         </article>
 
         <article class="topic" id="win-updates">
           <h3><a href="#win-updates">Aktualizacje</a></h3>
-          <p>Wersja z Microsoft Store aktualizuje się sama. W wersji z instalatorem wybierz <strong>Sprawdź aktualizacje</strong> (Ustawienia, menu zasobnika lub Ctrl+K). Jeśli jest nowsza wersja, <strong>Otwórz stronę wydania</strong> prowadzi do pobierania. Aplikacja nigdy sama niczego nie pobiera ani nie uruchamia.</p>
+          <p>LocalGateKeys ze Sklepu Microsoft aktualizuje się przez Sklep. Nadal używasz wersji ze starego instalatora? Jej ostatnia aktualizacja to 0.4.12: odinstaluj ją w Ustawieniach systemu Windows › Aplikacje › Zainstalowane aplikacje, a potem zainstaluj LocalGateKeys ze Sklepu Microsoft. Sejf zostaje na miejscu i otwiera się tym samym hasłem głównym.</p>
         </article>
 
         <article class="topic" id="win-keys">
@@ -428,7 +495,7 @@
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>Nowy element</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Zablokuj</td></tr>
               <tr><th scope="row"><kbd>Esc</kbd></th><td>Wstecz</td></tr>
-              <tr><th scope="row"><kbd>Enter</kbd> / <kbd>F2</kbd></th><td>Otwórz zaznaczony element</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>Otwórz zaznaczony element</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Kopiuj hasło (najpierw pyta)</td></tr>
               <tr><th scope="row"><kbd>Delete</kbd></th><td>Przenieś do kosza</td></tr>
               <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>Menu elementu</td></tr>
@@ -445,23 +512,25 @@
 
   <!-- ============================== EXTENSION ============================== -->
   <section class="help-panel" id="extension" aria-labelledby="extension-title">
-    <h2 class="panel-title" id="extension-title">Rozszerzenie przeglądarki dla Edge i Chrome</h2>
-    <p class="panel-lead">Wypełnia i zapisuje loginy na stronach. Komunikuje się tylko z aplikacją LocalGateKeys na tym samym komputerze, więc najpierw zainstaluj aplikację Windows.</p>
+    <h2 class="panel-title" id="extension-title">Rozszerzenie przeglądarki dla Edge, Chrome i Firefox</h2>
+    <p class="panel-lead">Wypełnia i zapisuje loginy na stronach. Komunikuje się tylko z aplikacją LocalGateKeys na tym samym komputerze, więc najpierw zainstaluj aplikację Windows. Używasz Safari? Tu nie musisz niczego pobierać: aplikacje na Maca i iPhone'a wypełniają w Safari przez autouzupełnianie i mają rozszerzenie Safari. Zobacz <a href="#mac-autofill">Autouzupełnianie i Safari na Macu</a> lub <a href="#ios-autofill">na iPhonie</a>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Tematy rozszerzenia">
-        <p class="help-toc-title">Na tej karcie</p>
-        <ol>
-          <li><a href="#ext-install">Instalacja i połączenie</a></li>
-          <li><a href="#ext-popup">Okno rozszerzenia</a></li>
-          <li><a href="#ext-fill">Wypełnianie loginu</a></li>
-          <li><a href="#ext-save">Zapisywanie loginu</a></li>
-          <li><a href="#ext-2fa">Wypełnianie kodów 2FA</a></li>
-          <li><a href="#ext-cards">Karty i tożsamości</a></li>
-          <li><a href="#ext-generate">Nowe hasła</a></li>
-          <li><a href="#ext-passkeys">Klucze dostępu</a></li>
-          <li><a href="#ext-trouble">Rozwiązywanie problemów</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#ext-install">Instalacja i połączenie</a></li>
+            <li><a href="#ext-popup">Okno rozszerzenia</a></li>
+            <li><a href="#ext-fill">Wypełnianie loginu</a></li>
+            <li><a href="#ext-save">Zapisywanie loginu</a></li>
+            <li><a href="#ext-2fa">Wypełnianie kodów 2FA</a></li>
+            <li><a href="#ext-cards">Karty i tożsamości</a></li>
+            <li><a href="#ext-generate">Nowe hasła</a></li>
+            <li><a href="#ext-passkeys">Klucze dostępu</a></li>
+            <li><a href="#ext-trouble">Rozwiązywanie problemów</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -470,7 +539,7 @@
           <h3><a href="#ext-install">Instalacja i połączenie</a></h3>
           <ol>
             <li>Zainstaluj i skonfiguruj <a href="#windows">aplikację Windows</a>.</li>
-            <li>Dodaj rozszerzenie: <strong>Edge</strong> z <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Dodatków Edge</a> (wybierz <strong>Pobierz</strong>). Wpis w Chrome Web Store pojawi się wkrótce.</li>
+            <li>Dodaj rozszerzenie: <strong>Edge</strong> z <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Dodatków Edge</a> (wybierz <strong>Pobierz</strong>). <strong>Chrome</strong> z <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Chrome Web Store</a> (wybierz <strong>Dodaj do Chrome</strong>). <strong>Firefox</strong> z <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Dodatków do Firefoksa</a> (wybierz <strong>Dodaj do Firefoksa</strong>).</li>
             <li>Kliknij ikonę puzzla na pasku narzędzi i przypnij <strong>LocalGateKeys</strong>.</li>
             <li>Kliknij ikonę LocalGateKeys. Karta połączenia powinna pokazywać <strong>Połączono</strong> lub <strong>Zablokowano</strong>.</li>
           </ol>
@@ -560,28 +629,31 @@
   <!-- ============================== IPHONE ============================== -->
   <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
     <h2 class="panel-title" id="iphone-title">LocalGateKeys na iPhone'a</h2>
-    <p class="panel-lead">Pobierz z <a href="https://apps.apple.com/app/id6825488435">App Store</a>. Aplikacja ma cztery karty: <strong>Sejf</strong>, <strong>Synchronizacja</strong>, <strong>Bezpieczeństwo</strong> i <strong>Ustawienia</strong>.</p>
+    <p class="panel-lead">Pobierz z <a href="https://apps.apple.com/app/id6825488435">App Store</a> (iOS 17 lub nowszy). Aplikacja ma cztery karty: <strong>Sejf</strong>, <strong>Synchronizacja</strong>, <strong>Bezpieczeństwo</strong> i <strong>Ustawienia</strong>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Tematy iPhone">
-        <p class="help-toc-title">Na tej karcie</p>
-        <ol>
-          <li><a href="#ios-setup">Pierwsze uruchomienie i odblokowywanie</a></li>
-          <li><a href="#ios-apppw">Hasło aplikacji i odzyskiwanie</a></li>
-          <li><a href="#ios-items">Elementy: dodawanie, edycja, usuwanie</a></li>
-          <li><a href="#ios-search">Wyszukiwanie i akcje</a></li>
-          <li><a href="#ios-generator">Generator haseł</a></li>
-          <li><a href="#ios-2fa">Kody dwuskładnikowe</a></li>
-          <li><a href="#ios-autofill">Autouzupełnianie w aplikacjach i Safari</a></li>
-          <li><a href="#ios-passkeys">Klucze dostępu</a></li>
-          <li><a href="#ios-safari">Zapisywanie z Safari</a></li>
-          <li><a href="#ios-security">Karta Bezpieczeństwo</a></li>
-          <li><a href="#ios-import">Import i eksport</a></li>
-          <li><a href="#ios-sync">Synchronizacja</a></li>
-          <li><a href="#ios-share">Udostępnianie elementu</a></li>
-          <li><a href="#ios-settings">Ustawienia</a></li>
-          <li><a href="#ios-pro">Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#ios-setup">Pierwsze uruchomienie i odblokowywanie</a></li>
+            <li><a href="#ios-apppw">Hasło aplikacji i odzyskiwanie</a></li>
+            <li><a href="#ios-items">Elementy: dodawanie, edycja, usuwanie</a></li>
+            <li><a href="#ios-search">Wyszukiwanie i akcje</a></li>
+            <li><a href="#ios-generator">Generator haseł</a></li>
+            <li><a href="#ios-2fa">Kody dwuskładnikowe</a></li>
+            <li><a href="#ios-autofill">Autouzupełnianie w aplikacjach i Safari</a></li>
+            <li><a href="#ios-passkeys">Klucze dostępu</a></li>
+            <li><a href="#ios-safari">Zapisywanie z Safari</a></li>
+            <li><a href="#ios-security">Karta Bezpieczeństwo</a></li>
+            <li><a href="#ios-import">Import i eksport</a></li>
+            <li><a href="#ios-sync">Synchronizacja</a></li>
+            <li><a href="#ios-share">Udostępnianie elementu</a></li>
+            <li><a href="#ios-settings">Ustawienia</a></li>
+            <li><a href="#ios-more">Hasło przymusu i więcej</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -601,9 +673,8 @@
           <p>Opcjonalne dodatkowe hasło, które otwiera LocalGateKeys zamiast kodu iPhone'a. Przydatne, jeśli inni znają Twój kod.</p>
           <ol>
             <li>Ustawienia › Hasło aplikacji › włącz <strong>Używaj hasła aplikacji</strong>.</li>
-            <li>Wybierz silne hasło.</li>
+            <li>Wybierz silne hasło (co najmniej 12 znaków) i zostaw włączone <strong>Odblokuj za pomocą Face ID</strong>, jeśli chcesz mieć skrót.</li>
             <li>Zapisz 24-wyrazową <strong>frazę odzyskiwania</strong>, stuknij <strong>Zapisane</strong> i wpisz trzy słowa, o które prosi aplikacja.</li>
-            <li>Opcjonalnie zachowaj <strong>Odblokuj przez Face ID</strong> jako skrót.</li>
           </ol>
           <p><strong>Nie pamiętasz?</strong> Stuknij <strong>Nie pamiętasz hasła aplikacji?</strong> na ekranie odblokowania, wpisz 24 słowa i wybierz nowe hasło aplikacji.</p>
           <p class="note">Jeśli dodasz do iPhone'a nową twarz lub odcisk palca, skrót Face ID wyłączy się dla bezpieczeństwa: wpisz raz hasło aplikacji i włącz go ponownie.</p>
@@ -616,9 +687,9 @@
             <li>Wypełnij pola i stuknij <strong>Zapisz</strong>. Jeśli przerwiesz w połowie, aplikacja zaproponuje, by później <strong>Kontynuować</strong> niezapisany element.</li>
           </ol>
           <ul>
-            <li>Otwórz element, aby <strong>Kopiuj nazwę użytkownika</strong>, <strong>Kopiuj hasło</strong>, <strong>Kopiuj kod 2FA</strong>, <strong>Otwórz stronę</strong>, oznaczyć jako <strong>Ulubiony</strong> lub <strong>Udostępnić</strong>. Skopiowany tekst po chwili znika ze schowka i nigdy nie trafia na inne urządzenia Apple.</li>
+            <li>Dotknij i przytrzymaj element w sejfie, aby wybrać <strong>Kopiuj nazwę użytkownika</strong>, <strong>Kopiuj hasło</strong>, <strong>Kopiuj kod 2FA</strong>, <strong>Otwórz stronę</strong> lub oznaczyć go jako <strong>Ulubiony</strong>. Otwórz go, aby skopiować dowolne pole, oznaczyć gwiazdką lub <strong>Udostępnić</strong>. Skopiowany tekst po chwili znika ze schowka i nigdy nie trafia na inne urządzenia Apple.</li>
             <li><strong>Historia haseł</strong> loginu przechowuje stare hasła: skopiuj lub przywróć jedno (wymaga Face ID).</li>
-            <li>Karty, paszporty, licencje i subskrypcje mogą mieć <strong>przypomnienie</strong> przed wygaśnięciem.</li>
+            <li>Każdy element oprócz loginu (karta, subskrypcja, gwarancja, licencja…) może mieć <strong>przypomnienie</strong> przed terminem; dla karty proponowana jest data ważności.</li>
             <li><strong>Załącz plik</strong> (Pro, do 25 MB, przechowywany w postaci zaszyfrowanej) przez <strong>+</strong>.</li>
             <li><strong>Usuń</strong>: element trafia do <em>Ostatnio usunięte</em>, z opcją <strong>Cofnij</strong> przez kilka sekund. Ustawienia › Dane › <strong>Ostatnio usunięte</strong> pozwala <strong>Przywrócić</strong> lub <strong>Usunąć na zawsze</strong>.</li>
             <li><strong>Sortuj</strong> wg nazwy lub daty, najpierw ulubione albo pogrupowane wg typu.</li>
@@ -627,12 +698,12 @@
 
         <article class="topic" id="ios-search">
           <h3><a href="#ios-search">Wyszukiwanie i szybkie akcje</a></h3>
-          <p>Przeciągnij sejf w dół lub stuknij <strong>Szukaj</strong> i pisz. Wpisz najpierw <code>&gt;</code>, aby zobaczyć <strong>Akcje</strong>: Nowy element, Generuj hasło, Skanuj kod QR, Zablokuj teraz, Synchronizuj teraz, Kontrola bezpieczeństwa, Ostatnio usunięte, Import i eksport i inne.</p>
+          <p>Stuknij przycisk wyszukiwania (lupę) u góry sejfu i pisz; przeciągnięcie sejfu w dół synchronizuje. Wpisz najpierw <code>&gt;</code>, aby zobaczyć <strong>Akcje</strong>: Nowy element, Generuj hasło, Skanuj kod QR, Zablokuj teraz, Synchronizuj teraz, Kontrola bezpieczeństwa, Ostatnio usunięte, Import i eksport i inne.</p>
         </article>
 
         <article class="topic" id="ios-generator">
           <h3><a href="#ios-generator">Generator haseł</a></h3>
-          <p>Przez <code>&gt;</code> Generuj hasło lub podczas edycji hasła loginu. Wybierz hasło o danej <strong>Długości</strong> albo frazę z liczbą <strong>Słów</strong> i <strong>Separatorem</strong>. <strong>Generuj ponownie</strong>, potem <strong>Użyj</strong>. Aplikacja pamięta ostatnio użyte opcje; <strong>Przywróć domyślne</strong> je przywraca.</p>
+          <p>Przez <code>&gt;</code> Generuj hasło lub podczas edycji hasła loginu. Wybierz hasło o danej <strong>Długości</strong> albo frazę z liczbą <strong>Słów</strong> i <strong>Separatorem</strong>. Stuknij przycisk odświeżania, aby wygenerować ponownie, potem <strong>Użyj</strong>. Aplikacja pamięta ostatnio użyte opcje; Ustawienia › Generator haseł › <strong>Przywróć ustawienia domyślne</strong> przywraca wartości domyślne.</p>
         </article>
 
         <article class="topic" id="ios-2fa">
@@ -656,15 +727,15 @@
           <p>Opcje w Ustawienia › Autouzupełnianie:</p>
           <ul>
             <li><strong>Pokazuj loginy na pasku QuickType</strong>: podpowiedzi nad klawiaturą.</li>
-            <li><strong>Kopiuj kod 2FA przy wypełnianiu</strong>: aby wkleić kod na następnym ekranie. Znika po 60 sekundach.</li>
+            <li><strong>Kopiuj kod 2FA podczas uzupełniania</strong>: aby wkleić kod na następnym ekranie. Znika po czasie ustawionym w <strong>Wyczyść schowek po</strong> (domyślnie 60 sekund).</li>
             <li><strong>Proponuj LocalGateKeys dla kluczy dostępu</strong>.</li>
           </ul>
-          <p>Karty i dane kontaktowe wypełniają się tak samo. Login zapisany dla strony <code>https</code> nie jest proponowany na zwykłej stronie <code>http</code>.</p>
+          <p>W iOS 18 i nowszych wypełniają się też karty i dane kontaktowe: stuknij pole tekstowe, wybierz <strong>Autouzupełnianie › Hasła</strong> i wskaż pole. Login zapisany dla strony <code>https</code> nie jest proponowany na zwykłej stronie <code>http</code>.</p>
         </article>
 
         <article class="topic" id="ios-passkeys">
           <h3><a href="#ios-passkeys">Klucze dostępu</a></h3>
-          <p>Przy włączonym autouzupełnianiu, gdy strona zaproponuje utworzenie klucza dostępu, wybierz LocalGateKeys. Klucz zostaje zapisany w sejfie i synchronizuje się z komputerem lub Makiem. Działa też logowanie na komputerze przez zeskanowanie jego kodu QR iPhone'em. Strona szczegółów klucza pokazuje stronę i konto; sam klucz nigdy nie jest pokazywany. Możesz zmienić jego nazwę lub go usunąć.</p>
+          <p>Przy włączonym autouzupełnianiu, gdy strona zaproponuje utworzenie klucza dostępu, wybierz LocalGateKeys. Klucz zostaje zapisany w sejfie i synchronizuje się z komputerem. Działa też logowanie na komputerze przez zeskanowanie jego kodu QR iPhone'em. Strona szczegółów klucza pokazuje stronę i konto; sam klucz nigdy nie jest pokazywany. Możesz zmienić jego nazwę lub go usunąć.</p>
         </article>
 
         <article class="topic" id="ios-safari">
@@ -679,7 +750,7 @@
 
         <article class="topic" id="ios-security">
           <h3><a href="#ios-security">Karta Bezpieczeństwo</a></h3>
-          <p>Wynik i listy loginów, które <strong>Wyciekły</strong>, są <strong>Powtórzone</strong>, <strong>Słabe</strong>, <strong>Stare</strong> lub mogłyby używać 2FA. Przesuń login w lewo, aby wybrać <strong>Zmień hasło</strong> lub <strong>Ignoruj</strong>. Sprawdzanie wycieków jest wyłączone, dopóki nie włączysz Ustawienia › <strong>Zezwalaj na sprawdzanie wycieków</strong>.</p>
+          <p>Wynik i listy loginów, które <strong>Wyciekły</strong>, są <strong>Powtórzone</strong>, <strong>Słabe</strong>, <strong>Stare</strong> lub mogłyby używać 2FA. Przesuń login w lewo, aby wybrać <strong>Zmień hasło</strong> lub <strong>Odrzuć</strong>. Sprawdzanie wycieków jest wyłączone, dopóki nie wyłączysz Ustawienia › <strong>Ścisły tryb offline</strong> (domyślnie włączony) i nie włączysz <strong>Zezwól na sprawdzanie wycieków</strong>.</p>
         </article>
 
         <article class="topic" id="ios-import">
@@ -690,19 +761,20 @@
             <li>Wybierz <strong>LocalGateKeys</strong>. Przenoszone są loginy, kody 2FA i klucze dostępu. Powtórzenie niczego nie dubluje.</li>
           </ol>
           <h4>Z pliku</h4>
-          <p>Ustawienia › Import i eksport › <strong>Importuj z pliku</strong>: CSV z Haseł Apple, <code>.json</code> z Bitwarden (także chroniony hasłem), <code>.1pux</code> z 1Password lub dowolny inny CSV. Przeglądasz każdy element, zanim stukniesz <strong>Importuj</strong>. Potem usuń plik eksportu.</p>
+          <p>Ustawienia › Import i eksport › <strong>Importuj z pliku</strong>: eksporty z Haseł Apple, Safari, Chrome, Edge, Brave, Firefox, Bitwarden (także chronione hasłem), 1Password (<code>.1pux</code>), LastPass, KeePass (<code>.kdbx</code>), Proton Pass, Dashlane lub dowolny CSV. Przeglądasz każdy element, zanim stukniesz <strong>Importuj</strong>. Potem usuń plik eksportu.</p>
           <h4>Kopia zapasowa i eksport</h4>
           <ul>
-            <li><strong>Eksportuj zaszyfrowaną kopię</strong>: plik <code>.lgkm</code> z hasłem o długości 12+ znaków. Przywróć go w Windows, na Macu lub innym telefonie.</li>
+            <li><strong>Eksportuj zaszyfrowaną kopię zapasową</strong>: plik <code>.lgkm</code> z hasłem o długości 12+ znaków. Przywróć go w Windows.</li>
             <li><strong>Eksportuj jako CSV</strong>: niezaszyfrowany, do przeniesienia do innej aplikacji. Aplikacja prosi o potwierdzenie.</li>
+            <li><strong>Eksportuj do pliku CXF…</strong> zapisuje wybrane loginy, notatki i klucze dostępu w pliku Credential Exchange, który mogą zaimportować inne menedżery haseł. Plik nie jest szyfrowany.</li>
           </ul>
         </article>
 
         <article class="topic" id="ios-sync">
-          <h3><a href="#ios-sync">Synchronizacja z komputerem lub Makiem</a> <span class="badge-pro">Pro</span></h3>
+          <h3><a href="#ios-sync">Synchronizacja z komputerem</a> <span class="badge-pro">Pro</span></h3>
           <h4>Przez Wi-Fi</h4>
           <ol>
-            <li>Na komputerze lub Macu otwórz Synchronizację i wybierz <strong>Pokaż kod QR</strong>.</li>
+            <li>Na komputerze otwórz Sync i urządzenia i wybierz <strong>Pokaż kod QR</strong>.</li>
             <li>Na iPhonie otwórz kartę <strong>Synchronizacja</strong> i w ciągu 120 sekund stuknij <strong>Skanuj kod QR</strong>. (Za pierwszym razem zezwól na dostęp do sieci lokalnej). Brak aparatu? Stuknij <strong>Wklej tekst kodu</strong> i wklej tekst z <strong>Kopiuj tekst kodu</strong> na komputerze.</li>
             <li>Sprawdź, czy oba ekrany pokazują ten sam kod, a potem wybierz <strong>Akceptuj</strong> na komputerze.</li>
           </ol>
@@ -728,17 +800,26 @@
           <h3><a href="#ios-settings">Ustawienia</a></h3>
           <dl class="defs">
             <dt>Bezpieczeństwo</dt><dd><strong>Automatyczna blokada po wyjściu z aplikacji</strong>, <strong>Blokuj przy bezczynności</strong>, <strong>Ukrywaj hasła do stuknięcia</strong>, <strong>Czyść schowek po</strong>, <strong>Zablokuj teraz</strong>.</dd>
-            <dt>Prywatność</dt><dd><strong>Ścisły tryb offline</strong>, ikony stron, nazwy elementów w powiadomieniach, <strong>Zapominaj kody Apple Watch przy blokadzie</strong>, sprawdzanie wycieków.</dd>
+            <dt>Prywatność</dt><dd><strong>Ścisły tryb offline</strong>, ikony stron, nazwy elementów w powiadomieniach, sprawdzanie wycieków.</dd>
             <dt>Wygląd</dt><dd>Systemowy, Jasny lub Ciemny.</dd>
             <dt>Dane</dt><dd>Ostatnio usunięte, jak długo przechowywać usunięte elementy, Import i eksport.</dd>
             <dt>Wymazywanie</dt><dd><strong>Wymaż sejf tego iPhone'a</strong> usuwa sejf tylko na tym iPhonie (pyta dwa razy). Komputer i folder synchronizacji pozostają bez zmian.</dd>
           </dl>
         </article>
 
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">Hasło przymusu i więcej</a></h3>
+          <ul>
+            <li><strong>Hasło przymusu</strong> (Pro): drugie hasło aplikacji na wypadek, gdy ktoś zmusza Cię do odblokowania. Otwiera osobny sejf tylko z wybranymi elementami, a Twój sejf odrzuca potem hasło aplikacji przez ustawioną liczbę godzin. Najpierw włącz hasło aplikacji, potem ustaw je w Ustawieniach w sekcji <strong>Hasło przymusu</strong>.</li>
+            <li><strong>Hostuj synchronizację Wi-Fi na tym telefonie</strong> (Pro) na karcie Sync pozwala innym urządzeniom sparować się bezpośrednio z iPhone’em, bez komputera.</li>
+            <li>Plan dostępu awaryjnego utworzony na komputerze trafia na iPhone’a przez synchronizację, więc tu też możesz odrzucać lub przyznawać prośby. <strong>Utwórz notatkę pakietu spadkowego</strong> dodaje notatkę dla spadkobierców.</li>
+          </ul>
+        </article>
+
         <article class="topic" id="ios-pro">
           <h3><a href="#ios-pro">Pro</a></h3>
-          <p>Ustawienia › Pro › <strong>Kup Pro</strong>: jedna płatność, bez subskrypcji, bez konta. Odblokowuje też aplikację na Maca. Na nowym iPhonie użyj <strong>Przywróć zakupy</strong> z tym samym kontem Apple.</p>
-          <p>Aby odblokować też Windows, wybierz <strong>Kopiuj klucz</strong> w sekcji <em>Odblokowuje też Windows</em> i zainstaluj ten klucz na komputerze (Narzędzia › Licencja).</p>
+          <p>Ustawienia › Pro › <strong>Przejdź na wyższy plan</strong>, potem kup: jedna płatność, bez subskrypcji, bez konta. Na nowym iPhonie użyj <strong>Przywróć zakupy</strong> z tym samym kontem Apple.</p>
+          <p>Zakup odblokowuje też Windows. Sparuj komputer z iPhone'em na karcie <strong>Synchronizacja</strong>, a darmowy komputer przejmie licencję przez synchronizację i stanie się Pro. Możesz też wybrać <strong>Kopiuj klucz</strong> i zainstalować ten klucz na komputerze (Ustawienia › Plan i synchronizacja › Licencja).</p>
         </article>
 
       </div>
@@ -748,25 +829,29 @@
   <!-- ============================== MAC ============================== -->
   <section class="help-panel" id="mac" aria-labelledby="mac-title">
     <h2 class="panel-title" id="mac-title">LocalGateKeys na Maca</h2>
-    <p class="panel-lead">Pasek boczny zawiera <strong>Sejf</strong>, <strong>Centrum bezpieczeństwa</strong>, <strong>Centrum odzyskiwania</strong>, <strong>Import i eksport</strong>, <strong>Synchronizację</strong>, <strong>Urządzenia i połączenia</strong> oraz <strong>Ustawienia</strong>.</p>
+
+    <p class="panel-lead">Pasek boczny pokazuje elementy (<strong>Wszystkie elementy</strong>, <strong>Ulubione</strong>, <strong>Ostatnio używane</strong>, każdy rodzaj i Twoje kolekcje) oraz narzędzia <strong>Centrum bezpieczeństwa</strong>, <strong>Generator</strong>, <strong>Synchronizacja i urządzenia</strong>, <strong>Import i eksport</strong> i <strong>Kosz</strong>, z <strong>Ustawieniami</strong> na dole. <strong>Centrum odzyskiwania</strong> otwierasz z Ustawienia › Kopie zapasowe, a <strong>Urządzenia i połączenia</strong> z Synchronizacji i urządzeń.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Tematy Mac">
-        <p class="help-toc-title">Na tej karcie</p>
-        <ol>
-          <li><a href="#mac-setup">Tworzenie sejfu</a></li>
-          <li><a href="#mac-unlock">Odblokowywanie i blokowanie</a></li>
-          <li><a href="#mac-items">Elementy</a></li>
-          <li><a href="#mac-2fa">Kody dwuskładnikowe</a></li>
-          <li><a href="#mac-security">Centrum bezpieczeństwa</a></li>
-          <li><a href="#mac-autofill">Autouzupełnianie i Safari</a></li>
-          <li><a href="#mac-import">Import i eksport</a></li>
-          <li><a href="#mac-backups">Kopie zapasowe</a></li>
-          <li><a href="#mac-sync">Synchronizacja</a></li>
-          <li><a href="#mac-share">Udostępnianie</a></li>
-          <li><a href="#mac-pro">Pro</a></li>
-          <li><a href="#mac-keys">Skróty klawiszowe</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#mac-setup">Tworzenie sejfu</a></li>
+            <li><a href="#mac-unlock">Odblokowywanie i blokowanie</a></li>
+            <li><a href="#mac-items">Elementy</a></li>
+            <li><a href="#mac-2fa">Kody dwuskładnikowe</a></li>
+            <li><a href="#mac-security">Centrum bezpieczeństwa</a></li>
+            <li><a href="#mac-autofill">Autouzupełnianie i Safari</a></li>
+            <li><a href="#mac-import">Import i eksport</a></li>
+            <li><a href="#mac-backups">Kopie zapasowe</a></li>
+            <li><a href="#mac-sync">Synchronizacja</a></li>
+            <li><a href="#mac-share">Udostępnianie</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">Ustawienia</a></li>
+            <li><a href="#mac-keys">Skróty klawiszowe</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -782,10 +867,10 @@
         <article class="topic" id="mac-unlock">
           <h3><a href="#mac-unlock">Odblokowywanie i blokowanie</a></h3>
           <ul>
-            <li><strong>Touch ID</strong>: Ustawienia › Odblokowywanie › <strong>Odblokuj przez Touch ID</strong>. Jeśli zmienisz odciski palców, użyj raz hasła głównego.</li>
+            <li><strong>Touch ID</strong>: Ustawienia › Bezpieczeństwo › Odblokowanie › <strong>Touch ID</strong>. Jeśli zmienisz odciski palców, użyj raz hasła głównego.</li>
             <li><strong>Zmień hasło główne</strong>: Ustawienia › Odblokowywanie. Elementy pozostają bez zmian.</li>
             <li><strong>Fraza odzyskiwania</strong>: skonfiguruj ją w <strong>Centrum odzyskiwania</strong> i potwierdź trzy słowa. Jeśli zapomnisz hasła głównego, wybierz na ekranie blokady <strong>Nie pamiętasz hasła głównego?</strong> › <strong>Odzyskaj frazą odzyskiwania</strong>.</li>
-            <li><strong>Zablokuj</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Ustawienia › Blokowanie ustawia blokadę przy bezczynności, wraz z ekranem, przy uśpieniu i maksymalny czas sesji.</li>
+            <li><strong>Zablokuj</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Ustawienia › Blokowanie ustawia blokadę przy bezczynności, wraz z ekranem, przy uśpieniu i maksymalny czas sesji. Możesz też wybrać, co liczy się jako aktywność dla blokady przy bezczynności.</li>
           </ul>
         </article>
 
@@ -794,8 +879,8 @@
           <ul>
             <li><strong>Nowy element</strong> (<kbd>⌘</kbd><kbd>N</kbd>) oferuje te same rodzaje co iPhone oraz <strong>Załącz plik…</strong> (Pro).</li>
             <li>Kopiuj przez <kbd>⌘</kbd><kbd>C</kbd> (hasło), <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> (nazwa użytkownika), <kbd>⌘</kbd><kbd>T</kbd> (kod 2FA).</li>
-            <li><strong>Dodaj pole</strong> dla pól niestandardowych, <strong>Tagi</strong> i <strong>Kolekcje</strong> (zostają na tym Macu).</li>
-            <li><kbd>⌫</kbd> przenosi element do Ostatnio usuniętych. Tam użyj <strong>Przywróć zaznaczone</strong> lub <strong>Opróżnij kosz</strong>.</li>
+            <li><strong>Dodaj pole</strong> dla pól niestandardowych, <strong>Tagi</strong> i <strong>Kolekcje</strong> (synchronizują się z innymi urządzeniami).</li>
+            <li><kbd>⌫</kbd> przenosi element do Ostatnio usuniętych. Otwórz <strong>Kosz</strong> na pasku bocznym i użyj <strong>Przywróć wybrane</strong> lub <strong>Opróżnij kosz</strong>.</li>
             <li>Załączone pliki otwierają się w Szybkim przeglądzie po Touch ID lub haśle głównym.</li>
             <li><strong>Generator</strong>: losowe hasło (wybierz zestawy znaków, unikaj podobnych) lub fraza (wielkie litery, dodaj liczbę, separator).</li>
           </ul>
@@ -803,7 +888,7 @@
 
         <article class="topic" id="mac-2fa">
           <h3><a href="#mac-2fa">Kody dwuskładnikowe</a> <span class="badge-pro">Pro</span></h3>
-          <p>Wybierz <strong>Skanuj kod QR…</strong>, potem <strong>Wybierz obraz…</strong>, wklej zrzut ekranu przez <kbd>⌘</kbd><kbd>V</kbd> (zrób go przez <kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>) lub przeciągnij obraz. Kody wypełniają się w Safari przez autouzupełnianie.</p>
+          <p>Wybierz <strong>Skanuj kod QR…</strong>, potem <strong>Wybierz obraz…</strong>, wklej zrzut ekranu przez <kbd>⌘</kbd><kbd>V</kbd> (skopiuj go przez <kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>) lub przeciągnij obraz. Kody wypełniają się w Safari przez autouzupełnianie.</p>
         </article>
 
         <article class="topic" id="mac-security">
@@ -818,7 +903,10 @@
             <li><strong>Otwórz ustawienia autouzupełniania</strong> i włącz LocalGateKeys w Ustawienia systemowe › Autouzupełnianie i hasła.</li>
             <li><strong>Otwórz ustawienia Safari</strong> i włącz rozszerzenie LocalGateKeys w Safari › Ustawienia › Rozszerzenia.</li>
           </ol>
-          <p>Hasła, klucze dostępu i kody 2FA będą wtedy wypełniane w Safari i aplikacjach. Nowe logowania w Safari są proponowane do zapisania; przejrzyj je przy następnym odblokowaniu. Inne przeglądarki nie są jeszcze obsługiwane na Macu.</p>
+          <p>Aby wypełnić login w Safari, kliknij pole nazwy użytkownika lub hasła. Safari pokaże pod nim Twoje loginy z LocalGateKeys: wybierz jeden i potwierdź Touch ID lub hasłem głównym. Klucze dostępu i kody 2FA są proponowane tak samo, a autouzupełnianie działa też w innych aplikacjach na Macu.</p>
+          <p>Rozszerzenie Safari proponuje zapisanie nowego loginu po zalogowaniu. Przejrzyj to, co zebrało, przy następnym odblokowaniu LocalGateKeys. Inne przeglądarki nie są jeszcze obsługiwane na Macu.</p>
+          <p>Nie widać loginów? Otwórz <strong>Urządzenia i połączenia</strong> i sprawdź, czy autouzupełnianie jest włączone. Na tej samej stronie Ustawień systemowych możesz wyłączyć Hasła, aby loginy proponował tylko LocalGateKeys.</p>
+          <p>Jeśli LocalGateKeys zamyka się po otwarciu <strong>Urządzenia i połączenia</strong>, zaktualizuj aplikację w Mac App Store.</p>
         </article>
 
         <article class="topic" id="mac-import">
@@ -837,15 +925,15 @@
           <ul>
             <li><strong>Pełna kopia</strong>: <strong>Utwórz…</strong> plik <code>.lgk</code> lub <strong>Przywróć…</strong> taki plik (zastępuje sejf). Działa między Makiem a Windows. Zachowywana jest kopia bezpieczeństwa, więc <strong>Odłóż z powrotem…</strong> cofa przywracanie.</li>
             <li><strong>Zaplanowane kopie</strong>: jak często, dzień tygodnia, godzina, ile zachować, folder i folder lustrzany oraz hasło kopii (12+ znaków).</li>
-            <li><strong>Zestaw odzyskiwania…</strong>: arkusz do wydruku z danymi odzyskiwania.</li>
+            <li><strong>Zestaw odzyskiwania…</strong>: plik opisujący Twoją ostatnią kopię zapasową, do przechowywania razem z nią. <strong>Drukuj zestaw awaryjny…</strong> drukuje stronę, która mówi, gdzie są sejf i kopie zapasowe oraz jak je przywrócić.</li>
           </ul>
         </article>
 
         <article class="topic" id="mac-sync">
           <h3><a href="#mac-sync">Synchronizacja</a> <span class="badge-pro">Pro</span></h3>
           <ul>
-            <li><strong>Udostępniaj synchronizację Wi-Fi</strong>: pokazuje kod QR do parowania. Gdy urządzenie dołączy, sprawdź jego kod i wybierz <strong>Akceptuj</strong> lub <strong>Odrzuć</strong>. Jeśli potem go nie rozpoznajesz, wybierz <strong>Cofnij</strong>.</li>
-            <li><strong>Dołącz do komputera z Windows</strong>: użyj tekstu kodu z <strong>Kopiuj tekst kodu</strong> na komputerze.</li>
+            <li><strong>Wi-Fi (ta sieć)</strong>: <strong>Włącz synchronizację Wi-Fi</strong>, potem <strong>Pokaż kod QR…</strong>. Gdy urządzenie dołączy, sprawdź jego kod i wybierz <strong>Akceptuj</strong> lub <strong>Odrzuć</strong>. Jeśli potem go nie rozpoznajesz, wybierz <strong>Cofnij</strong>.</li>
+            <li><strong>Dołącz za pomocą kodu</strong>: na drugim urządzeniu wybierz <strong>Pokaż kod QR</strong>, potem <strong>Kopiuj tekst kodu</strong>, i wklej tekst tutaj.</li>
             <li><strong>Folder w chmurze</strong>: dołącz do grupy lub utwórz ją w folderze takim jak Dropbox czy iCloud Drive, z hasłem synchronizacji. OneDrive i Google Drive są na razie niedostępne, dopóki nie zostanie rozwiązany problem z Apple.</li>
             <li><strong>Opuść synchronizację…</strong> / <strong>Zresetuj synchronizację na tym Macu…</strong>.</li>
           </ul>
@@ -853,12 +941,18 @@
 
         <article class="topic" id="mac-share">
           <h3><a href="#mac-share">Udostępnianie</a></h3>
-          <p>Zaznacz element i wybierz <strong>Udostępnij…</strong>. Aby odebrać, wybierz Plik › <strong>Odbierz udostępniony element…</strong>, otwórz lub upuść plik (albo wklej tekst QR) i wpisz sześć słów. Kluczy dostępu i elementów z załączonym plikiem nie można udostępniać.</p>
+          <p>Zaznacz element i wybierz <strong>Udostępnij…</strong>. Aby odebrać, wybierz Edycja › <strong>Odbierz udostępniony element…</strong> (lub znajdź to przez <kbd>⌘</kbd><kbd>K</kbd>), otwórz lub upuść plik (albo wklej tekst QR) i wpisz sześć słów. Kluczy dostępu i elementów z załączonym plikiem nie można udostępniać.</p>
         </article>
 
         <article class="topic" id="mac-pro">
           <h3><a href="#mac-pro">Pro</a></h3>
           <p>Kup Pro w Ustawienia › Plan. Jeden zakup obejmuje aplikacje na iPhone'a i Maca; na drugim urządzeniu użyj <strong>Przywróć zakupy</strong>. Darmowy Mac zsynchronizowany z iPhone'em Pro pokazuje <em>Pro z synchronizowanych urządzeń</em>.</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">Ustawienia</a></h3>
+          <p>Ustawienia są takie same w oknie głównym i pod <kbd>⌘</kbd><kbd>,</kbd>, a narzędzia pozostają widoczne na dole paska bocznego. Ustawienia › Kopie zapasowe zawierają harmonogram, <strong>Cotygodniowy test przywracania</strong> i liczbę automatycznych kopii do zachowania; Centrum odzyskiwania, Licencja i Pokaż konfigurację ponownie otwierają się z obu okien. Inne ustawienia: co liczy się jako aktywność dla automatycznej blokady, pytanie przed skopiowaniem kodu 2FA, otwieranie dokumentów z sejfu w innych aplikacjach, własny skrót szybkiego dostępu i linki pomocy.</p>
+          <p><strong>Hasło przymusu</strong> (Pro) w Ustawienia › Hasło przymusu: drugie hasło główne na wypadek, gdy ktoś zmusza Cię do odblokowania. Otwiera osobny sejf tylko z wybranymi elementami, a Twój sejf odrzuca potem hasło główne przez ustawioną liczbę godzin.</p>
         </article>
 
         <article class="topic" id="mac-keys">
@@ -884,17 +978,18 @@
   <!-- ============================== WATCH ============================== -->
   <section class="help-panel" id="watch" aria-labelledby="watch-title">
     <h2 class="panel-title" id="watch-title">LocalGateKeys na Apple Watch</h2>
-    <p class="panel-lead">Pokazuje kody dwuskładnikowe na nadgarstku. Jest dołączona do aplikacji na iPhone'a. Zawiera tylko kody: bez haseł, bez edycji. <span class="badge-pro">Pro</span></p>
-    <p class="callout-soon"><strong>Pojawi się w aplikacji na iPhone'a 1.1.</strong> Aplikacja na zegarek i przycisk <em>Pokaż na Apple Watch</em> pojawią się w wersji 1.1, która jest w przeglądzie App Review. Wersję sprawdzisz w Ustawienia iPhone'a › To urządzenie.</p>
+    <p class="panel-lead">Pokazuje kody dwuskładnikowe na nadgarstku. Jest dołączona do aplikacji na iPhone'a i wymaga watchOS 10 lub nowszego. Zawiera tylko kody: bez haseł, bez edycji. <span class="badge-pro">Pro</span></p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Tematy Apple Watch">
-        <p class="help-toc-title">Na tej karcie</p>
-        <ol>
-          <li><a href="#watch-add">Umieszczanie kodu na zegarku</a></li>
-          <li><a href="#watch-use">Korzystanie z kodów</a></li>
-          <li><a href="#watch-remove">Usuwanie kodów</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#watch-add">Umieszczanie kodu na zegarku</a></li>
+            <li><a href="#watch-use">Korzystanie z kodów</a></li>
+            <li><a href="#watch-remove">Usuwanie kodów</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -915,7 +1010,7 @@
         </article>
         <article class="topic" id="watch-remove">
           <h3><a href="#watch-remove">Usuwanie kodów</a></h3>
-          <p>Na iPhonie otwórz login i stuknij <strong>Usuń z Apple Watch</strong>. Aby usuwać wszystkie kody z zegarka przy każdej blokadzie aplikacji na iPhonie, włącz w Ustawieniach iPhone'a <strong>Zapominaj kody Apple Watch przy blokadzie</strong>.</p>
+          <p>Na iPhonie otwórz login i stuknij <strong>Usuń z Apple Watch</strong>. Aby usuwać wszystkie kody z zegarka przy każdej blokadzie aplikacji na iPhonie, włącz <strong>Zapominaj kody Apple Watch po zablokowaniu</strong> w LocalGateKeys › Ustawienia › Autouzupełnianie.</p>
         </article>
       </div>
     </div>
@@ -925,43 +1020,45 @@
   <section class="help-panel" id="android" aria-labelledby="android-title">
     <h2 class="panel-title" id="android-title">LocalGateKeys na Androida</h2>
     <p class="callout-soon"><strong>Już wkrótce.</strong> Aplikacji na Androida nie ma jeszcze w Google Play. Ten przewodnik pokazuje, jak będzie działać.</p>
-    <p class="panel-lead">Aplikacja ma trzy karty: <strong>Sejf</strong>, <strong>Szukaj</strong> i <strong>Synchronizacja</strong>. Ustawienia otwierasz przez inicjały w rogu.</p>
+    <p class="panel-lead">Aplikacja ma cztery karty: <strong>Sejf</strong>, <strong>Synchronizacja</strong>, <strong>Bezpieczeństwo</strong> i <strong>Ustawienia</strong>. Wyszukiwanie to lupa u góry karty Sejf.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Tematy Android">
-        <p class="help-toc-title">Na tej karcie</p>
-        <ol>
-          <li><a href="#and-setup">Pierwsze uruchomienie i odblokowywanie</a></li>
-          <li><a href="#and-apppw">Hasło aplikacji i odzyskiwanie</a></li>
-          <li><a href="#and-items">Elementy</a></li>
-          <li><a href="#and-search">Wyszukiwanie i akcje</a></li>
-          <li><a href="#and-generator">Generator haseł</a></li>
-          <li><a href="#and-2fa">Kody dwuskładnikowe</a></li>
-          <li><a href="#and-autofill">Autouzupełnianie</a></li>
-          <li><a href="#and-passkeys">Klucze dostępu</a></li>
-          <li><a href="#and-import">Import</a></li>
-          <li><a href="#and-backups">Kopie zapasowe</a></li>
-          <li><a href="#and-sync">Synchronizacja</a></li>
-          <li><a href="#and-share">Udostępnianie</a></li>
-          <li><a href="#and-settings">Ustawienia i Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Na tej karcie</summary>
+          <ol>
+            <li><a href="#and-setup">Pierwsze uruchomienie i odblokowywanie</a></li>
+            <li><a href="#and-apppw">Hasło aplikacji i odzyskiwanie</a></li>
+            <li><a href="#and-items">Elementy</a></li>
+            <li><a href="#and-search">Wyszukiwanie i akcje</a></li>
+            <li><a href="#and-generator">Generator haseł</a></li>
+            <li><a href="#and-2fa">Kody dwuskładnikowe</a></li>
+            <li><a href="#and-autofill">Autouzupełnianie</a></li>
+            <li><a href="#and-passkeys">Klucze dostępu</a></li>
+            <li><a href="#and-import">Import</a></li>
+            <li><a href="#and-backups">Kopie zapasowe</a></li>
+            <li><a href="#and-sync">Synchronizacja</a></li>
+            <li><a href="#and-share">Udostępnianie</a></li>
+            <li><a href="#and-settings">Ustawienia i Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
 
         <article class="topic" id="and-setup">
           <h3><a href="#and-setup">Pierwsze uruchomienie i odblokowywanie</a></h3>
-          <p>Sejf otwiera się odciskiem palca, twarzą lub blokadą ekranu telefonu. (Telefon musi mieć blokadę ekranu). Następuje krótka konfiguracja: odblokowanie odciskiem, <strong>Otwórz ustawienia autouzupełniania</strong>, <strong>Importuj…</strong> i opcjonalne hasło aplikacji. Każdy krok można pominąć; karta <em>Dokończ konfigurację</em> pozwala wrócić.</p>
-          <p>Ustawienia › Bezpieczeństwo ustawia <strong>Automatyczna blokada po wyjściu z aplikacji</strong> (od Natychmiast do 1 godziny lub Nigdy) i ma <strong>Zablokuj teraz</strong>. Aplikacja jest ukryta w widoku ostatnich aplikacji.</p>
+          <p>Sejf otwiera się odciskiem palca, twarzą lub blokadą ekranu telefonu. (Telefon musi mieć blokadę ekranu). Następuje krótka konfiguracja: odblokowanie odciskiem, <strong>Importuj…</strong>, opcjonalne hasło aplikacji i <strong>Otwórz ustawienia autouzupełniania</strong>. Każdy krok można pominąć; karta <em>Dokończ konfigurację</em> pozwala wrócić.</p>
+          <p>Ustawienia › Blokada i bezpieczeństwo ustawia <strong>Blokuj po opuszczeniu aplikacji</strong> (od Natychmiast do 1 godziny) i <strong>Blokuj przy bezczynności</strong> (od 1 do 30 minut lub Nigdy) oraz ma <strong>Zablokuj teraz</strong>. Aplikacja jest ukryta w widoku ostatnich aplikacji.</p>
         </article>
 
         <article class="topic" id="and-apppw">
           <h3><a href="#and-apppw">Hasło aplikacji i fraza odzyskiwania</a></h3>
           <ol>
-            <li>Ustawienia › <strong>Włącz hasło aplikacji</strong> i wybierz je. Od tej chwili to ono, a nie blokada ekranu, otwiera LocalGateKeys.</li>
-            <li>Zapisz 24-wyrazową frazę odzyskiwania, stuknij <strong>Zapisane</strong> i wpisz słowa, o które prosi aplikacja.</li>
+            <li>Ustawienia › Blokada i bezpieczeństwo › włącz <strong>Używaj hasła aplikacji</strong>, wybierz je i stuknij <strong>Kontynuuj</strong>. Od tej chwili to ono, a nie blokada ekranu, otwiera LocalGateKeys.</li>
+            <li>Zapisz 24-wyrazową frazę odzyskiwania, stuknij <strong>Zapisano</strong>, wpisz słowa, o które prosi aplikacja, i stuknij <strong>Włącz hasło aplikacji</strong>.</li>
           </ol>
-          <p>Nie pamiętasz? Stuknij <strong>Nie pamiętasz hasła aplikacji?</strong>, wpisz 24 słowa i wybierz nowe. <strong>Zmień</strong> i <strong>Wyłącz</strong> są w Ustawieniach.</p>
+          <p>Nie pamiętasz? Stuknij <strong>Nie pamiętasz hasła aplikacji?</strong>, wpisz 24 słowa i wybierz nowe. <strong>Zmień hasło aplikacji</strong> oraz przełącznik <strong>Używaj hasła aplikacji</strong>, którym je wyłączysz, są w Ustawienia › Blokada i bezpieczeństwo.</p>
           <p class="note">Po przywróceniu telefonu z kopii Google sejfu nie da się otworzyć (jego klucz nie jest objęty kopią). Wybierz <strong>Zacznij od nowa</strong>, a potem zsynchronizuj z komputerem, aby wszystko odzyskać.</p>
         </article>
 
@@ -978,7 +1075,7 @@
 
         <article class="topic" id="and-search">
           <h3><a href="#and-search">Wyszukiwanie i akcje</a></h3>
-          <p>Na karcie Szukaj wpisz nazwę lub zacznij od <code>&gt;</code>, by użyć akcji takich jak Eksportuj kopię, Generuj hasło, Importuj hasła, Zablokuj, Odbierz udostępniony element, Skanuj kod QR do parowania i Synchronizuj teraz.</p>
+          <p>Stuknij lupę na karcie Sejf i wpisz nazwę lub zacznij od <code>&gt;</code>, by użyć akcji takich jak Eksportuj kopię, Generuj hasło, Importuj hasła, Zablokuj, Odbierz udostępniony element, Skanuj kod QR do parowania i Synchronizuj teraz.</p>
         </article>
 
         <article class="topic" id="and-generator">
@@ -1002,12 +1099,12 @@
 
         <article class="topic" id="and-passkeys">
           <h3><a href="#and-passkeys">Klucze dostępu</a></h3>
-          <p>Włącz Ustawienia › <strong>Proponuj LocalGateKeys dla kluczy dostępu</strong>. Gdy strona lub aplikacja zaproponuje klucz dostępu, wybierz LocalGateKeys; później logujesz się przez <strong>Użyj klucza dostępu</strong>.</p>
+          <p>Włącz Ustawienia › Autouzupełnianie › <strong>Proponuj LocalGateKeys dla kluczy dostępu</strong>. Gdy strona lub aplikacja zaproponuje klucz dostępu, wybierz LocalGateKeys; później logujesz się przez <strong>Użyj swojego klucza dostępu</strong>.</p>
         </article>
 
         <article class="topic" id="and-import">
           <h3><a href="#and-import">Import</a></h3>
-          <p><strong>Importuj z innej aplikacji</strong> ›<strong>Wybierz plik eksportu</strong>: Chrome, Edge, Brave, Firefox, Hasła Apple, <code>.json</code> z Bitwarden (także chroniony hasłem), <code>.1pux</code> z 1Password lub dowolny CSV. Przejrzyj wszystko, a potem importuj. Następnie usuń plik eksportu.</p>
+          <p>Ustawienia › Synchronizacja i dane › <strong>Importuj z pliku</strong> › <strong>Wybierz plik eksportu</strong>: Chrome, Edge, Brave, Firefox, Hasła Apple, <code>.json</code> z Bitwarden (także chroniony hasłem), <code>.1pux</code> z 1Password lub dowolny CSV. Przejrzyj wszystko, a potem importuj. Następnie usuń plik eksportu.</p>
         </article>
 
         <article class="topic" id="and-backups">
@@ -1028,15 +1125,17 @@
 
         <article class="topic" id="and-share">
           <h3><a href="#and-share">Udostępnianie</a></h3>
-          <p>Otwórz element › <strong>Udostępnij ten element</strong> › <strong>Wyślij jako plik…</strong> lub <strong>Pokaż jako kod QR</strong> i przekaż sześć słów osobno. Aby odebrać: <strong>Odbierz udostępniony element</strong>, wpisz sześć słów, potem <strong>Dodaj do sejfu</strong>. Udostępnienie otwiera się raz w ciągu 24 godzin; trzy błędne kody je usuwają. Kluczy dostępu i plików nie można udostępniać.</p>
+          <p>Otwórz element, stuknij Udostępnij, potem <strong>Wyślij jako plik…</strong> lub <strong>Pokaż jako kod QR</strong> i przekaż sześć słów osobno. Aby odebrać: Ustawienia › Synchronizacja i dane › <strong>Odbierz udostępniony element</strong>, wpisz sześć słów, stuknij <strong>Otwórz</strong>, potem <strong>Dodaj do sejfu</strong>. Udostępnienie otwiera się raz w ciągu 24 godzin; trzy błędne kody je usuwają. Kluczy dostępu i plików nie można udostępniać.</p>
         </article>
 
         <article class="topic" id="and-settings">
           <h3><a href="#and-settings">Ustawienia i Pro</a></h3>
           <ul>
             <li><strong>Wygląd</strong>: Systemowy, Jasny lub Ciemny oraz Twoje inicjały.</li>
-            <li><strong>Bezpieczeństwo</strong>: ukrywaj hasła do stuknięcia, czyść schowek po, <strong>Wymaż sejf tego telefonu</strong> (tylko ten telefon).</li>
-            <li><strong>Pro</strong>: <strong>Kup</strong> raz przez Google Play, <strong>Przywróć zakupy</strong> na innym telefonie z tym samym kontem Google i <strong>Kopiuj klucz</strong>, aby odblokować też Windows.</li>
+            <li><strong>Blokada i bezpieczeństwo</strong> ma <strong>Wyczyść schowek po</strong>, <strong>Prywatność</strong> ma <strong>Ukrywaj hasła do czasu dotknięcia</strong>, a <strong>Synchronizacja i dane</strong> ma <strong>Wymaż sejf na tym telefonie</strong> (tylko ten telefon). Android pozwala sprawdzać schowek tylko wtedy, gdy aplikacja jest otwarta: kopia z kafelka Szybkich ustawień lub zrobiona tuż przed przejściem do innej aplikacji zostanie wyczyszczona przy następnym otwarciu LocalGateKeys.</li>
+            <li><strong>Pro</strong> (u góry Ustawień): <strong>Ulepsz</strong> i kup raz przez Google Play, <strong>Przywróć zakupy</strong> na innym telefonie z tym samym kontem Google i <strong>Kopiuj klucz</strong>, aby odblokować też Windows.</li>
+            <li><strong>Hasło przymusu</strong> (Pro): drugie hasło aplikacji na wypadek, gdy ktoś zmusza Cię do odblokowania. Otwiera osobny sejf tylko z wybranymi elementami, a Twój sejf odrzuca potem hasło aplikacji przez ustawioną liczbę godzin. Najpierw włącz hasło aplikacji, potem ustaw je w Ustawieniach w sekcji <strong>Hasło przymusu</strong>.</li>
+            <li><strong>Eksportuj do pliku CXF…</strong> zapisuje wybrane loginy, notatki i klucze dostępu w pliku Credential Exchange, który mogą zaimportować inne menedżery haseł. Plik nie jest szyfrowany.</li>
           </ul>
         </article>
 
@@ -1044,50 +1143,55 @@
     </div>
   </section>
 
-  <p class="help-more">Nie możesz czegoś znaleźć? Zobacz <a href="../pl/support.html">Pomoc i FAQ</a> lub napisz na <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>.</p>
+  <p class="help-more">Nie możesz czegoś znaleźć? Zobacz <a href="../pl/support">Pomoc i FAQ</a> lub napisz na <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>.</p>
 </div>
+<script src="../guide.js"></script>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Menedżer haseł dla Windows, który trzyma Twój sejf na Twoich urządzeniach.</p>
-        <p class="quiet">Ta strona nie ustawia plików cookie, nie używa analityki i nie ładuje niczego od innych firm.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Menedżer haseł dla Windows, Maca i iPhone'a, który trzyma Twój sejf na Twoich własnych urządzeniach.</p>
+        <p class="quiet">Ta strona liczy odwiedziny za pomocą Cloudflare Web Analytics, które nie używa plików cookie. Nie używa trackerów reklamowych i nie zapisuje plików cookie.</p>
       </div>
       <nav aria-label="Produkt">
         <h2>Produkt</h2>
         <ul>
-          <li><a href="../pl/features.html">Funkcje</a></li>
-          <li><a href="../pl/pricing.html">Cennik</a></li>
-          <li><a href="../pl/download.html">Pobierz</a></li>
-          <li><a href="../pl/licence.html">Twoja licencja Pro</a></li>
+          <li><a href="../pl/features">Funkcje</a></li>
+          <li><a href="../pl/pricing">Cennik</a></li>
+          <li><a href="../pl/download">Pobierz</a></li>
+          <li><a href="../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../pl/switch/">Przesiadka</a></li>
+          <li><a href="../buy">Kup Pro</a></li>
+          <li><a href="../pl/licence">Twoja licencja Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Odzyskaj licencję</a></li>
         </ul>
       </nav>
       <nav aria-label="Pomoc">
         <h2>Pomoc</h2>
         <ul>
-          <li><a href="../pl/help.html">Przewodnik</a></li>
-          <li><a href="../pl/support.html">Wsparcie i FAQ</a></li>
-          <li><a href="../pl/security.html">Bezpieczeństwo</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Zgłoś lukę w zabezpieczeniach</a></li>
+          <li><a href="../pl/help">Przewodnik</a></li>
+          <li><a href="../pl/support">Wsparcie i FAQ</a></li>
+          <li><a href="../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Zgłoś lukę w zabezpieczeniach</a></li>
         </ul>
       </nav>
       <nav aria-label="Prawne">
         <h2>Prawne</h2>
         <p class="quiet">Te dokumenty są w języku angielskim, a obowiązuje i jest wiążąca wersja angielska.</p>
         <ul>
-          <li><a href="../legal/eula.html">Umowa licencyjna</a></li>
-          <li><a href="../legal/privacy.html">Polityka prywatności</a></li>
-          <li><a href="../legal/terms-of-sale.html">Warunki sprzedaży</a></li>
-          <li><a href="../legal/refunds.html">Polityka zwrotów</a></li>
+          <li><a href="../legal/eula">Umowa licencyjna</a></li>
+          <li><a href="../legal/privacy">Polityka prywatności</a></li>
+          <li><a href="../legal/terms-of-sale">Warunki sprzedaży</a></li>
+          <li><a href="../legal/refunds">Polityka zwrotów</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows jest znakiem towarowym grupy firm Microsoft. Chrome jest znakiem towarowym Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Język"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/help.html" hreflang="pl" lang="pl" aria-current="true">Polski</a> · <a href="../zh-hans/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/help.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows jest znakiem towarowym grupy firm Microsoft. Chrome jest znakiem towarowym Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID i Safari są znakami towarowymi Apple Inc., zarejestrowanymi w USA i innych krajach.</p>
+      <nav class="lang-switch" aria-label="Język"><ul><li><a href="../help" hreflang="en" lang="en">English</a></li><li><a href="../es/help" hreflang="es" lang="es">Español</a></li><li><a href="../it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/help" hreflang="pl" lang="pl" aria-current="true">Polski</a></li><li><a href="../zh-hans/help" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/help" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

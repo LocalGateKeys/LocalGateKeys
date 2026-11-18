@@ -76,7 +76,7 @@ struct AddFileFlow: ViewModifier {
         case .saved: onAdded()
         case .needsPro: onNeedsPro()
         case .tooLarge: problem = DocumentFiles.tooLargeMessage
-        case .unavailable, .failed: problem = String(localized: "The file could not be saved on this iPhone.")
+        case .unavailable, .failed: problem = DeviceText.isPad ? String(localized: "ipad.addFileFlow.fileCouldNotBe", defaultValue: "The file could not be saved on this iPad.") : String(localized: "The file could not be saved on this iPhone.")
         }
     }
 }

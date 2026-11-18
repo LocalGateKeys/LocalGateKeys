@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys voor Windows: handleiding</title>
+  <meta name="description" content="LocalGateKeys op Windows 10 en 11 stap voor stap instellen, ontgrendelen, invullen, importeren, back-uppen en synchroniseren.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/windows">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/windows">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/windows">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/windows">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/windows">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/windows">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys voor Windows: handleiding">
+  <meta property="og:description" content="LocalGateKeys op Windows 10 en 11 stap voor stap instellen, ontgrendelen, invullen, importeren, back-uppen en synchroniseren.">
+  <meta property="og:url" content="https://localgatekeys.app/nl/guide/windows">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Het LocalGateKeys-logo: een wachtwoordbeheerder voor Windows, Mac en iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys voor Windows: handleiding">
+  <meta name="twitter:description" content="LocalGateKeys op Windows 10 en 11 stap voor stap instellen, ontgrendelen, invullen, importeren, back-uppen en synchroniseren.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Naar de inhoud</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../nl/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Hoofdmenu">
+        <ul class="nav">
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Hoofdmenu">
+          <ul class="nav nav-stack">
+            <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Taal</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys voor Windows</h1>
+  <p class="lead">Stapsgewijze hulp bij elk scherm en elke functie op dit apparaat. Elke kop is een link die je kunt delen.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platforms">
+    <ul><li><a class="help-tab" href="../../nl/guide/windows" aria-current="page">Windows</a></li><li><a class="help-tab" href="../../nl/guide/mac">Mac</a></li><li><a class="help-tab" href="../../nl/guide/iphone">iPhone en iPad</a></li><li><a class="help-tab" href="../../nl/guide/android">Android</a></li><li><a class="help-tab" href="../../nl/guide/extension">Browserextensie</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Goed om te weten, op elk apparaat</h2>
+    <ul>
+      <li><strong>Je kluis blijft op je apparaten.</strong> Er is geen account en geen LocalGateKeys-server die je wachtwoorden bewaart.</li>
+      <li><strong>Niemand kan je hoofdwachtwoord of app-wachtwoord opnieuw instellen.</strong> Stel een herstelzin in en bewaar die op papier.</li>
+      <li><strong>Free</strong> bevat tot 7 items. <strong>Pro</strong> (US$29.99, eenmalig betaald) geeft onbeperkt items, tweestapscodes, bestanden en synchronisatie. Bewerken, verwijderen en invullen van items die je al hebt wordt nooit geblokkeerd.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Onderwerpen Windows</h2>
+    <p class="panel-lead">Windows 10 (versie 2004 of later) en Windows 11, 64-bit. Installeer het via de Microsoft Store of de <a href="../../nl/download">downloadpagina</a>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Onderwerpen Windows">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Op dit tabblad</summary>
+          <ol>
+            <li><a href="#win-setup">Eerste start en profielen</a></li>
+            <li><a href="#win-unlock">Ontgrendelen en vergrendelen</a></li>
+            <li><a href="#win-screen">Het hoofdvenster</a></li>
+            <li><a href="#win-items">Items toevoegen en bewerken</a></li>
+            <li><a href="#win-trash">Verwijderen, prullenbak en ongedaan maken</a></li>
+            <li><a href="#win-search">Zoeken, palet, Snelle toegang</a></li>
+            <li><a href="#win-generator">Wachtwoordgenerator</a></li>
+            <li><a href="#win-security">Beveiligingscentrum</a></li>
+            <li><a href="#win-2fa">Tweestapscodes en QR</a></li>
+            <li><a href="#win-import">Importeren</a></li>
+            <li><a href="#win-export">Exporteren en overzetten</a></li>
+            <li><a href="#win-backups">Back-ups en herstellen</a></li>
+            <li><a href="#win-sync">Synchronisatie</a></li>
+            <li><a href="#win-share">Een item delen</a></li>
+            <li><a href="#win-apps">Windows-apps invullen</a></li>
+            <li><a href="#win-shared">Gedeelde verzamelingen</a></li>
+            <li><a href="#win-safety">Noodtoegang en dwangwachtwoord</a></li>
+            <li><a href="#win-dev">Ontwikkelaarstools en AI-agents</a></li>
+            <li><a href="#win-settings">Instellingen</a></li>
+            <li><a href="#win-pro">Pro-licentie</a></li>
+            <li><a href="#win-updates">Updates</a></li>
+            <li><a href="#win-keys">Sneltoetsen</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">Eerste start en profielen</a></h3>
+          <ol>
+            <li>Open LocalGateKeys. Typ een <strong>Hoofdwachtwoord</strong> van minstens 12 tekens, typ het nog eens bij <strong>Bevestig wachtwoord</strong> en kies <strong>Kluis maken</strong>.</li>
+            <li>Daarna volgt de gids <strong>LocalGateKeys instellen</strong> in vijf stappen: de kluis maken, <strong>Windows Hello instellen</strong>, je wachtwoorden <strong>Importeren</strong>, <strong>Herstelzin openen</strong> (je typt drie van de woorden opnieuw om te laten zien dat je hem hebt bewaard) en <strong>Verbinding testen</strong> voor de browserextensie.</li>
+            <li>Je kunt elke stap <strong>Overslaan</strong>. Overgeslagen stappen wachten in de kluis op een kaart <em>Instellen afronden</em>, met <strong>Instellen voortzetten</strong> en <strong>Verbergen</strong>.</li>
+          </ol>
+          <p class="tip"><strong>Tip.</strong> De gids opnieuw bekijken: Instellingen › Hulp en diagnose › <strong>Instellen opnieuw tonen</strong>.</p>
+          <h4>Profielen</h4>
+          <p>Elk profiel is een aparte kluis met een eigen hoofdwachtwoord, bijvoorbeeld een voor werk en een voor thuis.</p>
+          <ul>
+            <li>Kies op het ontgrendelscherm <strong>Ander profiel gebruiken</strong>, dan <strong>Profiel maken</strong> en typ een <strong>Profielnaam</strong>.</li>
+            <li>Om een profiel te bewerken druk je op Ctrl+K en voer je <strong>Profiel wisselen</strong> uit. Daar kun je <strong>Profiel toevoegen</strong>, <strong>Bewerken</strong>, een <strong>Foto…</strong> en <strong>Accentkleur</strong> instellen of het <strong>Verwijderen</strong>.</li>
+            <li><strong>Vergrendelen en van persoon wisselen</strong> in het systeemvakmenu vergrendelt en gaat meteen naar de profielkeuze.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">Ontgrendelen en vergrendelen</a></h3>
+          <h4>Manieren om te ontgrendelen</h4>
+          <ul>
+            <li><strong>Hoofdwachtwoord</strong>, dan <strong>Ontgrendelen</strong>. Werkt altijd.</li>
+            <li><strong>Ontgrendelen met Windows Hello</strong>: vingerafdruk, gezicht of pincode. Stel het in via Instellingen › Ontgrendeling › Windows Hello › <strong>Instellen</strong>. <strong>Windows Hello automatisch starten</strong> (standaard aan) toont de vraag zodra het venster opent.</li>
+            <li><strong>Camera gebruiken</strong>: gezichtsherkenning met een gewone webcam, uitgevoerd op de pc. Dit is minder veilig dan Windows Hello. Stel het in met <strong>Cameracontrole instellen</strong>.</li>
+          </ul>
+          <h4>Hoofdwachtwoord vergeten?</h4>
+          <ol>
+            <li>Kies op het ontgrendelscherm <strong>Vergeten? Gebruik je herstelzin</strong>.</li>
+            <li>Typ de 24 woorden, gescheiden door spaties.</li>
+            <li>Kies een nieuw hoofdwachtwoord (12 tekens of meer), typ het twee keer en kies <strong>Kluis herstellen</strong>.</li>
+          </ol>
+          <p class="note"><strong>Stel daarna</strong> Windows Hello en de cameracontrole opnieuw in. De herstelzin blijft werken.</p>
+          <h4>Het hoofdwachtwoord wijzigen</h4>
+          <p>Instellingen › Ontgrendeling › Hoofdwachtwoord › <strong>Wijzigen…</strong>. Typ het huidige en twee keer het nieuwe. Typ ook de 24 woorden van je herstelzin als die moet blijven werken; maak anders daarna een nieuwe zin. Back-ups die je al hebt gemaakt houden het wachtwoord waarmee ze zijn gemaakt.</p>
+          <h4>Vergrendelen</h4>
+          <ul>
+            <li>Knop <strong>Vergrendelen</strong> in de bovenbalk, of <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
+            <li><strong>Noodvergrendeling</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> overal in Windows. Vergrendelt meteen en annuleert elke lopende invulactie.</li>
+            <li>Instellingen › Vergrendelen:
+              <ul>
+                <li><strong>Vergrendelen na inactiviteit</strong>: Nooit, of 1 minuut tot 24 uur.</li>
+                <li><strong>Vergrendelen als Windows vergrendelt</strong> (Win+L, gebruiker wisselen, afmelden) en <strong>Vergrendelen bij slaapstand</strong> (deksel dicht, slaapstand, sluimerstand).</li>
+                <li><strong>Nooit langer ontgrendeld blijven dan</strong>: een harde grens, wat je ook doet.</li>
+                <li><strong>Activiteit tellen vanaf</strong>: computeractiviteit of kluisactiviteit.</li>
+                <li><strong>Vragen voordat 2FA-codes worden vrijgegeven</strong> aan de browserextensie.</li>
+              </ul>
+            </li>
+          </ul>
+          <p>Het menu van het systeemvakpictogram heeft <strong>LocalGateKeys openen</strong>, <strong>Kluis ontgrendelen</strong>, <strong>Kluis vergrendelen</strong>, <strong>Vergrendelen en van persoon wisselen</strong>, <strong>Snelle toegang</strong>, <strong>Controleren op updates</strong>, schakelaars voor <strong>Browserintegratie</strong> en <strong>Invulpictogrammen op het bureaublad</strong>, en <strong>Afsluiten</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">Het hoofdvenster</a></h3>
+          <dl class="defs">
+            <dt>Zijbalk · Kluis</dt><dd><strong>Alle items</strong>, <strong>Favorieten</strong>, <strong>Recent gebruikt</strong>.</dd>
+            <dt>Zijbalk · Typen</dt><dd>Eén regel per soort die je hebt, zoals Inloggegevens, Kaarten, Identiteiten, Beveiligde notities, Documenten, wifi of Passkeys.</dd>
+            <dt>Zijbalk · Collecties en weergaven</dt><dd>Je collecties en vastgezette weergaven.</dd>
+            <dt>Zijbalk · Hulpmiddelen</dt><dd>Beveiligingscentrum, Generator, Sync en apparaten, Apparaten en verbindingen, Importeren en exporteren, Prullenbak. <strong>Instellingen</strong> staat onderaan. Herinneringen open je via de kaart <em>Binnenkort</em> op Home, Activiteit via het Beveiligingscentrum, QR-code scannen met <kbd>Ctrl</kbd>+<kbd>K</kbd> en Licentie via Instellingen › Abonnement en synchronisatie. Met <kbd>Ctrl</kbd>+<kbd>K</kbd> bereik je elke pagina.</dd>
+            <dt>Bovenbalk</dt><dd>Zoekvak, <strong>Nieuw item</strong>, <strong>Vergrendelen</strong> en <strong>Ctrl K</strong> voor het opdrachtenpalet.</dd>
+            <dt>Start</dt><dd>Kaarten voor Wachtwoordgezondheid, Back-up en herstel, Binnenkort en Generator, plus <strong>Eenmalige codes</strong> (klik op een code om hem te kopiëren).</dd>
+          </dl>
+          <h4>De itemlijst</h4>
+          <ul>
+            <li>Filters: <strong>Alle</strong>, <strong>Aandacht nodig</strong>, <strong>Geen 2FA</strong>, <strong>Verloopt</strong>.</li>
+            <li><strong>Sorteren</strong>: Titel A–Z, Titel Z–A, Datum gewijzigd, Datum gemaakt.</li>
+            <li>Markeringen op een regel tonen een wachtwoord dat gelekt, zwak of hergebruikt is.</li>
+            <li>Klik met rechts op een regel (of <kbd>Shift</kbd>+<kbd>F10</kbd>) voor Bewerken, Gebruikersnaam kopiëren, Wachtwoord kopiëren, 2FA-code kopiëren, Website openen, Delen…, Aan favorieten toevoegen en Naar prullenbak verplaatsen….</li>
+          </ul>
+          <h4>Het detailvenster</h4>
+          <p>Toont de velden van het geselecteerde item. Wachtwoorden blijven verborgen tot je erop klikt. Knoppen kopiëren de gebruikersnaam, het wachtwoord of de 2FA-code, openen de website, <strong>Bewerken</strong>, <strong>Delen</strong> of <strong>Naar prullenbak</strong>. Documenten hebben ook <strong>Bestand openen</strong>, <strong>Veilige voorvertoning</strong>, <strong>Kopie opslaan…</strong> en <strong>Bestand vervangen…</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">Items toevoegen en bewerken</a></h3>
+          <ol>
+            <li>Kies <strong>Nieuw item</strong> of druk op <kbd>Ctrl</kbd>+<kbd>N</kbd>.</li>
+            <li>Kies een soort (klik erop, druk op het nummer of begin de naam te typen):
+              <ul>
+                <li><em>Inloggen</em>: Website-login, Desktopapp-login, Passkey</li>
+                <li><em>Geld</em>: Betaalkaart, Bankrekening · <em>Persoonlijk</em>: Identiteit, Beveiligde notitie, Document</li>
+                <li><em>Tech</em>: SSH-sleutel, API-sleutel, Wifi-netwerk, Bladwijzer · <em>Bezittingen</em>: Licentie, Abonnement, Garantie, Aankoop</li>
+              </ul>
+            </li>
+            <li>Vul de velden in en kies <strong>Opslaan</strong>. Ga je weg met niet-opgeslagen wijzigingen, dan krijg je de vraag <em>Wijzigingen negeren?</em></li>
+          </ol>
+          <h4>Logins in detail</h4>
+          <ul>
+            <li><strong>Titel</strong>, <strong>Website</strong>, <strong>Gebruikersnaam</strong>, <strong>Wachtwoord</strong> en <strong>Notities</strong>.</li>
+            <li>Met <strong>Wijzigen</strong> naast het wachtwoord typ je een nieuw wachtwoord, of kies je <strong>Wachtwoordzin</strong>, <strong>Willekeurig</strong> of <strong>Pincode</strong> om er een te maken. Wijzig het ook op de website en sla daarna op.</li>
+            <li><strong>Tweestaps</strong>: plak hier de instelsleutel van de site (Pro). Zie <a href="#win-2fa">Tweestapscodes</a>.</li>
+            <li><strong>Aangepaste velden</strong>: <strong>Veld toevoegen</strong> voor al het andere. Markeer een veld als Verborgen om het als een wachtwoord te behandelen.</li>
+            <li><strong>Wachtwoordgeschiedenis</strong>: tot 5 oude wachtwoorden worden een jaar lang versleuteld bewaard. <strong>Vorig wachtwoord kopiëren</strong> of <strong>Dit wachtwoord herstellen</strong>.</li>
+            <li><strong>Herstelcodes</strong>: één per regel. <strong>Kopieer en gebruik de volgende code</strong> kopieert er één en haalt hem van de lijst.</li>
+            <li><strong>Regels voor automatisch invullen</strong>: Invullen (Bij klik of Uit), Aanmelden na invullen (Standaard, Nooit of Altijd), Altijd om het hoofdwachtwoord vragen en Aanbieden om wijzigingen uit de browser op te slaan.</li>
+          </ul>
+          <h4>Andere soorten</h4>
+          <p>Elke soort heeft eigen velden. Datums schrijf je als JJJJ-MM-DD. Elk item kan een <strong>Favoriet</strong> zijn en <strong>Tags</strong> hebben (scheid ze met komma's). Documenten gebruiken <strong>Bestand kiezen en opslaan</strong> (Pro).</p>
+          <h4>Collecties en herinneringen</h4>
+          <ul>
+            <li>Collecties groeperen items op jouw manier: <strong>Collectie toevoegen</strong>, <strong>Naam wijzigen</strong>, <strong>Archiveren</strong>. Ze synchroniseren met je andere apparaten, en je kunt er een delen met andere mensen (zie <a href="#win-shared">Gedeelde verzamelingen</a>).</li>
+            <li><strong>Herinneringen</strong> toont items die binnenkort verlopen of verlopen zijn, met <strong>Voltooien</strong> en <strong>1 dag uitstellen</strong>.</li>
+            <li><strong>Activiteit</strong> toont een geschiedenis van wat er in de kluis is gebeurd.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">Verwijderen, prullenbak en ongedaan maken</a></h3>
+          <ol>
+            <li>Selecteer een item en kies <strong>Naar prullenbak</strong> of druk op <kbd>Delete</kbd>.</li>
+            <li>Er verschijnt een melding met <strong>Ongedaan maken</strong>: klik erop om het item meteen terug te halen.</li>
+            <li>Open later Hulpmiddelen › <strong>Prullenbak</strong> en gebruik <strong>Selectie herstellen</strong>, <strong>Selectie verwijderen</strong> of <strong>Prullenbak legen</strong>. Verwijderen uit de prullenbak kan niet ongedaan worden gemaakt.</li>
+          </ol>
+          <p>Instellingen › Privacy › <strong>Verwijderde items bewaren</strong> stelt 7, 14, 30 of 90 dagen in, en <strong>Prullenbak automatisch legen</strong> leegt hem voor je.</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">Zoeken, opdrachtenpalet en Snelle toegang</a></h3>
+          <ul>
+            <li><strong>Zoeken</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>, typ en druk op <kbd>Enter</kbd> om het eerste resultaat te openen of <kbd>↓</kbd> om de lijst in te gaan.</li>
+            <li><strong>Opdrachtenpalet</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd> vindt items en acties. Begin met <code>&gt;</code> voor alleen acties (Nu back-up maken, Wachtwoord genereren, Nu vergrendelen, Synchronisatiestatus…), <code>#</code> voor tags en <code>@</code> voor collecties.</li>
+            <li><strong>Snelle toegang</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> overal in Windows opent LocalGateKeys op de pagina Snelle toegang, om een login, notitie of bladwijzer te vinden. Wijzig de sneltoets in Instellingen › Automatisch invullen › Snelle toegang.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">Wachtwoordgenerator</a></h3>
+          <p>Open hem via de kaart <strong>Generator</strong> op Start of met Ctrl+K › Wachtwoord genereren.</p>
+          <ul>
+            <li><strong>Willekeurig</strong>: kies de lengte en welke tekens je gebruikt: A–Z, a–z, 0–9 en symbolen.</li>
+            <li><strong>Wachtwoordzin</strong>: kies het aantal woorden. Makkelijker te typen en even sterk als hij lang genoeg is.</li>
+            <li><strong>Opnieuw genereren</strong> voor een nieuwe, <strong>Kopiëren</strong> om hem te kopiëren.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">Beveiligingscentrum en wachtwoordgezondheid</a></h3>
+          <p>Hulpmiddelen › <strong>Beveiligingscentrum</strong> toont wat je het eerst moet oplossen: zwakke, hergebruikte, oude en gelekte wachtwoorden, en logins die 2FA zouden kunnen hebben.</p>
+          <ul>
+            <li><strong>Alles op lekken controleren</strong> vergelijkt je wachtwoorden met de lijst van Have I Been Pwned. Alleen de eerste 5 tekens van een hash verlaten je pc, nooit het wachtwoord.</li>
+            <li>Lekcontroles vragen twee wijzigingen in Instellingen › Privacy: zet <strong>Strikte offlinemodus</strong> uit (standaard aan) en zet <strong>Datalekcontroles</strong> aan. Strikte offlinemodus blokkeert lekcontroles, websitepictogrammen en elk ander netwerkverzoek.</li>
+            <li>Gebruik bij <strong>Wachtwoordgezondheid</strong> <strong>Item openen</strong> of <strong>Wachtwoord wijzigen</strong> om een item op te lossen.</li>
+          </ul>
+          <p><strong>Netwerkactiviteit</strong>, onderaan het Beveiligingscentrum, toont elke keer dat LocalGateKeys online ging en waarom: zoeken naar updates, lekcontroles, websitepictogrammen en synchronisatie met je eigen apparaten.</p>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">Tweestapscodes en QR scannen</a> <span class="badge-pro">Pro</span></h3>
+          <p>LocalGateKeys kan de 6-cijferige codes tonen die een site na het wachtwoord vraagt, zodat je geen aparte authenticator-app nodig hebt.</p>
+          <ol>
+            <li>Zet op de website inloggen met tweestaps / authenticator-app aan, zodat er een QR-code verschijnt.</li>
+            <li>Kies in LocalGateKeys Ctrl+K › <strong>QR-code scannen</strong>. Voeg de afbeelding op een van drie manieren toe:
+              <ul>
+                <li><strong>Schermafbeelding plakken</strong>: druk op <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, selecteer de QR-code en dan <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+                <li><strong>Afbeelding kiezen…</strong> (PNG, JPEG, BMP) of sleep de afbeelding erin.</li>
+                <li><strong>Webcam gebruiken</strong> en houd er een telefoonscherm met de code voor.</li>
+              </ul>
+            </li>
+            <li>Kies de login waar hij bij hoort, of <strong>Nieuwe login</strong>, dan <strong>Openen in editor</strong> en <strong>Opslaan</strong>.</li>
+            <li>Typ de huidige code op de website om 2FA daar af te ronden.</li>
+          </ol>
+          <p>Je kunt de instelsleutel of een <code>otpauth://</code>-link ook direct in het onderdeel <strong>Tweestaps</strong> van de login plakken.</p>
+          <h4>Overstappen van Google Authenticator</h4>
+          <ol>
+            <li>Kies in Google Authenticator <strong>Accounts overzetten › Exporteren</strong>.</li>
+            <li>Scan de getoonde QR-code (bij meerdere codes scan je ze allemaal: "Code 1 van 3 gescand").</li>
+            <li>Vink de accounts aan, kies <strong>Toevoegen aan bestaande login</strong> of Nieuwe login, dan <strong>Toevoegen</strong>. Dubbele worden overgeslagen.</li>
+          </ol>
+          <p class="note">Nieuwe logins die zo ontstaan krijgen de tag <code>needs-password</code>: vul later het echte wachtwoord in. Afbeeldingen worden in het geheugen gelezen en nooit opgeslagen. Met Free blijven codes die je al hebt werken; toevoegen of wijzigen vereist Pro.</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">Importeren uit een andere wachtwoordbeheerder</a></h3>
+          <ol>
+            <li>Exporteer je wachtwoorden uit de oude app (zie de lijst hieronder).</li>
+            <li>Open in LocalGateKeys Hulpmiddelen › Importeren en exporteren › <strong>Wachtwoorden en items importeren…</strong> en kies het bestand. Het formaat wordt automatisch herkend. Versleutelde bestanden vragen om hun <strong>Importwachtwoord</strong>.</li>
+            <li>Een gewone CSV uit een onbekende app toont <strong>Kolommen kiezen</strong>: geef aan welke kolom de titel, gebruikersnaam, het wachtwoord enzovoort is.</li>
+            <li>Controleer elke regel: Toevoegen, Overslaan, Vervangen, Samenvoegen of Beide houden. Gebruik <strong>Alle nieuwe toevoegen</strong>, <strong>Alle conflicten vervangen</strong> of <strong>Alles overslaan</strong> voor alles tegelijk.</li>
+            <li>Kies <strong>Importeren</strong>. Alles gaat in één keer; mislukt er iets, dan wordt er niets geschreven.</li>
+            <li><strong>Verwijder het exportbestand</strong>: het bevat je wachtwoorden onversleuteld.</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">Van</th><th scope="col">Bestand</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux of CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (ook met wachtwoord beveiligd) of CSV</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip of CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (direct geopend), XML of CSV</td></tr>
+              <tr><td>Proton Pass</td><td>JSON-zip of CSV (export zonder PGP)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Apple Wachtwoorden</td><td>CSV</td></tr>
+              <tr><td>Al het andere</td><td>CSV, met kolomkeuze</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Niet geïmporteerd: prullenbak, wachtwoordgeschiedenis, passkeys en bijlagen. <code>http://</code>-sites worden als https opgeslagen. Items zonder website of wachtwoord worden beveiligde notities. Met Free geldt de grens van 7 items. Credential Exchange-bestanden (CXF, <code>.json</code> of <code>.cxf</code>) van andere wachtwoordmanagers worden ook herkend, inclusief passkeys.</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">Exporteren en versleuteld overzetten</a></h3>
+          <p>Hulpmiddelen › Importeren en exporteren › <strong>Exporteren…</strong> biedt:</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong>: versleuteld met een wachtwoord dat je kiest (12+ tekens). De veilige keuze.</li>
+            <li>Bitwarden-compatibele CSV, Bitwarden JSON, KeePass 2 XML: <em>onversleuteld</em>. Verwijder ze na gebruik.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: de logins, notities en passkeys die je kiest, voor een andere wachtwoordmanager. <em>Onversleuteld</em>; privésleutels van passkeys gaan alleen mee als je dat goedkeurt.</li>
+            <li>Vink <strong>Geheimen van eenmalige wachtwoorden (2FA) meenemen</strong> aan om je 2FA-codes mee te nemen.</li>
+          </ul>
+          <p><strong>Versleuteld overzetten…</strong> verplaatst gekozen items (op favorieten, soorten, tags) naar een ander profiel of andere pc in een met wachtwoord beveiligd pakket. Kies aan de andere kant <strong>Een pakket importeren</strong>, <strong>Inspecteren</strong>, <strong>Voorvertoning</strong> en importeer dan.</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">Back-ups en herstellen</a></h3>
+          <h4>Geplande back-ups (aanbevolen)</h4>
+          <ol>
+            <li>Instellingen › Back-ups › <strong>Back-upwachtwoord</strong> › <strong>Instellen…</strong>. Gebruik 12+ tekens en <strong>schrijf het op</strong>.</li>
+            <li><strong>Geplande back-ups</strong>: dagelijks of wekelijks, met <strong>Tijdstip</strong> en <strong>Dag van de week</strong>.</li>
+            <li><strong>Cloudkopie</strong> › <strong>Kies…</strong> een map, zoals een usb-stick of tweede schijf, voor een tweede kopie.</li>
+            <li><strong>Oude geplande back-ups</strong>: alleen de nieuwste bewaren, of de nieuwste en de vorige.</li>
+            <li><strong>Wekelijkse hersteltest</strong>: elke week bewijst LocalGateKeys dat een geplande back-up te herstellen is. Er wordt niets bewaard. <strong>Aantal automatische back-ups om te bewaren</strong> bepaalt hoeveel automatische back-ups blijven.</li>
+          </ol>
+          <p class="note">Back-ups lopen alleen als de kluis ontgrendeld is. Een gemiste back-up terwijl de app dicht was, loopt bij de volgende ontgrendeling.</p>
+          <h4>Pagina Back-up en herstel</h4>
+          <p>Open hem via de kaart Back-up en herstel, Ctrl+K of <strong>Back-up en herstel</strong> op het ontgrendelscherm.</p>
+          <ul>
+            <li><strong>Back-up maken</strong>: een versleuteld <code>.lgk</code>-bestand met een eigen wachtwoord.</li>
+            <li><strong>Back-up controleren</strong>: controleert of een bestand opent, zonder je kluis aan te raken.</li>
+            <li><strong>Back-up herstellen</strong>: vereist het back-upwachtwoord en het hoofdwachtwoord van toen hij gemaakt werd. Je kunt hem als nieuw profiel herstellen.</li>
+            <li><strong>Herstel testen</strong>: opent een tijdelijke kopie om te bewijzen dat je back-up werkt, dan <strong>Testkopie weggooien</strong>.</li>
+            <li><strong>Herstelzin</strong> (Instellen / Vervangen…) en <strong>Herstelkit maken</strong>, een afdrukbaar blad.</li>
+          </ul>
+          <h4>Een telefoonback-up herstellen</h4>
+          <p>Importeren en exporteren › <strong>Telefoonback-up herstellen…</strong>, kies het <code>.lgkm</code>-bestand uit de iPhone-app, typ het wachtwoord, <strong>Voorbeeld</strong> en dan <strong>Herstellen</strong>. Items worden aan je kluis toegevoegd; er wordt niets gewist.</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">Synchroniseren tussen apparaten</a> <span class="badge-pro">Pro</span></h3>
+          <p>Synchronisatie loopt alleen als de kluis ontgrendeld is: bij ontgrendelen, elke 5 minuten en een paar seconden na een wijziging. Er zijn twee manieren, en je kunt ze allebei gebruiken:</p>
+          <h4>Wifi (telefoon of andere pc op hetzelfde netwerk)</h4>
+          <ol>
+            <li>Sync en apparaten › <strong>Wifi-synchronisatie aanzetten…</strong>. Houd het voorgestelde adres en de poort (47821) en kies <strong>Toestaan in Windows Firewall</strong> als daarom wordt gevraagd.</li>
+            <li>Kies <strong>QR-code tonen…</strong>. De code werkt één keer, 120 seconden lang.</li>
+            <li>Scan hem op het tabblad Synchronisatie van de telefoonapp. Kies voor een andere pc <strong>Codetekst kopiëren</strong> en gebruik daar <strong>Deelnemen met QR-tekst…</strong>.</li>
+            <li>Beide apparaten tonen een 6-cijferige code. Kies alleen <strong>Accepteren</strong> als ze gelijk zijn, anders <strong>Weigeren</strong>.</li>
+            <li>Direct na het koppelen verwijdert <strong>Ongedaan maken</strong> het nieuwe apparaat als het een vergissing was.</li>
+          </ol>
+          <p>Als het adres van de pc verandert, kies dan op de telefoon <strong>Opnieuw zoeken</strong>.</p>
+          <h4>Cloudmap (Dropbox, iCloud Drive…)</h4>
+          <ol>
+            <li>Op het eerste apparaat: <strong>Synchronisatiegroep maken…</strong>, kies een map die je cloudapp synchroniseert en stel een sterk synchronisatiewachtwoord in (12+ tekens).</li>
+            <li>Op elk ander apparaat: <strong>Deelnemen aan een map…</strong>, kies de map met <em>LocalGateKeys Sync</em> en typ het synchronisatiewachtwoord.</li>
+          </ol>
+          <p>De cloud ziet alleen versleutelde bestanden.</p>
+          <p class="note">OneDrive en Google Drive zijn voorlopig niet beschikbaar voor synchronisatie, tot een probleem met Apple is opgelost. Gebruik Dropbox, iCloud Drive of wifi-synchronisatie.</p>
+          <h4>Synchronisatie beheren</h4>
+          <ul>
+            <li><strong>Nu synchroniseren</strong> op de pagina Synchronisatiestatus (klik op de synchronisatie-indicator in de zijbalk).</li>
+            <li><strong>Een apparaat verwijderen…</strong> (stelt een nieuw synchronisatiewachtwoord in), <strong>Synchronisatiewachtwoord wijzigen…</strong>.</li>
+            <li><strong>Synchronisatie verlaten…</strong> houdt je items en vergeet de groep. <strong>Synchronisatie op deze pc resetten…</strong> vergeet ook de sleutels (vraagt twee keer).</li>
+            <li>Is een item op twee apparaten tegelijk gewijzigd, dan krijgt de extra kopie <em>(synchronisatieconflict)</em> in de titel.</li>
+          </ul>
+          <p class="note">Elk apparaat in de groep heeft Pro nodig. Een gratis pc die is gekoppeld aan een iPhone met Pro, neemt de licentie over via synchronisatie en wordt Pro (zie <a href="#win-pro">Pro-licentie</a>). Maximaal 16 apparaten per groep.</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">Een item met iemand delen</a></h3>
+          <ol>
+            <li>Selecteer het item, kies <strong>Delen</strong> en dan <strong>Deellink maken</strong>.</li>
+            <li>LocalGateKeys toont een <strong>Deelcode</strong> van zes woorden. Kies <strong>Opslaan als bestand…</strong> (een <code>.lgkshare</code>) of <strong>QR-code tonen</strong>.</li>
+            <li>Stuur het bestand en vertel de persoon de zes woorden <em>op een andere manier</em>, bijvoorbeeld telefonisch of persoonlijk.</li>
+          </ol>
+          <p><strong>Ontvangen:</strong> dubbelklik op het <code>.lgkshare</code>-bestand, of Ctrl+K › Ontvangen gedeelde items › <strong>Een gedeeld item openen…</strong>. Typ de zes woorden, controleer de <strong>Voorvertoning</strong> en kies <strong>Opslaan in kluis</strong>, <strong>Beide houden</strong> of <strong>Weigeren</strong>. Passkeys, documenten en items met een bijgevoegd bestand kunnen niet worden gedeeld.</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">Windows-apps invullen</a></h3>
+          <p>LocalGateKeys kan inlogvensters van gewone Windows-programma's invullen, niet alleen websites.</p>
+          <ol>
+            <li>Open het inlogvenster van het programma.</li>
+            <li>Druk op <kbd>Ctrl</kbd>+<kbd>N</kbd>, kies <strong>Login voor bureaubladapp</strong> en dan <strong>De app inspecteren…</strong>.</li>
+            <li><strong>Inlogvelden toewijzen</strong>: wijs de vakken voor gebruikersnaam en wachtwoord aan. Eventueel <strong>Inlogknop toewijzen…</strong>.</li>
+            <li><strong>Login opslaan</strong>.</li>
+            <li>Druk de volgende keer in dat programma op <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Spatie</kbd> of klik op de invulknop naast het wachtwoordvak.</li>
+          </ol>
+          <p>Verandert het programma na een update, open dan de login en kies <strong>App-koppeling…</strong> › <strong>Koppeling vernieuwen…</strong>. LocalGateKeys leest alleen de opbouw van het venster, nooit wat je typt.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Gedeelde verzamelingen</a> <span class="badge-pro">Pro</span></h3>
+          <p>Deel één verzameling met je gezin of een team via een map die iedereen kan bereiken, zoals een gedeelde OneDrive-map. Open de verzameling, kies <strong>Verzameling delen</strong>, de map, of leden mogen bewerken of alleen bekijken, en een deelwachtwoord.</p>
+          <p>De anderen kiezen <strong>Meedoen aan een gedeelde verzameling</strong>, de map en typen het deelwachtwoord; daarna kies jij <strong>Toelaten</strong>. Alleen die verzameling gaat via de map: je andere items blijven privé. Je kunt altijd iemand verwijderen, <strong>Stoppen met delen</strong> of vertrekken.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Noodtoegang en dwangwachtwoord</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Noodtoegang</strong> (Pro): kies op de pagina Back-up en herstel <strong>Noodtoegang instellen</strong>. Je herstelzin wordt in delen gesplitst voor mensen die je vertrouwt; jij kiest hoeveel delen nodig zijn en een wachttijd. Geef iedere houder zijn blad of deelbestand.</li>
+            <li>Als genoeg houders via de gedeelde map om toegang vragen, tonen je apparaten het verzoek en kun je het <strong>Weigeren</strong> tot de wachttijd voorbij is. Een houder kiest <strong>Ik heb toegang gekregen</strong>, voegt de delen toe en kiest <strong>Om toegang vragen</strong>; na toestemming opent de kluis als nieuw profiel.</li>
+            <li><strong>Nalatenschapspakket</strong>, op dezelfde pagina, maakt een notitie voor je erfgenamen (waar het testament ligt, op te zeggen accounts, apparaten en wie een deel heeft) en daarna de <strong>Noodkit</strong> om af te drukken.</li>
+            <li><strong>Dwangwachtwoord</strong> (Pro): Instellingen › Ontgrendeling › <strong>Dwangwachtwoord</strong> › <strong>Instellen</strong>. Het is een tweede hoofdwachtwoord voor als iemand je dwingt te ontgrendelen. Het opent een aparte kluis met alleen de items die je kiest, en je echte kluis weigert daarna zijn hoofdwachtwoord voor het aantal uren dat je instelt. Het werkt op Windows, Mac, iPhone en Android.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Ontwikkelaarstools en AI-agents</a></h3>
+          <p>Instellingen › <strong>Ontwikkelaar</strong> biedt SSH-sleutels uit je kluis aan ssh en Git op deze pc aan, om in te loggen en commits te ondertekenen. Elke handtekening vraagt om je goedkeuring. <strong>Maken</strong> maakt een nieuwe Ed25519-sleutel in de kluis.</p>
+          <p><strong>AI-agents LocalGateKeys laten gebruiken</strong> laat agents zoals Claude Code verbinden via MCP. Je keurt elke aanmelding of uitlezing goed; de agent ziet nooit een wachtwoord en elk verzoek wordt gelogd. In de Microsoft Store-versie voeg je het toe met <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">Instellingen</a></h3>
+          <p>Gebruik het vak <strong>Instellingen zoeken</strong> bovenaan (<kbd>Ctrl</kbd>+<kbd>F</kbd>) om elke optie te vinden. Wijzigingen worden meteen opgeslagen.</p>
+          <dl class="defs">
+            <dt>Ontgrendelen</dt><dd>Windows Hello, beveiligingssleutel, cameracontrole, sleutelbestand, YubiKey, hoofdwachtwoord, herstelzin.</dd>
+            <dt>Vergrendelen</dt><dd>Tijden en aanleidingen voor automatisch vergrendelen (zie <a href="#win-unlock">Ontgrendelen en vergrendelen</a>).</dd>
+            <dt>Automatisch invullen</dt><dd>Invullen in de browser, <strong>LocalGateKeys aanbieden voor passkeys</strong>, invullen in desktopapps, inloggen na invullen, sneltoets voor Snelle toegang. <strong>LocalGateKeys gebruiken voor Windows-passkeys</strong> biedt je passkeys aan in elke app en browser op Windows 11, steeds met jouw goedkeuring.</dd>
+            <dt>Privacy</dt><dd><strong>Klembord wissen na</strong> (5 seconden tot 5 minuten), lekcontroles, strikte offlinemodus, verbergen voor schermafbeeldingen en scherm delen, prullenbaktermijn, documenten openen in andere apps.</dd>
+            <dt>Back-ups</dt><dd>Zie <a href="#win-backups">Back-ups en herstellen</a>.</dd>
+            <dt>Weergave en app</dt><dd><strong>Thema</strong> Systeem, Licht of Donker; <strong>Taal</strong>; <strong>Starten met Windows</strong> (start vergrendeld); <strong>In het systeemvak blijven draaien</strong>; Updates.</dd>
+            <dt>Abonnement en synchronisatie</dt><dd>Je licentie, apparaatsynchronisatie en <strong>Dit apparaat wissen als het uit de synchronisatie wordt verwijderd</strong>.</dd>
+            <dt>Ontwikkelaar</dt><dd>SSH-agent en Git-ondertekening, en AI-agents (zie <a href="#win-dev">Ontwikkelaarstools en AI-agents</a>).</dd>
+            <dt>Hulp en diagnose</dt><dd>Sneltoetsen, Instellen opnieuw tonen, Apparaten en verbindingen, Foutenlogboek, juridische pagina's.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Pro-licentie</a></h3>
+          <ol>
+            <li>Koop Pro op de <a href="../../nl/pricing">prijzenpagina</a>. Je sleutel (begint met <code>LGK1-</code>) komt per e-mail.</li>
+            <li>Open Instellingen › Abonnement en synchronisatie › <strong>Licentie</strong>, plak de sleutel en kies <strong>Installeren</strong>, of <strong>Bestand openen…</strong> voor een <code>.lgklicense</code>-bestand.</li>
+          </ol>
+          <p>Pro gekocht in de iPhone-app? Koppel de pc aan de iPhone (zie <a href="#win-sync">Synchronisatie</a>) en een gratis pc wordt Pro via synchronisatie. Of kies in de Instellingen van de iPhone <strong>Sleutel kopiëren</strong> en installeer hem op dezelfde manier op de pc. De licentiepagina laat zien hoeveel van de 7 gratis items je gebruikt. Meer in <a href="../../nl/licence">Je Pro-licentie</a>.</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">Updates</a></h3>
+          <p>LocalGateKeys uit de Microsoft Store werkt zichzelf bij via de Store. Gebruik je nog de versie van het oude installatieprogramma? De laatste update daarvan is 0.4.12: verwijder hem via Windows-instellingen › Apps › Geïnstalleerde apps en installeer LocalGateKeys daarna vanuit de Microsoft Store. Je kluis blijft waar hij is en opent met hetzelfde hoofdwachtwoord.</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">Sneltoetsen</a></h3>
+          <p>Druk in de app op <kbd>F1</kbd> of <kbd>?</kbd> voor deze lijst.</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>Opdrachtenpalet</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>Zoeken</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>Nieuw item</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Vergrendelen</td></tr>
+              <tr><th scope="row"><kbd>Esc</kbd></th><td>Terug</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>Het geselecteerde item openen</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Wachtwoord kopiëren (vraagt eerst)</td></tr>
+              <tr><th scope="row"><kbd>Delete</kbd></th><td>Naar prullenbak</td></tr>
+              <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>Itemmenu</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>Noodvergrendeling, overal in Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>Snelle toegang, overal in Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Spatie</kbd></th><td>Een gekoppelde Windows-app invullen</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../nl/help">De hele handleiding op één pagina</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Een wachtwoordmanager voor Windows, Mac en iPhone die je kluis op je eigen apparaten bewaart.</p>
+        <p class="quiet">Deze website telt bezoeken met Cloudflare Web Analytics, dat geen cookies gebruikt. Ze gebruikt geen advertentietrackers en plaatst geen cookies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/download">Downloaden</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/switch/">Overstappen</a></li>
+          <li><a href="../../buy">Pro kopen</a></li>
+          <li><a href="../../nl/licence">Je Pro-licentie</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Licentie terugvinden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hulp">
+        <h2>Hulp</h2>
+        <ul>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/support">Support en veelgestelde vragen</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Een kwetsbaarheid melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Juridisch">
+        <h2>Juridisch</h2>
+        <p class="quiet">Deze documenten zijn in het Engels, en de Engelse versie is van toepassing en bindend.</p>
+        <ul>
+          <li><a href="../../legal/eula">Licentieovereenkomst</a></li>
+          <li><a href="../../legal/privacy">Privacybeleid</a></li>
+          <li><a href="../../legal/terms-of-sale">Verkoopvoorwaarden</a></li>
+          <li><a href="../../legal/refunds">Terugbetalingsbeleid</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is een handelsmerk van de Microsoft-groep van bedrijven. Chrome is een handelsmerk van Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID en Safari zijn handelsmerken van Apple Inc., geregistreerd in de VS en andere landen.</p>
+      <nav class="lang-switch" aria-label="Taal"><ul><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

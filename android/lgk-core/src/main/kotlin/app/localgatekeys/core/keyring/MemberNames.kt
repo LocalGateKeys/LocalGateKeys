@@ -23,7 +23,7 @@ internal object MemberNames {
      * Strict UTF-8 encode: a lone UTF-16 surrogate is refused (null) instead of silently becoming `?`,
      * like Python's `str.encode("utf-8")` (Swift strings cannot hold one).
      */
-    private fun strictEncode(name: String): ByteArray? = try {
+    internal fun strictEncode(name: String): ByteArray? = try {
         val buf = Charsets.UTF_8.newEncoder()
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT)

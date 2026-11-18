@@ -1,0 +1,469 @@
+{
+  "mac": {
+    "authority": {
+      "kind": "recovery-key-mac-v1",
+      "mac": "OLdUFFS2uQjq5ZiKuqDmO2D4Y5PZUP1KR8OSZyLx3O8=",
+      "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+    },
+    "checks": [
+      {
+        "accepted": true,
+        "key_id": "7678d5726806d21391294214bb01eb01",
+        "phrase": "phrase"
+      },
+      {
+        "accepted": false,
+        "key_id": "7678d5726806d21391294214bb01eb01",
+        "phrase": "other_phrase"
+      },
+      {
+        "accepted": false,
+        "key_id": "00000000000000000000000000000000",
+        "phrase": "phrase"
+      }
+    ],
+    "entropy": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "other_entropy": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20",
+    "other_phrase": "absurd avoid scissors anxiety gather lottery category door army half long cage bachelor another expect people blade school educate curtain scrub monitor lady beyond",
+    "phrase": "abandon amount liar amount expire adjust cage candy arch gather drum bullet absurd math era live bid rhythm alien crouch range attend journey unaware",
+    "phrase_key": "27f806513757515a0847e6aad93471e7196dffc9481b49af970a0222f4d37cfd",
+    "salt": "8d82b71c96a7dca3f7a7ef7afd28754f"
+  },
+  "mac_prefix": "localgatekeys|backup-reset-authority|v1|",
+  "note": "TEST ONLY: every password, phrase and key here is published.",
+  "phrase_key_info": "localgatekeys|recovery-key|v1",
+  "record_key_id": "7678d5726806d21391294214bb01eb01",
+  "rejected": [
+    {
+      "authority": [
+        {
+          "kind": "recovery-key-mac-v1",
+          "mac": "OLdUFFS2uQjq5ZiKuqDmO2D4Y5PZUP1KR8OSZyLx3O8=",
+          "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+        }
+      ],
+      "error": "The reset authority is damaged: not an object",
+      "name": "not an object"
+    },
+    {
+      "authority": {
+        "kind": "recovery-key-v2",
+        "mac": "OLdUFFS2uQjq5ZiKuqDmO2D4Y5PZUP1KR8OSZyLx3O8=",
+        "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+      },
+      "error": "The reset authority is damaged: unknown kind",
+      "name": "unknown kind"
+    },
+    {
+      "authority": {
+        "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+        "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+        "key_id": "7678d5726806d21391294214bb01eb01",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "xUfVmleeI65ixGIT",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      },
+      "error": "The reset authority is damaged: unexpected or missing fields",
+      "name": "wrapper extra key"
+    },
+    {
+      "authority": {
+        "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "xUfVmleeI65ixGIT",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      },
+      "error": "The reset authority is damaged: unexpected or missing fields",
+      "name": "wrapper missing aad"
+    },
+    {
+      "authority": {
+        "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+        "ciphertext": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "xUfVmleeI65ixGIT",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      },
+      "error": "The reset authority is damaged: bad ciphertext",
+      "name": "wrapper ciphertext 47 bytes"
+    },
+    {
+      "authority": {
+        "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+        "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      },
+      "error": "The reset authority is damaged: bad nonce",
+      "name": "wrapper nonce 16 bytes"
+    },
+    {
+      "authority": {
+        "aad": "",
+        "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "xUfVmleeI65ixGIT",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      },
+      "error": "The reset authority is damaged: bad aad",
+      "name": "wrapper empty aad"
+    },
+    {
+      "authority": {
+        "aad": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "xUfVmleeI65ixGIT",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      },
+      "error": "The reset authority is damaged: bad aad",
+      "name": "wrapper aad 4097 bytes"
+    },
+    {
+      "authority": {
+        "kind": "recovery-key-mac-v1",
+        "mac": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+      },
+      "error": "The reset authority is damaged: bad mac",
+      "name": "mac 31 bytes"
+    },
+    {
+      "authority": {
+        "kind": "recovery-key-mac-v1",
+        "mac": "OLdUFFS2uQjq5ZiKuqDmO2D4Y5PZUP1KR8OSZyLx3O8=",
+        "salt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+      },
+      "error": "The reset authority is damaged: bad salt",
+      "name": "mac salt 32 bytes"
+    },
+    {
+      "authority": {
+        "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+        "kind": "recovery-key-mac-v1",
+        "mac": "OLdUFFS2uQjq5ZiKuqDmO2D4Y5PZUP1KR8OSZyLx3O8=",
+        "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+      },
+      "error": "The reset authority is damaged: unexpected or missing fields",
+      "name": "mac extra key"
+    }
+  ],
+  "strict_reset": {
+    "cases": [
+      {
+        "accepted": true,
+        "current": "windows.old_snapshot",
+        "entropy": "old",
+        "name": "windows, phrase not replaced",
+        "record": "set"
+      },
+      {
+        "accepted": false,
+        "current": "windows.new_snapshot",
+        "entropy": "old",
+        "name": "windows, replaced phrase (bound, no longer current)",
+        "record": "set"
+      },
+      {
+        "accepted": false,
+        "current": "windows.new_snapshot",
+        "entropy": "new",
+        "name": "windows, current phrase not bound yet",
+        "record": "set"
+      },
+      {
+        "accepted": false,
+        "current": "none",
+        "entropy": "old",
+        "name": "windows, no phrase enrolled now",
+        "record": "set"
+      },
+      {
+        "accepted": true,
+        "current": "windows.new_snapshot",
+        "entropy": "new",
+        "name": "windows, after re-bind: current phrase",
+        "record": "set_rebound"
+      },
+      {
+        "accepted": false,
+        "current": "windows.new_snapshot",
+        "entropy": "old",
+        "name": "windows, after re-bind: replaced phrase",
+        "record": "set_rebound"
+      },
+      {
+        "accepted": true,
+        "current": "mac_before",
+        "entropy": "mac",
+        "name": "mac, phrase not replaced",
+        "record": "reset"
+      },
+      {
+        "accepted": false,
+        "current": "mac_after",
+        "entropy": "mac",
+        "name": "mac, replaced phrase (bound, no longer current)",
+        "record": "reset"
+      },
+      {
+        "accepted": false,
+        "current": "mac_after",
+        "entropy": "other",
+        "name": "mac, current phrase not bound yet",
+        "record": "reset"
+      },
+      {
+        "accepted": true,
+        "current": "mac_after",
+        "entropy": "other",
+        "name": "mac, after re-bind: current phrase",
+        "record": "reset_rebound"
+      },
+      {
+        "accepted": false,
+        "current": "mac_after",
+        "entropy": "mac",
+        "name": "mac, after re-bind: replaced phrase",
+        "record": "reset_rebound"
+      },
+      {
+        "accepted": false,
+        "current": "windows.old_snapshot",
+        "entropy": "old",
+        "name": "no authority in the record",
+        "record": "migrated"
+      },
+      {
+        "accepted": false,
+        "current": "mac_before",
+        "entropy": "old",
+        "name": "kind mismatch (Mac current for a Windows authority)",
+        "record": "set"
+      }
+    ],
+    "currents": {
+      "mac_after": {
+        "kind": "recovery-key-mac-v1",
+        "mac": "NTtW5NlDvw0W2ASdxcSPDiV/iZuk+AsCqGlXZI4lVrU=",
+        "salt": "TXl4s1DnaZnF9HAk7gQHtg=="
+      },
+      "mac_before": {
+        "kind": "recovery-key-mac-v1",
+        "mac": "pebNSJe2pMSB2CTtw+lYCqcb2kv6CAeQurDO8OTLAbA=",
+        "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+      },
+      "none": null,
+      "windows.new_snapshot": {
+        "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MiwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoiUVVPajlTNzlMYWF3Y2ZsczhVKzF6Zz09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+        "ciphertext": "b4T02Z/GtzT/1WHkAAruHpG8qqFjUENlGgdmTjxwXhEHz32LhvNIOn9rt+Va4doO",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "ElY+G8a6yMTbRATv",
+        "salt": "QUOj9S79Laawcfls8U+1zg=="
+      },
+      "windows.old_snapshot": {
+        "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+        "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+        "kind": "recovery-wrapper-v1",
+        "nonce": "xUfVmleeI65ixGIT",
+        "salt": "tArr0vQOdwFbFgx1X32xzA=="
+      }
+    },
+    "entropies": {
+      "mac": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "new": "10374214a8c8cd5ad3f5c0749795709b25692345891d4dbd6e2ba264e76f7577",
+      "old": "d3ec2d28784aa45df272e6ec1f91d4d6f10baa381b01b358e62e06d12d242f33",
+      "other": "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+    },
+    "mac_replaced": {
+      "phrase_key": "32f88ed967551f198026896eee62412b2512c830bf867980c403f3d34fc21ca7",
+      "salt": "4d7978b350e76999c5f47024ee0407b6"
+    },
+    "rebind_with_wrong_password": {
+      "error": "That is not the current backup password.",
+      "password": "second fixture backup password",
+      "record": "set"
+    },
+    "rebound_canonical": {
+      "reset_rebound": "{\"history\":[{\"key_id\":\"fcff6ece0e50fc1f9e31dbc981a4ab4a\",\"replaced_at\":1793003000,\"set_at\":1793002000,\"set_by\":\"changed\"},{\"key_id\":\"7678d5726806d21391294214bb01eb01\",\"replaced_at\":1793002000,\"set_at\":1793001000,\"set_by\":\"set\"}],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"ErfGQpn+8xeJl8MNWUwJKw==\",\"time_cost\":1},\"key_id\":\"c6a61f7b07a418120d40e90a25fe8ed8\",\"public_key\":\"5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=\",\"reset_at\":1793003000,\"reset_authority\":{\"kind\":\"recovery-key-mac-v1\",\"mac\":\"NTtW5NlDvw0W2ASdxcSPDiV/iZuk+AsCqGlXZI4lVrU=\",\"salt\":\"TXl4s1DnaZnF9HAk7gQHtg==\"},\"set_at\":1793003000,\"set_by\":\"reset\",\"v\":1}",
+      "set_rebound": "{\"history\":[],\"kdf\":{\"memory_cost_kib\":8192,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"YJn8P7Dx5Py3xX3+xj+TQQ==\",\"time_cost\":1},\"key_id\":\"7678d5726806d21391294214bb01eb01\",\"public_key\":\"ItJxd18v9FNCSkP9FoozP3aFiDwDD+Fv83GN+gCOLG0=\",\"reset_at\":null,\"reset_authority\":{\"aad\":\"bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MiwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoiUVVPajlTNzlMYWF3Y2ZsczhVKzF6Zz09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==\",\"ciphertext\":\"b4T02Z/GtzT/1WHkAAruHpG8qqFjUENlGgdmTjxwXhEHz32LhvNIOn9rt+Va4doO\",\"kind\":\"recovery-wrapper-v1\",\"nonce\":\"ElY+G8a6yMTbRATv\",\"salt\":\"QUOj9S79Laawcfls8U+1zg==\"},\"set_at\":1793001000,\"set_by\":\"set\",\"v\":1}"
+    },
+    "records": {
+      "migrated": {
+        "history": [],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "BfnztYdAAw/QThAuUDxPCw==",
+          "time_cost": 1
+        },
+        "key_id": "e3ba969d65478dd7ae40f8b17db26353",
+        "public_key": "gYtrSmpBGJnoH1HOb+t1Pyjlp7S7A+seA3s837zoWFc=",
+        "reset_at": null,
+        "reset_authority": null,
+        "set_at": 1793004000,
+        "set_by": "migrated",
+        "v": 1
+      },
+      "reset": {
+        "history": [
+          {
+            "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+            "replaced_at": 1793003000,
+            "set_at": 1793002000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "key_id": "c6a61f7b07a418120d40e90a25fe8ed8",
+        "public_key": "5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=",
+        "reset_at": 1793003000,
+        "reset_authority": {
+          "kind": "recovery-key-mac-v1",
+          "mac": "pebNSJe2pMSB2CTtw+lYCqcb2kv6CAeQurDO8OTLAbA=",
+          "salt": "jYK3HJan3KP3p+96/Sh1Tw=="
+        },
+        "set_at": 1793003000,
+        "set_by": "reset",
+        "v": 1
+      },
+      "reset_rebound": {
+        "history": [
+          {
+            "key_id": "fcff6ece0e50fc1f9e31dbc981a4ab4a",
+            "replaced_at": 1793003000,
+            "set_at": 1793002000,
+            "set_by": "changed"
+          },
+          {
+            "key_id": "7678d5726806d21391294214bb01eb01",
+            "replaced_at": 1793002000,
+            "set_at": 1793001000,
+            "set_by": "set"
+          }
+        ],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "ErfGQpn+8xeJl8MNWUwJKw==",
+          "time_cost": 1
+        },
+        "key_id": "c6a61f7b07a418120d40e90a25fe8ed8",
+        "public_key": "5dfF4TC67wHM+TmVHG+3iKI3FIDcMh4fzcoUGecYsno=",
+        "reset_at": 1793003000,
+        "reset_authority": {
+          "kind": "recovery-key-mac-v1",
+          "mac": "NTtW5NlDvw0W2ASdxcSPDiV/iZuk+AsCqGlXZI4lVrU=",
+          "salt": "TXl4s1DnaZnF9HAk7gQHtg=="
+        },
+        "set_at": 1793003000,
+        "set_by": "reset",
+        "v": 1
+      },
+      "set": {
+        "history": [],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+          "time_cost": 1
+        },
+        "key_id": "7678d5726806d21391294214bb01eb01",
+        "public_key": "ItJxd18v9FNCSkP9FoozP3aFiDwDD+Fv83GN+gCOLG0=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "xUfVmleeI65ixGIT",
+          "salt": "tArr0vQOdwFbFgx1X32xzA=="
+        },
+        "set_at": 1793001000,
+        "set_by": "set",
+        "v": 1
+      },
+      "set_rebound": {
+        "history": [],
+        "kdf": {
+          "memory_cost_kib": 8192,
+          "name": "argon2id",
+          "parallelism": 1,
+          "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+          "time_cost": 1
+        },
+        "key_id": "7678d5726806d21391294214bb01eb01",
+        "public_key": "ItJxd18v9FNCSkP9FoozP3aFiDwDD+Fv83GN+gCOLG0=",
+        "reset_at": null,
+        "reset_authority": {
+          "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MiwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoiUVVPajlTNzlMYWF3Y2ZsczhVKzF6Zz09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+          "ciphertext": "b4T02Z/GtzT/1WHkAAruHpG8qqFjUENlGgdmTjxwXhEHz32LhvNIOn9rt+Va4doO",
+          "kind": "recovery-wrapper-v1",
+          "nonce": "ElY+G8a6yMTbRATv",
+          "salt": "QUOj9S79Laawcfls8U+1zg=="
+        },
+        "set_at": 1793001000,
+        "set_by": "set",
+        "v": 1
+      }
+    },
+    "rule": "accepted = verify(record.reset_authority) and verify(current authority captured now, same kind)"
+  },
+  "windows": {
+    "checks": [
+      {
+        "accepted": true,
+        "phrase": "old_phrase",
+        "snapshot": "old_snapshot"
+      },
+      {
+        "accepted": false,
+        "phrase": "new_phrase",
+        "snapshot": "old_snapshot"
+      },
+      {
+        "accepted": false,
+        "phrase": "old_phrase",
+        "snapshot": "new_snapshot"
+      },
+      {
+        "accepted": true,
+        "phrase": "new_phrase",
+        "snapshot": "new_snapshot"
+      }
+    ],
+    "new_entropy": "10374214a8c8cd5ad3f5c0749795709b25692345891d4dbd6e2ba264e76f7577",
+    "new_phrase": "awake ring lunch face mimic pulp exist retreat innocent royal found curve final museum bike casual ethics twin memory dynamic example response still water",
+    "new_snapshot": {
+      "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MiwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoiUVVPajlTNzlMYWF3Y2ZsczhVKzF6Zz09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+      "ciphertext": "b4T02Z/GtzT/1WHkAAruHpG8qqFjUENlGgdmTjxwXhEHz32LhvNIOn9rt+Va4doO",
+      "kind": "recovery-wrapper-v1",
+      "nonce": "ElY+G8a6yMTbRATv",
+      "salt": "QUOj9S79Laawcfls8U+1zg=="
+    },
+    "old_entropy": "d3ec2d28784aa45df272e6ec1f91d4d6f10baa381b01b358e62e06d12d242f33",
+    "old_phrase": "stadium gesture energy vacuum prevent confirm six fresh ugly wish inside pupil awful steak there gasp rebuild shrimp merit asset barrel must rubber hood",
+    "old_snapshot": {
+      "aad": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoidEFycjB2UU9kd0ZiRmd4MVgzMnh6QT09In0sInZhdWx0X2lkIjoiMGJjMDdkZDNhNjUzNDMwZDljZDExZGYzYmFlOWYwOGIiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+      "ciphertext": "NaH6qcxMtPhu5lb9LrroHRZYeauOEG6K/7orYBKcvObN7FM9Ed8Ztr07FSRo8eur",
+      "kind": "recovery-wrapper-v1",
+      "nonce": "xUfVmleeI65ixGIT",
+      "salt": "tArr0vQOdwFbFgx1X32xzA=="
+    }
+  }
+}

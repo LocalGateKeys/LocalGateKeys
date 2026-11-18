@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Security | LocalGateKeys</title>
-  <meta name="description" content="How LocalGateKeys protects your vault and what it does not protect against.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys security model: Argon2id and AES-256-GCM</title>
+  <meta name="description" content="How LocalGateKeys protects your vault with Argon2id and AES-256-GCM, why there is no account or server, and what the design does not protect against.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/security">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys security model: Argon2id and AES-256-GCM">
+  <meta property="og:description" content="How LocalGateKeys protects your vault with Argon2id and AES-256-GCM, why there is no account or server, and what the design does not protect against.">
+  <meta property="og:url" content="https://localgatekeys.app/security">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The LocalGateKeys logo: a password manager for Windows, Mac and iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys security model: Argon2id and AES-256-GCM">
+  <meta name="twitter:description" content="How LocalGateKeys protects your vault with Argon2id and AES-256-GCM, why there is no account or server, and what the design does not protect against.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="brand/icon-256.png">
@@ -30,22 +44,39 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="index.html">
-        <img src="brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="./">
+        <img src="brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Main">
+      <nav class="nav-wide" aria-label="Main">
         <ul class="nav">
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="security.html" aria-current="page">Security</a></li>
-          <li><a href="get-started.html">Get started</a></li>
-          <li><a href="help.html">Guide</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="support.html">Support</a></li>
-          <li><a href="buy.html">Buy Pro</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help">Guide</a></li>
+          <li><a href="security" aria-current="page">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Main">
+          <ul class="nav nav-stack">
+            <li><a href="features">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help">Guide</a></li>
+          <li><a href="security" aria-current="page">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Language</span></summary>
+        <ul class="lang-menu-list"><li><a href="security" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/security" hreflang="es" lang="es">Español</a></li><li><a href="it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/security" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -62,13 +93,14 @@
   </div>
   <dl class="spec">
     <dt>Vault encryption</dt><dd>AES-256-GCM with a fresh random nonce for every save</dd>
-    <dt>Master password</dt><dd>Argon2id, 64 MiB memory, 3 passes, parallelism 4, random salt per wrapper</dd>
+    <dt>Master password</dt><dd>Argon2id, 3 passes, parallelism 4, random salt per wrapper; 256 MiB of memory in the Windows app (64 MiB on a PC with less than 4 GB of memory) and 64 MiB in the Mac, iPhone and Android apps</dd>
     <dt>Recovery phrase</dt><dd>Optional 24-word BIP39 phrase (256 bits), expanded with HKDF-SHA256</dd>
-    <dt>Windows Hello</dt><dd>Wraps the vault key, never the master password</dd>
+    <dt>Windows Hello, Touch ID, Face ID and fingerprint</dt><dd>Release the vault key from storage the device protects; the master password is never stored</dd>
     <dt>Backups and transfers</dt><dd>Argon2id and AES-256-GCM with the parameters stored in the authenticated header</dd>
     <dt>Device sync</dt><dd>A random group key, handed to each device with X25519 and HKDF-SHA256 and, for a cloud folder, also wrapped by your sync password with Argon2id; every record sealed with AES-256-GCM and bound to its item, version and key epoch; every device file bound to the device that wrote it</dd>
-    <dt>Passkeys</dt><dd>ES256 (P-256) keys kept inside the encrypted vault; the app builds the signed data from the origin the browser reports, never from the page</dd>
+    <dt>Passkeys</dt><dd>ES256 (P-256) keys kept inside the encrypted vault; the app builds the signed data from the origin the browser reports, never from the page. The Microsoft Store app can also be the passkey provider of Windows 11 (off by default); Windows then keeps your passkey site and account names in its own list, never the keys</dd>
     <dt>Writes to disk</dt><dd>Temporary file, flush, then atomic replace, so a crash cannot leave half a vault</dd>
+    <dt>AI agents</dt><dd>Off by default (Pro). An agent reaches the app only through lgk mcp on your own device and sees only the logins and items you allowed. You approve each request; the app fills the sign-in itself, and no reply to the agent contains a password. Each request goes into an access log whose entries are chained with SHA-256 hashes, and the Security check says whether that chain is intact</dd>
   </dl>
 
   <div class="ledger">
@@ -82,6 +114,8 @@
         <li>Passwords sitting unencrypted on disk</li>
         <li>Forms being submitted without you</li>
         <li>Your cloud provider reading synced data: it only stores ciphertext</li>
+        <li>A web page reading the accounts LocalGateKeys offers you: in Chrome, Edge and Firefox the list is drawn in a separate extension frame the page cannot read</li>
+        <li>An AI agent getting a password from LocalGateKeys: no reply to the agent contains one, and it sees only the logins you allowed</li>
       </ul>
     </section>
     <section class="not" aria-labelledby="not-protects">
@@ -93,6 +127,7 @@
         <li>Someone using your PC while the vault is unlocked</li>
         <li>Phishing inside a genuine app that shows attacker-controlled content</li>
         <li>Losing your vault, your backups and your master password with no recovery phrase: nobody, including us, can open it</li>
+        <li>An AI agent that controls your browser reading a password after LocalGateKeys has filled it into the page, or a command you approved passing on the secrets it was given</li>
       </ul>
     </section>
   </div>
@@ -110,28 +145,34 @@
       <li>submitting a sign-in you did not start</li>
     </ul>
 
-    <h2>The network, honestly</h2>
+    <h2 id="network">The network, honestly</h2>
     <p>There is no LocalGateKeys account and no server that holds vaults. The app connects to the internet in only these cases:</p>
     <ul>
-      <li><strong>Update checks.</strong> When you choose Check for updates, the app downloads one small file and verifies its signature with a key built into the app. It never downloads or runs an installer by itself.</li>
-      <li><strong>Licence revocation list.</strong> Together with each update check, the app downloads a signed list of refunded licences and checks your licence against it on your PC. It sends nothing about your licence.</li>
+      <li><strong>Updates.</strong> The Microsoft Store updates the Windows app and the App Store updates the Mac and iPhone apps; LocalGateKeys itself never downloads or runs an installer. The retired Windows installer builds (up to 0.4.12, the last one) download one small file from our server when you choose Check for updates and verify its signature with a key built into the app.</li>
+      <li><strong>Licence revocation list.</strong> With each update check in the installer builds, and when you choose Check for updates in the Microsoft Store app with strict offline mode off, the app downloads a signed list of refunded licences and checks your licence against it on your PC. It sends nothing about your licence.</li>
       <li><strong>Website icons.</strong> To show a site's icon, the app downloads it from that site's own address. No username, password or vault data is sent, but each download tells that site, and anyone watching the network, that your vault has an account there. This is off by default and only happens if you turn on "Show website icons" in Settings; strict offline mode blocks it.</li>
       <li><strong>Breach checks, if you turn them on.</strong> When you start a check, the app sends the first five characters of each password's SHA-1 hash to Have I Been Pwned. The service sees your IP address, never the password, the full hash, the username or the website.</li>
       <li><strong>Sync, if you set it up.</strong> Over your home network, devices talk to each other directly. Through a cloud folder, your cloud-drive app does the uploading.</li>
+      <li><strong>Buying Pro in the Mac, iPhone or Android app.</strong> The app sends the store's signed purchase record to our licence server, which answers with your licence key. No email address and no device data are sent.</li>
+      <li><strong>Verified site.</strong> The lookalike check runs on your device. Your saved sites never leave the app, and nothing is sent to a server.</li>
     </ul>
-    <p>Strict offline mode is on by default. It blocks background internet requests, website icons and breach checks, and an update check asks you first. The <a href="legal/privacy.html">privacy policy</a> lists exactly what our servers see when you do check for updates.</p>
+    <p>In the Windows app, Security center › Network activity lists each of these connections with the time, the host and the result. The names of websites you saved are shown only while the app runs and are never written to disk, and devices on your own network appear as "Local network".</p>
+    <p>Strict offline mode is on by default. It blocks background internet requests, website icons and breach checks, and an update check asks you first. The <a href="legal/privacy">privacy policy</a> lists exactly what our servers see when you do check for updates.</p>
 
     <h2>Known limitations</h2>
     <ul>
-      <li>The master password is moved into a wipeable buffer as soon as it reaches the app and is erased when the operation that needed it finishes. The page you type it into runs in Microsoft Edge WebView2, and the hand-off from that page to the app makes a short-lived copy; neither copy can be erased by the app.</li>
-      <li>The camera unlock is a convenience check, not certified protection against photos or masks. Windows Hello is the stronger choice.</li>
+      <li>The master password is moved into a wipeable buffer as soon as it reaches the app and is erased when the operation that needed it finishes. The page you type it into runs in Microsoft Edge WebView2. The page empties its field and the app lets go of the copy made by the hand-off before your key is computed, but neither of those two copies can be overwritten in memory, so traces can remain there for a short time.</li>
+      <li>Camera unlock asks for a random head movement, so a photo held flat in front of the camera, or a still picture on a screen, does not pass. It is still a convenience check, not certified protection: a bent or folded photo, a video that follows the prompts, or a mask may pass. Windows Hello is the stronger choice.</li>
       <li>Windows app fill does not work with programs running as administrator, custom-drawn game interfaces, or embedded web views it cannot verify.</li>
-      <li>The vault detects being rolled back to an older copy. If you use sync, your other devices also remember how new your vault was, so deleting the vault and its anchor file together is caught at the next sync (Windows PCs for now; the iPhone, Mac and Android apps follow). Without sync, someone who can replace both files can still defeat the check.</li>
-      <li>Passkeys work in Chrome and Edge only, and only for the page itself: a sign-in inside another site's frame uses the browser's own passkey dialog. If a site cancels after you approve a new passkey, the passkey may stay in your vault; delete it in the app.</li>
+      <li>The vault detects being rolled back to an older copy. If you use sync, your other devices remember how new your vault was, so an older copy put back on one device is reported at the next sync, in every app. Without sync, a Windows PC keeps a second record outside the vault folder, so an older vault put back together with its anchor file is refused; someone who can change your Windows account's settings can remove that record too. The iPhone, Mac and Android apps keep their files closed to other apps, but without sync they do not notice an older copy put back in their place.</li>
+      <li>Passkeys work in Chrome, Edge and Firefox. Signing in with a passkey inside another site's frame works in Chrome and Edge when the surrounding site allows it; in Firefox, and when you create a passkey inside another site's frame, the browser's own passkey dialog is used. If a site cancels after you approve a new passkey, the app removes it again; when the app cannot tell whether the site kept it, the passkey stays in your vault and you can delete it in the app.</li>
+      <li>The lookalike warning is a hint, not a wall: a page's own script can bypass it, for example by sending a password without a form submit. Check the address yourself.</li>
+      <li>Emergency access has no server, so only the apps enforce the waiting period and your veto. Anyone who holds enough shards can recover your backup at once, without waiting. Pick holders who would not act together, and keep the shards apart.</li>
+      <li>The duress password defends against being forced to unlock the app. It does not defend against someone who examines the files on your disk, and a careful person can find out that a second vault exists. It is on Windows, the Mac, iPhone and Android.</li>
     </ul>
 
     <h2>Report a vulnerability</h2>
-    <p>Email <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. The <a href="legal/vulnerability-disclosure.html">vulnerability disclosure policy</a> explains what is in scope, how quickly we respond and how we credit researchers.</p>
+    <p>Email <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. The <a href="legal/vulnerability-disclosure">vulnerability disclosure policy</a> explains what is in scope, how quickly we respond and how we credit researchers.</p>
   </div>
 </div>
   </main>
@@ -139,42 +180,46 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>A password manager for Windows that keeps your vault on your own devices.</p>
-        <p class="quiet">This site sets no cookies, runs no analytics and loads nothing from other companies.</p>
+        <p class="footer-brand"><img src="brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>A password manager for Windows, Mac and iPhone that keeps your vault on your own devices.</p>
+        <p class="quiet">This website uses Cloudflare Web Analytics, which is cookieless, to count page visits. It uses no advertising trackers and sets no cookies.</p>
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
         <ul>
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="licence.html">Your Pro licence</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="download">Download</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="switch/">Switch</a></li>
+          <li><a href="buy">Buy Pro</a></li>
+          <li><a href="licence">Your Pro licence</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recover your licence</a></li>
         </ul>
       </nav>
       <nav aria-label="Help">
         <h2>Help</h2>
         <ul>
-          <li><a href="help.html">User guide</a></li>
-          <li><a href="support.html">Support and FAQ</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
+          <li><a href="help">User guide</a></li>
+          <li><a href="support">Support and FAQ</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="legal/vulnerability-disclosure">Report a vulnerability</a></li>
         </ul>
       </nav>
       <nav aria-label="Legal">
         <h2>Legal</h2>
         <ul>
-          <li><a href="legal/eula.html">Licence agreement</a></li>
-          <li><a href="legal/privacy.html">Privacy policy</a></li>
-          <li><a href="legal/terms-of-sale.html">Terms of sale</a></li>
-          <li><a href="legal/refunds.html">Refund policy</a></li>
+          <li><a href="legal/eula">Licence agreement</a></li>
+          <li><a href="legal/privacy">Privacy policy</a></li>
+          <li><a href="legal/terms-of-sale">Terms of sale</a></li>
+          <li><a href="legal/refunds">Refund policy</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Language"><a href="security.html" hreflang="en" lang="en" aria-current="true">English</a> · <a href="es/security.html" hreflang="es" lang="es">Español</a> · <a href="it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID and Safari are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <nav class="lang-switch" aria-label="Language"><ul><li><a href="security" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/security" hreflang="es" lang="es">Español</a></li><li><a href="it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/security" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

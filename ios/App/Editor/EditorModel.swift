@@ -6,7 +6,8 @@ import AppSharedMac
 import AppShared
 #endif
 
-enum SaveResult: Equatable { case saved, unchanged, needsPro, needsPunycode, invalid, failed }
+/// `needsOwner`: the change loosens an access rule (feature pack §4) and needs the owner check first.
+enum SaveResult: Equatable { case saved, unchanged, needsPro, needsPunycode, invalid, failed, needsOwner }
 
 /// Create, edit and delete one record. Records go through LGKCore `Normalise.normalForm` and `Wrapper.make`,
 /// and are committed through the store; deletes write a `SyncMeta` tombstone.
@@ -31,6 +32,17 @@ final class EditorModel {
     private(set) var savedID: String?
     /// Delete found the item gone already (a sync removed it): the view says so and closes.
     private(set) var alreadyRemoved = false
+    /// Collections (sub-plan 07): the catalog and the item's memberships as the picker shows them, read once by
+    /// `loadCollections()`. A save writes the memberships in the same commit as the record, and only when they changed.
+    private(set) var collections: [CollectionCatalog.Collection] = []
+    /// Collections that are view only here: the picker shows them locked.
+    private(set) var readOnlyCollections: Set<String> = []
+    var memberships: Set<String> = []
+    @ObservationIgnored private var originalMemberships: Set<String> = []
+    @ObservationIgnored private var collectionsLoaded = false
+    /// The item is in a collection shared with this vault as view only: it opens read-only and every save or delete is
+    /// refused (`readOnlyItemText`).
+    private(set) var isReadOnly = false
 
     @ObservationIgnored private let store: any ItemStore
     @ObservationIgnored private let pro: ProModel
@@ -54,6 +66,30 @@ final class EditorModel {
         self.kind = item.flatMap { EditorKind(kind: $0.kind) } ?? kind
         isNew = item == nil; id = item?.id; original = item?.record
         if let r = item?.record { values = Self.values(of: r, kind: self.kind) } else { values = self.kind.defaults }
+    }
+
+    /// Typed items only: logins (and documents, which have no editor here) never get a collection.
+    var offersCollections: Bool { !CollectionCatalog.nonMemberKinds.contains(kind.rawValue) }
+
+    /// Reads the collections and this item's memberships once (a second call, e.g. after the picker closes, keeps what
+    /// was picked), and whether the item is read-only here.
+    func loadCollections() {
+        guard !collectionsLoaded, let snap = try? store.load() else { return }
+        collectionsLoaded = true
+        collections = CollectionCatalog.collections(in: snap)
+        readOnlyCollections = Self.readOnlyCollectionIDs(in: snap)
+        if let id {
+            let current = Set(CollectionCatalog.memberships(of: id, in: snap))
+            originalMemberships = current
+            memberships = current
+            isReadOnly = Self.itemIsReadOnly(id, in: snap)
+        }
+    }
+
+    /// The picked collections' names ("None" for none); ids of collections this device does not know are not shown.
+    var membershipSummary: String {
+        let names = collections.filter { memberships.contains($0.id) }.map(\.name)
+        return names.isEmpty ? String(localized: "None") : names.joined(separator: ", ")
     }
 
     /// The edited item's id (nil: a new item) and its record as stored, for the unsaved draft (EditorDraft.swift).
@@ -276,6 +312,7 @@ final class EditorModel {
 
     static let punycodeMessage = String(localized: "Enter this website's domain in its xn-- (punycode) form.")
     static let alreadyRemovedMessage = String(localized: "This item was already removed")
+    static let changedWhileEditingText = String(localized: "This item was changed elsewhere while you were editing. Save again to keep your version, or cancel to keep the other one.")
 
     func save() -> SaveResult {
         error = nil; needsPunycode = false; totpError = nil; websiteError = nil; amountError = nil
@@ -291,36 +328,80 @@ final class EditorModel {
         } catch WebsiteInputError.invalid(let message) {
             websiteError = message; error = String(localized: "Check the website."); return .invalid
         } catch { self.error = String(localized: "This item cannot be saved."); return .invalid }
+        let membershipsChanged = memberships != originalMemberships
         // Unchanged: leave the stored bytes alone so the version vector is not bumped.
-        if let original, Self.same(.object(edited), .object(original)) { return .unchanged }
-        if totpNeedsPro, ProFeatures.totpChangeNeedsPro(new: edited["totp"], old: original?["totp"]) {
+        var recordUnchanged = false
+        if let original, Self.same(.object(edited), .object(original)) {
+            if !membershipsChanged { return .unchanged }
+            recordUnchanged = true
+        }
+        if !recordUnchanged, totpNeedsPro, ProFeatures.totpChangeNeedsPro(new: edited["totp"], old: original?["totp"]) {
             totpError = ProFeatures.totpMessage; error = String(localized: "Two-factor codes need Pro."); showUpgrade = true
             return .needsPro
         }
         do {
-            var snap = try store.load()
-            if isNew {
-                guard ItemLimit.allows(.create, snapshot: snap, isPro: pro.isPro) else { showUpgrade = true; return .needsPro }
+            // Review M1: a commit that lands between the load and the commit (a sync run, the Safari import, AutoFill)
+            // makes the commit stale. The save runs once more on the fresh snapshot, with every check again; when
+            // that commit changed this very item, nothing is overwritten silently (saving again keeps this version).
+            var storedFirst: JSONValue?
+            for attempt in 0..<2 {
+                var snap = try store.load()
+                if let id {
+                    if attempt == 0 {
+                        storedFirst = snap.records[id]
+                    } else if snap.records[id] != storedFirst {
+                        error = Self.changedWhileEditingText; return .failed
+                    }
+                }
+                // A view-only shared item never changes here, whatever the editor shows (sub-plan 07).
+                if let id, Self.itemIsReadOnly(id, in: snap) {
+                    isReadOnly = true; error = Self.readOnlyItemText; return .invalid
+                }
+                if isNew {
+                    guard ItemLimit.allows(.create, snapshot: snap, isPro: pro.isPro) else { showUpgrade = true; return .needsPro }
+                }
+                if !recordUnchanged, let original,
+                   let before = try? Normalise.normalForm(ns: kind.ns, record: .object(original)),
+                   let after = try? Normalise.normalForm(ns: kind.ns, record: .object(edited)),
+                   Self.same(Self.withoutStamp(before), Self.withoutStamp(after)) {
+                    if !membershipsChanged { return .unchanged }
+                    recordUnchanged = true
+                }
+                let rid: String
+                if recordUnchanged, let id {
+                    rid = id
+                } else {
+                    var stamped = edited
+                    if keepsPasswordHistory, kind == .web { stamped = Self.withPasswordHistory(stamped, original: original, now: clock.now) }
+                    stamped["updated_at"] = .int(clock.now)
+                    if case .int(let created)? = stamped["created_at"], created > clock.now { stamped["created_at"] = .int(clock.now) }
+                    let record = try Normalise.normalForm(ns: kind.ns, record: .object(stamped))
+                    guard case .object(let o) = record, case .string(let newID)? = o["id"] else { error = String(localized: "This item cannot be saved."); return .invalid }
+                    if let id, newID != id { error = String(localized: "This item cannot be saved."); return .invalid }
+                    if isNew, snap.records[newID] != nil { error = String(localized: "This item cannot be saved."); return .failed }
+                    snap.records[newID] = Wrapper.make(ns: kind.ns, record: record)
+                    rid = newID
+                }
+                if membershipsChanged,
+                   let moved = try CollectionCatalog.setMemberships(itemID: rid, kind: kind.rawValue, to: Array(memberships),
+                                                                   in: snap, readOnly: Self.readOnlyCollectionIDs(in: snap)) {
+                    snap.records = moved.records
+                }
+                let change = StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync)
+                do {
+                    try background.run("LocalGateKeys save") { try store.commit(change) }
+                } catch LocalStoreError.stale where attempt == 0 {
+                    continue
+                }
+                savedID = rid
+                originalMemberships = memberships
+                return .saved
             }
-            if let original,
-               let before = try? Normalise.normalForm(ns: kind.ns, record: .object(original)),
-               let after = try? Normalise.normalForm(ns: kind.ns, record: .object(edited)),
-               Self.same(Self.withoutStamp(before), Self.withoutStamp(after)) {
-                return .unchanged
-            }
-            var stamped = edited
-            if keepsPasswordHistory, kind == .web { stamped = Self.withPasswordHistory(stamped, original: original, now: clock.now) }
-            stamped["updated_at"] = .int(clock.now)
-            if case .int(let created)? = stamped["created_at"], created > clock.now { stamped["created_at"] = .int(clock.now) }
-            let record = try Normalise.normalForm(ns: kind.ns, record: .object(stamped))
-            guard case .object(let o) = record, case .string(let rid)? = o["id"] else { error = String(localized: "This item cannot be saved."); return .invalid }
-            if let id, rid != id { error = String(localized: "This item cannot be saved."); return .invalid }
-            if isNew, snap.records[rid] != nil { error = String(localized: "This item cannot be saved."); return .failed }
-            snap.records[rid] = Wrapper.make(ns: kind.ns, record: record)
-            let change = StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync)
-            try background.run("LocalGateKeys save") { try store.commit(change) }
-            savedID = rid
-            return .saved
+            self.error = String(localized: "The item could not be saved on this device."); return .failed
+        } catch let failure as CollectionCatalog.Failure {
+            error = Self.collectionText(for: failure); return .invalid
+        } catch is ReadOnlyCollectionError {
+            error = Self.readOnlyCollectionText; return .invalid
         } catch NormaliseError.needsPunycode {
             needsPunycode = true
             error = Self.punycodeMessage
@@ -340,8 +421,12 @@ final class EditorModel {
     /// does the same store delete; nil deletes at once.
     func delete(using move: ((String) -> SaveResult)? = nil) -> SaveResult {
         guard let id else { return .failed }
+        if let snap = try? store.load(), Self.itemIsReadOnly(id, in: snap) {
+            isReadOnly = true; error = Self.readOnlyItemText; return .invalid
+        }
         let r = move?(id) ?? Self.delete(id: id, store: store, clock: clock, background: background)
         if r == .failed { error = String(localized: "The item could not be deleted on this device.") }
+        if r == .invalid { isReadOnly = true; error = Self.readOnlyItemText }
         alreadyRemoved = r == .unchanged
         return r
     }
@@ -352,7 +437,12 @@ final class EditorModel {
     static func delete(id: String, store: any ItemStore, clock: any UnixClock, background: any BackgroundTasking) -> SaveResult {
         do {
             var snap = try store.load()
-            guard snap.records.removeValue(forKey: id) != nil else { return .unchanged }
+            guard !CollectionStates.isStateID(id), snap.records[id] != nil else { return .unchanged }
+            // A view-only shared item is never deleted here (the Recently deleted move goes through this too).
+            if itemIsReadOnly(id, in: snap) { return .invalid }
+            snap.records[id] = nil
+            // Its collections go with it (a Recently deleted row keeps them: `CollectionCatalog.trashRecord`).
+            snap.records = CollectionCatalog.withoutMembership(id, records: snap.records)
             if let m = snap.meta[id], !m.deleted, let device = snap.sync?.deviceID {
                 snap.meta[id] = SyncMeta.tomb(vv: try VersionVector.bump(m.vv, device: device), deletedAt: clock.now)
             }
@@ -361,6 +451,50 @@ final class EditorModel {
             return .saved
         } catch {
             return .failed
+        }
+    }
+}
+
+// MARK: - Collections (sub-plan 07), shared with the Mac
+
+extension EditorModel {
+    nonisolated static let readOnlyItemText = String(localized: "This item is in a collection shared with you as view only, so it can't be changed on this device.")
+    nonisolated static let readOnlyCollectionText = String(localized: "This collection is shared with you as view only, so it can't be changed on this device.")
+    nonisolated static let sharedDeleteText = String(localized: "A shared collection can't be deleted. Stop sharing it or leave it first.")
+    nonisolated static let collectionLimitText = String(localized: "You can have at most 500 collections.")
+    nonisolated static let notMemberText = String(localized: "Logins and documents can't be added to a collection.")
+    nonisolated static let badNameText = String(localized: "This name can't be used.")
+    nonisolated static let collectionGoneText = String(localized: "That collection no longer exists.")
+    nonisolated static let collectionFailedText = String(localized: "The collection could not be changed.")
+
+    /// Collections this vault may not change: those it holds as a member of a view-only share (a damaged share store
+    /// fails closed) and those another of this person's devices holds that way (`csl:` links).
+    nonisolated static func readOnlyCollectionIDs(in snapshot: StoreSnapshot) -> Set<String> {
+        ShareGroups.readOnlyCollectionIDs(in: snapshot).union(CollectionCatalog.linkedReadOnlyIDs(in: snapshot))
+    }
+
+    /// Whether the item `itemID` is in a view-only collection: it is neither edited, deleted nor moved here.
+    nonisolated static func itemIsReadOnly(_ itemID: String, in snapshot: StoreSnapshot) -> Bool {
+        let readOnly = readOnlyCollectionIDs(in: snapshot)
+        if readOnly.isEmpty { return false }
+        return CollectionCatalog.memberships(of: itemID, in: snapshot).contains { readOnly.contains($0) }
+    }
+
+    /// The line shown for a refused collection change.
+    nonisolated static func collectionText(for error: any Error) -> String {
+        if error is ReadOnlyCollectionError { return readOnlyCollectionText }
+        guard let failure = error as? CollectionCatalog.Failure else { return collectionFailedText }
+        switch failure {
+        case .limit: return collectionLimitText
+        case .emptyName: return String(localized: "Enter a name for the collection.")
+        case .longName: return String(localized: "Collection names can be at most 100 characters.")
+        case .duplicateName: return String(localized: "A collection with this name already exists.")
+        case .tooMany: return String(localized: "An item cannot belong to more than 20 collections.")
+        case .invalidText: return badNameText
+        case .notFound: return collectionGoneText
+        case .notMember: return notMemberText
+        case .shared: return sharedDeleteText
+        case .longDescription, .invalidID, .unknownCollection, .reserved: return collectionFailedText
         }
     }
 }

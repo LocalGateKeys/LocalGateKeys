@@ -66,7 +66,7 @@ class FolderJoinFlowTest {
 
     private fun test(body: suspend CoroutineScope.() -> Unit) = runBlocking { withTimeout(60_000) { body() } }
 
-    private fun CoroutineScope.coordinator(store: ItemStore): SyncCoordinator {
+    private fun CoroutineScope.coordinator(store: ItemStore, slots: SecretSlots = this@FolderJoinFlowTest.slots): SyncCoordinator {
         val scope = CoroutineScope(coroutineContext.minusKey(Job) + SupervisorJob())
         scopes.add(scope)
         val deps = SyncDependencies(
@@ -304,8 +304,8 @@ class FolderJoinFlowTest {
 
     @Test fun cloud_folder_examples_follow_ruling_20_amended() {
         assertEquals(
-            "Choose the folder your cloud app syncs (OneDrive, Dropbox, Nextcloud), the one that holds LocalGateKeys Sync, " +
-                "and enter the sync password.",
+            "To join, choose the folder your cloud app syncs (OneDrive, Dropbox, Nextcloud), the one that holds LocalGateKeys " +
+                "Sync, and enter the sync password. To start a new sync group, choose an empty folder instead.",
             EnglishTxt().s(SyncScreenText.FOLDER_NOT_JOINED),
         )
         assertEquals(
@@ -313,5 +313,180 @@ class FolderJoinFlowTest {
                 "sync, or a folder-sync app that keeps a folder on this phone in step with Google Drive.",
             EnglishTxt().s(FolderJoinText.GOOGLE_DRIVE_NOTICE),
         )
+    }
+    // ---- Start a new folder ----
+
+    private val newPassword = "Tangerine-Orbit-Velvet-93!"
+
+    private suspend fun createForm(c: SyncCoordinator, uri: String = "content://tree/new"): Pair<FolderJoinFlow, FolderPasswordForm> {
+        val flow = FolderJoinFlow(c, EnglishTxt())
+        flow.startCreate()
+        flow.picked(FolderPick.Picked(uri))
+        val form = flow.form.value!!
+        assertTrue(form.creating)
+        return flow to form
+    }
+
+    @Test fun starting_a_new_folder_creates_a_group_a_second_device_can_join() = test {
+        val store = LockedStore()
+        val c = coordinator(store)
+        val (flow, form) = createForm(c)
+        form.update(newPassword)
+        assertFalse(form.canJoin) // the repeat is needed too
+        form.updateConfirm(newPassword)
+        assertTrue(c.actionError.value ?: "", flow.join())
+        assertNull(flow.form.value)
+        val state = store.snapshot.sync!!
+        assertTrue(state.hasFolder)
+        assertEquals(1L, state.epoch)
+        assertEquals(listOf(state.deviceId), state.members)
+        assertNotNull(folder.get("LocalGateKeys Sync/keyring.lgkkeys"))
+        assertEquals("content://tree/new", folderUri())
+        assertEquals("This phone now syncs through the cloud folder.", c.actionInfo.value)
+
+        // A second device (its own slots and vault) joins the new folder with the same password.
+        val slots2 = SecretSlots(tmp.newFile("secrets2.bin").also { it.delete() }, ByteArray(32) { 6 }, SystemRandomSource())
+        val store2 = LockedStore()
+        val c2 = coordinator(store2, slots2)
+        val flow2 = FolderJoinFlow(c2, EnglishTxt())
+        flow2.picked(FolderPick.Picked("content://tree/new"))
+        assertFalse(flow2.form.value!!.creating)
+        flow2.form.value!!.update(newPassword)
+        assertTrue(c2.actionError.value ?: "", flow2.join())
+        val joined = store2.snapshot.sync!!
+        assertEquals(state.groupId, joined.groupId)
+        assertTrue(joined.key.contentEquals(state.key))
+        assertEquals(2, joined.members.size)
+    }
+
+    // ---- Add a cloud folder to this group ----
+
+    private fun wifiOnly(lanPeers: List<app.localgatekeys.core.lan.LanPeer> = emptyList()): LockedStore {
+        val wifi = app.localgatekeys.core.lan.LanPeers.createWifiGroup(slots.installId(), SystemRandomSource())
+        return LockedStore(StoreSnapshot(sync = wifi.copy(lanPeers = lanPeers.map {
+            app.localgatekeys.core.lan.LanPeer(it.deviceId, wifi.groupId, it.name, signingPublic = it.signingPublic, exchangePublic = it.exchangePublic, revoked = it.revoked)
+        })))
+    }
+
+    @Test fun adding_a_folder_gives_the_wifi_group_a_folder_another_device_can_join() = test {
+        val store = wifiOnly()
+        val before = store.snapshot.sync!!
+        val c = coordinator(store)
+        c.refreshMembership()
+        val flow = FolderJoinFlow(c, EnglishTxt())
+        flow.startAdd()
+        flow.picked(FolderPick.Picked("content://tree/add"))
+        val form = flow.form.value!!
+        assertTrue(form.creating); assertTrue(form.adding) // a new password, entered twice
+        form.update(newPassword); form.updateConfirm(newPassword)
+        assertTrue(c.actionError.value ?: "", flow.join())
+        assertNull(flow.freshKeyText.value)
+        val state = store.snapshot.sync!!
+        assertTrue(state.hasFolder)
+        assertEquals(before.groupId, state.groupId)
+        assertEquals(1L, state.epoch)
+        assertTrue(state.key.contentEquals(before.key))
+        assertEquals(before.identity, state.identity)
+        assertNotNull(folder.get("LocalGateKeys Sync/keyring.lgkkeys"))
+        assertEquals("content://tree/add", folderUri())
+        assertEquals("This phone now syncs through the cloud folder.", c.actionInfo.value)
+
+        // Another device joins the folder with the new password and gets the same group.
+        val slots2 = SecretSlots(tmp.newFile("secrets-add.bin").also { it.delete() }, ByteArray(32) { 6 }, SystemRandomSource())
+        val store2 = LockedStore()
+        val c2 = coordinator(store2, slots2)
+        val flow2 = FolderJoinFlow(c2, EnglishTxt())
+        flow2.picked(FolderPick.Picked("content://tree/add"))
+        flow2.form.value!!.update(newPassword)
+        assertTrue(c2.actionError.value ?: "", flow2.join())
+        assertEquals(state.groupId, store2.snapshot.sync!!.groupId)
+    }
+
+    @Test fun adding_a_folder_after_a_wifi_device_was_removed_asks_for_a_new_key() = test {
+        val gone = app.localgatekeys.core.lan.LanPeer("gone-1", "g", "Old tablet", signingPublic = ByteArray(32) { 1 }, exchangePublic = ByteArray(32) { 2 }, revoked = true)
+        val kept = app.localgatekeys.core.lan.LanPeer("kept-1", "g", "Laptop", signingPublic = ByteArray(32) { 3 }, exchangePublic = ByteArray(32) { 4 })
+        val store = wifiOnly(listOf(gone, kept))
+        val before = store.snapshot.sync!!
+        val c = coordinator(store)
+        c.refreshMembership()
+        val flow = FolderJoinFlow(c, EnglishTxt())
+        flow.startAdd()
+        flow.picked(FolderPick.Picked("content://tree/fresh"))
+        flow.form.value!!.let { it.update(newPassword); it.updateConfirm(newPassword) }
+        assertFalse(flow.join()) // nothing yet: the confirmation is shown
+        assertNull(flow.form.value)
+        val text = flow.freshKeyText.value!!
+        assertTrue(text, text.startsWith("A Wi-Fi device was removed from this group"))
+        assertTrue(text, text.contains("over Wi-Fi: Laptop · Device kept-1. Afterwards pair each of them again"))
+        assertFalse(text, text.contains("Old tablet"))
+        assertTrue(text, text.endsWith("Continue?"))
+        assertFalse(store.snapshot.sync!!.hasFolder)
+        assertNull(folder.get("LocalGateKeys Sync/keyring.lgkkeys"))
+
+        assertTrue(c.actionError.value ?: "", flow.confirmFreshKey())
+        assertNull(flow.freshKeyText.value)
+        val state = store.snapshot.sync!!
+        assertTrue(state.hasFolder)
+        assertEquals(2L, state.epoch)
+        assertFalse(state.key.contentEquals(before.key))
+        assertEquals(before.groupId, state.groupId)
+    }
+
+    @Test fun cancelling_the_new_key_confirmation_adds_nothing() = test {
+        val gone = app.localgatekeys.core.lan.LanPeer("gone-1", "g", "Old tablet", signingPublic = ByteArray(32) { 1 }, exchangePublic = ByteArray(32) { 2 }, revoked = true)
+        val store = wifiOnly(listOf(gone))
+        val c = coordinator(store)
+        c.refreshMembership()
+        val flow = FolderJoinFlow(c, EnglishTxt())
+        flow.startAdd()
+        flow.picked(FolderPick.Picked("content://tree/fresh"))
+        flow.form.value!!.let { it.update(newPassword); it.updateConfirm(newPassword) }
+        assertFalse(flow.join())
+        flow.cancelFreshKey()
+        assertNull(flow.freshKeyText.value)
+        assertFalse(flow.confirmFreshKey())
+        assertFalse(store.snapshot.sync!!.hasFolder)
+        assertNull(folder.get("LocalGateKeys Sync/keyring.lgkkeys"))
+    }
+
+    @Test fun starting_a_new_folder_in_a_folder_with_a_group_is_folder_in_use() = test {
+        seedEpoch1Folder()
+        val store = LockedStore()
+        val c = coordinator(store)
+        val (flow, form) = createForm(c)
+        form.update(newPassword); form.updateConfirm(newPassword)
+        assertFalse(flow.join())
+        assertEquals("This folder already holds a sync group. Use Join a folder instead.", c.actionError.value)
+        assertNull(store.snapshot.sync)
+        assertEquals(0, store.commits)
+        assertNull(folderUri())
+        assertEquals(listOf<String?>(null), folders.kept)
+    }
+
+    @Test fun starting_a_new_folder_with_a_weak_password_is_refused() = test {
+        val store = LockedStore()
+        val c = coordinator(store)
+        val (flow, form) = createForm(c)
+        form.update("short"); form.updateConfirm("short")
+        assertFalse(flow.join())
+        assertEquals(EnglishTxt().s(R.string.sync_the_sync_password_needs_at), c.actionError.value)
+        assertNull(store.snapshot.sync)
+        assertNull(folder.get("LocalGateKeys Sync/keyring.lgkkeys"))
+        assertNull(folderUri())
+    }
+
+    @Test fun starting_a_new_folder_with_different_passwords_keeps_the_sheet_open() = test {
+        val store = LockedStore()
+        val c = coordinator(store)
+        val (flow, form) = createForm(c)
+        form.update(newPassword); form.updateConfirm(newPassword + "x")
+        assertFalse(flow.join())
+        assertEquals(form, flow.form.value) // still open
+        assertEquals("The two passwords do not match.", form.problem.value)
+        assertEquals(newPassword, form.password.value) // nothing was taken
+        assertEquals(0, store.commits)
+        assertTrue(folders.opened.isEmpty())
+        form.updateConfirm(newPassword)
+        assertNull(form.problem.value)
     }
 }

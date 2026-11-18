@@ -1,4 +1,5 @@
 import SwiftUI
+import LGKCore
 
 /// The sidebar on the colour wash (mockup `.sb`): Vault, Types (only kinds with items), Collections (with
 /// counts and a Manage button) and Tools.
@@ -56,15 +57,31 @@ struct Sidebar: View {
                         .buttonStyle(.plain).padding(.top, 12).padding(.trailing, 10)
                         .help("Manage collections").accessibilityLabel("Manage collections")
                     }
-                    ForEach(model.sortedCollections, id: \.id) { row($0.name, .collection($0.id)) }
+                    ForEach(model.sortedCollections, id: \.id) { row(CollectionCatalog.displayName($0.name), .collection($0.id)) }
                 }
-                header(String(localized: "Tools"))
-                ForEach(Tool.allCases, id: \.self) { row($0.title, .tool($0)) }
             }
             .padding(.horizontal, 6).padding(.vertical, 4)
         }
         .scrollIndicators(.automatic)
         .softBottomEdge()
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            // Tools and Settings never scroll: only the item groups above them do, so every tool stays
+            // visible at any window height.
+            VStack(alignment: .leading, spacing: 0) {
+                header(String(localized: "Tools"), top: 8)
+                ForEach(Tool.sidebarTools, id: \.self) { row($0.sidebarTitle, .tool($0)) }
+                row(Tool.settings.title, .tool(.settings)).padding(.top, 4)
+            }
+            .padding(.horizontal, 6).padding(.top, 4)
+            .overlay(alignment: .top) { Rectangle().fill(theme.textFaint.opacity(0.35)).frame(height: 0.5).padding(.horizontal, 6) }
+        }
+    }
+
+    /// A tool page highlights its sidebar row (Activity → Security centre, Devices → Sync & devices).
+    private func isOn(_ selection: SidebarSelection) -> Bool {
+        if model.selection == selection { return true }
+        if case .tool(let row) = selection, case .tool(let shown) = model.selection { return shown.sidebarRow == row }
+        return false
     }
 
     private func header(_ title: String, top: CGFloat = 16) -> some View {
@@ -73,7 +90,7 @@ struct Sidebar: View {
     }
 
     private func row(_ title: String, _ selection: SidebarSelection) -> some View {
-        let on = model.selection == selection
+        let on = isOn(selection)
         return Button { model.selection = selection } label: {
             HStack {
                 Text(title).foregroundStyle(theme.text).lineLimit(1)

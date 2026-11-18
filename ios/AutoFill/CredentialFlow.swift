@@ -53,8 +53,24 @@ final class CredentialFlow {
     private(set) var snapshot: StoreSnapshot?
     /// The store opened by the last unlock (for `PasskeyFlow.register`'s commit); dropped with the snapshot.
     private(set) var store: (any ItemStore)?
+    /// Items this request may not offer or fill (feature pack §2 and §4): travel-hidden items, and logins whose
+    /// access rules refuse autofill on a phone. Read with the snapshot; dropped with it.
+    private(set) var omitted: Set<String> = []
+    /// Reads this vault's travel mode (the app's `local-data.bin`); tests replace it.
+    var travel: (any ItemStore) -> TravelMode = { store in
+        // A local data file that can't be read hides everything (scan 2026-11-15 S-L4).
+        (store as? LocalStore).map { PhoneLocalDataFile.travel(for: $0) } ?? .off
+    }
 
     static let reason = String(localized: "Unlock LocalGateKeys to fill your password.")
+
+    /// Writes the Safari "just filled" marker (`SafariFillMarker.recordFill`: the origins and the username, never the
+    /// password). Only `recordFill` calls it, after its gates; tests replace it.
+    var writeFillMarker: @MainActor (_ origins: [String], _ username: String) -> Void = { origins, username in
+        SafariFillMarker.recordFill(origins: origins, username: username)
+    }
+    /// A duress session or hold (sub-plan 08): no marker then. Tests replace it.
+    var duressBlocked: @MainActor () -> Bool = { PhoneDuress.shared()?.servicesBlocked() ?? false }
 
     /// Awaited once when Face ID fails with `LAError.notInteractive` (-1004: the extension's UI was not on
     /// screen yet), before the single retry. The driver replaces it with "the next viewDidAppear, or its retry
@@ -91,6 +107,7 @@ final class CredentialFlow {
         }
         AutoFillTrace.log("unlock snapshot loaded records=\(s.records.count) revision=\(s.revision)")
         snapshot = s; store = opened
+        omitted = AutoFillGate.omitted(s, travel: travel(opened), today: RecordDigest.today())
         return s
     }
 
@@ -111,13 +128,14 @@ final class CredentialFlow {
 
     /// Logins for the page, best first (`prepareCredentialList`).
     func candidates(urls: [String]) async throws -> [AutoFillLogin] {
-        matcher.matches(try await unlock(), urls: urls)
+        let snapshot = try await unlock()
+        return matcher.matches(snapshot, urls: urls).filter { !omitted.contains($0.id) }
     }
 
     /// The login for a QuickType identity (`prepareInterfaceToProvideCredential`).
     func login(recordID: String) async throws -> AutoFillLogin {
         let snapshot = try await unlock()
-        guard let l = matcher.login(id: recordID, in: snapshot) else {
+        guard !omitted.contains(recordID), let l = matcher.login(id: recordID, in: snapshot) else {
             AutoFillTrace.log("lookup recordID=\(rid: recordID) found=false \(AutoFillMatcher.traceKind(id: recordID, in: snapshot))")
             throw Failure.notFound
         }
@@ -125,8 +143,27 @@ final class CredentialFlow {
         return l
     }
 
+    /// Logins for the page that hold a 2FA secret, best first (`prepareOneTimeCodeCredentialList`, iOS 18+).
+    func codeCandidates(urls: [String]) async throws -> [AutoFillLogin] {
+        try await candidates(urls: urls).filter { $0.totp != nil }
+    }
+
+    /// The login of a one-time-code identity: like `login(recordID:)`, and it must still hold a 2FA secret.
+    func codeLogin(recordID: String) async throws -> AutoFillLogin {
+        let l = try await login(recordID: recordID)
+        guard l.totp != nil else { throw Failure.notFound }
+        return l
+    }
+
+    /// The login's current 2FA code (one-time-code fill); nil without a valid secret. Never copied anywhere.
+    func code(_ login: AutoFillLogin) -> String? {
+        precondition(snapshot != nil, "code before authentication")
+        guard let t = login.totp else { return nil }
+        return try? TOTP.code(secret: t.secret, algorithm: t.algorithm, digits: t.digits, period: t.period, at: clock.now)
+    }
+
     /// Forgets the decrypted vault (after completing or cancelling a request).
-    func reset() { snapshot = nil; store = nil }
+    func reset() { snapshot = nil; store = nil; omitted = [] }
 
     /// Called when a login is returned: copies its TOTP code (if it has one and "Copy 2FA code when filling"
     /// is on). Returns (user, password).
@@ -137,6 +174,20 @@ final class CredentialFlow {
             clipboard.copy(code)
         }
         return (login.username, login.password)
+    }
+
+    /// A password went out for `origins` (the login's saved origin, and the page's origin when the request named one,
+    /// see `CredentialRequestDriver.complete`): leaves the Safari "just filled" marker, so the Safari extension does not
+    /// ask to save the sign-in that follows. Nothing when no origin is one the Safari extension saves for, while an
+    /// erase is pending or during a duress session or hold. Best effort: never throws, never stops a fill.
+    func recordFill(origins: [String], username: String) {
+        let usable = SafariFillMarker.usableOrigins(origins)
+        guard !usable.isEmpty, !username.isEmpty else { return }
+        guard !settings.erasePending, !duressBlocked() else {
+            AutoFillTrace.log("fill marker skipped (erase pending or duress)")
+            return
+        }
+        writeFillMarker(usable, username)
     }
 }
 
@@ -158,6 +209,8 @@ enum CredentialRequestRoute: Equatable, Sendable {
     /// A password (QuickType) identity: its record identifier is the store item id.
     case password(recordID: String)
     case passkey(recordID: String, rpID: String, clientDataHash: Data)
+    /// A one-time-code identity (iOS 18+): its record identifier is the login's item id.
+    case oneTimeCode(recordID: String)
     /// No record identifier: answered at once, without unlocking.
     case identityNotFound
 
@@ -166,6 +219,10 @@ enum CredentialRequestRoute: Equatable, Sendable {
             guard let identity = pk.credentialIdentity as? ASPasskeyCredentialIdentity,
                   let id = identity.recordIdentifier else { return .identityNotFound }
             return .passkey(recordID: id, rpID: identity.relyingPartyIdentifier, clientDataHash: pk.clientDataHash)
+        }
+        if #available(iOS 18.0, *), request.type == .oneTimeCode {
+            guard let id = request.credentialIdentity.recordIdentifier else { return .identityNotFound }
+            return .oneTimeCode(recordID: id)
         }
         guard let id = request.credentialIdentity.recordIdentifier else { return .identityNotFound }
         return .password(recordID: id)
@@ -227,6 +284,15 @@ protocol CredentialRequestSink: AnyObject {
     func showTextFields(_ fields: [TextInsertionField])
     /// Exactly one per text-insertion request: the picked field's text.
     func completeText(_ text: String)
+    /// One per one-time-code request (iOS 18+): the picked login's current 2FA code.
+    func completeOneTimeCode(_ code: String)
+    /// Task 8: a failure the person must act on in the app ("Open LocalGateKeys to unlock this vault"); the request
+    /// stays open until Cancel.
+    func showMessage(_ text: String)
+}
+
+extension CredentialRequestSink {
+    func showMessage(_ text: String) {}
 }
 
 /// One AutoFill request at a time, finished exactly once. Cancel stops the in-flight task; a task that
@@ -247,6 +313,13 @@ final class CredentialRequestDriver {
     let passkeys: PasskeyFlow
     /// The open passkey list's request (relying party and client data hash), for `selectPasskey`.
     private var passkeyRequest: (rpID: String, clientDataHash: Data)?
+    /// The open list is a one-time-code list (iOS 18+): a picked row fills its 2FA code, never its password.
+    private(set) var listsCodes = false
+    /// The open password list's page origin when it is a web page the Safari extension saves for
+    /// (`fillOrigin(_:)`): a password picked from that list leaves the Safari "just filled" marker for it as well as for
+    /// the login's own saved origin. Nil for every other request (QuickType identities, which name no page, codes,
+    /// passkeys, text); cleared by each new request. A QuickType fill's marker uses the login's saved origin only.
+    private(set) var fillOrigin: String?
     /// Set by the first Create: a second tap must not restart the registration (a second Face ID prompt,
     /// or a second passkey once the first one has committed).
     private var registrationStarted = false
@@ -308,6 +381,7 @@ final class CredentialRequestDriver {
         task?.cancel()
         generation += 1
         finished = false
+        fillOrigin = nil
         let gen = generation
         AutoFillTrace.log("driver.start generation=\(gen)")
         let isLive: @MainActor () -> Bool = { [weak self] in
@@ -322,9 +396,17 @@ final class CredentialRequestDriver {
         }
     }
 
-    /// `prepareCredentialList`.
-    func beginList(urls: [String]) {
-        AutoFillTrace.log("driver.beginList services=\(hosts: urls)")
+    /// The page origin of a request's service identifiers for the Safari "just filled" marker: the first URL-type
+    /// identifier whose origin the Safari extension saves for (`SafariFillMarker.pageOrigin`); nil when there is none
+    /// (a domain identifier, an app, an http page). Read on the delivering thread.
+    nonisolated static func fillOrigin(_ ids: [ASCredentialServiceIdentifier]) -> String? {
+        ids.lazy.filter { $0.type == .URL }.compactMap { SafariFillMarker.pageOrigin($0.identifier) }.first
+    }
+
+    /// `prepareCredentialList`. `fillOrigin`: the page's origin when it is a web page (`fillOrigin(_:)`).
+    func beginList(urls: [String], fillOrigin: String? = nil) {
+        AutoFillTrace.log("driver.beginList services=\(hosts: urls) web=\(fillOrigin != nil)")
+        defer { self.fillOrigin = fillOrigin }   // after `start`, which clears it
         start { [weak self] isLive in
             guard let self else { return }
             guard isLive() else { return }
@@ -334,7 +416,49 @@ final class CredentialRequestDriver {
                 self.sink?.showList(logins)
             } catch {
                 guard isLive() else { return self.dropStale() }
-                self.cancel(AutoFillErrorMapping.code(for: error))
+                self.fail(error)
+            }
+        }
+    }
+
+    /// `prepareOneTimeCodeCredentialList` (iOS 18+): the page's logins that hold a 2FA secret.
+    static let codeReason = String(localized: "Unlock LocalGateKeys to fill a verification code.")
+
+    func beginCodeList(urls: [String]) {
+        AutoFillTrace.log("driver.beginCodeList services=\(hosts: urls)")
+        listsCodes = true
+        start { [weak self] isLive in
+            guard let self else { return }
+            guard isLive() else { return }
+            do {
+                _ = try await self.flow.unlock(reason: Self.codeReason)
+                let logins = try await self.flow.codeCandidates(urls: urls)
+                guard isLive() else { return self.dropStale() }
+                self.sink?.showList(logins)
+            } catch {
+                guard isLive() else { return self.dropStale() }
+                self.fail(error)
+            }
+        }
+    }
+
+    /// `prepareInterfaceToProvideCredential` for a one-time-code identity (iOS 18+).
+    func beginOneTimeCode(recordID: String) {
+        AutoFillTrace.log("driver.beginOneTimeCode recordID=\(rid: recordID)")
+        listsCodes = true
+        start { [weak self] isLive in
+            guard let self else { return }
+            guard isLive() else { return }
+            do {
+                _ = try await self.flow.unlock(reason: Self.codeReason)
+                let login = try await self.flow.codeLogin(recordID: recordID)
+                guard isLive() else { return self.dropStale() }
+                self.complete(login)
+            } catch {
+                AutoFillTrace.log("driver.beginOneTimeCode error=\(error: error)")
+                guard isLive() else { return self.dropStale() }
+                self.cancel(error as? CredentialFlow.Failure == .notFound ? .credentialIdentityNotFound
+                                                                           : AutoFillErrorMapping.code(for: error))
             }
         }
     }
@@ -344,11 +468,13 @@ final class CredentialRequestDriver {
         switch route {
         case .password(let id): AutoFillTrace.log("driver.begin route=password recordID=\(rid: id)")
         case .passkey(let id, let rp, _): AutoFillTrace.log("driver.begin route=passkey recordID=\(rid: id) rp=\(host: rp)")
+        case .oneTimeCode(let id): AutoFillTrace.log("driver.begin route=oneTimeCode recordID=\(rid: id)")
         case .identityNotFound: AutoFillTrace.log("driver.begin route=identityNotFound")
         }
         switch route {
         case .password(let id): beginIdentity(recordID: id)
         case let .passkey(id, rpID, hash): beginPasskey(recordID: id, rpID: rpID, clientDataHash: hash)
+        case .oneTimeCode(let id): beginOneTimeCode(recordID: id)
         case .identityNotFound: finishImmediately(.credentialIdentityNotFound)
         }
     }
@@ -385,7 +511,7 @@ final class CredentialRequestDriver {
                 self.sink?.showPasskeys(list)
             } catch {
                 guard isLive() else { return self.dropStale() }
-                self.cancel(AutoFillErrorMapping.code(for: error))
+                self.fail(error)
             }
         }
     }
@@ -476,7 +602,7 @@ final class CredentialRequestDriver {
                 self.sink?.showTextFields(TextInsertionCatalog.fields(snapshot))
             } catch {
                 guard isLive() else { return self.dropStale() }
-                self.cancel(AutoFillErrorMapping.code(for: error))
+                self.fail(error)
             }
         }
     }
@@ -491,6 +617,17 @@ final class CredentialRequestDriver {
         sink?.completeText(field.value)
     }
 
+    /// A failed list, passkey list or text request: a vault that needs the app says so (the request stays open for
+    /// Cancel); everything else finishes with its `ASExtensionError` code.
+    private func fail(_ error: Error) {
+        if let text = AutoFillErrorMapping.message(for: error) {
+            AutoFillTrace.log("driver.fail showing message")
+            sink?.showMessage(text)
+        } else {
+            cancel(AutoFillErrorMapping.code(for: error))
+        }
+    }
+
     func finishImmediately(_ code: ASExtensionError.Code) {
         AutoFillTrace.log("driver.finishImmediately code=\(code.rawValue)")
         task?.cancel()
@@ -503,10 +640,21 @@ final class CredentialRequestDriver {
     func complete(_ login: AutoFillLogin) {
         AutoFillTrace.log("driver.complete recordID=\(rid: login.id) finished=\(finished)")
         guard !finished else { return }
+        if listsCodes {
+            // A one-time-code request fills the code only: never the password, nothing copied.
+            guard let code = flow.code(login) else { return cancel(.failed) }
+            finished = true
+            flow.reset()
+            sink?.completeOneTimeCode(code)
+            return
+        }
         finished = true
         let filled = flow.fill(login)
         flow.reset()
         sink?.completeRequest(user: filled.user, password: filled.password)
+        // After the fill is handed over, so the marker never delays it. Passwords only: codes returned above, passkeys
+        // and text never come here.
+        flow.recordFill(origins: [login.origin, fillOrigin].compactMap { $0 }, username: filled.user)
     }
 
     func cancel(_ code: ASExtensionError.Code) {
@@ -534,6 +682,12 @@ enum AutoFillErrorMapping {
         if let la = error as? LAError, [.userCancel, .systemCancel, .appCancel].contains(la.code) { return .userCanceled }
         if case KeychainVaultError.status(let st) = error, st == errSecUserCanceled { return .userCanceled }
         return .failed   // notInteractive (-1004) too, once its one retry has failed
+    }
+
+    /// Task 8: the line shown instead of finishing the request; nil for every other failure.
+    static func message(for error: Error) -> String? {
+        guard (error as? AppPasswordError) == .openAppForFactors else { return nil }
+        return String(localized: "autofill.factorsNeedApp", defaultValue: "Open LocalGateKeys to unlock this vault (it needs a key file or YubiKey).")
     }
 
     /// `LAError.notInteractive` (-1004): Face ID was asked for before the extension's UI was on screen. Not a

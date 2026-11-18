@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Markdown formatting in notes (Quick Wins Task 6). -->
+<resources>
+    <string name="notes_show_formatting">서식 표시</string>
+    <string name="notes_todo_done">완료</string>
+    <string name="notes_todo_not_done">미완료</string>
+</resources>

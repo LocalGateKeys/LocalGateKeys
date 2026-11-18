@@ -54,6 +54,10 @@ public final class OfferSession: @unchecked Sendable {
               inviter.exchangePublicKey == offer.inviterExchangePublic else {
             throw PairingError.authentication("Inviter identity does not match the offer")
         }
+        // A version-2 offer is armed only with its reveal (`PairingOffer.create` on this device).
+        guard offer.commit == nil || offer.reveal != nil else {
+            throw PairingError.malformed("This offer was not created on this device")
+        }
         self.offer = offer
         self.inviter = inviter
         self.wall = wall
@@ -89,8 +93,11 @@ public final class OfferSession: @unchecked Sendable {
     }
 
     /// One enrollment request. `reservedIDs` are device ids already in the group (they count as a
-    /// failed attempt); `peerCount` >= `maxPeers` answers `full` before anything is consumed.
-    public func handle(_ raw: [UInt8], reservedIDs: Set<String> = [], peerCount: Int = 0, maxPeers: Int = 16) -> Outcome {
+    /// failed attempt); `peerCount` >= `maxPeers` answers `full` without counting or consuming anything.
+    /// `rejoining`: a verified request this host accepts although its id is reserved, and also when the peer list is
+    /// full (a paired device pairing again with the same keys replaces its own entry; `LanPeers.rejoining`).
+    public func handle(_ raw: [UInt8], reservedIDs: Set<String> = [], peerCount: Int = 0, maxPeers: Int = 16,
+                       rejoining: (Enrollment.Request) -> Bool = { _ in false }) -> Outcome {
         lock.lock(); defer { lock.unlock() }
         if stopped { return .close }
         let now = wall.now
@@ -101,22 +108,27 @@ public final class OfferSession: @unchecked Sendable {
         if !armed || consumed || attemptCount >= Self.maxAttempts || expiredLocked() {
             return Self.refusal("used-or-expired")
         }
-        if peerCount >= maxPeers { return Self.refusal("full") }
+        // A full list answers `full` to every request but a verified rejoin, which needs the request opened first.
+        let full = peerCount >= maxPeers
         let plain: [UInt8]
         do { plain = try Enrollment.decryptRequest(offer: offer, inviter: inviter, raw: raw) }
-        catch { return Self.refusal("refused") }  // not counted
+        catch { return Self.refusal(full ? "full" : "refused") }  // not counted
         do {
             let request = try Enrollment.verifyRequestBody(offer: offer, plain: plain)
-            guard !reservedIDs.contains(request.deviceID) else {
+            let again = rejoining(request)
+            if full && !again { return Self.refusal("full") }
+            guard again || !reservedIDs.contains(request.deviceID) else {
                 throw PairingError.authentication("This device id is already in use in the group")
             }
             consumed = true
             return .verified(request)
         } catch let error as PairingError {
+            if full { return Self.refusal("full") }
             attemptCount += 1
             if case .refused("update-needed") = error { return Self.refusal("update-needed") }
             return Self.refusal("refused")
         } catch {
+            if full { return Self.refusal("full") }
             attemptCount += 1
             return Self.refusal("refused")
         }

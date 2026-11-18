@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from localvault import licensing
 from localvault.attachments import DocumentService
 from localvault.import_workflow import ImportWorkflowError, apply_import_plan, plan_records
 from localvault.importers import ImportedRecord
@@ -157,6 +158,22 @@ def test_over_limit_vault_still_edits_and_deletes(case_dir: Path) -> None:
     assert session.items.delete_item(note_id)
     assert session.delete(ids[2])
     assert session.live_item_count() == 4
+
+
+def test_item_past_free_limit_hits_limit(case_dir: Path) -> None:
+    assert licensing.FREE_ITEM_LIMIT == 7
+    session = _vault(case_dir, limit=licensing.FREE_ITEM_LIMIT)
+    ids = [session.upsert_web(origin=f"https://site{i}.example", username="me", password=f"pw-{i}")
+           for i in range(7)]
+    assert session.live_item_count() == 7
+    with pytest.raises(ItemLimitReached) as caught:
+        session.items.create_note("Eighth", "body")
+    assert caught.value.limit == 7 and caught.value.count == 7
+    assert "7 items" in str(caught.value)
+    session.update_entry_fields(ids[0], label="Renamed", password="new-pw")
+    assert session.get_entry(ids[0])["label"] == "Renamed"
+    assert session.delete(ids[1])
+    assert session.live_item_count() == 6
 
 
 def test_delete_down_to_three_allows_exactly_one_create(case_dir: Path) -> None:

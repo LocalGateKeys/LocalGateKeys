@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">Sammlungen</string>
+    <string name="collections_none">Noch keine Sammlungen.</string>
+    <string name="collections_footer">Notizen, Karten und andere typisierte Einträge können Sammlungen hinzugefügt werden. Anmeldungen nicht.</string>
+    <string name="collections_add_starters">Startsammlungen hinzufügen</string>
+    <string name="collections_new">Neue Sammlung</string>
+    <string name="collections_name">Name</string>
+    <string name="collections_create">Erstellen</string>
+    <string name="collections_delete_title">Sammlung löschen?</string>
+    <string name="collections_delete_message">Die darin enthaltenen Einträge bleiben erhalten.</string>
+    <string name="collections_view_only">Nur ansehen</string>
+    <string name="collections_shared">Geteilt</string>
+    <string name="collections_picker_footer">Ein Eintrag kann in bis zu 20 Sammlungen sein.</string>
+    <string name="collections_all_items">Alle Einträge</string>
+    <string name="collections_manage">Sammlungen verwalten</string>
+    <string name="collections_filter">Sammlung: %1$s</string>
+    <string name="collections_filter_clear">Alle Einträge anzeigen</string>
+    <string name="collections_filter_empty">Keine Einträge in dieser Sammlung.</string>
+    <string name="collections_read_only_item">Dieser Eintrag ist in einer Sammlung, die nur zum Ansehen mit dir geteilt wurde, und kann auf diesem Gerät nicht geändert werden.</string>
+    <string name="collections_read_only">Diese Sammlung wurde nur zum Ansehen mit dir geteilt und kann auf diesem Gerät nicht geändert werden.</string>
+    <string name="collections_shared_delete">Eine geteilte Sammlung kann nicht gelöscht werden. Beende zuerst das Teilen oder verlasse sie.</string>
+    <string name="collections_limit">Du kannst höchstens 500 Sammlungen haben.</string>
+    <string name="collections_not_member">Anmeldungen und Dokumente können keiner Sammlung hinzugefügt werden.</string>
+    <string name="collections_bad_name">Dieser Name kann nicht verwendet werden.</string>
+    <string name="collections_gone">Diese Sammlung existiert nicht mehr.</string>
+    <string name="collections_failed">Die Sammlung konnte nicht geändert werden.</string>
+    <string name="collections_empty_name">Geben Sie einen Namen für die Sammlung ein.</string>
+    <string name="collections_long_name">Sammlungsnamen dürfen höchstens 100 Zeichen lang sein.</string>
+    <string name="collections_duplicate">Eine Sammlung mit diesem Namen existiert bereits.</string>
+    <string name="collections_too_many">Ein Eintrag kann nicht zu mehr als 20 Sammlungen gehören.</string>
+    <string name="collections_read_failed">Der Tresor konnte auf diesem Gerät nicht gelesen werden.</string>
+    <string name="collection_starter_personal">Persönlich</string>
+    <string name="collection_starter_work">Arbeit</string>
+    <string name="collection_starter_travel">Reisen</string>
+    <string name="collection_starter_emergency">Notfall</string>
+</resources>

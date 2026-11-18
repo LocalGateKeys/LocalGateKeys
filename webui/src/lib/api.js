@@ -46,15 +46,20 @@ function collectErrorLog(node, depth = 0) {
   for (const value of Object.values(node)) collectErrorLog(value, depth + 1);
 }
 
-/** Call a bridge method. Always resolves to {ok: true, ...} or {ok: false, error: {code, message}}. */
+/** Call a bridge method. Always resolves to {ok: true, ...} or {ok: false, error: {code, message}}.
+ *  The arguments (a master password, for one) are dropped as soon as the call is sent: never kept,
+ *  logged or retried. */
 export async function call(method, ...args) {
   try {
     const api = await bridge();
     const fn = api?.[method];
     if (typeof fn !== 'function') {
+      args.length = 0;
       return { ok: false, error: { code: 'bridge', message: t('api.err.notAvailable') } };
     }
-    const result = await fn(...args);
+    let pending;
+    try { pending = fn(...args); } finally { args.length = 0; }
+    const result = await pending;
     collectErrorLog(result);
     return result ?? { ok: false, error: { code: 'bridge', message: t('api.err.noReply') } };
   } catch {

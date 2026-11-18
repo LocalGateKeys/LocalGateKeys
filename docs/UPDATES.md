@@ -5,6 +5,24 @@ fetches one small signed JSON document, verifies it with a publisher key that
 is compiled into the application, compares versions, and offers to open the
 release-notes page in the browser. It never downloads or runs an installer.
 
+## Store-only distribution (2026-11-09)
+
+LocalGateKeys for Windows now ships only through the Microsoft Store. Store
+(MSIX) builds are updated by the Store and never use this feed. **0.4.12 is
+the final Inno Setup installer release**: it reaches installer users only
+through this feed and shows them the "LocalGateKeys has moved to the
+Microsoft Store" notice (`src/localvault/app/store_move.py`). Their vault in
+`%LOCALAPPDATA%\LocalGateKeys` is shared with the MSIX build, so uninstalling
+the installer build and installing from the Store keeps it.
+
+After that the feed is frozen: `stable.json` stays at 0.4.12, and the Worker
+(`cloudflare/update-feed`, wrangler vars `MIN_RELEASE` = `LAST_INSTALLER_RELEASE`
+= `0.4.12`) serves only 0.4.12 and answers 410 with a pointer to the Store for
+any newer release. The client code below stays, because the remaining
+installer builds keep checking (and verifying) the signed feed until their
+users move. The release steps in this document apply only to that one 0.4.12
+publication; the revocation list (below) is still published as before.
+
 Everything lives in `src/localvault/updates.py` (client), `src/localvault/version.py`
 (`APP_VERSION`, `BUILD_DATE`), `scripts/sign_release_manifest.py` (publisher
 tooling) and `tests/test_updates.py`.
@@ -163,7 +181,7 @@ python scripts/sign_release_manifest.py sign `
 * The manifest is validated before signing, so a malformed manifest never
   gets a signature.
 
-Suggested one-line hook for `scripts/build_personal_installer.ps1` (after the
+Suggested one-line hook for `scripts/build_personal_installer.ps1 -FinalInstallerRelease` (after the
 installer and its `.manifest.json` are produced; the key is supplied by the
 release engineer, not stored on the build machine):
 
@@ -204,15 +222,18 @@ rejected, it never redirects, and it refuses to serve a `stable.json` larger
 than the client's 64 KB cap. The Worker is not trusted for integrity: the
 signature in `stable.json` is, so a tampered Worker or bucket can only make
 checks fail. Releases older than the `MIN_RELEASE` var in `wrangler.jsonc`
-(now `0.4.7`) are no longer served; the objects stay in R2. Tests: `tests/update-feed-worker.test.cjs` (part of `npm test`).
+(now `0.4.12`) are no longer served, and releases newer than
+`LAST_INSTALLER_RELEASE` (`0.4.12`) get a 410 that points to the Microsoft
+Store; the objects stay in R2. Tests: `tests/update-feed-worker.test.cjs` (part of `npm test`).
 
 ### One-time setup
 
 ```powershell
-wrangler login                                   # opens the browser
-wrangler r2 bucket create localgatekeys-releases
 cd cloudflare\update-feed
-wrangler deploy                                  # serves the custom domain in wrangler.jsonc
+npm ci                                           # installs the pinned wrangler (devDependency)
+npx wrangler login                               # opens the browser
+npx wrangler r2 bucket create localgatekeys-releases
+npx wrangler deploy                                  # serves the custom domain in wrangler.jsonc
 ```
 
 Then set the client config (step 2 above) to that origin:
@@ -225,9 +246,11 @@ The URL is compiled into every client, so do not rename the Worker or move
 the account afterwards; a move means shipping a client with the new URL and
 keeping the old origin alive until old clients have upgraded.
 
-### Each release
+### Each release (only the final 0.4.12 installer release)
 
-1. Build the installer (`scripts/build_personal_installer.ps1`).
+No installer release follows 0.4.12; Store releases do not touch this feed.
+
+1. Build the installer (`scripts/build_personal_installer.ps1 -FinalInstallerRelease`).
 2. Write the manifest with artifact URLs of the form
    `https://updates.localgatekeys.app/releases/<app_version>/<file>`
    and `notes_url` pointing at the release notes (e.g. the GitHub release).
@@ -249,7 +272,7 @@ carries licence data.
 ```powershell
 python scripts/sign_release_manifest.py revocations --key .\release-signing-key.pem `
   --ids-file .\revoked.txt --out .\revocations.json
-wrangler r2 object put localgatekeys-releases/revocations.json --file .\revocations.json --content-type application/json --remote
+npx --prefix cloudflare/license-issuer wrangler r2 object put localgatekeys-releases/revocations.json --file .\revocations.json --content-type application/json --remote
 ```
 
 `.\scripts\publish_revocations.ps1 -IdsFile <ids> -Key <release key PEM>` does

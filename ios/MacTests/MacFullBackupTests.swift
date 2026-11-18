@@ -58,8 +58,8 @@ final class MacFullBackupTests: XCTestCase {
     private static let master = "fixture master password 2026"
     private static let backupPassword = "fixture backup password 2026"
 
-    private var dir: URL!
-    private var vaultDir: URL!
+    nonisolated(unsafe) private var dir: URL!
+    nonisolated(unsafe) private var vaultDir: URL!
     private let key = (0..<32).map { UInt8($0 &* 7 &+ 1) }
 
     override func setUpWithError() throws {
@@ -88,6 +88,24 @@ final class MacFullBackupTests: XCTestCase {
 
     /// This test's attachment folder (never the real Application Support).
     private var attachments: BlobFolder { BlobFolder(root: dir.appendingPathComponent("files", isDirectory: true)) }
+
+    /// Sub-plan 07: a new vault that holds only collection states (e.g. the starters) still counts as empty for the
+    /// lock screen's restore; one with an item does not.
+    func testRestoreIntoNewVaultIgnoresCollectionStates() async throws {
+        let store = try liveStore()
+        let family = "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+        try seed(store, [CollectionStates.catalogPrefix + family: CollectionStates.wrapper(CollectionStates.catalog(
+            collectionID: family, name: "Personal", description: "", createdAt: 1, updatedAt: 1))])
+        let (m, _) = model(store)
+        let missing = dir.appendingPathComponent("missing.lgk")
+        do { try await m.restoreIntoNewVault(url: missing, password: Self.backupPassword, vaultPassword: Self.master); XCTFail() }
+        catch { XCTAssertNotEqual(error as? RecoveryError, MacFullBackup.notAuthorised, "the restore was let through") }
+        var snap = try store.load().records
+        snap[Self.a] = Self.login(Self.a, "mail")
+        try seed(store, snap)
+        do { try await m.restoreIntoNewVault(url: missing, password: Self.backupPassword, vaultPassword: Self.master); XCTFail() }
+        catch { XCTAssertEqual(error as? RecoveryError, MacFullBackup.notAuthorised) }
+    }
 
     /// Task 12: a document goes into the backup as a Windows sidecar and catalog row; a restore preview writes no
     /// file; the confirmed restore seals the file again and brings the document back as a document.
@@ -223,6 +241,202 @@ final class MacFullBackupTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: vaultDir.path).filter { $0.hasPrefix("restore-staging-") }, [])
     }
 
+    /// Sub-plan 07 (5e review ruling): a restore keeps the share groups and, for every collection shared on this Mac,
+    /// the items in it exactly as they are now (records and memberships), so it never takes a shared item out for every
+    /// member nor puts the backup's older copy over the others' edits. The preview says so.
+    func testRestoreKeepsTheItemsOfCollectionsSharedOnThisMac() async throws {
+        let store = try liveStore()
+        try seed(store, [Self.a: Self.login(Self.a, "mail"), Self.c: Self.note(Self.c)])
+        let local = InMemoryLocalData()
+        let (m, gate) = model(store, local: local)
+        let url = dir.appendingPathComponent("shared.lgk")
+        _ = try await m.create(to: url, backupPassword: Self.backupPassword, masterPassword: Self.master)
+
+        // After the backup: note c is edited, note d is added, both go into "Family", which this Mac then shares.
+        var records = try store.load().records
+        records[Self.c] = Wrapper.make(ns: .item, record: .object([
+            "id": .string(Self.c), "kind": .string("note"), "title": .string("Router (edited by a member)"),
+            "fields": .object(["body": .string("y")]), "created_at": .int(1_700_000_000), "updated_at": .int(1_800_000_000),
+        ]))
+        records[Self.d] = Self.note(Self.d)
+        try seed(store, records)
+        let made = try CollectionCatalog.create(name: "Family", in: try store.load(), now: 1_800_000_000)
+        try store.commit(made.change)
+        for id in [Self.c, Self.d] {
+            try store.commit(try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: id, kind: "note", to: [made.id],
+                                                                                in: try store.load())))
+        }
+        _ = try ShareGroups.create(store: store, collectionID: made.id, password: "violet-harbor-canyon-47-quilt",
+                                   deviceName: "Test Mac", sharedMode: "edit",
+                                   installID: try InMemoryKeychainVault().installID(random: SystemRandomSource()),
+                                   isPro: true, random: SystemRandomSource(), clock: SystemClock())
+        let before = try store.load()
+        XCTAssertNotNil(before.shares)
+
+        let preview = try await m.previewRestore(url: url, password: Self.backupPassword, vaultPassword: Self.master)
+        XCTAssertEqual(preview.sharedCollections, 1)
+        // The shared notes stay as they are, so they are neither replaced nor moved to Recently deleted.
+        XCTAssertEqual(preview.replaced, 0)
+        XCTAssertEqual(preview.removed, 0)
+        XCTAssertTrue(preview.lines.contains("Shared collections are not restored from the backup: their items stay as they are now"))
+
+        let ok = try await restore(m, gate, url)
+        XCTAssertTrue(ok, m.message ?? "")
+        let after = try store.load()
+        XCTAssertEqual(after.records[Self.c], before.records[Self.c], "the shared note keeps its current copy")
+        XCTAssertEqual(after.records[Self.d], before.records[Self.d], "a shared note the backup lacks stays")
+        XCTAssertEqual(CollectionCatalog.memberships(of: Self.c, in: after), [made.id])
+        XCTAssertEqual(CollectionCatalog.memberships(of: Self.d, in: after), [made.id])
+        XCTAssertEqual(after.shares, before.shares, "the share group is untouched")
+        XCTAssertEqual(after.records[Self.a], Self.login(Self.a, "mail"), "everything else comes from the backup")
+        XCTAssertEqual(local.localData?.trash.count, 0, "no shared item went to Recently deleted")
+    }
+
+    /// A restore that would put an item back into a shared collection it is no longer in leaves it out of that
+    /// collection (nothing old is republished); a damaged share store keeps more, never less.
+    func testKeepingSharedLeavesOldItemsOutOfSharedCollections() throws {
+        let family = "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6", home = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+        func member(_ item: String, _ ids: [String]) -> JSONValue {
+            CollectionStates.wrapper(CollectionStates.membership(itemID: item, collectionIDs: ids))
+        }
+        // The share store cannot be decoded: every collection it might name counts as shared.
+        let current = StoreSnapshot(records: [
+            Self.c: Self.note(Self.c), CollectionStates.membershipPrefix + Self.c: member(Self.c, [family]),
+        ], revision: 3, shares: .object(["group": .object(["collection_id": .string(family)])]))
+        XCTAssertEqual(MacFullBackup.sharedCollectionIDs(current), [family])
+        let restored: [String: JSONValue] = [
+            Self.b: Self.note(Self.b), CollectionStates.membershipPrefix + Self.b: member(Self.b, [family, home]),
+            Self.d: Self.note(Self.d), CollectionStates.membershipPrefix + Self.d: member(Self.d, [family]),
+        ]
+        let out = MacFullBackup.keepingShared(current: current, restored: restored)
+        XCTAssertEqual(out[Self.c], current.records[Self.c], "the shared item stays")
+        XCTAssertEqual(CollectionCatalog.memberships(of: Self.c, in: StoreSnapshot(records: out)), [family])
+        XCTAssertEqual(CollectionCatalog.memberships(of: Self.b, in: StoreSnapshot(records: out)), [home])
+        XCTAssertNil(out[CollectionStates.membershipPrefix + Self.d])
+        XCTAssertNotNil(out[Self.d], "the item itself is restored, as this vault's own")
+        // Nothing shared here: unchanged.
+        XCTAssertEqual(MacFullBackup.keepingShared(current: StoreSnapshot(records: current.records), restored: restored), restored)
+    }
+
+    /// Fix round 1, ruling 1: a collection another of this person's devices shares (only its `csl:` link is here, as
+    /// owner or member) keeps its items, memberships, catalog row and link exactly as they are now.
+    func testKeepingSharedKeepsCollectionsAnotherDeviceShares() throws {
+        let family = "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6", home = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+        func member(_ item: String, _ ids: [String]) -> JSONValue {
+            CollectionStates.wrapper(CollectionStates.membership(itemID: item, collectionIDs: ids))
+        }
+        func row(_ id: String, _ name: String) -> JSONValue {
+            CollectionStates.wrapper(CollectionStates.catalog(collectionID: id, name: name, description: "", createdAt: 1, updatedAt: 2))
+        }
+        for role in ["owner", "member"] {
+            let link = CollectionStates.wrapper(CollectionStates.link(collectionID: family, mode: "edit", role: role))
+            let edited = Wrapper.make(ns: .item, record: .object([
+                "id": .string(Self.c), "kind": .string("note"), "title": .string("Router (edited)"),
+                "fields": .object(["body": .string("y")]), "created_at": .int(1_700_000_000), "updated_at": .int(1_800_000_000),
+            ]))
+            let current = StoreSnapshot(records: [
+                Self.c: edited, CollectionStates.membershipPrefix + Self.c: member(Self.c, [family]),
+                CollectionStates.catalogPrefix + family: row(family, "Family"),
+                CollectionStates.catalogPrefix + home: row(home, "Home"),
+                CollectionStates.linkPrefix + family: link,
+            ], revision: 4)
+            XCTAssertNil(current.shares, "no share record on this Mac")
+            XCTAssertEqual(MacFullBackup.sharedCollectionIDs(current), [family], role)
+            // A whole-store copy from before: the old note, the old catalog without Family, the note in Home only.
+            let restored: [String: JSONValue] = [
+                Self.c: Self.note(Self.c), CollectionStates.membershipPrefix + Self.c: member(Self.c, [home]),
+                CollectionStates.catalogPrefix + home: row(home, "Home"),
+                Self.b: Self.note(Self.b), CollectionStates.membershipPrefix + Self.b: member(Self.b, [family]),
+            ]
+            let out = MacFullBackup.keepingShared(current: current, restored: restored)
+            let snap = StoreSnapshot(records: out)
+            XCTAssertEqual(out[Self.c], edited, role)
+            XCTAssertEqual(CollectionCatalog.memberships(of: Self.c, in: snap), [family], role)
+            XCTAssertEqual(CollectionCatalog.memberships(of: Self.b, in: snap), [], "an old item is not put back in it")
+            XCTAssertEqual(out[CollectionStates.catalogPrefix + family], row(family, "Family"), "its catalog row stays")
+            XCTAssertEqual(out[CollectionStates.linkPrefix + family], link)
+        }
+    }
+
+    /// Fix round 1, ruling 2: putting back a Mac safety copy (a whole store with its own, older catalog) keeps the
+    /// shared collection's current catalog row, its items and their memberships.
+    func testSafetyCopyRestoreKeepsTheSharedCollectionsCurrentRow() async throws {
+        let store = try liveStore()
+        try seed(store, [Self.a: Self.login(Self.a, "mail"), Self.c: Self.note(Self.c)])
+        let made = try CollectionCatalog.create(name: "Family", in: try store.load(), now: 1_700_000_000)
+        try store.commit(made.change)
+        try store.commit(try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: Self.c, kind: "note", to: [made.id],
+                                                                            in: try store.load())))
+        let local = InMemoryLocalData()
+        let (m, gate) = model(store, local: local)
+        // A restore keeps a safety copy of the vault as it is: "Family" under its old name, with note c only.
+        let url = dir.appendingPathComponent("copy.lgk")
+        _ = try await m.create(to: url, backupPassword: Self.backupPassword, masterPassword: Self.master)
+        let restored = try await restore(m, gate, url)
+        XCTAssertTrue(restored, m.message ?? "")
+        MacFullBackup.finishInterruptedRestore(in: vaultDir)
+        let copy = try XCTUnwrap(m.safetyCopies().first)
+
+        // Then Family is renamed, gets note d, and is shared from this Mac.
+        try store.commit(try XCTUnwrap(try CollectionCatalog.rename(made.id, to: "Family (shared)", in: try store.load(),
+                                                                    now: 1_800_000_000)))
+        var records = try store.load().records
+        records[Self.d] = Self.note(Self.d)
+        try seed(store, records)
+        try store.commit(try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: Self.d, kind: "note", to: [made.id],
+                                                                            in: try store.load())))
+        _ = try ShareGroups.create(store: store, collectionID: made.id, password: "violet-harbor-canyon-47-quilt",
+                                   deviceName: "Test Mac", sharedMode: "edit",
+                                   installID: try InMemoryKeychainVault().installID(random: SystemRandomSource()),
+                                   isPro: true, random: SystemRandomSource(), clock: SystemClock())
+        let before = try store.load()
+
+        XCTAssertTrue(m.requestRestore(safetyCopy: copy))
+        await gate.submit(Self.master)
+        let back = await m.restoreTask?.value
+        XCTAssertEqual(back, true, m.message ?? "")
+        let after = try store.load()
+        XCTAssertEqual(CollectionCatalog.collections(in: after).first { $0.id == made.id }?.name, "Family (shared)")
+        XCTAssertEqual(after.records[CollectionStates.catalogPrefix + made.id], before.records[CollectionStates.catalogPrefix + made.id])
+        XCTAssertEqual(after.records[Self.d], before.records[Self.d], "the shared note the copy lacks stays")
+        XCTAssertEqual(CollectionCatalog.memberships(of: Self.c, in: after), [made.id])
+        XCTAssertEqual(CollectionCatalog.memberships(of: Self.d, in: after), [made.id])
+        XCTAssertEqual(after.shares, before.shares)
+        XCTAssertEqual(local.localData?.trash.count, 0, "no shared item went to Recently deleted")
+    }
+
+    /// Final review minor 7: a Windows full backup's share secrets (owner key, group key, keyring), share bookkeeping,
+    /// links, the Windows personal sync group and the "shared" marks on collection rows never stay on this Mac and never
+    /// go out again in a Mac backup (restoring that on the PC would bring stale share records back).
+    func testWindowsShareSecretsNeverStayOnTheMacNorGoOutAgain() async throws {
+        let payload: [String: JSONValue] = [
+            "share_groups": .object(["g": .object(["role": .string("owner")])]), "share_sync_meta": .object([:]),
+            "collection_links": .object([:]), "sync_group": .object(["group_id": .string("x")]),
+            "attachment_store_id": .string("s"),
+            "collections": .array([.object(["id": .string("c1"), "name": .string("Family"), "shared_group_id": .string("g")]),
+                                   .object(["id": .string("c2"), "name": .string("Work")])]),
+        ]
+        let cleaned = MacFullBackup.withoutDeviceSecrets(payload)
+        for key in MacFullBackup.deviceOnlyPayloadKeys { XCTAssertNil(cleaned[key], key) }
+        XCTAssertEqual(cleaned["attachment_store_id"], .string("s"))
+        XCTAssertEqual(cleaned["collections"], .array([.object(["id": .string("c1"), "name": .string("Family")]),
+                                                       .object(["id": .string("c2"), "name": .string("Work")])]))
+
+        // Kept from a restore made before this fix: the next Mac backup leaves them out.
+        let store = try liveStore()
+        try seed(store, [Self.c: Self.note(Self.c)])
+        let (m, _) = model(store)
+        let profile = DesktopProfileStore(directory: vaultDir, localKey: key)
+        var kept = DesktopProfileStore.Contents.empty
+        kept.payload = payload.filter { !["collections", "attachment_store_id"].contains($0.key) }
+        try profile.seal(kept).write(to: profile.fileURL)
+        let out = dir.appendingPathComponent("out.lgk")
+        _ = try await m.create(to: out, backupPassword: Self.backupPassword, masterPassword: Self.master)
+        let contents = try FullBackupV2.open(Data(contentsOf: out), password: Self.backupPassword)
+        let (exported, _) = try DesktopVaultFile.openPayload(contents.vault, password: Self.master)
+        for key in MacFullBackup.deviceOnlyPayloadKeys { XCTAssertNil(exported[key], key) }
+    }
+
     func testSafetyCopiesKeepNewestFive() async throws {
         let store = try liveStore()
         try seed(store, [Self.a: Self.login(Self.a, "mail")])
@@ -294,7 +508,8 @@ final class MacFullBackupTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: made), try Data(contentsOf: made2), "the Mac create path is deterministic here")
         let out = Self.repo.appendingPathComponent("tests/vectors/recovery/kit/from_mac", isDirectory: true)
         let target = out.appendingPathComponent("mac-created.lgk")
-        if (try? Data(contentsOf: target)) != (try Data(contentsOf: made)) {
+        // The tracked copy is rewritten only on request (`LGK_WRITE_FROM_MAC=1`, passed as TEST_RUNNER_LGK_WRITE_FROM_MAC).
+        if ProcessInfo.processInfo.environment["LGK_WRITE_FROM_MAC"] == "1", (try? Data(contentsOf: target)) != (try Data(contentsOf: made)) {
             try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
             try fixed.writeRecoveryKit(to: dir.appendingPathComponent("recovery-kit.json"), backup: made, inventory: inventory,
                                        appVersion: "1.0.0")

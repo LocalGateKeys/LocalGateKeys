@@ -15,13 +15,20 @@ public enum SyncRunner {
     /// * A store that cannot be read for sync gives `local-data` and no `ownStates` (publish nothing).
     /// * A received document (attachment sync) whose blob is not in `blobs` yet is quarantined as
     ///   `attachment-missing`: it is never applied without its file, and the next run retries.
+    /// * Personal collections (sub-plan 07 Task 5d, desktop `run_merge(collections=)`): with `collections` (every peer
+    ///   of the run reads them: a folder member's signed `.lgkcol`, a Wi-Fi peer's `features`) the collection states
+    ///   are merged and published too (`CollectionSync`); without, the peers' collection states are dropped before the
+    ///   merge and none of this device's are built or tombstoned. `shares` (this device's share records) applies in
+    ///   both: read-only share items are never changed here by another of this person's devices.
     public static func run(store: StoreSnapshot, views: [PeerView], device: String, now: Int64,
                            licenseKeys: [String: [UInt8]] = [:], known: Set<String> = [],
-                           blobs: (any AttachmentBlobStore)? = nil) -> RunReport {
+                           blobs: (any AttachmentBlobStore)? = nil, collections: Bool = false,
+                           shares: CollectionShares = .none) -> RunReport {
         var report = RunReport()
         let local: (states: [String: ItemState], meta: [String: SyncMeta], skipped: [String: String])
         do {
-            local = try SyncMeta.localView(records: store.records, meta: store.meta, device: device, now: now)
+            local = try SyncMeta.localView(records: store.records, meta: store.meta, device: device, now: now,
+                                           collections: collections, shares: shares)
         } catch {
             report.issues.append(SyncIssue("local-data", "\(error)"))
             return report
@@ -30,15 +37,20 @@ public enum SyncRunner {
         report.skipped = localSkipped
         let knownAll = known.union([device]).union(views.map(\.deviceID))
         let plausible = views.map { view -> PeerView in
+            // A run without collections strips the peers' collection states (live or tombstone) before the merge,
+            // so they never touch the stored ones (desktop `run_merge(collections=False)`).
             let kept = view.states.filter { s in
+                if !collections && CollectionStates.isStateID(s.itemID) { return false }
                 let why = Plausibility.implausibleVV(s.vv, local: local.states[s.itemID]?.vv, known: knownAll)
                 if why != nil { report.issues.append(SyncIssue("implausible-vv", "\(view.deviceID):\(s.itemID)")) }
                 return why == nil
             }
             return kept.count == view.states.count ? view : PeerView(deviceID: view.deviceID, states: kept)
         }
+        // This device's stored emergency access plan: a remote plan that re-keys it is quarantined.
+        let heirLocal: JSONValue? = store.meta[Heir.stateID]?.deleted == true ? nil : SyncMeta.recordOf(store.records[Heir.stateID])
         let fold = Engine.fold(local: local.states, views: plausible, ownDeviceID: device) { state in
-            check(state, licenseKeys: licenseKeys, blobs: blobs)
+            check(state, licenseKeys: licenseKeys, blobs: blobs, collections: collections, heirLocal: heirLocal)
         }
         for dev in fold.badViews { report.issues.append(SyncIssue("bad-peer-data", dev)) }
         for q in fold.quarantined {
@@ -48,7 +60,7 @@ public enum SyncRunner {
         let applied: SyncMeta.ApplyResult
         do {
             applied = try SyncMeta.applyRemote(fold.outcome, records: store.records, meta: local.meta, device: device,
-                                               now: now, licenseKeys: licenseKeys)
+                                               now: now, licenseKeys: licenseKeys, collections: collections, shares: shares)
         } catch {
             report.issues.append(SyncIssue("apply-failed", "\(error)"))
             report.ownStates = sorted(local.states)
@@ -58,7 +70,8 @@ public enum SyncRunner {
         }
         let final: (states: [String: ItemState], meta: [String: SyncMeta], skipped: [String: String])
         do {
-            final = try SyncMeta.localView(records: applied.records, meta: applied.meta, device: device, now: now)
+            final = try SyncMeta.localView(records: applied.records, meta: applied.meta, device: device, now: now,
+                                           collections: collections, shares: shares)
         } catch {
             report.issues.append(SyncIssue("local-data", "\(error)"))
             return report
@@ -80,8 +93,26 @@ public enum SyncRunner {
     }
 
     /// The bridge's refusal for a state the fold wants to store, or nil (plays desktop `apply`'s per-record check).
-    static func check(_ state: ItemState, licenseKeys: [String: [UInt8]], blobs: (any AttachmentBlobStore)? = nil) -> String? {
+    /// With `collections`, a collection state (or the engine's conflict copy of one) is checked as one
+    /// (`CollectionStates.unwrap`); without, it is refused like any record under a reserved id. `heirLocal` is this
+    /// device's stored emergency access plan record: a remote plan that re-keys it is quarantined.
+    static func check(_ state: ItemState, licenseKeys: [String: [UInt8]], blobs: (any AttachmentBlobStore)? = nil,
+                      collections: Bool = false, heirLocal: JSONValue? = nil) -> String? {
         guard !state.deleted, let item = state.item else { return nil }
+        if collections && CollectionSync.isCollectionState(state) {
+            // A state under a `col:`/`cm:`/`csl:` id is never a copy: a stray `id` is checked (and refused) as what
+            // the apply unwraps, so it is quarantined alone (desktop `check_remote_state`, `is_copy=False`).
+            var isCopy = false
+            if case .object(let o) = item { isCopy = o["id"] != nil && !CollectionStates.isStateID(state.itemID) }
+            do {
+                _ = try CollectionStates.unwrap(state, isCopy: isCopy)
+                return nil
+            } catch let e as RecordError {
+                return e.reason ?? "bad-remote"
+            } catch {
+                return "bad-remote"
+            }
+        }
         let isCopy: Bool
         if case .object(let o) = item {
             // applyRemote drops these without a word: a licence this build cannot verify, or a licence conflict copy.
@@ -92,7 +123,11 @@ public enum SyncRunner {
             isCopy = false
         }
         do {
-            _ = try Wrapper.unwrap(state, isCopy: isCopy, licenseKeys: licenseKeys)
+            let (ns, record) = try Wrapper.unwrap(state, isCopy: isCopy, licenseKeys: licenseKeys)
+            if ns == .heir && !isCopy {
+                // Another device cannot silently re-key the plan.
+                if (try? Heir.mergeSynced(local: heirLocal, remote: record)) == nil { return "bad-remote" }
+            }
             if let ref = AttachmentDocuments.ref(of: item), blobs?.has(ref.blob) != true { return "attachment-missing" }
             return nil
         } catch let e as RecordError {

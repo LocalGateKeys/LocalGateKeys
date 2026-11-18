@@ -4,7 +4,7 @@ import AppShared
 
 /// One row of the Security tab.
 enum SecurityCategory: String, CaseIterable, Identifiable, Sendable {
-    case breached, reused, weak, old, noTwoFactor
+    case breached, reused, weak, old, noTwoFactor, http, passkey
 
     var id: String { rawValue }
 
@@ -15,6 +15,8 @@ enum SecurityCategory: String, CaseIterable, Identifiable, Sendable {
         case .weak: String(localized: "Weak")
         case .old: String(localized: "Old")
         case .noTwoFactor: String(localized: "2FA available")
+        case .http: String(localized: "Not HTTPS")
+        case .passkey: String(localized: "Passkey available")
         }
     }
 
@@ -25,6 +27,8 @@ enum SecurityCategory: String, CaseIterable, Identifiable, Sendable {
         case .weak: "lock.open"
         case .old: "clock"
         case .noTwoFactor: "number"
+        case .http: "lock.slash"
+        case .passkey: "person.badge.key"
         }
     }
 
@@ -34,9 +38,14 @@ enum SecurityCategory: String, CaseIterable, Identifiable, Sendable {
         case .reused: String(localized: "These passwords are used for more than one login. If one site leaks, the others are exposed.")
         case .weak: String(localized: "These passwords are short or easy to guess.")
         case .old: String(localized: "These passwords have not changed for over a year. Age alone is not a reason to change them.")
-        case .noTwoFactor: String(localized: "These logins have no 2FA code saved. Turn on two-factor sign-in on the site if it offers it.")
+        case .noTwoFactor: String(localized: "This site offers two-factor codes, but this login has none.")
+        case .http: String(localized: "These logins use an unencrypted address. Check it and switch to https:// if the site supports it.")
+        case .passkey: String(localized: "These sites support passkeys, a safer way to sign in. Save one for each.")
         }
     }
+
+    /// Reused and weak rows offer "Change password"; the 2FA, not-HTTPS and passkey rows do not.
+    var offersChangePassword: Bool { self != .noTwoFactor && self != .http && self != .passkey }
 }
 
 /// The iPhone's Security check (UX plan workstream 2): the shared `VaultHealth` (the Mac's score and filters,
@@ -63,10 +72,16 @@ final class SecurityCheckModel {
     @ObservationIgnored private let settings: AppSettings
     @ObservationIgnored private let clock: () -> Date
     @ObservationIgnored private let cache = StrengthCache()
+    /// Which sites offer TOTP and passkeys, read once on first use (the bundled `site_features.json`).
+    @ObservationIgnored private let featuresSource: () -> SiteFeatures
+    @ObservationIgnored private var loadedFeatures: SiteFeatures?
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// Items travel mode hides on this device (feature pack §2): left out of every check. Tests replace it.
+    @ObservationIgnored var hidden: @MainActor (StoreSnapshot) -> Set<String> = { TravelModeBox.shared.current.hiddenIDs(in: $0) }
 
-    init(store: any ItemStore, settings: AppSettings = .shared, clock: @escaping () -> Date = Date.init) {
-        self.store = store; self.settings = settings; self.clock = clock
+    init(store: any ItemStore, settings: AppSettings = .shared, clock: @escaping () -> Date = Date.init,
+         features: @escaping () -> SiteFeatures = { SiteFeatures.bundled() }) {
+        self.store = store; self.settings = settings; self.clock = clock; self.featuresSource = features
         dismissed = Set(settings.defaults.stringArray(forKey: Self.dismissedKey) ?? [])
     }
 
@@ -76,8 +91,16 @@ final class SecurityCheckModel {
         items.filter { $0.isLogin && !$0.tags.contains(TwoFactorScanModel.needsPasswordTag) }.map { item in
             HealthLogin(id: item.id, title: item.title, password: item.record["password"]?.stringValue ?? "",
                         hasTOTP: item.record["totp"]?.objectValue?["secret"]?.stringValue?.isEmpty == false,
-                        updatedAt: item.updatedAt > 0 ? Date(timeIntervalSince1970: TimeInterval(item.updatedAt)) : nil)
+                        updatedAt: item.updatedAt > 0 ? Date(timeIntervalSince1970: TimeInterval(item.updatedAt)) : nil,
+                        urls: URLMatcher.entryURLs(item.record).map(\.url))
         }
+    }
+
+    /// Registrable domains that already have a passkey item.
+    nonisolated static func passkeyDomains(_ items: [VaultItem], features: SiteFeatures) -> Set<String> {
+        features.passkeyDomains(relyingPartyIDs: items.filter { $0.kind == "passkey" }.compactMap {
+            $0.record["payload"]?.objectValue?["relying_party_id"]?.stringValue
+        })
     }
 
     nonisolated static func ids(_ category: SecurityCategory, in health: VaultHealth) -> Set<String> {
@@ -87,6 +110,8 @@ final class SecurityCheckModel {
         case .weak: health.weak
         case .old: health.old
         case .noTwoFactor: health.noTwoFactor
+        case .http: health.insecure
+        case .passkey: health.passkeyAvailable
         }
     }
 
@@ -95,14 +120,18 @@ final class SecurityCheckModel {
     /// Reads the vault again and recomputes.
     func refresh() {
         guard let snap = try? store.load() else { return }
-        items = VaultItem.items(from: snap)
+        let hide = hidden(snap)
+        items = VaultItem.items(from: snap).filter { !hide.contains($0.id) }
         recompute()
     }
 
     private func recompute() {
         let logins = Self.healthLogins(items)
         breached.formIntersection(Set(logins.map(\.id)))
-        health = VaultHealth.compute(logins, breached: breached, now: clock(), cache: cache)
+        let features = loadedFeatures ?? featuresSource()
+        loadedFeatures = features
+        health = VaultHealth.compute(logins, breached: breached, now: clock(), cache: cache, features: features,
+                                     passkeyDomains: Self.passkeyDomains(items, features: features))
     }
 
     func ids(_ category: SecurityCategory) -> Set<String> {

@@ -7,20 +7,20 @@
     <style>
       :root {
         color-scheme: light;
-        --workspace: #F7F9FC;
+        --workspace: #F5F7FB;
         --surface: #FFFFFF;
         --ink: #13203A;
         --muted: #4D5F7C;
         --subtle: #64748B;
         --border: #D7E1EE;
         --border-soft: #E5EAF2;
-        --panel-hover: #F3F7FD;
+        --panel-hover: #F2F6FD;
         --panel-muted: #EDF2F8;
         --panel-disabled: #E5ECF5;
-        --accent: #005FCC;
-        --accent-hover: #004FA3;
-        --accent-pressed: #003F85;
-        --accent-soft: #E6F0FF;
+        --accent: #1F5BE8;
+        --accent-hover: #1749C4;
+        --accent-pressed: #123A9C;
+        --accent-soft: #EAF1FF;
         --accent-foreground: #FFFFFF;
         --accent-foreground-muted: #E9F2FF;
         --green: #176B45;
@@ -37,210 +37,197 @@
         width: 360px;
         margin: 0;
         color: var(--ink);
-        background: var(--workspace);
-        font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+        background: var(--surface);
+        font: 13px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
       button { appearance: none; border: 0; color: inherit; font: inherit; }
-      button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-      .shell { padding: 12px; }
+      button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .shell { display: flex; flex-direction: column; }
 
-      .brand { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
-      .logo {
-        width: 34px;
-        height: 34px;
+      /* Header: brand, page origin, connection pill. */
+      .brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px 12px; }
+      .logo { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px; object-fit: cover; }
+      .brand-copy { min-width: 0; flex: 1; }
+      .brand h1 { margin: 0; color: var(--ink); font-size: 14px; font-weight: 650; letter-spacing: -.1px; }
+      .site-origin { margin-top: 1px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+      .chip {
         flex: 0 0 auto;
-        border-radius: 11px;
-        object-fit: cover;
-        box-shadow: 0 1px 3px rgba(23, 43, 58, .12);
-      }
-      .brand h1 { margin: 0; color: var(--ink); font-size: 15px; font-weight: 750; letter-spacing: -.2px; }
-      .tagline { margin-top: 1px; color: var(--subtle); font-size: 11px; }
-      .privacy-mark {
-        margin-left: auto;
-        padding: 3px 7px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        color: var(--muted);
-        background: var(--surface);
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: .06em;
-      }
-
-      .section-label {
-        margin: 0;
-        color: var(--subtle);
-        font-size: 10px;
-        font-weight: 750;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-      }
-      .site-card {
-        padding: 10px 11px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--surface);
-        box-shadow: 0 1px 2px rgba(23, 43, 58, .035);
-      }
-      .site-topline { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-      .site-origin {
-        min-height: 19px;
-        margin-top: 5px;
-        color: var(--ink);
-        font-size: 13px;
-        font-weight: 700;
-        overflow-wrap: anywhere;
-      }
-      .site-hint { margin: 3px 0 0; color: var(--muted); font-size: 10px; }
-
-      .connection-card {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-height: 46px;
-        margin: 7px 0 12px;
-        padding: 7px 9px;
-        border: 1px solid var(--border-soft);
-        border-radius: 10px;
-        background: rgba(255, 255, 255, .65);
-      }
-      .connection-indicator {
-        flex: 0 0 auto;
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: var(--subtle);
-        box-shadow: 0 0 0 4px var(--border-soft);
-      }
-      .connection-copy { min-width: 0; flex: 1; }
-      .connection-title { color: var(--ink); font-size: 12px; font-weight: 700; }
-      .connection-description { margin-top: 1px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
-      .connection-card[data-state="connected"] .connection-indicator { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
-      .connection-card[data-state="locked"] .connection-indicator,
-      .connection-card[data-state="setup"] .connection-indicator { background: var(--amber); box-shadow: 0 0 0 4px var(--amber-soft); }
-      .connection-card[data-state="disabled"] .connection-indicator,
-      .connection-card[data-state="offline"] .connection-indicator { background: var(--red); box-shadow: 0 0 0 4px var(--red-soft); }
-      .connection-refresh {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        flex: 0 0 auto;
-        width: 32px;
-        height: 32px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
         color: var(--muted);
-        background: var(--surface);
-        cursor: pointer;
-        font-size: 17px;
-        line-height: 1;
+        background: var(--panel-muted);
+        font-size: 11.5px;
+        font-weight: 600;
       }
-      .connection-refresh:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-      .connection-refresh:disabled { cursor: default; color: var(--subtle); }
-      .connection-refresh[aria-busy="true"] { animation: rotate .8s linear infinite; }
-      @keyframes rotate { to { transform: rotate(360deg); } }
+      .chip::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+      .chip[data-state="connected"] { color: var(--green); background: var(--green-soft); }
+      .chip[data-state="locked"], .chip[data-state="setup"] { color: var(--amber); background: var(--amber-soft); }
+      .chip[data-state="offline"] { color: var(--red); background: var(--red-soft); }
 
-      .actions-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-      .shortcut-hint { color: var(--subtle); font-size: 9px; font-weight: 700; letter-spacing: .06em; }
-      .actions { display: grid; gap: 6px; }
-      .action {
-        position: relative;
-        width: 100%;
-        min-height: 42px;
-        padding: 8px 11px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        color: var(--ink);
-        background: var(--surface);
-        box-shadow: 0 1px 2px rgba(23, 43, 58, .035);
-        cursor: pointer;
-        text-align: left;
-        transition: background-color .14s ease, border-color .14s ease, transform .14s ease, box-shadow .14s ease;
+      /* Phishing shield verdict. A lookalike is a full-width warning, more prominent than the other states. */
+      .site-state {
+        align-self: flex-start;
+        margin: -4px 16px 10px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--panel-muted);
       }
-      .action:hover:not(:disabled) { border-color: var(--accent); background: var(--panel-hover); box-shadow: 0 2px 5px rgba(19, 32, 58, .07); }
-      .action:active:not(:disabled) { transform: translateY(1px); }
-      .action.primary {
-        min-height: 52px;
-        padding: 9px 42px 9px 12px;
-        border-color: var(--accent);
+      .site-state[data-state="exact"], .site-state[data-state="related"] { color: var(--green); background: var(--green-soft); }
+      .site-state[data-state="lookalike"] {
+        align-self: stretch;
+        padding: 10px 12px;
+        border: 2px solid var(--red);
+        border-radius: 12px;
+        color: var(--red);
+        background: var(--red-soft);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      [hidden] { display: none !important; }
+
+      /* Logins: the main action of the popup. */
+      section { margin: 0 16px; }
+      .section-label { margin: 0 0 8px; color: var(--subtle); font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+      .card { padding: 14px; border-radius: 14px; background: var(--workspace); }
+      .login-row { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+      .login-copy { min-width: 0; color: var(--ink); font-size: 13.5px; font-weight: 600; }
+      .note { margin: 10px 0 0; color: var(--muted); font-size: 11.5px; }
+      .site-logins { display: grid; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
+      .site-login { display: grid; width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+      .site-login:hover:not(:disabled) { background: var(--panel-hover); border-color: var(--accent); }
+      .site-login:disabled { cursor: default; color: var(--subtle); }
+      .site-login span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .site-login .login-user { color: var(--muted); font-size: 11.5px; }
+      .why { margin: 10px 0 0; color: var(--muted); font-size: 11.5px; }
+      .why summary { cursor: pointer; color: var(--accent); }
+      .why p { margin: 6px 0 0; }
+      .fill-button, .gate-action {
+        min-height: 40px;
+        padding: 8px 16px;
+        border-radius: 10px;
         color: var(--accent-foreground);
         background: var(--accent);
-        box-shadow: 0 2px 4px rgba(0, 95, 204, .15);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 650;
+        transition: background-color .14s ease, transform .14s ease;
       }
-      .action.primary::after {
-        position: absolute;
-        top: 50%;
-        right: 15px;
-        color: var(--accent-foreground-muted);
-        content: "→";
-        font-size: 20px;
-        line-height: 1;
-        transform: translateY(-54%);
+      .gate-action { width: 100%; margin-top: 12px; }
+      .fill-button:hover:not(:disabled), .gate-action:hover:not(:disabled) { background: var(--accent-hover); }
+      .fill-button:active:not(:disabled), .gate-action:active:not(:disabled) { background: var(--accent-pressed); transform: scale(.99); }
+      .fill-button:disabled, .gate-action:disabled { color: var(--subtle); background: var(--panel-disabled); cursor: default; }
+      .gate-text { margin: 0; color: var(--ink); font-size: 13px; }
+
+      /* Tools: one row of icon buttons under the logins. */
+      .actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 12px 12px 0; padding: 6px 0; border-top: 1px solid var(--border-soft); border-bottom: 1px solid var(--border-soft); }
+      #generate { order: -1; }
+      .action {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 100%;
+        min-height: 60px;
+        padding: 8px 4px;
+        border-radius: 10px;
+        color: var(--ink);
+        background: transparent;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color .14s ease, color .14s ease;
       }
-      .action.primary:hover:not(:disabled) { border-color: var(--accent-hover); background: var(--accent-hover); }
-      .action.primary:active:not(:disabled) { border-color: var(--accent-pressed); background: var(--accent-pressed); }
-      .action-title { display: block; font-weight: 750; }
-      .action-description { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
-      .primary .action-description { color: var(--accent-foreground-muted); }
-      .action:disabled, .automatic-toggle:disabled { cursor: default; box-shadow: none; }
-      .action:disabled { border-color: var(--border-soft); color: var(--subtle); background: var(--panel-muted); }
-      .action:disabled .action-description { color: var(--subtle); }
-      .action.primary:disabled { border-color: var(--border-soft); color: var(--muted); background: var(--panel-disabled); }
-      .action.primary:disabled .action-description,
-      .action.primary:disabled::after { color: var(--muted); }
-      .secondary-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .secondary-actions .action { min-height: 50px; }
-      .secondary-actions .action-description { line-height: 1.35; }
-      .action[aria-busy="true"]::before {
-        position: absolute;
-        top: 50%;
-        right: 15px;
-        width: 14px;
-        height: 14px;
+      .action-icon { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; color: var(--accent); background: var(--accent-soft); transition: background-color .14s ease, color .14s ease; }
+      .action:hover:not(:disabled) { background: var(--panel-hover); }
+      .action:hover:not(:disabled) .action-icon { color: var(--accent-foreground); background: var(--accent); }
+      .action-title { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+      .actions .action-description { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .action:disabled, .automatic-toggle:disabled { cursor: default; }
+      .action:disabled { color: var(--subtle); }
+      .action:disabled .action-icon { color: var(--subtle); background: var(--panel-muted); }
+      .action[aria-expanded="true"] { background: var(--accent-soft); }
+      .action[aria-expanded="true"] .action-icon { color: var(--accent-foreground); background: var(--accent); }
+      .action[aria-busy="true"]::before, .fill-button[aria-busy="true"]::before, .gate-action[aria-busy="true"]::before {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin-right: 6px;
         border: 2px solid currentColor;
         border-right-color: transparent;
         border-radius: 50%;
         content: "";
         animation: rotate .7s linear infinite;
-        transform: translateY(-50%);
+        vertical-align: -1px;
       }
-      .action.primary[aria-busy="true"]::after { content: none; }
+      .action[aria-busy="true"]::before { position: absolute; top: 6px; right: 10px; margin: 0; }
+      @keyframes rotate { to { transform: rotate(360deg); } }
 
+      /* Save-offer switch. */
       .automatic-toggle {
         display: flex;
         align-items: center;
-        gap: 11px;
-        width: 100%;
-        min-height: 50px;
-        margin-top: 2px;
-        padding: 9px 11px;
-        border: 1px solid var(--border);
+        gap: 12px;
+        width: auto;
+        margin: 6px 8px 0;
+        padding: 10px 8px;
         border-radius: 10px;
         color: var(--ink);
-        background: var(--surface);
+        background: transparent;
         cursor: pointer;
         text-align: left;
       }
-      .automatic-toggle:hover:not(:disabled) { border-color: var(--accent); background: var(--panel-hover); }
-      .toggle-track { position: relative; flex: 0 0 auto; width: 35px; height: 20px; border-radius: 999px; background: var(--panel-disabled); transition: background-color .14s ease; }
-      .toggle-track::after { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(23, 43, 58, .18); content: ""; transition: transform .14s ease; }
-      .automatic-toggle[aria-pressed="true"] .toggle-track { background: var(--accent); }
-      .automatic-toggle[aria-pressed="true"] .toggle-track::after { transform: translateX(15px); }
-      .automatic-copy { min-width: 0; flex: 1; }
-      .automatic-label { display: block; color: var(--ink); font-weight: 700; }
-      .automatic-hint { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
-      .automatic-toggle:disabled { color: var(--subtle); background: var(--workspace); }
+      .automatic-toggle:hover:not(:disabled) { background: var(--panel-hover); }
+      .automatic-copy { min-width: 0; flex: 1; order: -1; }
+      .toggle-track { position: relative; flex: 0 0 auto; width: 36px; height: 20px; border-radius: 999px; background: var(--panel-disabled); transition: background-color .14s ease; }
+      .toggle-track::after { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(23, 43, 58, .2); content: ""; transition: transform .14s ease; }
+      .automatic-toggle[aria-checked="true"] .toggle-track { background: var(--accent); }
+      .automatic-toggle[aria-checked="true"] .toggle-track::after { transform: translateX(16px); }
+      .automatic-label { display: block; color: var(--ink); font-weight: 600; }
+      .automatic-hint { display: block; margin-top: 1px; color: var(--muted); font-size: 11.5px; }
       .automatic-toggle:disabled .automatic-label,
       .automatic-toggle:disabled .automatic-hint { color: var(--subtle); }
       .automatic-toggle:disabled .toggle-track { background: var(--panel-muted); }
 
-      .status-message { margin-top: 10px; padding: 9px 10px; border: 1px solid transparent; border-radius: 9px; color: var(--muted); background: var(--surface); font-size: 11px; overflow-wrap: anywhere; }
+      .status-message { margin: 8px 16px 0; padding: 9px 11px; border-radius: 10px; color: var(--muted); background: var(--workspace); font-size: 11.5px; overflow-wrap: anywhere; }
       .status-message[hidden] { display: none; }
-      .status-message[data-kind="success"] { border-color: #B8DEC9; color: var(--green); background: var(--green-soft); }
-      .status-message[data-kind="error"] { border-color: #E9BFC5; color: var(--red); background: var(--red-soft); }
-      .status-message[data-kind="info"] { border-color: #BBD2F1; color: var(--accent-hover); background: var(--accent-soft); }
-      .footer { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--subtle); font-size: 11px; }
-      .footer-mark { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; color: var(--accent); background: var(--accent-soft); font-size: 9px; }
+      .status-message[data-kind="success"] { color: var(--green); background: var(--green-soft); }
+      .status-message[data-kind="error"] { color: var(--red); background: var(--red-soft); }
+      .status-message[data-kind="info"] { color: var(--accent-hover); background: var(--accent-soft); }
+      .footer { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 10px 16px; color: var(--subtle); background: var(--workspace); font-size: 11px; }
+      .footer-mark { display: inline-flex; align-items: center; justify-content: center; color: var(--green); }
+
+      /* Password generator, opened by the Generate button (aria-expanded). */
+      .generator { margin: 10px 16px 0; border-radius: 14px; background: var(--workspace); }
+      .generator > summary { display: none; }
+      .gen-body { display: grid; gap: 10px; padding: 12px; }
+      .gen-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel-muted); }
+      .gen-tab { padding: 6px; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; font-weight: 600; }
+      .gen-tab[aria-selected="true"] { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(23, 43, 58, .1); }
+      .gen-output { display: flex; align-items: center; gap: 6px; }
+      .gen-value { flex: 1; min-width: 0; min-height: 40px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font: 13px/1.35 "Cascadia Mono", Consolas, monospace; overflow-wrap: anywhere; user-select: all; }
+      .gen-icon { flex: 0 0 auto; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--muted); cursor: pointer; font-size: 16px; }
+      .gen-icon:hover { border-color: var(--accent); color: var(--accent); }
+      .gen-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .gen-row label { font-weight: 600; }
+      .gen-row output { min-width: 28px; color: var(--accent); font-weight: 700; text-align: right; }
+      .gen-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+      .gen-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+      .gen-checks label { display: flex; align-items: center; gap: 6px; }
+      .gen-checks input { accent-color: var(--accent); }
+      .gen-row select { padding: 5px 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+      .gen-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      .gen-buttons .action { display: block; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-weight: 600; }
+      .gen-buttons .action:hover:not(:disabled) { border-color: var(--accent); background: var(--panel-hover); }
+      .gen-buttons .action.fill { border-color: var(--accent); color: var(--accent-foreground); background: var(--accent); }
+      .gen-buttons .action.fill:hover:not(:disabled) { background: var(--accent-hover); }
+      [data-gen-mode="password"] .only-passphrase, [data-gen-mode="passphrase"] .only-password { display: none; }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
     </style>
   </head>
@@ -248,74 +235,135 @@
     <main class="shell">
       <header class="brand">
         <img src="icons/icon48.png" class="logo" alt="" />
-        <div>
+        <div class="brand-copy">
           <h1>LocalGateKeys</h1>
-          <div class="tagline" data-i18n="popup_tagline">Your keys. Your control.</div>
+          <div id="site" class="site-origin" aria-live="polite" data-i18n="popup_checking_page">Checking this page…</div>
         </div>
-        <span class="privacy-mark" data-i18n="popup_local_vault">LOCAL VAULT</span>
+        <span id="chip" class="chip" data-state="checking" role="status" data-i18n="popup_chip_checking">Checking</span>
       </header>
 
-      <section class="site-card" aria-labelledby="site-label">
-        <div class="site-topline">
-          <p id="site-label" class="section-label" data-i18n="popup_current_site">Current site</p>
-          <span class="section-label" data-i18n="popup_this_page">THIS PAGE</span>
-        </div>
-        <div id="site" class="site-origin" aria-live="polite" data-i18n="popup_checking_page">Checking this page…</div>
-        <p id="site-hint" class="site-hint" data-i18n="popup_site_hint">Actions stay on this page and require your choice.</p>
-      </section>
+      <div id="site-state" class="site-state" aria-live="polite" hidden></div>
 
-      <section id="connection-card" class="connection-card" data-state="checking" aria-labelledby="connection-title">
-        <span class="connection-indicator" aria-hidden="true"></span>
-        <div class="connection-copy">
-          <div id="connection-title" class="connection-title" aria-live="polite" data-i18n="popup_checking_connection">Checking connection…</div>
-          <div id="connection-description" class="connection-description" aria-live="polite" data-i18n="popup_checking_connection_desc">Contacting LocalGateKeys without unlocking your vault.</div>
-        </div>
-        <button id="connection" class="connection-refresh" type="button" aria-label="Refresh connection status" title="Refresh connection status" data-i18n-aria-label="popup_refresh_connection" data-i18n-title="popup_refresh_connection">↻</button>
-      </section>
-
-      <section aria-labelledby="actions-label">
-        <div class="actions-heading">
-          <p id="actions-label" class="section-label" data-i18n="popup_quick_actions">Quick actions</p>
-          <span class="shortcut-hint" data-i18n="popup_manual_by_design">MANUAL BY DESIGN</span>
-        </div>
-        <div class="actions">
-          <button id="fill" class="action primary" type="button" disabled>
-            <span class="action-title" data-i18n="popup_fill_login">Fill login</span>
-            <span class="action-description" data-i18n="popup_fill_login_desc">Choose a saved login for this page</span>
-          </button>
-          <button id="identity" class="action" type="button" disabled>
-            <span class="action-title" data-i18n="popup_fill_identity">Fill identity</span>
-            <span class="action-description" data-i18n="popup_fill_identity_desc">Review contact fields before filling</span>
-          </button>
-          <button id="card" class="action" type="button" disabled>
-            <span class="action-title" data-i18n="popup_fill_card">Fill card…</span>
-            <span class="action-description" data-i18n="popup_fill_card_desc">Pick a card, tick fields, confirm in the app</span>
-          </button>
-          <div class="secondary-actions">
-            <button id="save" class="action" type="button" disabled>
-              <span class="action-title" data-i18n="popup_save_login">Save login</span>
-              <span class="action-description" data-i18n="popup_save_login_desc">Save these login fields</span>
-            </button>
-            <button id="generate" class="action" type="button" disabled>
-              <span class="action-title" data-i18n="popup_generate_password">Generate password</span>
-              <span class="action-description" data-i18n="popup_generate_password_desc">Create a password for sign-up</span>
-            </button>
+      <section aria-labelledby="logins-label">
+        <h2 id="logins-label" class="section-label" data-i18n="popup_logins_heading">Logins for this site</h2>
+        <div class="card">
+          <div id="logins-ready">
+            <ul id="site-logins" class="site-logins" aria-labelledby="logins-label" hidden></ul>
+            <p id="site-logins-empty" class="note" hidden data-i18n="popup_site_logins_empty">No saved logins for this site yet.</p>
+            <div class="login-row">
+              <span class="login-copy" data-i18n="popup_fill_login_desc">Choose a saved login for this page</span>
+              <button id="fill" class="fill-button" type="button" aria-describedby="logins-note" disabled data-i18n="popup_fill_button">Fill</button>
+            </div>
+            <p id="logins-note" class="note" data-i18n="popup_logins_note">Your saved logins for this site open on the page, never in this popup. Press Enter to fill.</p>
+            <details id="why-no-icon" class="why">
+              <summary data-i18n="popup_why_no_icon">Why is there no icon on the page?</summary>
+              <p data-i18n="popup_why_no_icon_text">LocalGateKeys shows no icon when the login form is in a frame from another site, sends the password to another site, is hidden, or when icons are off for this site.</p>
+              <p id="frame-origin" hidden></p>
+            </details>
           </div>
-          <button id="automatic" class="automatic-toggle" type="button" aria-pressed="false" aria-describedby="automatic-hint" disabled>
-            <span class="toggle-track" aria-hidden="true"></span>
-            <span class="automatic-copy">
-              <span id="automatic-label" class="automatic-label" data-i18n="popup_auto_turn_off">Turn off save prompts on this site</span>
-              <span id="automatic-hint" class="automatic-hint" data-i18n="popup_auto_on_hint">On: you're asked after a successful sign-in here</span>
-            </span>
-          </button>
+          <div id="logins-gate" hidden>
+            <p id="gate-text" class="gate-text" aria-live="polite"></p>
+            <button id="gate-action" class="gate-action" type="button" hidden></button>
+          </div>
         </div>
       </section>
+
+      <div class="actions">
+        <button id="identity" class="action" type="button" disabled>
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M6.5 16c.6-1.4 1.5-2 2.5-2s1.9.6 2.5 2M14 10h4M14 13.5h3"/></svg></span>
+          <span class="action-title" data-i18n="popup_fill_identity">Fill identity</span>
+          <span class="action-description" data-i18n="popup_fill_identity_desc">Review contact fields before filling</span>
+        </button>
+        <button id="card" class="action" type="button" disabled>
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/></svg></span>
+          <span class="action-title" data-i18n="popup_fill_card">Fill card</span>
+          <span class="action-description" data-i18n="popup_fill_card_desc">Pick a card, tick fields, confirm in the app</span>
+        </button>
+        <button id="save" class="action" type="button" disabled>
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></span>
+          <span class="action-title" data-i18n="popup_save_login">Save this login</span>
+          <span class="action-description" data-i18n="popup_save_login_desc">Save these login fields</span>
+        </button>
+        <button id="generate" class="action" type="button" aria-expanded="false" aria-controls="generator">
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l11-11M14 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM19 11l.7 1.3L21 13l-1.3.7L19 15l-.7-1.3L17 13l1.3-.7z"/></svg></span>
+          <span class="action-title" data-i18n="popup_generate_password">Generate password</span>
+          <span class="action-description" data-i18n="popup_generate_password_desc">Create a password for sign-up</span>
+        </button>
+      </div>
+
+      <details id="generator" class="generator" data-gen-mode="password">
+        <summary data-i18n="gen_title">Password generator</summary>
+        <div class="gen-body">
+          <div class="gen-tabs" role="tablist">
+            <button id="gen-mode-password" class="gen-tab" type="button" role="tab" aria-selected="true" data-i18n="gen_mode_password">Password</button>
+            <button id="gen-mode-passphrase" class="gen-tab" type="button" role="tab" aria-selected="false" data-i18n="gen_mode_passphrase">Passphrase</button>
+          </div>
+          <div class="gen-output">
+            <div id="gen-value" class="gen-value" aria-live="polite"></div>
+            <button id="gen-refresh" class="gen-icon" type="button" title="New" aria-label="New" data-i18n-title="gen_new" data-i18n-aria-label="gen_new">↻</button>
+          </div>
+          <div class="gen-row only-password">
+            <label for="gen-length" data-i18n="gen_length">Length</label>
+            <input id="gen-length" type="range" min="8" max="128" step="1" value="20" />
+            <output id="gen-length-value" for="gen-length">20</output>
+          </div>
+          <div class="gen-checks only-password">
+            <label><input id="gen-lowercase" type="checkbox" checked /> a–z</label>
+            <label><input id="gen-uppercase" type="checkbox" checked /> A–Z</label>
+            <label><input id="gen-digits" type="checkbox" checked /> 0–9</label>
+            <label><input id="gen-symbols" type="checkbox" checked /> !@#$%</label>
+            <label style="grid-column: 1 / -1"><input id="gen-ambiguous" type="checkbox" checked /> <span data-i18n="gen_avoid_ambiguous">Avoid look-alike characters (l, 1, O, 0)</span></label>
+          </div>
+          <div class="gen-row only-passphrase">
+            <label for="gen-words" data-i18n="gen_words">Words</label>
+            <input id="gen-words" type="range" min="3" max="12" step="1" value="6" />
+            <output id="gen-words-value" for="gen-words">6</output>
+          </div>
+          <div class="gen-row only-passphrase">
+            <label for="gen-separator" data-i18n="gen_separator">Separator</label>
+            <select id="gen-separator">
+              <option value="dash">-</option>
+              <option value="space" data-i18n="gen_sep_space">Space</option>
+              <option value="dot">.</option>
+              <option value="underscore">_</option>
+              <option value="none" data-i18n="gen_sep_none">None</option>
+            </select>
+          </div>
+          <div class="gen-checks only-passphrase">
+            <label><input id="gen-capitalize" type="checkbox" /> <span data-i18n="gen_capitalize">Capitalize</span></label>
+            <label><input id="gen-number" type="checkbox" /> <span data-i18n="gen_add_number">Add a number</span></label>
+          </div>
+          <div class="gen-buttons">
+            <button id="gen-copy" class="action" type="button" data-i18n="gen_copy">Copy</button>
+            <button id="gen-fill" class="action fill" type="button" data-i18n="gen_fill">Fill on page</button>
+          </div>
+        </div>
+      </details>
+
+      <button id="automatic" class="automatic-toggle" type="button" role="switch" aria-checked="false" aria-describedby="automatic-hint" disabled>
+        <span class="toggle-track" aria-hidden="true"></span>
+        <span class="automatic-copy">
+          <span id="automatic-label" class="automatic-label" data-i18n="popup_auto_label">Ask to save logins on this site</span>
+          <span id="automatic-hint" class="automatic-hint" data-i18n="popup_auto_on_hint">On: you're asked after a successful sign-in here</span>
+        </span>
+      </button>
+
+      <button id="popup-only" class="automatic-toggle" type="button" role="switch" aria-checked="false" aria-describedby="popup-only-hint" disabled>
+        <span class="toggle-track" aria-hidden="true"></span>
+        <span class="automatic-copy">
+          <span class="automatic-label" data-i18n="popup_popup_only_label">Always use this popup on this site</span>
+          <span id="popup-only-hint" class="automatic-hint" data-i18n="popup_popup_only_off_hint">Off: icons and menus appear next to this site's login fields</span>
+        </span>
+      </button>
 
       <div id="status" class="status-message" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-      <footer class="footer"><span class="footer-mark" aria-hidden="true">◆</span><span data-i18n="popup_footer">Encrypted locally on this device</span></footer>
+      <footer class="footer"><span class="footer-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span data-i18n="popup_footer">Encrypted locally on this device</span></footer>
     </main>
     <script src="api.js"></script>
+    <script src="generator.js"></script>
     <script src="popup.js"></script>
+    <script src="popup-generator.js"></script>
+    <script src="popup-logins.js"></script>
   </body>
 </html>

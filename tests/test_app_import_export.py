@@ -226,3 +226,115 @@ def test_a_plan_built_after_close_is_discarded(env, monkeypatch):
     with pytest.raises(ApiError) as gone:
         env.imports.plan(handle, None, None)
     assert gone.value.code == "expired" and built[0].cancelled
+
+
+def _cxf_vault(env):
+    import base64
+
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    der = ec.generate_private_key(ec.SECP256R1()).private_bytes(
+        serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
+    session = env.controller.session
+    login = session.create_web_login(urls=[{"url": "https://a.test", "match": "exact_origin"}],
+                                     username="a", password="pw-123456789012", label="A")
+    passkey = session.items.create_passkey("PK", relying_party_id="pk.test", credential_id="AQID",
+                                           private_key=base64.urlsafe_b64encode(der).decode().rstrip("="),
+                                           algorithm="ES256", user_name="bob")
+    identity = session.items.create_identity("Me", {"given_name": "Alice"})
+    return login, passkey, identity
+
+
+def test_cxf_export_lists_only_cxf_kinds(env):
+    login, passkey, identity = _cxf_vault(env)
+    rows = env.exports.items()["items"]
+    assert {row["id"] for row in rows} == {login, passkey}
+    assert all(set(row) == {"id", "title", "kind"} for row in rows)
+
+
+def test_cxf_export_releases_passkeys_after_reauth(env):
+    from localvault.importers.cxf import parse_cxf
+
+    login, passkey, _identity = _cxf_vault(env)
+    env.dialogs.save_path = env.tmp / "out"
+    env.port.passwords = [MASTER]
+    result = env.exports.export("cxf", False, "", "", [login, passkey])
+    assert env.port.asked == ["Confirm to export passwords", "Export now?", "Export passkey private keys?"]
+    records, _skipped = parse_cxf((env.tmp / "out.json").read_bytes())
+    assert {record.kind for record in records} == {"login", "passkey"} and result["status"] == "Exported 2 records."
+    assert any(field["name"] == "private_key" and field["value"] for field in records[1].custom_fields)
+
+
+def test_cxf_export_declined_release_writes_nothing(env):
+    login, passkey, _identity = _cxf_vault(env)
+    env.dialogs.save_path = env.tmp / "out.json"
+    env.port.passwords = [MASTER]
+    env.port.answers = [True, False]
+    with pytest.raises(ApiError) as declined:
+        env.exports.export("cxf", False, "", "", [login, passkey])
+    assert declined.value.code == "cancelled"
+    assert not (env.tmp / "out.json").exists() and list(env.tmp.glob(".lgk-export-*")) == []
+
+
+def test_cxf_export_needs_a_selection(env):
+    with pytest.raises(ApiError) as empty:
+        env.exports.export("cxf", False, "", "", [])
+    assert empty.value.code == "invalid" and env.port.asked == []
+
+
+def _boom(*_args, **_kwargs):
+    raise RuntimeError("report bookkeeping broke")
+
+
+@pytest.mark.parametrize("target", ["localvault.import_report.build_report", "localvault.import_report.landed",
+                                    "localvault.import_workflow._written_digests"])
+def test_import_that_committed_is_never_reported_as_failed(env, monkeypatch, target):
+    # Live test 2026-11-15: "Import failed" while the record had been saved. Anything that breaks after the
+    # commit (digests, report, undo bookkeeping) is logged; the reply still says the import worked.
+    logged = []
+    monkeypatch.setattr("localvault.error_log.log_exception", lambda where, exc: logged.append(where))
+    monkeypatch.setattr(target, _boom)
+    env.dialogs.open_path = _chrome_csv(env.tmp, rows=1)
+    opened = env.imports.open()
+    env.imports.plan(opened["handle"], None, None)
+    result = env.imports.apply(opened["handle"])
+    assert result["status"] == "Imported 1 record." or result["status"].startswith("Imported 1")
+    assert logged
+    assert [e["username"] for e in env.controller.session.find_web("https://site0.test")] == ["user0"]
+    assert ("items.changed", {}) in env.bus.events
+
+
+def test_cxf_export_leaves_out_travel_hidden_items_even_when_chosen(env):
+    from localvault import travel
+
+    login, passkey, _identity = _cxf_vault(env)
+    session = env.controller.session
+    session.items.update_item(passkey, tags=["Bank"])
+    session._commit_prefs({travel.PREF_KEY: travel.clean_setting(True, [], ["Bank"])})
+    assert passkey in travel.hidden_id_set(session)
+    assert {row["id"] for row in env.exports.items()["items"]} == {login}
+    env.dialogs.save_path = env.tmp / "out.json"
+    env.port.passwords = [MASTER]
+    with pytest.raises(ApiError) as nothing:
+        env.exports.export("cxf", False, "", "", [passkey])  # an id chosen before travel mode came on
+    assert nothing.value.code == "invalid" and not (env.tmp / "out.json").exists()
+
+
+@pytest.mark.parametrize("target", ["localvault.import_report.prepare_undo", "localvault.import_report.row_facts"])
+def test_a_failure_before_writing_does_not_leave_the_import_applying(env, monkeypatch, target):
+    """Final review L3: the undo preparation runs inside the try, so the import is not stuck at "Importing..."."""
+    def broken(*_args, **_kwargs):
+        raise ValueError("malformed row")
+
+    monkeypatch.setattr(target, broken)
+    env.dialogs.open_path = _chrome_csv(env.tmp, rows=1)
+    opened = env.imports.open()
+    env.imports.plan(opened["handle"], None, None)
+    with pytest.raises(ApiError) as failed:
+        env.imports.apply(opened["handle"])
+    assert failed.value.code == "import_failed"
+    assert env.imports._entry(opened["handle"])["applying"] is False
+    progress = [detail for name, detail in env.bus.events if name == "import.progress"]
+    assert progress and progress[-1]["text"] == ""
+    env.imports.close(opened["handle"])  # not refused as "in progress"

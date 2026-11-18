@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>$(LGK_APP_GROUP)</string>
+		<string>$(LGK_SAFARI_APP_GROUP)</string>
 	</array>
 	<key>keychain-access-groups</key>
 	<array>

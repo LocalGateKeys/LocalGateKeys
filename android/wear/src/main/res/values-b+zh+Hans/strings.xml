@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">已固定的验证码</string>
+    <string name="tile_description">手机上 LocalGateKeys 中已固定的双重验证码。</string>
+    <string name="tile_no_data">在手机上打开 LocalGateKeys</string>
+    <string name="tile_locked">在手机上解锁 LocalGateKeys 以查看验证码</string>
+    <string name="tile_locked_immediately">在手机上将自动锁定设为 1 分钟或更长时间，即可在此查看验证码</string>
+    <string name="tile_empty">在 LocalGateKeys 中固定一个验证码</string>
+    <string name="tile_watch_locked">解锁手表以查看验证码</string>
+    <string name="tile_updated_now">刚刚更新</string>
+    <string name="tile_updated_minutes">%1$d 分钟前更新</string>
+    <string name="tile_updated_hours">%1$d 小时前更新</string>
+    <string name="tile_updated_days">%1$d 天前更新</string>
+</resources>

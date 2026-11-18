@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">Dieser Tresor benötigt zusätzlich seine Schlüsseldatei.</string>
+    <string name="factors_required_yubikey">Dieser Tresor benötigt zusätzlich seinen YubiKey.</string>
+    <string name="factors_required_both">Dieser Tresor benötigt zusätzlich seine Schlüsseldatei und seinen YubiKey.</string>
+    <string name="factors_keyfile_mismatch">Das ist nicht die Schlüsseldatei dieses Tresors.</string>
+    <string name="factors_yubikey_mismatch">Das ist nicht der YubiKey dieses Tresors.</string>
+    <string name="factors_keyfile_invalid">Diese Datei kann nicht als Schlüsseldatei verwendet werden.</string>
+    <string name="factors_yubikey_bad_answer">Der YubiKey hat nicht richtig geantwortet. Prüfe, ob Slot %1$d auf HMAC-SHA1-Challenge-Response eingestellt ist.</string>
+    <string name="factors_yubikey_removed">Berühren Sie Ihren YubiKey erneut.</string>
+    <string name="factors_yubikey_timeout">Keine Berührung erkannt. Berühren Sie Ihren YubiKey, wenn er blinkt.</string>
+    <string name="factors_yubikey_slot_not_configured">Steckplatz %1$d dieses YubiKey ist nicht für Challenge-Response eingerichtet. Wählen Sie in Yubico Authenticator „Slots“ und stellen Sie Steckplatz %1$d auf Challenge-Response (HMAC-SHA1).</string>
+    <string name="factors_keyfile_unreadable">Die Schlüsseldatei %1$s konnte nicht gelesen werden. Wählen Sie sie erneut.</string>
+    <string name="factors_keyfile_too_large">Diese Datei ist zu groß für eine Schlüsseldatei.</string>
+    <string name="factors_removed_by_phrase">Schlüsseldatei / YubiKey entfernt; fügen Sie sie erneut hinzu.</string>
+    <string name="factors_prompt_no_keyfile">Keine Schlüsseldatei gewählt</string>
+    <string name="factors_prompt_keyfile">Schlüsseldatei: %1$s</string>
+    <string name="factors_prompt_choose">Schlüsseldatei wählen…</string>
+    <string name="factors_touch_title">Berühren Sie Ihren YubiKey</string>
+    <string name="factors_section">Schlüsseldatei und YubiKey</string>
+    <string name="factors_keyfile">Schlüsseldatei</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">Schlüsseldatei eingerichtet</string>
+    <string name="factors_keyfile_none">Keine Schlüsseldatei</string>
+    <string name="factors_yubikey_set">YubiKey eingerichtet (Steckplatz %1$d)</string>
+    <string name="factors_yubikey_none">Kein YubiKey</string>
+    <string name="factors_add_keyfile">Schlüsseldatei hinzufügen…</string>
+    <string name="factors_create_keyfile">Schlüsseldatei erstellen…</string>
+    <string name="factors_add_yubikey">YubiKey hinzufügen</string>
+    <string name="factors_slot">Steckplatz</string>
+    <string name="factors_remove_keyfile">Schlüsseldatei entfernen</string>
+    <string name="factors_remove_yubikey">YubiKey entfernen</string>
+    <string name="factors_remove_confirm">Danach braucht der Tresor diesen Faktor nicht mehr zum Entsperren.</string>
+    <string name="factors_keyfile_added">Schlüsseldatei %1$s hinzugefügt.</string>
+    <string name="factors_keyfile_created">Schlüsseldatei %1$s erstellt und hinzugefügt. Bewahren Sie eine Kopie an einem sicheren Ort auf.</string>
+    <string name="factors_yubikey_added">YubiKey hinzugefügt (Steckplatz %1$d).</string>
+    <string name="factors_keyfile_removed">Schlüsseldatei entfernt.</string>
+    <string name="factors_yubikey_removed_done">YubiKey entfernt.</string>
+    <string name="factors_yubikey_setup">LocalGateKeys programmiert Ihren YubiKey nie. Richten Sie ihn in Yubico Authenticator ein: Slots, Challenge-Response, HMAC-SHA1, Steckplatz 2 (oder 1). Ein Backup-YubiKey braucht dasselbe Geheimnis.</string>
+    <string name="factors_always_ask">Immer nach Schlüsseldatei / YubiKey fragen</string>
+    <string name="factors_always_ask_needs_factor">Fügen Sie zuerst eine Schlüsseldatei oder einen YubiKey hinzu.</string>
+    <string name="factors_shortcuts_off">Schalten Sie zuerst „Immer nach Schlüsseldatei / YubiKey fragen“ aus.</string>
+    <string name="factors_failed">Die Schlüsseldatei oder der YubiKey konnte nicht geändert werden.</string>
+    <string name="factors_yubikey_no_transport">Schalten Sie NFC ein, um den YubiKey ans Telefon zu halten, oder stecken Sie ihn an.</string>
+    <string name="factors_prompt_remember">Diese Schlüsseldatei auf diesem Telefon merken</string>
+    <string name="factors_prompt_yubikey">Halten Sie Ihren YubiKey an die Rückseite des Telefons, oder stecken Sie ihn an und berühren Sie ihn (Steckplatz %1$d).</string>
+    <string name="factors_sheet_title">LocalGateKeys öffnen, um zu entsperren</string>
+    <string name="factors_sheet_text">Das App-Passwort braucht seine Schlüsseldatei oder seinen YubiKey, und danach kann nur die App fragen.</string>
+    <string name="factors_sheet_open">LocalGateKeys öffnen</string>
+    <string name="factors_needs_app_password">Schalten Sie das App-Passwort ein, um eine Schlüsseldatei oder einen YubiKey hinzuzufügen</string>
+    <string name="factors_footer">Dann ist zusätzlich zum App-Passwort eine Schlüsseldatei oder ein YubiKey nötig. Die Wiederherstellungsphrase entsperrt weiterhin ohne sie.</string>
+    <string name="factors_always_ask_note">Schaltet das Entsperren mit Fingerabdruck oder Gesicht aus, solange eine Schlüsseldatei oder ein YubiKey eingerichtet ist.</string>
+    <string name="factors_remember">Ort der Schlüsseldatei auf diesem Telefon merken</string>
+    <string name="factors_password_text">Geben Sie das App-Passwort ein. Eine bereits eingerichtete Schlüsseldatei oder ein YubiKey wird ebenfalls abgefragt.</string>
+    <string name="factors_add_confirm">Ab jetzt sind zum Entsperren das App-Passwort und dieser Faktor nötig. Die Wiederherstellungsphrase entsperrt weiterhin ohne ihn.</string>
+</resources>

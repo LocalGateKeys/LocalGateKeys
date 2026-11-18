@@ -94,3 +94,46 @@ final class PasswordGeneratorG2Tests: XCTestCase {
         XCTAssertEqual(GeneratorDefaults(settings: settings).load(), GeneratorOptions())
     }
 }
+
+final class PasswordGeneratorAnswerTests: XCTestCase {
+    private func answer(_ words: Int, seed: UInt8 = 0) throws -> [String] {
+        var o = GeneratorOptions()
+        o.mode = .answer; o.answerWords = words
+        return try PasswordGenerator(random: CountingRandom(start: seed)).generate(o).components(separatedBy: " ")
+    }
+
+    func test_answer_mode_word_count() throws {
+        var o = GeneratorOptions(); o.mode = .answer
+        XCTAssertEqual(o.answerWords, 3)
+        XCTAssertEqual(try PasswordGenerator(random: SystemRandomSource()).generate(o).components(separatedBy: " ").count, 3)
+        XCTAssertEqual(try answer(1).count, 2)
+        XCTAssertEqual(try answer(2).count, 2)
+        XCTAssertEqual(try answer(6).count, 6)
+        XCTAssertEqual(try answer(99).count, 6)
+        XCTAssertEqual(PasswordGenerator.answerWordsRange, 2...6)
+    }
+
+    func test_answer_mode_charset() throws {
+        for seed in UInt8(0)..<40 {
+            let text = try answer(4, seed: seed).joined(separator: " ")
+            XCTAssertNotNil(text.range(of: "^[a-z]+( [a-z]+)+$", options: .regularExpression), text)
+        }
+    }
+
+    func test_answer_words_from_eff_list() throws {
+        let list = Set(PasswordGenerator.wordlist)
+        for seed in UInt8(0)..<40 { XCTAssertTrue(try answer(6, seed: seed).allSatisfy(list.contains)) }
+    }
+
+    func test_options_saved_before_answer_words_still_decode() throws {
+        let old = """
+        {"mode":"passphrase","length":30,"lowercase":true,"uppercase":true,"digits":true,"symbols":false,
+         "avoidAmbiguous":true,"symbolSet":"!","exclude":"","minDigits":1,"minSymbols":1,"words":9,
+         "separator":".","capitalize":true,"appendNumber":false}
+        """
+        let o = try JSONDecoder().decode(GeneratorOptions.self, from: Data(old.utf8))
+        XCTAssertEqual(o.words, 9); XCTAssertEqual(o.length, 30); XCTAssertEqual(o.answerWords, 3)
+        var a = GeneratorOptions(); a.mode = .answer; a.answerWords = 5
+        XCTAssertEqual(try JSONDecoder().decode(GeneratorOptions.self, from: JSONEncoder().encode(a)), a)
+    }
+}

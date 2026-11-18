@@ -7,7 +7,7 @@ typealias ItemKind = String
 
 /// The sidebar's tools, in the Windows order.
 enum Tool: CaseIterable, Hashable {
-    case securityCentre, generator, reminders, sync, devices, licence, importExport, recoveryCentre, activity, trash, settings
+    case securityCentre, generator, reminders, sync, devices, licence, importExport, recoveryCentre, activity, trash, settings, cleanUp
 
     var title: String {
         switch self {
@@ -22,6 +22,28 @@ enum Tool: CaseIterable, Hashable {
         case .activity: String(localized: "Activity")
         case .trash: String(localized: "Trash")
         case .settings: String(localized: "Settings")
+        case .cleanUp: String(localized: "Clean-up")
+        }
+    }
+
+    /// The five Tools rows of the sidebar (UX refresh 2026-11-12, as on Windows); Settings sits at the bottom.
+    /// The other pages stay reachable: Activity from the Security centre, Devices & connections from Sync & devices,
+    /// Reminders from the Coming up box, Recovery centre from the Backup & recovery box, Licence from Settings › Plan,
+    /// and every one of them from the menus and the palette.
+    static let sidebarTools: [Tool] = [.securityCentre, .generator, .sync, .importExport, .trash]
+
+    /// The sidebar row's label (Sync becomes "Sync & devices").
+    var sidebarTitle: String {
+        self == .sync ? String(localized: "sidebar.syncAndDevices", defaultValue: "Sync & devices") : title
+    }
+
+    /// The sidebar row that stays highlighted while this tool's page shows (nil: none of the five).
+    var sidebarRow: Tool? {
+        switch self {
+        case .activity, .cleanUp: .securityCentre
+        case .devices: .sync
+        case .reminders, .recoveryCentre, .licence: nil
+        default: self
         }
     }
 }
@@ -37,8 +59,9 @@ enum SidebarSelection: Hashable {
 final class SidebarModel {
     var selection: SidebarSelection = .all
     var items: [VaultItem]
-    /// Mac-local collections and memberships (item id → collection ids), kept current by the window.
-    var collections: [LocalData.Collection] = []
+    /// The vault's collections and memberships (item id → collection ids), from the item store (sub-plan 07), kept
+    /// current by the window.
+    var collections: [CollectionCatalog.Collection] = []
     var memberships: [String: [String]] = [:]
 
     /// How many items "Recently used" lists (most recently updated first).
@@ -72,7 +95,7 @@ final class SidebarModel {
     func filtered(_ items: [VaultItem]) -> [VaultItem] { Self.filter(items, by: selection, memberships: memberships) }
 
     /// Collections, by name (case-insensitive), for the sidebar group.
-    var sortedCollections: [LocalData.Collection] {
+    var sortedCollections: [CollectionCatalog.Collection] {
         collections.sorted { (Casefold.fold($0.name), $0.id) < (Casefold.fold($1.name), $1.id) }
     }
 
@@ -80,7 +103,7 @@ final class SidebarModel {
                                    memberships: [String: [String]] = [:]) -> [VaultItem] {
         switch selection {
         case .collection(let c):
-            items.filter { !CollectionsModel.loginKinds.contains($0.kind) && (memberships[$0.id] ?? []).contains(c) }
+            items.filter { MacCollectionsModel.canBeMember($0) && (memberships[$0.id] ?? []).contains(c) }
         case .all, .tool: items
         case .favourites: items.filter(\.favorite)
         case .kind(let k): items.filter { $0.kind == k }
@@ -94,7 +117,7 @@ final class SidebarModel {
         case .favourites: String(localized: "Favourites")
         case .recent: String(localized: "Recently used")
         case .kind(let k): Self.label(forKind: k)
-        case .collection(let c): collections.first { $0.id == c }?.name ?? String(localized: "Collection")
+        case .collection(let c): collections.first { $0.id == c }.map { CollectionCatalog.displayName($0.name) } ?? String(localized: "Collection")
         case .tool(let t): t.title
         }
     }

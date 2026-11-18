@@ -50,7 +50,10 @@ struct TwoFactorScanView: View {
                 model.reset(); onNewLogin(editor); dismiss()
             }
         }
-        .onDisappear { decoding?.cancel(); model.reset() }
+        // A sheet's content can be removed and added again in one update (a vault screen created right after the
+        // unlock, as when a 2FA link opens the app): the model is reset only once no copy of this view is left.
+        .onAppear { model.viewAppeared() }
+        .onDisappear { decoding?.cancel(); model.viewDisappeared() }
         .alert("Replace the 2FA code?", isPresented: Binding(get: { model.confirmReplaceID != nil }, set: { if !$0 { model.cancelReplacements() } })) {
             Button("Replace", role: .destructive) {
                 if let id = model.confirmReplaceID, model.addKey(to: id, confirmed: true) == .saved { onSaved() }
@@ -98,7 +101,7 @@ struct TwoFactorScanView: View {
                     }
                     if reading { ProgressView("Reading the image…") }
                 } footer: {
-                    Text("The image is read on this iPhone and is not saved.")
+                    Text(DeviceText.isPad ? String(localized: "ipad.twoFactorScanView.imageReadAndNot", defaultValue: "The image is read on this iPad and is not saved.") : String(localized: "The image is read on this iPhone and is not saved."))
                 }
                 .listRowBackground(Palette.groupSurface)
                 if let error = model.error {

@@ -177,4 +177,18 @@ class GeneratorModelTest {
         assertEquals(GeneratorStrength.Level.FAIR, m.strength) // 6 * log2(340) = 50.5 bits; the packaged list is strong
         assertTrue(m.value.split("-").all { it in PassphraseWordlist.FALLBACK })
     }
+
+    @Test fun answerMode() {
+        val m = model(); m.start()
+        m.update { it.copy(mode = Mode.ANSWER) }
+        assertEquals("three words by default", 3, m.value.split(" ").size)
+        assertEquals(m.value, m.value.lowercase())
+        assertFalse("no digits", m.value.any { it.isDigit() })
+        m.update { it.copy(answerWords = 5) }
+        assertEquals(5, m.value.split(" ").size)
+        m.update { it.copy(answerWords = 9) }
+        assertEquals("capped at six words", 6, m.value.split(" ").size)
+        assertEquals(Mode.ANSWER, GeneratorDefaults(settings).load().mode)
+        assertEquals("Answer", m.options.summary(EnglishTxt()))
+    }
 }

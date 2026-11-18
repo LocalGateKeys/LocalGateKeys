@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">토큰</string>
+    <string name="jwt_alg">알고리즘</string>
+    <string name="jwt_iss">발급자</string>
+    <string name="jwt_sub">주체</string>
+    <string name="jwt_aud">대상</string>
+    <string name="jwt_iat">발급 시각</string>
+    <string name="jwt_nbf">유효 시작</string>
+    <string name="jwt_exp">만료</string>
+    <string name="jwt_expired">만료됨</string>
+    <string name="jwt_unchecked">서명은 확인하지 않음</string>
+    <string name="jwt_setExpiry">토큰에서 만료일 설정</string>
+    <string name="jwt_expirySet">만료일을 %1$s(으)로 설정했습니다.</string>
+    <string name="jwt_notSaved">만료일을 설정하지 못했습니다.</string>
+</resources>

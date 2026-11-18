@@ -18,14 +18,15 @@ struct PasskeyCreateSheet: View {
     #if os(macOS)
     static let footnote = String(localized: "It is saved in LocalGateKeys on this Mac and syncs to your PC with your other items.")
     #else
-    static let footnote = String(localized: "It is saved in LocalGateKeys on this iPhone and syncs to your PC with your other items.")
+    static let footnote = DeviceText.isPad ? String(localized: "ipad.passkeyCreateSheet.savedInLocalgatekeysAnd", defaultValue: "It is saved in LocalGateKeys on this iPad and syncs to your PC with your other items.") : String(localized: "It is saved in LocalGateKeys on this iPhone and syncs to your PC with your other items.")
     #endif
 
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
             Image(systemName: "person.badge.key.fill")
-                .font(.system(size: 44))
+                .font(.largeTitle)
+                .imageScale(.large)   // follows Dynamic Type (review 2026-11-15, UX 3)
                 .foregroundStyle(Palette.accentText)
             Text("Create a passkey")
                 .font(.title2.bold())

@@ -121,11 +121,21 @@ class SocketLanConnection(private val endpoint: LanEndpoint, private val dialer:
 /**
  * Sends the one enrollment request of a scanned offer and returns the one-frame reply (desktop `SyncTransport.enroll`).
  * Not retried. The reply comes only after the user chose Accept on the inviting device, so the read waits up to the
- * dialer's enrollment reply time ([LanDialer.dial] forEnrollment).
+ * dialer's enrollment reply time ([LanDialer.dial] forEnrollment). For a version-2 offer the inviter first sends its
+ * reveal frame (`LGKENROLLRV1\n`), which goes to `onInterim`; the final reply follows on the same connection.
  */
 class SocketEnroller(private val dialer: LanDialer) {
-    /** [onConnected]: called once the connection is up, before the request is sent. */
-    fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit = {}): ByteArray {
+    /**
+     * [onInterim]: the reveal frame, when one arrives before the reply (it may throw to abort); a second reveal is
+     * refused. [onConnected]: called once the connection is up, before the request is sent (last, so a trailing lambda
+     * still means onConnected).
+     */
+    fun enroll(
+        endpoint: LanEndpoint,
+        request: ByteArray,
+        onInterim: (ByteArray) -> Unit = {},
+        onConnected: () -> Unit = {},
+    ): ByteArray {
         if (!LanAddress.isLan(endpoint.host)) throw LanSocketException("not a LAN address")
         val magic = Enrollment.REQUEST_MAGIC
         if (request.size > Enrollment.MAX_BYTES || request.size < magic.size || !request.copyOf(magic.size).contentEquals(magic)) {
@@ -135,8 +145,14 @@ class SocketEnroller(private val dialer: LanDialer) {
         try {
             onConnected()
             s.send(LanTransport.encodeFrame(request))
-            val reply = LanTransport.decodeFrame(s.receiveFrame())
+            var reply = LanTransport.decodeFrame(s.receiveFrame())
             if (reply.size > Enrollment.MAX_BYTES) throw LanSocketException("enrollment reply exceeds the bound")
+            if (Enrollment.isReveal(reply)) {
+                onInterim(reply)
+                reply = LanTransport.decodeFrame(s.receiveFrame())
+                if (reply.size > Enrollment.MAX_BYTES) throw LanSocketException("enrollment reply exceeds the bound")
+                if (Enrollment.isReveal(reply)) throw LanSocketException("enrollment reply is malformed")
+            }
             return reply
         } finally {
             s.close()
@@ -362,7 +378,7 @@ class SocketLanTransport(
         localStates: List<ItemState>,
         ownCounter: Long,
         onMoved: (LanEndpoint) -> Unit,
-    ): List<ItemState> = exchangeWitnessing(peer, identity, groupKey, localStates, ownCounter, null, onMoved).states
+    ): List<ItemState> = exchangeWitnessing(peer, identity, groupKey, localStates, ownCounter, null, false, onMoved).states
 
     /** [exchangeViewsFindingHost] with rollback witnesses ([LanClient.exchange]). */
     override fun exchangeWitnessing(
@@ -372,11 +388,12 @@ class SocketLanTransport(
         localStates: List<ItemState>,
         ownCounter: Long,
         publish: LanPublish?,
+        askFeatures: Boolean,
         onMoved: (LanEndpoint) -> Unit,
     ): LanExchange {
         val client = LanClient(identity, groupKey, counters, random, clock)
         try {
-            return client.exchange(peer, localStates, ownCounter, PairedLanConnector(peer, dialer), publish)
+            return client.exchange(peer, localStates, ownCounter, PairedLanConnector(peer, dialer), publish, askFeatures)
         } catch (e: LanPeerNotAnswering) {
             val b = browser ?: throw e
             if (Thread.currentThread().isInterrupted) throw cancelledError()
@@ -393,7 +410,7 @@ class SocketLanTransport(
                 if (Thread.currentThread().isInterrupted) throw cancelledError()
                 val moved = peer.copy(endpoint = candidate)
                 try {
-                    val result = client.exchange(moved, localStates, ownCounter, PairedLanConnector(moved, dialer), publish)
+                    val result = client.exchange(moved, localStates, ownCounter, PairedLanConnector(moved, dialer), publish, askFeatures)
                     onMoved(candidate)
                     return result
                 } catch (x: LanPeerNotAnswering) {
@@ -423,8 +440,14 @@ class SocketLanTransport(
         probe: Boolean,
     ): BlobFetch = LanClient(identity, groupKey, counters, random, clock).fetchBlobs(peer, PairedLanConnector(peer, dialer), refs, probe)
 
+    override fun probeHeir(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey): Boolean? =
+        LanClient(identity, groupKey, counters, random, clock).probeHeir(peer, PairedLanConnector(peer, dialer))
+
     override fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit): ByteArray =
-        SocketEnroller(dialer).enroll(endpoint, request, onConnected)
+        SocketEnroller(dialer).enroll(endpoint, request, onConnected = onConnected)
+
+    override fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit, onInterim: (ByteArray) -> Unit): ByteArray =
+        SocketEnroller(dialer).enroll(endpoint, request, onInterim = onInterim, onConnected = onConnected)
 
     /** Never shows the counters, keys or frames. */
     override fun toString(): String = "SocketLanTransport(timeoutMs=$timeoutMs)"

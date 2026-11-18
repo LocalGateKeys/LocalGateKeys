@@ -54,7 +54,7 @@ import org.junit.Test
 class UpgradeSheetTest {
     @get:Rule val rule = createComposeRule()
 
-    private class FakePurchases(var offer: ProOffer = ProOffer.Available("$4.99")) : ProPurchasing {
+    private class FakePurchases(var offer: ProOffer = ProOffer.Available("$29.99")) : ProPurchasing {
         @Volatile var entitled = false
         @Volatile var purchaseCalls = 0
         override suspend fun isEntitled() = entitled
@@ -130,7 +130,7 @@ class UpgradeSheetTest {
     }
 
     @Test fun a_full_free_plan_opens_the_sheet_and_buying_opens_the_editor() {
-        val store = Store(StoreSnapshot(records(note(0), note(1), note(2), note(3))))
+        val store = Store(StoreSnapshot(records(note(0), note(1), note(2), note(3), note(4), note(5), note(6))))
         val play = FakePurchases()
         val pro = ProModel(play, emptyMap(), txt = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources))
         show(store, pro)
@@ -138,14 +138,14 @@ class UpgradeSheetTest {
         rule.onNodeWithText("Payment card").performClick()
         rule.onNodeWithTag("upgrade").assertIsDisplayed()
         rule.onNodeWithText("LocalGateKeys Pro").assertIsDisplayed()
-        rule.onNodeWithText("Pay once for unlimited items and two‑factor codes.").assertIsDisplayed()
-        rule.onNodeWithContentDescription("4 of 4 free items used. Pro: no limit.").assertIsDisplayed()
-        rule.onNodeWithText("Sync with your PC needs Pro on the PC as well.").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Pay once for unlimited items, sync, two‑factor codes and attachments.").assertIsDisplayed()
+        rule.onNodeWithContentDescription("7 of 7 free items used. Pro: no limit.").assertIsDisplayed()
+        rule.onNodeWithText("Also unlocks Windows: pair your PC").performScrollTo().assertIsDisplayed()
         // The stand-in notice of the earlier tasks is gone; there are no links out of the app.
         assertTrue(rule.onAllNodesWithText("Free plan is full").fetchSemanticsNodes().isEmpty())
         assertTrue(rule.onAllNodesWithText("Privacy Policy").fetchSemanticsNodes().isEmpty())
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("Buy for $4.99").fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithText("One-time purchase, no subscription.").assertIsDisplayed()
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Buy for $29.99").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("One payment. Every update, forever, free. No subscription.").assertIsDisplayed()
         rule.onNodeWithTag("upgrade-buy").assertIsEnabled().performClick()
         // Bought: the sheet closes by itself and the plus menu now opens the editor.
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("upgrade").fetchSemanticsNodes().isEmpty() }
@@ -157,7 +157,7 @@ class UpgradeSheetTest {
     }
 
     @Test fun no_product_says_not_available_and_disables_buy_and_close_returns() {
-        val store = Store(StoreSnapshot(records(note(0), note(1), note(2), note(3))))
+        val store = Store(StoreSnapshot(records(note(0), note(1), note(2), note(3), note(4), note(5), note(6))))
         val play = FakePurchases(ProOffer.Unavailable)
         show(store, ProModel(play, emptyMap(), txt = AndroidTxt(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources)))
         rule.onNodeWithContentDescription("New item").performClick()
@@ -169,7 +169,7 @@ class UpgradeSheetTest {
         rule.onNodeWithText("Close").performClick()
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("upgrade").fetchSemanticsNodes().isEmpty() }
         assertEquals(0, play.purchaseCalls)
-        rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().let { assertEquals(4, it.size) }
+        rule.onAllNodesWithTag("vault-row").fetchSemanticsNodes().let { assertEquals(7, it.size) }
     }
 
     @Test fun adding_a_two_factor_code_without_pro_opens_the_sheet_over_the_editor() {
@@ -182,9 +182,9 @@ class UpgradeSheetTest {
         rule.onNodeWithText("Save").performClick()
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("upgrade").fetchSemanticsNodes().isNotEmpty() }
         // Opened from the editor: no item count.
-        rule.onNodeWithContentDescription("Free: 4 items. Pro: no limit.").assertIsDisplayed()
+        rule.onNodeWithContentDescription("Free: 7 items. Pro: no limit.").assertIsDisplayed()
         assertEquals(0, store.commits)
-        rule.waitUntil(5_000) { rule.onAllNodesWithText("Buy for $4.99").fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("Buy for $29.99").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("upgrade-buy").performClick()
         rule.waitUntil(5_000) { rule.onAllNodesWithTag("upgrade").fetchSemanticsNodes().isEmpty() }
         // The editor kept its draft underneath: saving now goes through.

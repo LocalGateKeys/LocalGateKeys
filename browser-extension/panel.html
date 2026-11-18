@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<title>LocalGateKeys</title>
+<!-- The in-page panel (pickers, guards, save prompts), framed into the page by
+     content.js. Its text comes from the service worker by extension messaging;
+     the page sees only an opaque cross-origin frame. -->
+<style>
+  :root{color-scheme:light dark;}
+  html,body{margin:0;padding:0;background:transparent;}
+  .panel{--bg:#FFFFFF;--ws:#F5F7FB;--line:#E3E8F0;--line2:#CDD5E1;--ink:#16202E;--muted:#5B6678;--acc:#1F5BE8;--acc-h:#1749C4;--acc-p:#123A9C;--soft:#EAF1FF;--warn:#9A6200;--shadow:0 12px 32px rgba(16,32,64,.16),0 2px 6px rgba(16,32,64,.08);--mark:url("icons/icon48.png");color-scheme:light;box-sizing:border-box;width:100%;max-height:400px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:14px;color:var(--ink);font:13px/1.5 "Segoe UI Variable Text","Segoe UI Variable","Segoe UI",system-ui,sans-serif;box-shadow:var(--shadow);padding:14px;}
+  @media (prefers-color-scheme:dark){.panel{--bg:#0F1A2B;--ws:#0A1322;--line:#22324A;--line2:#2F4361;--ink:#EAF0FA;--muted:#9AA9BF;--acc:#1F5BE8;--acc-h:#3A72F0;--acc-p:#1749C4;--soft:#16294A;--warn:#E0B65C;--shadow:0 16px 40px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.3);color-scheme:dark;}}
+  .panel.list{height:100vh;max-height:none;}
+  .gen{display:grid;gap:8px;margin:10px 0 12px;} .gen-out{display:flex;gap:6px;align-items:center;}
+  .gen-value{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--ws);color:var(--ink);font:13px/1.35 Consolas,"Cascadia Mono",monospace;overflow-wrap:anywhere;user-select:all;}
+  .gen .gen-again{all:unset;box-sizing:border-box;width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line2);border-radius:10px;cursor:pointer;color:var(--acc);background:var(--bg);font-size:16px;}
+  .gen .gen-again:hover,.gen .gen-again:focus-visible{background:var(--soft);border-color:var(--acc);}
+  .gen-len{display:flex;align-items:center;gap:8px;color:var(--muted);} .gen-len input{flex:1;accent-color:var(--acc);} .gen-len b{min-width:22px;text-align:right;color:var(--ink);}
+  .gen-checks{display:flex;flex-wrap:wrap;gap:4px 12px;color:var(--muted);} .gen-checks input{accent-color:var(--acc);margin:0 2px 0 0;}
+  h3{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:0 0 8px;color:var(--ink);} h3::before{content:"";flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:var(--mark) center/contain no-repeat;}
+  .origin{display:inline-block;max-width:100%;box-sizing:border-box;font-size:11px;line-height:1.4;color:var(--muted);background:var(--ws);border:1px solid var(--line);border-radius:999px;padding:2px 9px;overflow-wrap:anywhere;} .origin:empty{display:none;}
+  p{margin:8px 0 12px;color:var(--muted);overflow-wrap:anywhere;} p:empty{display:none;}
+  button{font:inherit;font-weight:600;min-height:36px;border:1px solid var(--line2);border-radius:10px;background:var(--bg);color:var(--ink);padding:7px 14px;cursor:pointer;margin:4px 6px 0 0;transition:background .12s,border-color .12s;} button:hover{background:var(--soft);border-color:var(--acc);} button:active{background:var(--soft);} button:focus-visible{outline:2px solid var(--acc);outline-offset:2px;}
+  .primary{min-height:40px;background:var(--acc);border-color:var(--acc);color:#fff;} .primary:hover{background:var(--acc-h);border-color:var(--acc-h);} .primary:active{background:var(--acc-p);border-color:var(--acc-p);}
+  .account{display:block;box-sizing:border-box;width:100%;text-align:left;margin:6px 0;font-weight:500;border-color:var(--line);border-radius:12px;padding:8px 12px;} .account:hover{background:var(--soft);border-color:var(--acc);} .account span{display:block;overflow-wrap:anywhere;} .secondary{font-size:11px;font-weight:400;color:var(--muted);} .match{color:var(--warn);} .account.has-logo{display:flex;align-items:center;gap:10px;} .account .logo{display:grid;place-items:center;flex:0 0 auto;width:28px;height:28px;border-radius:8px;} .logo svg{width:16px;height:16px;display:block;} .account .text{flex:1;min-width:0;} .account:has(.fill-pill){display:flex;align-items:center;gap:10px;} .account .fill-pill{display:inline-flex;align-items:center;flex:0 0 auto;height:28px;box-sizing:border-box;padding:0 12px;border-radius:8px;background:#1F5BE8;color:#fff;font-size:12px;font-weight:600;overflow-wrap:normal;white-space:nowrap;} .account:hover .fill-pill{background:#1749C4;} @media (prefers-color-scheme:dark){.account .fill-pill{background:#4C7DFF;color:#fff;} .account:hover .fill-pill{background:#3A68E0;}}
+  .check{display:flex;align-items:center;gap:8px;} .check .tick{display:inline-grid;place-items:center;width:16px;height:16px;flex:0 0 auto;border:1px solid var(--line2);border-radius:4px;font-size:11px;color:#fff;background:var(--bg);} .check[aria-checked="true"] .tick{background:var(--acc);border-color:var(--acc);} .note{font-size:11px;color:var(--warn);margin:4px 0 0;}
+  .field{display:grid;gap:4px;margin:4px 0 10px;color:var(--muted);font-size:12px;} .field input{font:inherit;font-size:13px;color:var(--ink);background:var(--ws);border:1px solid var(--line2);border-radius:10px;padding:7px 10px;} .field input:focus-visible{outline:2px solid var(--acc);outline-offset:1px;}
+  .check[role="radio"] .tick{border-radius:50%;}
+  .panel::-webkit-scrollbar{width:8px}.panel::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}.panel::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<section id="root" class="panel" role="dialog" aria-label="LocalGateKeys"></section>
+<script src="api.js"></script>
+<script src="generator.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>

@@ -22,14 +22,31 @@ struct EditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if model.isReadOnly {
+                    // A view-only shared item (sub-plan 07): it opens, but nothing here can change it.
+                    Section { Label(EditorModel.readOnlyItemText, systemImage: "lock").foregroundStyle(Palette.secondaryText) }
+                        .listRowBackground(Palette.groupSurface)
+                }
                 Section {
                     ForEach(model.kind.fields) { field in fieldRow(field) }
                 }
                 .listRowBackground(Palette.groupSurface)
+                .disabled(model.isReadOnly)
+                if model.offersCollections {
+                    Section {
+                        NavigationLink {
+                            CollectionPicker(collections: model.collections, readOnly: model.readOnlyCollections, selection: $model.memberships)
+                        } label: {
+                            LabeledContent("Collections", value: model.membershipSummary)
+                        }
+                        .disabled(model.isReadOnly)
+                    }
+                    .listRowBackground(Palette.groupSurface)
+                }
                 if let error = model.error {
                     Section { Text(error).foregroundStyle(Palette.danger) }.listRowBackground(Palette.groupSurface)
                 }
-                if !model.isNew {
+                if !model.isNew && !model.isReadOnly {
                     Section {
                         Button("Delete item", role: .destructive) { confirmDelete = true }
                     }
@@ -47,8 +64,10 @@ struct EditorView: View {
                         let r = model.save()
                         if r == .saved || r == .unchanged { drafts?.delete(); onDone(r); dismiss() }
                     }
+                    .disabled(model.isReadOnly)
                 }
             }
+            .onAppear { model.loadCollections() }
             // An alert with a visible Cancel (tester feedback 1): iOS 26 shows a destructive-only dialog as a
             // popover with no way out but tapping outside it.
             .alert("Delete this item?", isPresented: $confirmDelete) {
@@ -59,8 +78,8 @@ struct EditorView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(trash == nil ? String(localized: "It is removed from this iPhone and from your other devices at the next sync.")
-                     : String(localized: "It moves to Recently deleted on this iPhone and is removed from your other devices at the next sync."))
+                Text(trash == nil ? (DeviceText.isPad ? String(localized: "ipad.editorView.removedFromAndFrom", defaultValue: "It is removed from this iPad and from your other devices at the next sync.") : String(localized: "It is removed from this iPhone and from your other devices at the next sync."))
+                     : (DeviceText.isPad ? String(localized: "ipad.editorView.movesRecentlyDeletedAnd", defaultValue: "It moves to Recently deleted on this iPad and is removed from your other devices at the next sync.") : String(localized: "It moves to Recently deleted on this iPhone and is removed from your other devices at the next sync.")))
             }
             .alert(EditorModel.alreadyRemovedMessage,
                    isPresented: Binding(get: { model.alreadyRemoved }, set: { if !$0 { model.clearAlreadyRemoved() } })) {
@@ -73,7 +92,10 @@ struct EditorView: View {
             .sheet(isPresented: $model.showUpgrade) { UpgradeView(pro: pro) }
             // `.inactive` comes before `.background`, where the lock may drop the Keychain: saved while it is open.
             .onChange(of: scenePhase) { _, phase in
-                if phase != .active { drafts?.save(model.draft(now: SystemClock().now)) }
+                // An untouched form leaves no draft to offer after the next unlock (review L2).
+                if phase != .active {
+                    if model.formChanged { drafts?.save(model.draft(now: SystemClock().now)) } else { drafts?.delete() }
+                }
             }
             // Closed while the app is in front (Cancel, swipe down, Save): the draft goes. A lock while in the
             // background closes it too, and keeps the draft for the next unlock.

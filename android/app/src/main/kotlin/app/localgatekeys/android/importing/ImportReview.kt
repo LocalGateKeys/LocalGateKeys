@@ -1,15 +1,18 @@
 package app.localgatekeys.android.importing
 
 import app.localgatekeys.android.R
+import app.localgatekeys.android.collections.CollectionsModel
 import app.localgatekeys.android.i18n.Txt
 import androidx.annotation.StringRes
 import app.localgatekeys.android.editor.EditorKind
 import app.localgatekeys.android.editor.EditorModel
 import app.localgatekeys.android.pro.ItemLimit
 import app.localgatekeys.android.vault.LocalStoreException
+import app.localgatekeys.core.importing.CxfImport
 import app.localgatekeys.core.importing.ImportCandidate
 import app.localgatekeys.core.importing.ImportCustomField
 import app.localgatekeys.core.importing.ImportResult
+import app.localgatekeys.core.importing.ImportSkip
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Casefold
 import app.localgatekeys.core.primitives.RandomSource
@@ -20,10 +23,12 @@ import app.localgatekeys.core.records.NormaliseException
 import app.localgatekeys.core.records.Origin
 import app.localgatekeys.core.records.PyStrip
 import app.localgatekeys.core.records.Wrapper
+import app.localgatekeys.core.sync.CollectionCatalog
 import app.localgatekeys.core.sync.ItemStore
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
 import app.localgatekeys.core.totp.Totp
+import app.localgatekeys.core.sync.itemRecords
 
 /** What the person chose for one row (Windows `import_workflow.DECISIONS`; `add` is [ADD]). */
 enum class ImportDecision(@StringRes val label: Int) {
@@ -54,8 +59,10 @@ data class ImportDraft(
     val favourite: Boolean = false,
     val identity: Map<String, String> = emptyMap(),
     val card: Map<String, String> = emptyMap(),
+    /** A passkey's vault payload (core `CxfImport.PASSKEY_KEYS`, the private key included). */
+    val passkey: Map<String, String> = emptyMap(),
 ) {
-    enum class Kind(val raw: String) { LOGIN("login"), NOTE("note"), CARD("card"), IDENTITY("identity") }
+    enum class Kind(val raw: String) { LOGIN("login"), NOTE("note"), CARD("card"), IDENTITY("identity"), PASSKEY("passkey") }
 
     override fun toString(): String = "ImportDraft(kind=$kind, fields=${customFields.size})"
 }
@@ -77,6 +84,11 @@ data class ImportRow(
     val limited: Boolean = false,
     /** Why the source row could not be imported (the Windows message), for [ImportRowStatus.SKIPPED_SOURCE]. */
     val reason: String? = null,
+    /**
+     * The target is in a collection shared with this vault as view only (sub-plan 07, 5l review): it is never replaced,
+     * as on Windows (`check_writable`); Skip or Keep both only.
+     */
+    val readOnly: Boolean = false,
 ) {
     val kind: ImportDraft.Kind get() = draft.kind
     val title: String get() = draft.title
@@ -103,7 +115,7 @@ data class ImportRow(
         get() = when {
             base == ImportRowStatus.SKIPPED_SOURCE -> listOf(ImportDecision.SKIP)
             base == ImportRowStatus.NEW -> listOf(ImportDecision.ADD, ImportDecision.SKIP)
-            inImportDuplicate -> listOf(ImportDecision.SKIP, ImportDecision.KEEP_BOTH)
+            inImportDuplicate || readOnly -> listOf(ImportDecision.SKIP, ImportDecision.KEEP_BOTH)
             else -> listOf(ImportDecision.SKIP, ImportDecision.REPLACE, ImportDecision.KEEP_BOTH)
         }
 
@@ -123,7 +135,7 @@ data class ImportOutcome(val created: Int, val updated: Int, val skipped: Int, v
 }
 
 class ImportReviewException(val kind: Kind, val row: Int = 0, val detail: String = "") : Exception(kind.name) {
-    enum class Kind { TARGET_CHANGED, TARGET_REVISION_CHANGED, ITEM_LIMIT, INVALID, ITEM_NOT_SAVED }
+    enum class Kind { TARGET_CHANGED, TARGET_REVISION_CHANGED, ITEM_LIMIT, INVALID, ITEM_NOT_SAVED, READ_ONLY }
 
     /** What the person reads; [message] stays the stable kind name. */
     fun text(t: Txt): String = when (kind) {
@@ -132,13 +144,14 @@ class ImportReviewException(val kind: Kind, val row: Int = 0, val detail: String
         Kind.ITEM_LIMIT -> t.plural(R.plurals.import_error_item_limit, ItemLimit.FREE_ITEMS, ItemLimit.FREE_ITEMS)
         Kind.INVALID -> t.s(R.string.import_workflow_row, row, detail)
         Kind.ITEM_NOT_SAVED -> t.s(R.string.import_error_row_not_saved, row)
+        Kind.READ_ONLY -> t.s(R.string.collections_read_only_item)
     }
 }
 
 /**
  * The review step of an import: a port of `ios/App/Import/ImportReviewModel.swift` (itself Windows `import_workflow.py`:
- * `normalise_records`, `classify_rows`, `set_decision`/`recompute_limits`/`limit_note`, `apply_import_plan`) without
- * passkeys. Rows already in the vault default to Skip, repeats inside the import too (a repeat with another password
+ * `normalise_records`, `classify_rows`, `set_decision`/`recompute_limits`/`limit_note`, `apply_import_plan`). Passkeys
+ * (Credential Exchange files) are saved as the desktop's `passkey` items, checked by the core normaliser first. Rows already in the vault default to Skip, repeats inside the import too (a repeat with another password
  * is kept as a secure-note copy); on the free plan rows past the free slots are "Needs Pro" and two-factor keys are
  * kept as hidden custom fields. Records are made as the phone editor makes them ([EditorModel.newRecord], core
  * `Normalise.normalForm`, `Wrapper.make`) and [commit] writes every reviewed row in one store commit.
@@ -171,12 +184,12 @@ class ImportReview(
             list.add(
                 ImportRow(
                     list.size, row, ImportDraft(ImportDraft.Kind.NOTE, title = t.s(R.string.import_row_n, row)),
-                    base = ImportRowStatus.SKIPPED_SOURCE, decision = ImportDecision.SKIP, reason = skip.message,
+                    base = ImportRowStatus.SKIPPED_SOURCE, decision = ImportDecision.SKIP, reason = skipText(skip, t),
                 ),
             )
         }
         rows = list
-        this.issues = cap(result.skipped.map { it.message }, t) + issues
+        this.issues = cap(result.skipped.map { skipText(it, t) }, t) + issues
         recomputeLimits()
     }
 
@@ -273,7 +286,10 @@ class ImportReview(
                     }
                 }
                 ImportDecision.REPLACE -> {
-                    update(row, row.targetId ?: throw ImportReviewException(ImportReviewException.Kind.TARGET_CHANGED), records, snap, stamp)
+                    val target = row.targetId ?: throw ImportReviewException(ImportReviewException.Kind.TARGET_CHANGED)
+                    // A view-only item is never changed here, also when it became view-only after the review.
+                    if (CollectionsModel.itemIsReadOnly(target, snap)) throw ImportReviewException(ImportReviewException.Kind.READ_ONLY, row.sourceRow)
+                    update(row, target, records, snap, stamp)
                     updated++
                     if (row.kind != ImportDraft.Kind.LOGIN) row.extra?.let { create(it, row, records, stamp); created++ }
                 }
@@ -302,6 +318,14 @@ class ImportReview(
                 record["tags"] = JsonValue.Arr(d.tags.map { JsonValue.Str(it) })
                 record["favorite"] = JsonValue.Bool(d.favourite)
                 ns = Namespace.ENTRY
+            }
+            ImportDraft.Kind.PASSKEY -> {
+                record = linkedMapOf(
+                    "id" to JsonValue.Str(EditorModel.uuid4(random)), "kind" to JsonValue.Str("passkey"), "title" to JsonValue.Str(d.title),
+                    "payload" to JsonValue.Obj(payload(d)), "created_at" to JsonValue.Int(stamp), "updated_at" to JsonValue.Int(stamp),
+                    "favorite" to JsonValue.Bool(d.favourite), "tags" to JsonValue.Arr(d.tags.map { JsonValue.Str(it) }),
+                )
+                ns = Namespace.ITEM
             }
             else -> {
                 val kind = when (d.kind) {
@@ -424,6 +448,16 @@ class ImportReview(
                 }
                 if (d.folder.isNotEmpty()) d = d.copy(folder = stripChars(d.folder.replace('\\', '/'), "/ "))
                 d = d.copy(tags = cleanTags(d.tags))
+                if (d.kind == ImportDraft.Kind.PASSKEY) {
+                    // Windows `passkey_payload`: the vault's own check, before the row is offered. The normaliser's reason
+                    // is English, so the person reads only the translated line.
+                    if (!passkeyAccepted(d)) {
+                        val m = t.s(R.string.import_workflow_row_passkey_could_not, number)
+                        issues.add(m); add(number, d, base = ImportRowStatus.SKIPPED_SOURCE, decision = ImportDecision.SKIP, reason = m); continue
+                    }
+                    add(number, d.copy(title = title(d, number, d.passkey["relying_party_id"] ?: ""), customFields = emptyList(), notes = ""))
+                    continue
+                }
                 d = fitFields(d, number, issues, t)
                 when (d.kind) {
                     ImportDraft.Kind.LOGIN -> {
@@ -514,6 +548,7 @@ class ImportReview(
                         d = d.copy(title = title(d, number))
                         add(number, fitFields(d, number, issues, t))
                     }
+                    ImportDraft.Kind.PASSKEY -> Unit // handled above
                 }
             }
             if (upgradedRows.isNotEmpty()) {
@@ -534,11 +569,13 @@ class ImportReview(
                 ImportCandidate.Kind.NOTE -> ImportDraft.Kind.NOTE
                 ImportCandidate.Kind.CARD -> ImportDraft.Kind.CARD
                 ImportCandidate.Kind.IDENTITY -> ImportDraft.Kind.IDENTITY
+                ImportCandidate.Kind.PASSKEY -> ImportDraft.Kind.PASSKEY
             }
             var d = ImportDraft(
                 kind, title = c.title, username = c.username, password = c.password, notes = c.notes,
                 totp = if (kind == ImportDraft.Kind.LOGIN) c.totp else "", urls = c.urls, customFields = c.customFields,
                 tags = c.tags, folder = c.folder, favourite = c.favourite, identity = c.identity, card = c.card,
+                passkey = if (kind == ImportDraft.Kind.PASSKEY) c.passkey else emptyMap(),
             )
             if (kind != ImportDraft.Kind.LOGIN && c.totp.isNotEmpty()) d = addField(d, "One-time password (otpauth)", c.totp, hidden = true).first
             return d
@@ -562,7 +599,10 @@ class ImportReview(
         internal fun classify(rows: MutableList<ImportRow>, snap: StoreSnapshot) {
             val logins = HashMap<Pair<String, String>, Pair<String, Map<String, JsonValue>>>()
             val catalog = HashMap<String, Pair<String, Map<String, JsonValue>>>()
-            for (id in snap.records.keys.sorted()) {
+            // Passkeys are matched by credential, never by title: two accounts on one site share a title, and
+            // replacing the other account's key would lose it.
+            val passkeys = HashMap<String, Pair<String, Map<String, JsonValue>>>()
+            for (id in snap.itemRecords.keys.sorted()) {
                 if (snap.meta[id]?.deleted == true) continue
                 val w = (snap.records[id] as? JsonValue.Obj)?.fields ?: continue
                 val r = (w["record"] as? JsonValue.Obj)?.fields ?: continue
@@ -574,10 +614,16 @@ class ImportReview(
                     if (key !in logins) logins[key] = id to r
                 } else if (ns == Namespace.ITEM.wire) {
                     val kind = (r["kind"] as? JsonValue.Str)?.v ?: continue
+                    if (kind == "passkey") {
+                        val pk = passkeyKey((r["payload"] as? JsonValue.Obj)?.fields ?: emptyMap()) ?: continue
+                        if (pk !in passkeys) passkeys[pk] = id to r
+                        continue
+                    }
                     val key = kind + "\u0000" + Casefold.fold((r["title"] as? JsonValue.Str)?.v ?: "")
                     if (key !in catalog) catalog[key] = id to r
                 }
             }
+            val readOnlyIds = CollectionsModel.readOnlyCollectionIds(snap)
             for (i in rows.indices) {
                 val row = rows[i]
                 if (row.base == ImportRowStatus.SKIPPED_SOURCE) continue
@@ -595,6 +641,10 @@ class ImportReview(
                 if (row.kind == ImportDraft.Kind.LOGIN) {
                     target = logins[row.origin to row.draft.username] ?: continue
                     same = (target.second["password"] as? JsonValue.Str)?.v == row.draft.password
+                } else if (row.kind == ImportDraft.Kind.PASSKEY) {
+                    val pk = normalisedPasskey(row.draft)?.let { passkeyKey(it) } ?: continue
+                    target = passkeys[pk] ?: continue
+                    same = sameItem(target.second, row.draft)
                 } else {
                     target = catalog[row.kind.raw + "\u0000" + Casefold.fold(row.title)] ?: continue
                     same = sameItem(target.second, row.draft)
@@ -602,8 +652,16 @@ class ImportReview(
                 rows[i] = row.copy(
                     targetId = target.first, targetRecord = JsonValue.Obj(target.second),
                     base = if (same) ImportRowStatus.DUPLICATE else ImportRowStatus.CONFLICT, decision = ImportDecision.SKIP,
+                    readOnly = readOnlyIds.isNotEmpty() && CollectionCatalog.memberships(target.first, snap).any { it in readOnlyIds },
                 )
             }
+        }
+
+        /** (relying party, credential id) of a passkey payload, or null when either is missing. */
+        private fun passkeyKey(p: Map<String, JsonValue>): String? {
+            val rp = Casefold.fold(((p["relying_party_id"] as? JsonValue.Str)?.v ?: "").trim())
+            val cred = (p["credential_id"] as? JsonValue.Str)?.v ?: ""
+            return if (rp.isEmpty() || cred.isEmpty()) null else rp + "\u0000" + cred
         }
 
         private fun sameItem(stored: Map<String, JsonValue>, d: ImportDraft): Boolean {
@@ -616,6 +674,11 @@ class ImportReview(
                     listOf("number", "expiry", "cardholder").all { (p[it] ?: JsonValue.Str("")) == (wanted[it] ?: JsonValue.Str("")) }
                 }
                 ImportDraft.Kind.IDENTITY -> (p - "template_id") == d.identity.mapValues { JsonValue.Str(it.value) }
+                // Windows: the same passkey is the same relying party, credential id and user handle.
+                ImportDraft.Kind.PASSKEY -> {
+                    val wanted = normalisedPasskey(d) ?: emptyMap()
+                    listOf("relying_party_id", "credential_id", "user_handle").all { (p[it] ?: JsonValue.Str("")) == (wanted[it] ?: JsonValue.Str("")) }
+                }
                 ImportDraft.Kind.LOGIN -> false
             }
         }
@@ -746,7 +809,7 @@ class ImportReview(
             )
 
         private fun hasNull(d: ImportDraft): Boolean {
-            val values = listOf(d.title, d.username, d.password, d.notes, d.totp, d.folder) + d.urls + d.identity.values + d.card.values +
+            val values = listOf(d.title, d.username, d.password, d.notes, d.totp, d.folder) + d.urls + d.identity.values + d.card.values + d.passkey.values +
                 d.customFields.flatMap { listOf(it.name, it.value) }
             return values.any { it.contains('\u0000') }
         }
@@ -871,15 +934,62 @@ class ImportReview(
             t.s(R.string.import_card_unreadable)
         }
 
+        /** The skipped-source line in the person's language when the core named it ([ImportSkip.code]). */
+        internal fun skipText(skip: ImportSkip, t: Txt): String = when {
+            skip.code == CxfImport.SKIPPED_TYPES && skip.args.size == 2 -> {
+                val count = skip.args[0].toIntOrNull() ?: 0
+                t.plural(R.plurals.import_cxf_skipped_types, count, count, skip.args[1])
+            }
+            else -> skip.message
+        }
+
+        /** Windows `passkey_payload` before validation: the payload keys and empty notes. */
+        private fun passkeyFields(d: ImportDraft): Map<String, JsonValue> {
+            val out = LinkedHashMap<String, JsonValue>()
+            for (key in CxfImport.PASSKEY_KEYS) d.passkey[key]?.let { out[key] = JsonValue.Str(it) }
+            out["notes"] = JsonValue.Str("")
+            return out
+        }
+
+        private fun probePasskey(d: ImportDraft): JsonValue = Normalise.normalForm(
+            Namespace.ITEM,
+            JsonValue.Obj(
+                linkedMapOf(
+                    "id" to JsonValue.Str("00000000-0000-4000-8000-000000000000"), "kind" to JsonValue.Str("passkey"),
+                    "title" to JsonValue.Str("passkey"), "created_at" to JsonValue.Int(0), "updated_at" to JsonValue.Int(0),
+                    "payload" to JsonValue.Obj(passkeyFields(d)),
+                ),
+            ),
+        )
+
+        private fun normalisedPasskey(d: ImportDraft): Map<String, JsonValue>? = try {
+            ((probePasskey(d) as? JsonValue.Obj)?.fields?.get("payload") as? JsonValue.Obj)?.fields
+        } catch (e: Exception) {
+            null
+        }
+
+        /** True when the passkey is complete and the vault's normaliser takes it. */
+        private fun passkeyAccepted(d: ImportDraft): Boolean {
+            val required = listOf("relying_party_id", "credential_id", "private_key", "algorithm")
+            if (required.any { d.passkey[it].isNullOrEmpty() }) return false
+            return try {
+                probePasskey(d)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
         private fun payload(d: ImportDraft): Map<String, JsonValue> = when (d.kind) {
             ImportDraft.Kind.CARD -> cardFields(d)
+            ImportDraft.Kind.PASSKEY -> passkeyFields(d)
             ImportDraft.Kind.IDENTITY -> d.identity.mapValues { JsonValue.Str(it.value) }
             else -> linkedMapOf("body" to JsonValue.Str(d.notes), "fields" to fieldsJson(d.customFields))
         }
 
         /** The live web login with this canonical origin and exactly this username (desktop `_web_login_match`). */
         fun match(origin: String, username: String, snapshot: StoreSnapshot): String? {
-            for (id in snapshot.records.keys.sorted()) {
+            for (id in snapshot.itemRecords.keys.sorted()) {
                 if (snapshot.meta[id]?.deleted == true) continue
                 val w = (snapshot.records[id] as? JsonValue.Obj)?.fields ?: continue
                 if (w["ns"] != JsonValue.Str(Namespace.ENTRY.wire)) continue

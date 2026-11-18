@@ -4,12 +4,17 @@ Work through every section in order. Each produces an artifact that the next
 one consumes, and the manifest written at the end records all of them.
 Record the evidence for each gate with the release.
 
+**Windows ships only through the Microsoft Store (since 2026-11-09).** A
+release is the MSIX package uploaded to Partner Center
+(store/MICROSOFT_STORE_CHECKLIST.md);
+the Store signs and delivers it. The Inno Setup installer was removed on
+2026-11-18; steps marked *final installer release only* no longer apply.
+
 ## 1. Freeze the source
 
 - [ ] `CHANGELOG.md`: move *Unreleased* under a dated version heading.
 - [ ] Bump `version` in `pyproject.toml`, `src/localvault/version.py`,
-      `browser-extension/manifest.json` and `AppVersion` in
-      `build-personal/LocalGateKeys-Personal.iss`; keep them identical.
+      `browser-extension/manifest.json`; keep them identical.
 - [ ] CI green on `main` (ruff, pytest 3.12/3.13, Node tests, build smoke).
 - [ ] Tag the commit. Everything below is built from that tag.
 
@@ -19,18 +24,24 @@ Record the evidence for each gate with the release.
       3.13); review the diff for unexpected new packages.
 - [ ] `.\scripts\run_tests.ps1` (installs from `requirements-dev.lock.txt` with
       `--require-hashes`, then runs the suite). Any hash mismatch is a stop.
+- [ ] `.\scripts\ci_local.ps1 -Only security` is clean (pip-audit, npm audit,
+      bandit; accepted findings only in `scripts\security_ignore.txt`).
 - [ ] For an offline build: `.\scripts\update_locks.ps1 -Wheelhouse` populates
       `release-inputs\wheelhouse`; copy it to the build machine with the locks.
 
 ## 3. Build (reproducibly)
 
 ```powershell
-.\scripts\build_personal_installer.ps1 -OutputRoot build-A -Offline `
-    -ModelRoot src\localvault\models -IsccPath "<path>\ISCC.exe" `
-    -CertificateThumbprint <40-hex-sha1>
+.\scripts\build_personal_installer.ps1 -SkipInstaller -Release -OutputRoot build-A -Offline `
+    -ModelRoot src\localvault\models
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_msix_package.ps1 `
+    -Channel Store -IdentityFile build-msix\store-identity.json
 ```
 
-- [ ] Signing makes it a release build (same as `-Release`): dependencies are
+The first command builds the frozen executables (the MSIX input); the second
+packs the Store MSIX (details and the upload: `store/MICROSOFT_STORE_CHECKLIST.md`).
+
+- [ ] A release build (`-Release`, or signing): dependencies are
       reinstalled from the hash-pinned lock (or the `-Offline` wheelhouse), the
       venv's Python must be at least `-MinimumPythonVersion` (default 3.14.9),
       and `THIRD-PARTY-NOTICES.txt` must match the installed packages
@@ -72,6 +83,19 @@ Compare-Object ($a.payload | % { "$($_.path) $($_.sha256)" }) ($b.payload | % { 
 
 ## 6. Code signing
 
+The Store signs the MSIX package; nothing to do for a Store release. The rest
+of this section is kept for reference: no Authenticode certificate was bought,
+and the installer is retired (2026-11-09).
+
+> **Owner action (audit item W-2, no longer needed):** the direct-download `.exe` files and the
+> installer can only be Authenticode-signed with a code-signing certificate, which
+> the owner has to buy (an OV or EV certificate from a public CA; an EV certificate
+> or a cloud signing service builds SmartScreen reputation fastest). Until one
+> exists every build has `signed: false`, and the checklist below cannot be passed
+> for a direct-download release. Once bought, pass its thumbprint or PFX to
+> `scripts\build_personal_installer.ps1` (`-CertificateThumbprint` or `-PfxPath`).
+> The Microsoft Store package does not need it (the Store signs it).
+
 - [ ] `manifest.signed` is `true`; `manifest.signing.certificate_thumbprint_sha1`
       is the release certificate.
 - [ ] `signtool verify /pa /v` succeeds for `LocalGateKeys.exe`,
@@ -79,9 +103,11 @@ Compare-Object ($a.payload | % { "$($_.path) $($_.sha256)" }) ($b.payload | % { 
       uninstaller inside an installed copy (`unins000.exe`).
 - [ ] Signatures carry an RFC 3161 timestamp (the default TSA is
       `http://timestamp.digicert.com`).
-- [ ] A build with `signed: false` is never published.
+- [ ] A build with `signed: false` is never published. Once the code-signing certificate exists this is absolute:
+      no unsigned `.exe` or installer ships, and a build that prints "UNSIGNED build" is for local testing only.
+      (Owner steps to get the certificate: `docs/store/SUBMISSION_CHECKLIST.md` section 6.)
 
-## 7. Manifest and checksums
+## 7. Manifest and checksums (final installer release only)
 
 - [ ] `LocalGateKeys-Setup-Personal.manifest.json` (schema 2): `git_commit`
       matches the tag, `tools.pyinstaller` matches `pyproject.toml`'s pin,
@@ -90,13 +116,25 @@ Compare-Object ($a.payload | % { "$($_.path) $($_.sha256)" }) ($b.payload | % { 
 
 ## 8. Install validation
 
-- [ ] Clean Windows VM, network disabled: install, first run, bridge repair,
-      extension load, save/fill on the demo page, lock/unlock, uninstall keeps
-      profile data. Record results in the release's validation document.
+- [ ] Clean Windows VM, network disabled: install the MSIX (sideload test build
+      or the Store flight), first run, bridge repair, extension load, save/fill
+      on the demo page, lock/unlock, uninstall keeps profile data. Record
+      results in the release's validation document.
+- [ ] *Final installer release only:* from an installed installer build, update
+      to 0.4.12, unlock, and check the "moved to the Microsoft Store" notice and
+      its Settings row; uninstall the installer build, install from the Store,
+      and confirm the vault is still there.
 
-## 9. Update-feed publication
+## 9. Update-feed publication (final installer release only)
 
-The app checks for updates only when the user asks and only against fixed
+Store builds are updated by the Store and never read the feed. The feed is
+published once more, for 0.4.12, then frozen: the update Worker
+(`LAST_INSTALLER_RELEASE` = `0.4.12`) refuses anything newer with a 410 that
+points to the Store. See [UPDATES.md](UPDATES.md). The licence items at the end
+of this section (`LICENSE_KEYS`, `--check-build --release`, `PURCHASE_URL`,
+`revocations.json`) apply to every release.
+
+The installer app checks for updates only when the user asks and only against fixed
 HTTPS URLs compiled into `src/localvault/updates.py`.
 
 - [ ] `RELEASE_FEED_URL` (the Cloudflare Worker, must not change) and
@@ -138,5 +176,4 @@ HTTPS URLs compiled into `src/localvault/updates.py`.
 
 ## 10. Announce
 
-- [ ] Release notes = the CHANGELOG section plus the manifest/SBOM hashes and
-      the certificate thumbprint.
+- [ ] Release notes = the CHANGELOG section plus the manifest/SBOM hashes.

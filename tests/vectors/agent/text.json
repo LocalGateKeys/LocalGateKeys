@@ -1,0 +1,472 @@
+{
+ "clean_text": [
+  {
+   "input": "plain",
+   "limit": 80,
+   "output": "plain"
+  },
+  {
+   "input": "  two   spaces\tand\ttabs  ",
+   "limit": 80,
+   "output": "two spaces and tabs"
+  },
+  {
+   "input": "line\nbreak\r\nend",
+   "limit": 80,
+   "output": "line break end"
+  },
+  {
+   "input": "bell\u0007and\u0000nul",
+   "limit": 80,
+   "output": "bellandnul"
+  },
+  {
+   "input": "bidi ‮gnp.exe‬",
+   "limit": 80,
+   "output": "bidi gnp.exe"
+  },
+  {
+   "input": "zero​width‍joiner",
+   "limit": 80,
+   "output": "zerowidthjoiner"
+  },
+  {
+   "input": "nbsp and　ideographic",
+   "limit": 80,
+   "output": "nbsp and ideographic"
+  },
+  {
+   "input": "line separator para",
+   "limit": 80,
+   "output": "line separator para"
+  },
+  {
+   "input": "privateuse",
+   "limit": 80,
+   "output": "privateuse"
+  },
+  {
+   "input": "café 中文 😀",
+   "limit": 80,
+   "output": "café 中文 😀"
+  },
+  {
+   "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "limit": 80,
+   "output": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "input": "abc def",
+   "limit": 5,
+   "output": "abc d"
+  },
+  {
+   "input": "",
+   "limit": 80,
+   "output": ""
+  },
+  {
+   "input": "   ",
+   "limit": 80,
+   "output": ""
+  },
+  {
+   "input": "soft­hyphen",
+   "limit": 80,
+   "output": "softhyphen"
+  },
+  {
+   "input": "delchar",
+   "limit": 80,
+   "output": "delchar"
+  },
+  {
+   "input": "c1control",
+   "limit": 80,
+   "output": "c1control"
+  },
+  {
+   "input": "word joiner⁠",
+   "limit": 80,
+   "output": "word joiner"
+  },
+  {
+   "input": "bom﻿mark",
+   "limit": 80,
+   "output": "bommark"
+  }
+ ],
+ "sites": [
+  {
+   "input": "paypal.com",
+   "registrable_domain": "paypal.com",
+   "site_host": "paypal.com"
+  },
+  {
+   "input": "https://www.paypal.com/x",
+   "registrable_domain": "paypal.com",
+   "site_host": "www.paypal.com"
+  },
+  {
+   "input": "login.paypal.com",
+   "registrable_domain": "paypal.com",
+   "site_host": "login.paypal.com"
+  },
+  {
+   "input": "  login.example.com  ",
+   "registrable_domain": "example.com",
+   "site_host": "login.example.com"
+  },
+  {
+   "input": "https://Login.Example.COM.",
+   "registrable_domain": "example.com",
+   "site_host": "login.example.com"
+  },
+  {
+   "input": "http://shop.example.co.uk/path?q=1",
+   "registrable_domain": "example.co.uk",
+   "site_host": "shop.example.co.uk"
+  },
+  {
+   "input": "example.co.uk",
+   "registrable_domain": "example.co.uk",
+   "site_host": "example.co.uk"
+  },
+  {
+   "input": "co.uk",
+   "registrable_domain": "co.uk",
+   "site_host": "co.uk"
+  },
+  {
+   "input": "localhost",
+   "registrable_domain": "localhost",
+   "site_host": "localhost"
+  },
+  {
+   "input": "127.0.0.1",
+   "registrable_domain": "127.0.0.1",
+   "site_host": "127.0.0.1"
+  },
+  {
+   "input": "https://[::1]/",
+   "registrable_domain": "::1",
+   "site_host": "::1"
+  },
+  {
+   "input": "",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "   ",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "not a url",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "https://",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "ftp://example.com",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "https://user:pw@example.com",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "example.com:8443",
+   "registrable_domain": "example.com",
+   "site_host": "example.com"
+  },
+  {
+   "input": "bücher.example",
+   "registrable_domain": "xn--bcher-kva.example",
+   "site_host": "xn--bcher-kva.example"
+  },
+  {
+   "input": "xn--bcher-kva.example",
+   "registrable_domain": "xn--bcher-kva.example",
+   "site_host": "xn--bcher-kva.example"
+  },
+  {
+   "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com",
+   "registrable_domain": null,
+   "site_host": null
+  },
+  {
+   "input": "https://bank.example.org/login",
+   "registrable_domain": "example.org",
+   "site_host": "bank.example.org"
+  },
+  {
+   "input": "www.github.com",
+   "registrable_domain": "github.com",
+   "site_host": "www.github.com"
+  },
+  {
+   "input": "javascript:alert(1)",
+   "registrable_domain": null,
+   "site_host": null
+  }
+ ],
+ "origin_domain": [
+  {
+   "input": "https://login.example.com",
+   "output": "example.com"
+  },
+  {
+   "input": "https://example.com:443",
+   "output": "example.com"
+  },
+  {
+   "input": "http://login.example.com",
+   "output": null
+  },
+  {
+   "input": "https://example.com/path",
+   "output": null
+  },
+  {
+   "input": "https://example.com:8443",
+   "output": "example.com"
+  },
+  {
+   "input": "https://localhost",
+   "output": "localhost"
+  },
+  {
+   "input": "http://localhost",
+   "output": "localhost"
+  },
+  {
+   "input": "not an origin",
+   "output": null
+  },
+  {
+   "input": "",
+   "output": null
+  },
+  {
+   "input": "https://co.uk",
+   "output": "co.uk"
+  },
+  {
+   "input": "https://www.paypal.com",
+   "output": "paypal.com"
+  }
+ ],
+ "agents_may_use": [
+  {
+   "entry": {
+    "scope": {
+     "ai_agents": true
+    }
+   },
+   "output": true
+  },
+  {
+   "entry": {
+    "scope": {
+     "ai_agents": false
+    }
+   },
+   "output": false
+  },
+  {
+   "entry": {
+    "scope": {
+     "ai_agents": "true"
+    }
+   },
+   "output": false
+  },
+  {
+   "entry": {
+    "scope": {
+     "ai_agents": 1
+    }
+   },
+   "output": false
+  },
+  {
+   "entry": {
+    "scope": {}
+   },
+   "output": false
+  },
+  {
+   "entry": {
+    "scope": null
+   },
+   "output": false
+  },
+  {
+   "entry": {
+    "scope": [
+     "ai_agents"
+    ]
+   },
+   "output": false
+  },
+  {
+   "entry": {},
+   "output": false
+  },
+  {
+   "entry": {
+    "scope": "x"
+   },
+   "output": false
+  }
+ ],
+ "site_passkeys": {
+  "passkeys": [
+   {
+    "credential_id": "c1",
+    "rp_id": "example.com",
+    "user_name": "alice"
+   },
+   {
+    "credential_id": "c2",
+    "rp_id": "login.example.com",
+    "user_name": "Bob"
+   },
+   {
+    "credential_id": "c3",
+    "rp_id": "other.com",
+    "user_name": "alice"
+   },
+   {
+    "credential_id": "",
+    "rp_id": "example.com",
+    "user_name": "alice"
+   },
+   {
+    "credential_id": "c5",
+    "rp_id": "EXAMPLE.COM.",
+    "user_name": ""
+   },
+   {
+    "credential_id": "c6",
+    "rp_id": "co.uk",
+    "user_name": "alice"
+   },
+   {
+    "credential_id": "c7",
+    "rp_id": "files.example.com",
+    "user_name": "alice"
+   }
+  ],
+  "cases": [
+   {
+    "username": "alice",
+    "hosts": [
+     "login.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c1"
+    ]
+   },
+   {
+    "username": "bob",
+    "hosts": [
+     "login.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c2"
+    ]
+   },
+   {
+    "username": "carol",
+    "hosts": [
+     "login.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c1",
+     "c2",
+     "c5"
+    ]
+   },
+   {
+    "username": "",
+    "hosts": [
+     "login.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c1",
+     "c2",
+     "c5"
+    ]
+   },
+   {
+    "username": "alice",
+    "hosts": [
+     "example.com",
+     "www.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c1"
+    ]
+   },
+   {
+    "username": "alice",
+    "hosts": [
+     "shop.other.com"
+    ],
+    "domain": "other.com",
+    "output": [
+     "c3"
+    ]
+   },
+   {
+    "username": "alice",
+    "hosts": [
+     "files.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c1",
+     "c7"
+    ]
+   },
+   {
+    "username": "alice",
+    "hosts": [],
+    "domain": "example.com",
+    "output": []
+   },
+   {
+    "username": " ALICE ",
+    "hosts": [
+     "www.example.com"
+    ],
+    "domain": "example.com",
+    "output": [
+     "c1"
+    ]
+   },
+   {
+    "username": "alice",
+    "hosts": [
+     "example.co.uk"
+    ],
+    "domain": "example.co.uk",
+    "output": []
+   }
+  ]
+ }
+}

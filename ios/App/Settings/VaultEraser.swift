@@ -35,14 +35,18 @@ struct VaultEraser: VaultErasing {
     /// Deletes the store directory (a seam: tests make it fail).
     var removeDirectory: @Sendable (URL) throws -> Void = { try FileManager.default.removeItem(at: $0) }
     var now: @Sendable () -> Int64 = { Int64(Date().timeIntervalSince1970) }
-    /// `<app group>/SafariSave` (index and inbox), found without creating it; nil: nothing to delete.
+    /// `<Safari group>/SafariSave` (index and inbox), found without creating it; nil: nothing to delete.
     var safariDirectory: @Sendable () throws -> URL? = { nil }
     /// The unsaved editor draft (Task 6, `EditorDraftStore`); nil: none. Failure name "draft".
     var draftFile: @Sendable () -> URL? = { nil }
+    /// The app's other local folders: attachment files, received shares, open copies, site icons. Best effort and
+    /// never a failure (attachments are sealed under keys kept only in the vault). Files the person exported
+    /// (backups, CSV, shares sent) are outside the app and never listed here.
+    var extraDirectories: @Sendable () -> [URL] = { [] }
 
     /// Two confirmations, in the style of Leave and Reset sync (`SyncWording`).
-    static var confirmText1: String { String(localized: "Erase this iPhone's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this iPhone. Your PC and the sync folder are not changed. If this iPhone was your only copy, the items are gone.") }
-    static var confirmText2: String { String(localized: "Are you sure? This cannot be undone. Erase this iPhone's vault now?") }
+    static var confirmText1: String { DeviceText.isPad ? String(localized: "ipad.vaultEraser.confirm1", defaultValue: "Erase this iPad's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this iPad. Your PC and the sync folder are not changed. If this iPad was your only copy, the items are gone.") : String(localized: "Erase this iPhone's vault?\n\nThis deletes every item, the vault's keys and its sync settings from this iPhone. Your PC and the sync folder are not changed. If this iPhone was your only copy, the items are gone.") }
+    static var confirmText2: String { DeviceText.isPad ? String(localized: "ipad.vaultEraser.confirm2", defaultValue: "Are you sure? This cannot be undone. Erase this iPad's vault now?") : String(localized: "Are you sure? This cannot be undone. Erase this iPhone's vault now?") }
 
     /// Context-free vaults for the shared, app-only and Safari groups (deleting needs no Face ID; the
     /// session's authenticated context is gone once the app locks).
@@ -56,7 +60,22 @@ struct VaultEraser: VaultErasing {
                            identities: SystemCredentialIdentityStore(),
                            scheduleIdentityRetry: { settings.identityRemovalPending = true },
                            safariDirectory: { try SafariSaveFiles.location() },
-                           draftFile: { EditorDraftStore.location() })
+                           draftFile: { EditorDraftStore.location() },
+                           // The pre-Safari-group folder too, in case the launch migration could not move it.
+                           extraDirectories: { VaultEraser.localFolders() + [SafariSaveFiles.legacyLocation()].compactMap { $0 } })
+    }
+
+    /// `<Application Support>/LocalGateKeys` (attachments, received shares), the open copies and the site icons.
+    static func localFolders() -> [URL] {
+        var dirs = [AttachmentFiles.openCopiesDirectory]
+        if let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            dirs.append(support.appendingPathComponent("LocalGateKeys", isDirectory: true))
+        }
+        // `SiteIconStore.defaultDirectory`, spelled out (the store is main-actor isolated).
+        if let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            dirs.append(caches.appendingPathComponent("SiteIcons", isDirectory: true))
+        }
+        return dirs
     }
 
     func erase() async throws {
@@ -80,9 +99,14 @@ struct VaultEraser: VaultErasing {
             try? FileManager.default.removeItem(at: safari)
         }
         if let draft = draftFile(), !EditorDraftStore.deleteFile(draft) { failed.append("draft") }
+        for dir in extraDirectories() where FileManager.default.fileExists(atPath: dir.path) {
+            try? FileManager.default.removeItem(at: dir)
+        }
         // Task 7: the app password file and the Face ID shortcut (before the slots, so a failed slot delete
         // never leaves password mode pointing at a deleted vault).
         if let appPassword = AppPasswordStore.shared(), !appPassword.removeAll() { failed.append("app-password") }
+        // Sub-plan 08: the duress password's second vault, its hold and the real vault's record of it.
+        if let duress = PhoneDuress.shared(), !duress.eraseAll() { failed.append("second-vault") }
         for slot in VaultSlot.allCases {
             for keychain in keychains {
                 do { try keychain.delete(slot) }

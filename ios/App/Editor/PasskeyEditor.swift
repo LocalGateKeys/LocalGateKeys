@@ -33,9 +33,11 @@ final class PasskeyRenameModel {
         guard title != original else { return .unchanged }
         do {
             var snap = try store.load()
+            // A passkey in a view-only shared collection is not renamed here (sub-plan 07).
+            if EditorModel.itemIsReadOnly(id, in: snap) { error = EditorModel.readOnlyItemText; return .invalid }
             guard case .object(let w)? = snap.records[id], w["ns"] == .string(Namespace.item.rawValue),
                   case .object(var r)? = w["record"], r["kind"] == .string("passkey") else {
-                error = String(localized: "This passkey is no longer on this iPhone."); return .failed
+                error = DeviceText.isPad ? String(localized: "ipad.passkeyEditor.passkeyNoLonger", defaultValue: "This passkey is no longer on this iPad.") : String(localized: "This passkey is no longer on this iPhone."); return .failed
             }
             r["title"] = .string(title)
             r["updated_at"] = .int(clock.now)

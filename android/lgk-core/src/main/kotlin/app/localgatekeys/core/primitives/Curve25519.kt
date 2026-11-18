@@ -34,6 +34,38 @@ object Ed25519 {
             false
         }
     }
+
+    private val P = java.math.BigInteger.ONE.shiftLeft(255) - java.math.BigInteger.valueOf(19)
+    private val L = java.math.BigInteger.ONE.shiftLeft(252) + java.math.BigInteger("27742317777372353535851937790883648493")
+    private val SMALL_ORDER_Y: Set<java.math.BigInteger> = setOf(
+        java.math.BigInteger.ZERO, java.math.BigInteger.ONE, P - java.math.BigInteger.ONE,
+        le(Hex.decode("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05")),
+        le(Hex.decode("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a")),
+    )
+
+    private fun le(b: ByteArray): java.math.BigInteger = java.math.BigInteger(1, b.reversedArray())
+
+    /** Canonical (`y < p`, `x = 0` only with the sign bit clear) and not one of the 8 torsion points. */
+    private fun strictPoint(enc: ByteArray): Boolean {
+        val raw = enc.copyOf()
+        val signBit = raw[31].toInt() and 0x80 != 0
+        raw[31] = (raw[31].toInt() and 0x7f).toByte()
+        val y = le(raw)
+        if (y >= P) return false
+        if (signBit && (y == java.math.BigInteger.ONE || y == P - java.math.BigInteger.ONE)) return false
+        return y !in SMALL_ORDER_Y
+    }
+
+    /**
+     * libsodium `crypto_sign_verify_detached` rules (feature pack contract §5.2): `S < L`, canonical non-small-order
+     * `A` and `R`, then the cofactorless equation (Bouncy Castle).
+     */
+    fun verifyStrict(sig: ByteArray, msg: ByteArray, pub: ByteArray): Boolean {
+        if (pub.size != 32 || sig.size != 64) return false
+        if (le(sig.copyOfRange(32, 64)) >= L) return false
+        if (!strictPoint(pub) || !strictPoint(sig.copyOfRange(0, 32))) return false
+        return verify(sig, msg, pub)
+    }
 }
 
 object X25519 {

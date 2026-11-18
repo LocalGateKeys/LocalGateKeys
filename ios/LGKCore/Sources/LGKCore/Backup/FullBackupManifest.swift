@@ -89,10 +89,12 @@ enum FullBackupManifest {
         (1...256).contains(name.unicodeScalars.count) && !name.unicodeScalars.contains("\u{0}")
     }
 
-    /// `_full_manifest_entries`: the decrypted manifest's rows, in member order.
-    static func entries(_ manifest: [String: JSONValue], entryCount: Int64) throws -> [FullBackupEntry] {
+    /// `_full_manifest_entries`: the decrypted manifest's rows, in member order. `version` is the container's
+    /// (2, or 3 for `FullBackupV3`; the manifest carries the same number).
+    static func entries(_ manifest: [String: JSONValue], entryCount: Int64,
+                        version: Int64 = FullBackupV2.version) throws -> [FullBackupEntry] {
         func bad(_ m: String) -> FullBackupError { .invalid(m) }
-        guard int(manifest["version"]) == FullBackupV2.version, case .array(let rows)? = manifest["entries"] else {
+        guard int(manifest["version"]) == version, case .array(let rows)? = manifest["entries"] else {
             throw bad("Full backup manifest is malformed")
         }
         guard Int64(rows.count) == entryCount, (2...FullBackupV2.maxEntries).contains(rows.count) else {

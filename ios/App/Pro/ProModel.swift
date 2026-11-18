@@ -81,6 +81,10 @@ final class StoreKitPurchases: ProPurchasing {
     }
 
     func offer() async -> ProOffer {
+        #if DEBUG
+        // Screenshot runs: `-LGKPrice <text>` shows that price whatever the sandbox store answers.
+        if let price = UserDefaults.standard.string(forKey: "LGKPrice") { return .available(price: price) }
+        #endif
         do {
             guard let product = try await loadProduct() else { return .unavailable }
             return .available(price: product.displayPrice)

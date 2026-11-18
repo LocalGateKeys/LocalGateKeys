@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Funktionen | LocalGateKeys</title>
-  <meta name="description" content="Was LocalGateKeys kann, Edition für Edition: verschlüsselter Tresor, Ausfüllen im Browser und auf dem Desktop, Passkeys, Windows Hello, Zwei-Faktor-Codes, Importe, Backups und Geräte-Synchronisierung.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Passwort-Manager-Funktionen: Autofill, Passkeys, 2FA</title>
+  <meta name="description" content="Verschlüsselter Tresor, Autofill im Browser, Passkeys, Zwei-Faktor-Codes, sicheres Teilen, Import, Backups und Sync auf Windows, Mac, iPhone und Apple Watch.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/de/features">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/features">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Passwort-Manager-Funktionen: Autofill, Passkeys, 2FA">
+  <meta property="og:description" content="Verschlüsselter Tresor, Autofill im Browser, Passkeys, Zwei-Faktor-Codes, sicheres Teilen, Import, Backups und Sync auf Windows, Mac, iPhone und Apple Watch.">
+  <meta property="og:url" content="https://localgatekeys.app/de/features">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Das LocalGateKeys-Logo: ein Passwort-Manager für Windows, Mac und iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Passwort-Manager-Funktionen: Autofill, Passkeys, 2FA">
+  <meta name="twitter:description" content="Verschlüsselter Tresor, Autofill im Browser, Passkeys, Zwei-Faktor-Codes, sicheres Teilen, Import, Backups und Sync auf Windows, Mac, iPhone und Apple Watch.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,32 +44,49 @@
   <a class="skip" href="#main">Zum Inhalt springen</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../de/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../de/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Hauptnavigation">
+      <nav class="nav-wide" aria-label="Hauptnavigation">
         <ul class="nav">
-          <li><a href="../de/features.html" aria-current="page">Funktionen</a></li>
-          <li><a href="../de/pricing.html">Preise</a></li>
-          <li><a href="../de/security.html">Sicherheit</a></li>
-          <li><a href="../de/get-started.html">Erste Schritte</a></li>
-          <li><a href="../de/help.html">Handbuch</a></li>
-          <li><a href="../de/download.html">Download</a></li>
-          <li><a href="../de/support.html">Support</a></li>
-          <li><a href="../buy.html">Pro kaufen</a></li>
+          <li><a href="../de/features" aria-current="page">Funktionen</a></li>
+          <li><a href="../de/get-started">Erste Schritte</a></li>
+          <li><a href="../de/help">Handbuch</a></li>
+          <li><a href="../de/security">Sicherheit</a></li>
+          <li><a href="../de/pricing">Preise</a></li>
+          <li><a href="../de/support">Support</a></li>
+          <li><a class="nav-cta" href="../de/download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menü</summary>
+        <nav aria-label="Hauptnavigation">
+          <ul class="nav nav-stack">
+            <li><a href="../de/features" aria-current="page">Funktionen</a></li>
+          <li><a href="../de/get-started">Erste Schritte</a></li>
+          <li><a href="../de/help">Handbuch</a></li>
+          <li><a href="../de/security">Sicherheit</a></li>
+          <li><a href="../de/pricing">Preise</a></li>
+          <li><a href="../de/support">Support</a></li>
+          <li><a class="nav-cta" href="../de/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Sprache</span></summary>
+        <ul class="lang-menu-list"><li><a href="../features" hreflang="en" lang="en">English</a></li><li><a href="../es/features" hreflang="es" lang="es">Español</a></li><li><a href="../it/features" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/features" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/features" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="../pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/features" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
   <main id="main">
 <div class="wrap page-head">
   <h1>Alles, was es kann, und wo es das tut</h1>
-  <p class="lead">All das läuft auf Ihren eigenen Geräten. Free fasst bis zu 4 Einträge; <a href="../de/pricing.html">Pro</a> hebt das Limit auf und ergänzt Synchronisierung, Zwei-Faktor-Codes und Dokumente.</p>
+  <p class="lead">All das läuft auf Ihren eigenen Geräten: der Windows-App, der Browser-Erweiterung und der iPhone-App. Free fasst bis zu 7 Einträge; <a href="../de/pricing">Pro</a> hebt das Limit auf und ergänzt Synchronisierung, Zwei-Faktor-Codes und Dokumente.</p>
 </div>
 <div class="wrap">
-  <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="Die Startseite von LocalGateKeys: Passwort-Zustand, anstehende Erinnerungen, eine Karte mit Einmalcodes und aktuellen Zwei-Faktor-Codes sowie eine Liste von Logins mit Website-Logos." loading="lazy" decoding="async"></picture><figcaption>Start: Passwort-Zustand, Erinnerungen, aktuelle Zwei-Faktor-Codes und Ihre Einträge. Demo-Tresor mit erfundenen Konten.</figcaption></figure>
+  <figure class="shot"><img src="../screenshots/home-vault-dark.webp" srcset="../screenshots/home-vault-dark-w720.webp 720w, ../screenshots/home-vault-dark-w1440.webp 1440w, ../screenshots/home-vault-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Die Startseite von LocalGateKeys: Passwort-Zustand, anstehende Erinnerungen, eine Karte mit Einmalcodes und aktuellen Zwei-Faktor-Codes sowie eine Liste von Logins mit Website-Logos." loading="lazy" decoding="async"><figcaption>Start: Passwort-Zustand, Erinnerungen, aktuelle Zwei-Faktor-Codes und Ihre Einträge. Demo-Tresor mit erfundenen Konten.</figcaption></figure>
 </div>
 
 <div class="wrap page-body">
@@ -64,28 +95,31 @@
     <dl>
       <div><dt>Verschlüsselt auf Ihrer Festplatte</dt><dd>Alles, was Sie speichern, wird mit einem durch Ihr Master-Passwort geschützten Schlüssel verschlüsselt, mit Argon2id und AES-256-GCM. Auch Namen, Benutzernamen und Websites sind verschlüsselt, nicht nur Passwörter.</dd></div>
       <div><dt>Mehr als Passwörter</dt><dd>Logins für Websites und Desktop-Apps, Passkeys, Zahlungskarten, Bankkonten, Identitäten, sichere Notizen, Dokumente, SSH-Schlüssel, API-Schlüssel, WLAN-Netzwerke, Lesezeichen, Software-Lizenzen, Abos, Garantien und Einkäufe, jeweils mit eigenen Feldern.</dd></div>
-      <div><dt>Dokumente (Pro)</dt><dd>Bewahren Sie Dateien wie eingescannte Dokumente im Tresor auf, bis zu 25 MB pro Datei. Jede Datei wird mit einem eigenen Schlüssel verschlüsselt. Sie können ein Dokument in der Vorschau ansehen, eine Kopie speichern oder es in einer anderen App öffnen.</dd></div>
+      <div><dt>Dokumente (Pro)</dt><dd>Bewahren Sie Dateien wie eingescannte Dokumente im Tresor auf, bis zu 25 MB pro Datei. Jede Datei wird mit einem eigenen Schlüssel verschlüsselt. Sie können ein Dokument in der Vorschau ansehen, eine Kopie speichern oder es in einer anderen App öffnen. Mit der Synchronisierung wandern Dateien, weiterhin verschlüsselt, auf Ihre anderen Geräte.</dd></div>
       <div><dt>Zwei-Faktor-Codes (Pro)</dt><dd>Speichern Sie den Einrichtungsschlüssel einer Website, und LocalGateKeys zeigt den aktuellen Code oben im Login sowie auf einer Karte „Einmalcodes“ auf der Startseite an. Die Codes folgen dem TOTP-Standard (RFC 6238): 6 bis 8 Ziffern, 15 bis 120 Sekunden, SHA-1, SHA-256 oder SHA-512.</dd></div>
-      <div><dt>Code aus einem QR-Code hinzufügen</dt><dd>Schneiden Sie den QR-Code auf der Zwei-Faktor-Einrichtungsseite der Website mit Win+Umschalt+S aus und fügen Sie ihn ein, oder halten Sie ihn vor Ihre Webcam. Auch ein QR-Code aus einem Google-Authenticator-Export funktioniert. Das Bild wird auf Ihrem PC gelesen und nie gespeichert.</dd></div>
+      <div><dt>Codes auf der Apple Watch (Pro)</dt><dd>Zeigen Sie die Zwei-Faktor-Codes, die Sie auswählen, auf Ihrer Apple Watch an, bis zu 10. Die Uhr zeigt nur Codes, nie Passwörter, und sie funktionieren auch ohne iPhone in der Nähe.</dd></div>
+      <div><dt>QR-Code scannen</dt><dd>Wählen Sie QR-Code scannen und fügen Sie einen Ausschnitt des Zwei-Faktor-QR-Codes der Website ein (Win+Umschalt+S), legen Sie ein Bild ab oder halten Sie ihn vor Ihre Webcam. Auch QR-Codes aus einem Google-Authenticator-Export funktionieren. Das Bild wird auf Ihrem PC gelesen und nie gespeichert.</dd></div>
       <div><dt>Passwortgenerator</dt><dd>Zufällige Passwörter mit 8 bis 256 Zeichen oder Passphrasen mit 3 bis 16 Wörtern.</dd></div>
       <div><dt>Passwort-Zustand</dt><dd>Sehen Sie, welche gespeicherten Passwörter schwach, mehrfach verwendet, älter als ein Jahr sind oder keinen Zwei-Faktor-Code haben. Die Prüfung auf Datenlecks bei Have I Been Pwned ist aus, bis Sie sie einschalten, läuft nur, wenn Sie sie starten, und sendet nur fünf Zeichen eines Hashes, nie das Passwort.</dd></div>
       <div><dt>Website-Logos und Typ-Symbole</dt><dd>Jeder Eintrag zeigt das Symbol der Website, ein eingebautes Logo für bekannte Websites oder ein Symbol für seinen Typ, damit Sie ihn auf einen Blick erkennen.</dd></div>
-      <div><dt>Suche und Sammlungen</dt><dd>Finden Sie Einträge mit einer Befehlspalette (Strg+K), Filterchips, Favoriten und eigenen Sammlungen. Pfeiltasten, Eingabetaste und Strg+C funktionieren in der Eintragsliste direkt aus dem Suchfeld.</dd></div>
+      <div><dt>Suche, Sortierung und Sammlungen</dt><dd>Finden Sie Einträge mit einer Befehlspalette (Strg+K), Filterchips, Favoriten und eigenen Sammlungen. Sortieren Sie die Liste nach Titel, Änderungs- oder Erstellungsdatum, Favoriten zuerst. Pfeiltasten, Eingabetaste und Strg+C funktionieren in der Liste direkt aus dem Suchfeld.</dd></div>
       <div><dt>Papierkorb und Rückgängig</dt><dd>Gelöschte Einträge landen im Papierkorb, und die Meldung, die das bestätigt, hat eine Schaltfläche Rückgängig. Der Papierkorb leert sich nach 30 Tagen von selbst oder behält alles, bis Sie ihn leeren.</dd></div>
-      <div><dt>Passwortverlauf</dt><dd>Wenn sich das Passwort eines Logins ändert, werden die letzten fünf alten Passwörter in seinem verschlüsselten Verlauf aufbewahrt.</dd></div>
+      <div><dt>Passwortverlauf</dt><dd>Wenn sich das Passwort eines Logins ändert, werden bis zu 10 frühere Passwörter ein Jahr lang in seinem verschlüsselten Verlauf aufbewahrt. Kopieren Sie eines oder stellen Sie es wieder her.</dd></div>
+      <div><dt>Verifizierte Website</dt><dd>Die Browser-Erweiterung kennzeichnet eine gespeicherte Website als verifizierte Website und warnt, bevor Sie sich auf einer täuschend ähnlichen Adresse anmelden oder speichern, etwa mit vertauschtem Buchstaben. Die Prüfung läuft auf Ihrem Gerät, und Ihre gespeicherten Websites verlassen die App nie. Safari führt nur eine versiegelte Liste von Website-Namen. Unter Android zeigt die Speicherabfrage des Autofill dasselbe Ergebnis und fragt nach, bevor sie auf einer täuschend ähnlichen Adresse speichert.</dd></div>
     </dl>
     <div class="shots">
-      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="Ein GitHub-Login in LocalGateKeys mit dem aktuellen Zwei-Faktor-Code oben, darunter Benutzername, verborgenes Passwort, Website, Notizen und Wiederherstellungscodes." loading="lazy" decoding="async"></picture><figcaption>Der aktuelle Zwei-Faktor-Code steht oben im Login.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="../screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/generator-dark.webp" width="2880" height="1800" alt="Der Passwortgenerator mit einem zufälligen Passwort aus 20 Zeichen und Optionen für Länge, Buchstaben, Ziffern und Symbole." loading="lazy" decoding="async"></picture><figcaption>Der Generator erzeugt zufällige Passwörter oder Passphrasen.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="Das Sicherheitscenter mit einer Bewertung von 77 von 100, mit zu prüfenden schwachen, mehrfach verwendeten, alten Passwörtern und Passwörtern ohne Zwei-Faktor-Code sowie Prüfungen für Entsperren und Backup." loading="lazy" decoding="async"></picture><figcaption>Das Sicherheitscenter zeigt, was Sie zuerst beheben sollten.</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/item-2fa-code-light.webp" srcset="../screenshots/item-2fa-code-light-w720.webp 720w, ../screenshots/item-2fa-code-light-w1440.webp 1440w, ../screenshots/item-2fa-code-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Ein GitHub-Login in LocalGateKeys mit dem aktuellen Zwei-Faktor-Code oben, darunter Benutzername, verborgenes Passwort, Website, Notizen und Wiederherstellungscodes." loading="lazy" decoding="async"><figcaption>Der aktuelle Zwei-Faktor-Code steht oben im Login.</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/generator-light.webp" srcset="../screenshots/generator-light-w720.webp 720w, ../screenshots/generator-light-w1440.webp 1440w, ../screenshots/generator-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Der Passwortgenerator mit einem zufälligen Passwort aus 20 Zeichen und Optionen für Länge, Buchstaben, Ziffern und Symbole." loading="lazy" decoding="async"><figcaption>Der Generator erzeugt zufällige Passwörter oder Passphrasen.</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/security-center-dark.webp" srcset="../screenshots/security-center-dark-w720.webp 720w, ../screenshots/security-center-dark-w1440.webp 1440w, ../screenshots/security-center-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Das Sicherheitscenter mit einer Bewertung von 77 von 100, mit zu prüfenden schwachen, mehrfach verwendeten, alten Passwörtern und Passwörtern ohne Zwei-Faktor-Code sowie Prüfungen für Entsperren und Backup." loading="lazy" decoding="async"><figcaption>Das Sicherheitscenter zeigt, was Sie zuerst beheben sollten.</figcaption></figure>
     </div>
   </section>
 
   <section class="feature-group" aria-labelledby="f-move">
     <h2 id="f-move">Rein und raus</h2>
     <dl>
-      <div><dt>Import aus anderen Passwortmanagern</dt><dd>Übernehmen Sie Exporte aus 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass und KeePassXC (einschließlich <code>.kdbx</code>-Dateien), Chrome, Edge, Brave, Firefox und Safari oder aus jeder anderen CSV-Datei. Sie prüfen jeden Eintrag, bevor etwas geschrieben wird, und der Import geht nie online.</dd></div>
+      <div><dt>Import aus anderen Passwortmanagern</dt><dd>Übernehmen Sie Exporte aus 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass und KeePassXC (einschließlich <code>.kdbx</code>-Dateien), Chrome, Edge, Brave, Firefox und Safari oder aus jeder anderen CSV-Datei. Sie prüfen jeden Eintrag, bevor etwas geschrieben wird, und der Import geht nie online. Auf dem iPhone übernehmen Sie Logins, Zwei-Faktor-Codes und Passkeys direkt aus Apple Passwörter (iOS 26 und neuer) oder importieren eine Datei aus vielen Passwortmanagern und Authenticator-Apps.</dd></div>
       <div><dt>Export</dt><dd>Exportieren Sie in eine verschlüsselte KeePass-KDBX-4-Datei, in Bitwarden-kompatibles CSV oder JSON oder in KeePass-XML. Jeder Export fragt zuerst nach Ihrem Master-Passwort.</dd></div>
+      <div><dt>Einen Eintrag sicher teilen</dt><dd>Senden Sie einen Login oder eine Notiz als <code>.lgkshare</code>-Datei oder QR-Code, gesichert mit einem Code aus sechs Wörtern, den Sie der anderen Person auf anderem Weg mitteilen. Er lässt sich nur einmal öffnen, und drei falsche Codes zerstören ihn. Passkeys, Dokumente und Einträge mit angehängter Datei lassen sich nicht teilen.</dd></div>
     </dl>
   </section>
 
@@ -120,24 +154,67 @@
       <div><dt>Geplante verschlüsselte Backups</dt><dd>Täglich oder wöchentlich, zu einer von Ihnen festgelegten Zeit. Jedes Backup ist eine vollständige verschlüsselte Datei, die nach dem Schreiben geprüft wird, einschließlich Anhängen.</dd></div>
       <div><dt>Zusätzliche Kopie in einem Ordner Ihrer Wahl</dt><dd>Lassen Sie jedes Backup in einen Ordner von OneDrive, Google Drive, Dropbox oder Proton Drive kopieren, oder an einen beliebigen anderen Ort. Es werden nur verschlüsselte Backup-Dateien kopiert, nie der aktive Tresor.</dd></div>
       <div><dt>Verschlüsselte Übertragungspakete</dt><dd>Verschieben Sie ausgewählte Einträge in einer verschlüsselten Datei, die durch ein eigenes Passwort geschützt ist, in einen anderen Tresor.</dd></div>
+      <div><dt>Handy-Backups</dt><dd>Die iPhone- und Android-App speichern eine verschlüsseltes .lgkm-Backup mit einem Passwort Ihrer Wahl. Stellen Sie es auf jedem iPhone, Android-Handy, Mac oder PC wieder her: Es wird wie bei der Synchronisierung zusammengeführt und löscht Ihren Tresor nie.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-emergency">
+    <h2 id="f-emergency">Notfallzugriff und Zwangspasswort (Pro)</h2>
+    <dl>
+      <div><dt>Notfallzugriff</dt><dd>Teilen Sie Ihre Wiederherstellungsphrase in bis zu fünf Teile für Menschen, denen Sie vertrauen. Eine von Ihnen gewählte Anzahl (zwei bis fünf) davon genügt zum Zugriff. Jeder erhält eine signierte Datei, einen QR-Code oder ein gedrucktes Blatt. Es gibt kein Konto und keinen Server: Sie teilen mit ihnen einen Ordner, etwa einen Cloud-Ordner oder einen USB-Stick.</dd></div>
+      <div><dt>Wartezeit und Veto</dt><dd>Wer Zugriff braucht, fragt in der eigenen LocalGateKeys-App an. Nach der von Ihnen gewählten Wartezeit (1 bis 30 Tage) öffnet die App eine Kopie Ihres neuesten verschlüsselten Backups. Bis dahin kann jedes Ihrer Geräte Nein sagen. Sie können den Zugriff auch sofort erlauben. Auf dem Telefon endet der Ablauf mit der Anzeige Ihrer Wiederherstellungsphrase; öffnen Sie das Backup an einem Computer.</dd></div>
+      <div><dt>Die Grenze</dt><dd>Außerhalb der Apps erzwingt nichts die Wartezeit oder Ihr Nein. Jede Gruppe von Inhabern mit genug Teilen kann gemeinsam Ihr Backup sofort öffnen. Wählen Sie Menschen, die nicht zusammen handeln würden, und bewahren Sie die Teile getrennt auf. Wenn Sie Ihre Wiederherstellungsphrase ersetzen, sind alte Teile wertlos.</dd></div>
+      <div><dt>Zwangspasswort</dt><dd>Ein zweites Passwort öffnet einen glaubwürdigen Tresor mit Beispieleinträgen und verrät nichts über Ihren echten. Solange er offen ist, bleibt der echte Tresor für die gewählte Zahl Stunden gesperrt, und nichts wird synchronisiert. Das verbirgt Ihren Tresor vor jemandem, der Ihnen über die Schulter schaut oder Sie zwingt, die App zu öffnen. Es verbirgt nicht, dass die Funktion existiert, wenn jemand Ihre Dateien untersucht. Auf Windows, Mac, iPhone und Android.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-power">
+    <h2 id="f-power">Werkzeuge für Fortgeschrittene</h2>
+    <dl>
+      <div><dt>Wiederherstellungstest für Backups</dt><dd>Einmal pro Woche stellt LocalGateKeys Ihr neuestes Backup in einem temporären Ordner wieder her, prüft, ob es sich öffnen lässt, und löscht die Kopie. Es meldet Ihnen, wenn das Backup ein altes Passwort verwendet.</dd></div>
+      <div><dt>Assistent für Passwortänderungen</dt><dd>Öffnet die Seite, auf der Sie das Passwort einer Website ändern: aus einer kuratierten Liste, über die Standardadresse /.well-known/change-password oder über die Anmeldeseite. Fremde Websites füllt er nie aus.</dd></div>
+      <div><dt>Mehrere Tresore (Pro)</dt><dd>Führen Sie getrennte Tresore, etwa Arbeit und Privat. Der kostenlose Tarif enthält einen Tresor. Die Grenze von 7 kostenlosen Einträgen gilt für alle Tresore zusammen.</dd></div>
+      <div><dt>Druckbarer Tresor-Gesundheitsbericht</dt><dd>Ein einseitiger Bericht zum Ausdrucken. Er enthält keine Passwörter und keine Eintragsnamen.</dd></div>
+      <div><dt>Ablaufende und widerrufbare Freigaben</dt><dd>Freigaben können nach 1 Stunde oder 1 Tag ablaufen, nur einmal nutzbar sein und widerrufen werden. Das geschieht nach bestem Bemühen.</dd></div>
+      <div><dt>Vorlage für das Nachlasspaket</dt><dd>Eine Vorlage für Nachlassverwalter, neben dem Notfallzugriff.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-dev">
+    <h2 id="f-dev">Für Entwickler und KI-Agenten</h2>
+    <dl>
+      <div><dt>KI-Agenten melden sich an, Ihre Passwörter bleiben auf Ihrem PC (Pro)</dt><dd>Claude Code und andere MCP-Agenten können LocalGateKeys bitten, sich bei einer Website anzumelden. Sie bestätigen jede Anfrage, die Browsererweiterung füllt das Formular aus, und der Agent sieht das Passwort nie. Unter Windows: claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp (die Microsoft-Store-App führt die lgk-Befehlszeile auch als LocalGateKeysNativeHost.exe lgk aus). <a href="../de/news/2026-11-ai-agents">KI-Agenten melden sich an, Ihre Passwörter bleiben auf Ihrem PC</a></dd></div>
+      <div><dt>Manipulationssicheres Zugriffsprotokoll</dt><dd>Jeder Aktivitätseintrag ist über einen Hash mit dem vorherigen verknüpft, daher zeigt die Sicherheitsprüfung, wenn das Protokoll geändert, gekürzt oder geleert wurde.</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-sync">
     <h2 id="f-sync">Synchronisierung zwischen Ihren Geräten (Pro)</h2>
     <dl>
-      <div><dt>Über Ihr WLAN zu Hause</dt><dd>Koppeln Sie einen PC einmal mit einem Einmal-QR-Code (zwischen PCs fügen Sie dessen Text ein). Sind beide im selben Netzwerk entsperrt, tauschen sie Änderungen direkt über eine authentifizierte, verschlüsselte Verbindung aus. Nichts läuft über das Internet.</dd></div>
-      <div><dt>Über Ihren eigenen Cloud-Ordner</dt><dd>Wenn Ihre PCs selten im selben Netzwerk sind, synchronisieren Sie über einen OneDrive-, Dropbox-, Google-Drive- oder iCloud-Drive-Ordner, den Sie bereits nutzen, geschützt durch ein Sync-Passwort. Der Anbieter speichert immer nur verschlüsselte Dateien. Sie können beide Wege nutzen.</dd></div>
-      <div><dt>Was synchronisiert wird</dt><dd>Logins für Websites und Desktop-Apps sowie andere Einträge wie Notizen und Lesezeichen. Sammlungen, Dokumente und Anhänge werden noch nicht synchronisiert. Bei Änderungen auf zwei PCs gleichzeitig bleiben beide Versionen erhalten, und ein Löschen verschiebt den Eintrag auf den anderen PCs in den Papierkorb.</dd></div>
-      <div><dt>iPhone</dt><dd>Die iPhone-App synchronisiert mit Ihrem Windows-PC. <a href="https://apps.apple.com/app/id6825488435">Im App Store laden</a>.</dd></div>
+      <div><dt>Über Ihr WLAN zu Hause</dt><dd>Koppeln Sie einen PC oder ein iPhone einmal mit einem Einmal-QR-Code (zwischen PCs fügen Sie dessen Text ein). Sind beide im selben Netzwerk entsperrt, tauschen sie Änderungen direkt über eine authentifizierte, verschlüsselte Verbindung aus. Nichts läuft über das Internet. Ändert sich die Adresse eines PCs, verbindet Erneut suchen wieder, und jedes Gerät zeigt, wann es zuletzt synchronisiert hat.</dd></div>
+      <div><dt>Über Ihren eigenen Cloud-Ordner</dt><dd>Wenn Ihre Geräte selten im selben Netzwerk sind, synchronisieren Sie über einen Cloud-Ordner, den Sie bereits nutzen, etwa Dropbox oder iCloud Drive, geschützt durch ein Sync-Passwort. Der Anbieter speichert immer nur verschlüsselte Dateien. Sie können beide Wege nutzen.</dd></div>
+      <div><dt>Was synchronisiert wird</dt><dd>Logins, Notizen, Karten und Ihre anderen Einträge sowie angehängte Dokumente mit ihren Dateien. Sammlungen bleiben auf jedem Gerät. Bei Änderungen auf zwei Geräten gleichzeitig bleiben beide Versionen erhalten, und ein Löschen verschiebt den Eintrag auf den anderen Geräten in den Papierkorb. Bringt ein Gerät eine ältere Kopie des Tresors zurück, warnt die Windows-App Sie, statt sie zu übernehmen.</dd></div>
+      <div><dt>iPhone</dt><dd>Die iPhone-App synchronisiert mit Ihrem Windows-PC und Mac. Ein kostenloser PC, der mit einem iPhone mit Pro gekoppelt ist, übernimmt die Lizenz per Synchronisierung und wird zu Pro. <a href="https://apps.apple.com/app/id6825488435">Im App Store laden</a>.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-iphone">
+    <h2 id="f-iphone">Auf dem iPhone</h2>
+    <dl>
+      <div><dt>AutoFill in Safari und Apps</dt><dd>Füllen Sie Logins in Safari und anderen Apps aus, mit Vorschlägen in der QuickType-Leiste, und nutzen Sie LocalGateKeys für Passkeys. Ab iOS 18 füllt die App in jedem Textfeld auch Karten, Adressen und weitere Angaben aus. Die Safari-Erweiterung bietet an, einen neuen Login nach der Anmeldung zu speichern.</dd></div>
+      <div><dt>Face ID, Touch ID oder ein App-Passwort</dt><dd>Der Tresor öffnet sich mit Face ID, Touch ID oder dem Code Ihres iPhone, ohne dass ein Passwort erstellt werden muss. Wenn andere Ihren Code kennen, fügen Sie ein optionales App-Passwort hinzu, abgesichert durch eine Wiederherstellungsphrase aus 24 Wörtern.</dd></div>
+      <div><dt>Sicherheitsprüfung</dt><dd>Der Tab Sicherheit gibt Ihrem Tresor eine Bewertung und listet schwache, mehrfach verwendete und alte Passwörter sowie Logins auf, die Zwei-Faktor-Codes nutzen könnten. Prüfungen auf Datenlecks bleiben aus, bis Sie sie einschalten.</dd></div>
+      <div><dt>Zuletzt gelöscht, Verlauf und Erinnerungen</dt><dd>Gelöschte Einträge warten 30 Tage unter Zuletzt gelöscht, und Widerrufen holt einen sofort zurück. Jeder Login behält seinen Passwortverlauf, und Sie können sich erinnern lassen, bevor eine Karte, ein Reisepass oder eine Lizenz abläuft.</dd></div>
+      <div><dt>Angehängte Dateien (Pro)</dt><dd>Hängen Sie Dokumente und Fotos an Ihren Tresor an, verschlüsselt gespeichert und mit Ihren anderen Geräten synchronisiert.</dd></div>
+      <div><dt>Zehn Sprachen</dt><dd>Die iPhone-App spricht Englisch, Deutsch, Spanisch, Italienisch, Japanisch, Koreanisch, Niederländisch, Polnisch, brasilianisches Portugiesisch und vereinfachtes Chinesisch.</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-privacy">
     <h2 id="f-privacy">Datenschutz</h2>
     <dl>
-      <div><dt>Kein Konto</dt><dd>Sie registrieren oder melden sich nie an. Eine Pro-Lizenz ist ein Schlüssel, den Sie behalten und der auf Ihrem PC geprüft wird.</dd></div>
-      <div><dt>Keine Telemetrie</dt><dd>Die App sendet keine Nutzungsdaten, Absturzberichte oder Analysen.</dd></div>
+      <div><dt>Kein Konto</dt><dd>Sie registrieren oder melden sich nie an. Eine Pro-Lizenz ist ein Schlüssel, den Sie behalten und der auf Ihrem Gerät geprüft wird. Auf dem iPhone ist Pro ein Kauf im App Store, und die App sendet nur den App-Store-Beleg an unseren Lizenzserver.</dd></div>
+      <div><dt>Keine Telemetrie</dt><dd>Die Apps senden keine Nutzungsdaten, Absturzberichte oder Analysen.</dd></div>
       <div><dt>Strenger Offline-Modus</dt><dd>Standardmäßig an. Er blockiert Internetanfragen im Hintergrund und Prüfungen auf Datenlecks, und vor einer Update-Prüfung wird zuerst gefragt.</dd></div>
       <div><dt>Website-Symbole, Ihre Entscheidung</dt><dd>Um das Symbol einer Website anzuzeigen, lädt die App es von dieser Website herunter. Dadurch erfährt die Website, dass Sie dort ein Konto haben, und nichts weiter. Standardmäßig ist das aus: Schalten Sie in den Einstellungen „Website-Symbole anzeigen“ ein (der strenge Offline-Modus muss aus sein).</dd></div>
       <div><dt>Update-Prüfungen, die Sie starten</dt><dd>Die Update-Prüfung lädt eine kleine signierte Datei herunter. Die App lädt oder installiert nie etwas von selbst.</dd></div>
@@ -149,43 +226,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Ein Passwortmanager für Windows, der Ihren Tresor auf Ihren eigenen Geräten behält.</p>
-        <p class="quiet">Diese Website setzt keine Cookies, verwendet keine Analysen und lädt nichts von anderen Unternehmen.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Ein Passwortmanager für Windows, Mac und iPhone, der Ihren Tresor auf Ihren eigenen Geräten behält.</p>
+        <p class="quiet">Diese Website zählt Seitenaufrufe mit Cloudflare Web Analytics, das ohne Cookies arbeitet. Sie verwendet keine Werbe-Tracker und setzt keine Cookies.</p>
       </div>
       <nav aria-label="Produkt">
         <h2>Produkt</h2>
         <ul>
-          <li><a href="../de/features.html">Funktionen</a></li>
-          <li><a href="../de/pricing.html">Preise</a></li>
-          <li><a href="../de/download.html">Download</a></li>
-          <li><a href="../de/licence.html">Ihre Pro-Lizenz</a></li>
+          <li><a href="../de/features">Funktionen</a></li>
+          <li><a href="../de/pricing">Preise</a></li>
+          <li><a href="../de/download">Download</a></li>
+          <li><a href="../de/get-started">Erste Schritte</a></li>
+          <li><a href="../de/switch/">Wechseln</a></li>
+          <li><a href="../buy">Pro kaufen</a></li>
+          <li><a href="../de/licence">Ihre Pro-Lizenz</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Lizenz wiederherstellen</a></li>
         </ul>
       </nav>
       <nav aria-label="Hilfe">
         <h2>Hilfe</h2>
         <ul>
-          <li><a href="../de/help.html">Benutzerhandbuch</a></li>
-          <li><a href="../de/support.html">Support und FAQ</a></li>
-          <li><a href="../de/security.html">Sicherheit</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Sicherheitslücke melden</a></li>
+          <li><a href="../de/help">Benutzerhandbuch</a></li>
+          <li><a href="../de/support">Support und FAQ</a></li>
+          <li><a href="../de/security">Sicherheit</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Sicherheitslücke melden</a></li>
         </ul>
       </nav>
       <nav aria-label="Rechtliches">
         <h2>Rechtliches</h2>
         <p class="quiet">Diese Dokumente liegen auf Englisch vor, und es gilt die englische Fassung, die verbindlich ist.</p>
         <ul>
-          <li><a href="../legal/eula.html">Lizenzvereinbarung</a></li>
-          <li><a href="../legal/privacy.html">Datenschutzerklärung</a></li>
-          <li><a href="../legal/terms-of-sale.html">Verkaufsbedingungen</a></li>
-          <li><a href="../legal/refunds.html">Rückerstattungsrichtlinie</a></li>
+          <li><a href="../legal/eula">Lizenzvereinbarung</a></li>
+          <li><a href="../legal/privacy">Datenschutzerklärung</a></li>
+          <li><a href="../legal/terms-of-sale">Verkaufsbedingungen</a></li>
+          <li><a href="../legal/refunds">Rückerstattungsrichtlinie</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows ist eine Marke der Microsoft-Unternehmensgruppe. Chrome ist eine Marke von Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Sprache"><a href="../features.html" hreflang="en" lang="en">English</a> · <a href="../es/features.html" hreflang="es" lang="es">Español</a> · <a href="../it/features.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/features.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/features.html" hreflang="de" lang="de" aria-current="true">Deutsch</a> · <a href="../pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/features.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows ist eine Marke der Microsoft-Unternehmensgruppe. Chrome ist eine Marke von Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID und Safari sind Marken von Apple Inc., eingetragen in den USA und anderen Ländern.</p>
+      <nav class="lang-switch" aria-label="Sprache"><ul><li><a href="../features" hreflang="en" lang="en">English</a></li><li><a href="../es/features" hreflang="es" lang="es">Español</a></li><li><a href="../it/features" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/features" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/features" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="../pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/features" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">Un promemoria è in scadenza</string>
+    <string name="reminder_named_body">%1$s è in scadenza</string>
+    <string name="reminder_save_failed">Impossibile salvare il promemoria su questo telefono.</string>
+    <string name="reminder_channel_name">Promemoria</string>
+    <string name="reminder_section">Promemoria</string>
+    <string name="reminder_due">In scadenza</string>
+    <string name="reminder_remind_me">Ricordamelo</string>
+    <string name="reminder_change">Cambia promemoria</string>
+    <string name="reminder_remove">Rimuovi promemoria</string>
+    <string name="reminder_add">Aggiungi promemoria</string>
+    <string name="reminder_suggest_button">Ricordamelo prima che scada</string>
+    <string name="reminder_card_expires">Questa carta scade %1$s.</string>
+    <string name="reminder_due_date">Data di scadenza</string>
+    <string name="reminder_on_the_day">Il giorno stesso</string>
+    <string name="reminder_upcoming">In arrivo</string>
+    <string name="reminder_nothing_upcoming">Niente in arrivo nei prossimi 30 giorni.</string>
+    <string name="reminder_overdue_due">Scaduto · scadeva %1$s</string>
+    <string name="reminder_due_on">Scade %1$s</string>
+    <string name="reminder_snooze">Posticipa</string>
+    <string name="reminder_snooze_day">Posticipa di un giorno</string>
+    <string name="reminder_notifications_off">Le notifiche sono disattivate per LocalGateKeys. I promemoria vengono comunque mostrati qui.</string>
+    <string name="reminder_settings_title">Promemoria</string>
+    <string name="reminder_show_names">Mostra i nomi degli elementi nelle notifiche</string>
+    <string name="reminder_settings_footer">Aggiungi un promemoria da una carta, un documento o un abbonamento. Disattivato: le notifiche dicono solo “Un promemoria è in scadenza”, così nulla sull\'elemento appare nella schermata di blocco. Attivato: il nome dell\'elemento può comparire anche nella schermata di blocco, a seconda dell\'impostazione delle notifiche nella schermata di blocco del telefono.</string>
+    <string name="reminder_editor_footer">Una notifica arriva alle 9:00 del giorno. Dice solo “Un promemoria è in scadenza” a meno che Impostazioni › Promemoria non mostri i nomi degli elementi. I promemoria restano su questo telefono e non vengono mai sincronizzati.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d giorno prima</item>
+        <item quantity="other">%1$d giorni prima</item>
+    </plurals>
+</resources>

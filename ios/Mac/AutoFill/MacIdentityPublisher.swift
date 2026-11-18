@@ -13,7 +13,13 @@ final class MacIdentityPublisher {
     init(store: any CredentialIdentityStoring, settings: AppSettings,
          matcher: URLMatcher = AutoFillMatcher.bundled().matcher) {
         let codes: Bool = if #available(macOS 15.0, *) { true } else { false }
-        sync = IdentityStoreSync(identityStore: store, matcher: matcher, settings: settings, oneTimeCodes: codes)
+        var sync = IdentityStoreSync(identityStore: store, matcher: matcher, settings: settings, oneTimeCodes: codes)
+        // Feature pack §2 and §4: travel-hidden items and logins whose rules refuse autofill on this Mac are never
+        // published (the lock model republishes when travel mode changes).
+        sync.omit = { snapshot in
+            AutoFillGate.omitted(snapshot, travel: TravelModeBox.shared.current, today: RecordDigest.today(), device: .computer)
+        }
+        self.sync = sync
     }
 
     /// Replaces the published identities with `snapshot`'s (or removes them, per the settings), after the
@@ -52,8 +58,10 @@ final class MacIdentityPublisher {
 
 /// The unlocked store as the app sees it: every successful `commit` (editor, favourites, trash, login extras,
 /// collections, the palette, imports) runs `onCommit`, the one place the AutoFill identities are republished.
-final class PublishingItemStore: ItemStore, @unchecked Sendable {
+final class PublishingItemStore: ForwardingItemStore, @unchecked Sendable {
     let base: any ItemStore
+    /// Emergency access finds the vault's `LocalStore` through this (`HeirLocalState.open`).
+    var forwardedStore: any ItemStore { base }
     private let onCommit: @Sendable (_ fromSync: Bool) -> Void
 
     /// `onCommit` gets `fromSync: true` only for commits made through `commit(_:fromSync:)` by sync.
@@ -68,7 +76,12 @@ final class PublishingItemStore: ItemStore, @unchecked Sendable {
 
     /// `fromSync: true` for a merge or pairing written by sync (`SyncSourceStore`), never an edit.
     func commit(_ change: StoreChange, fromSync: Bool) throws {
-        try base.commit(change)
+        // Item history (feature pack §1.3): versions sync replaces are recorded as "sync".
+        if fromSync {
+            try HistoryContext.$changeType.withValue(.sync) { try base.commit(change) }
+        } else {
+            try base.commit(change)
+        }
         onCommit(fromSync)
     }
 }

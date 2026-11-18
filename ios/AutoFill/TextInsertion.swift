@@ -67,9 +67,10 @@ enum TextInsertionCatalog {
     /// (the lines joined by newlines) after the separate lines' first row.
     static func fields(_ snapshot: StoreSnapshot) -> [TextInsertionField] {
         var cards: [(String, [TextInsertionField])] = [], people: [(String, [TextInsertionField])] = []
-        for id in snapshot.records.keys.sorted(by: Scalars.less) {
+        let records = snapshot.itemRecords   // never a collection state
+        for id in records.keys.sorted(by: Scalars.less) {
             if snapshot.meta[id]?.deleted == true { continue }
-            guard case .object(let w)? = snapshot.records[id], case .string(let ns)? = w["ns"],
+            guard case .object(let w)? = records[id], case .string(let ns)? = w["ns"],
                   ns == Namespace.item.rawValue || ns == Namespace.entry.rawValue,
                   case .object(let r)? = w["record"], case .string(let kind)? = r["kind"] else { continue }
             let payload: [String: JSONValue]

@@ -1,6 +1,7 @@
 <script>
   /** Live camera check: a round preview with a progress ring, driven by face.status / face.frame events.
    *  Frames exist only in this page's memory; nothing is saved. */
+  import { dialog } from '../lib/dialog.js';
   import { t } from '../lib/i18n.svelte.js';
   import { call, on } from '../lib/api.js';
   import Button from './Button.svelte';
@@ -26,7 +27,7 @@
 </script>
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={heading}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog={{ onescape: () => call('face_cancel') }} aria-label={heading}>
     <h2>{heading}</h2>
     <p class="hint">{mode === 'verify' ? t('cameraView.lookVerify') : t('cameraView.lookEnroll')}</p>
     <div class="preview">

@@ -1,6 +1,18 @@
 package app.localgatekeys.android.sync
 
+import app.localgatekeys.android.backup.INSTALL_ID
+import app.localgatekeys.android.backup.TEST_KDF
+import app.localgatekeys.android.backup.BackupExporter
+import app.localgatekeys.android.editor.CountingStore
+import app.localgatekeys.android.editor.SaveResult
+import app.localgatekeys.android.editor.numberedNotes
+import app.localgatekeys.android.editor.pairedSnapshot
 import app.localgatekeys.android.i18n.EnglishTxt
+import app.localgatekeys.android.trash.InMemoryLocalData
+import app.localgatekeys.android.trash.PhoneTrash
+import app.localgatekeys.android.unlock.CountingRandom
+import app.localgatekeys.core.backup.PhoneBackupFormat
+import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.android.unlock.MemoryItemStore
 import app.localgatekeys.android.unlock.TestClock
 import app.localgatekeys.android.unlock.UnlockedVault
@@ -61,6 +73,11 @@ class SyncSessionsTest {
         sessions.appOpen(first)
         sessions.appOpen(first) // a recreated activity: no second unlock sync
         assertEquals(1, a.completedRuns.value)
+        // Back from the background while still unlocked: one more run, for the session that was open then only.
+        sessions.foreground(a)
+        assertEquals(2, a.completedRuns.value)
+        sessions.foreground(null)
+        assertEquals(2, a.completedRuns.value)
 
         val log = ArrayList<String>()
         val unlocker = sessions.wrap(RecordingUnlocker(log) { a.gate.isOpen })
@@ -74,6 +91,9 @@ class SyncSessionsTest {
         val second = vault()
         val b = sessions.forVault(second)
         assertNotSame(a, b)
+        sessions.foreground(a) // the session that was open when the app came back has locked since
+        sessions.foreground(b) // before this unlock's own sync: that one covers it
+        assertEquals(0, b.completedRuns.value)
         // Another vault replaces the old session (the old one shut down).
         val c = sessions.forVault(vault())
         assertFalse(b.gate.isOpen)
@@ -156,6 +176,52 @@ class SyncSessionsTest {
         join.await()
         assertTrue(done)
         sessions.endAndWait() // nothing left: returns at once
+        scope.cancel()
+    }
+
+    /**
+     * Review 5a #1: a duress session starts no sync, yet deleting an item (Recently deleted) and exporting a backup
+     * work there as in a normal vault: the features use the second vault's own store, not the shut coordinator's.
+     */
+    @Test fun a_duress_session_syncs_nothing_but_its_features_still_work() = runBlocking {
+        val scope = CoroutineScope(coroutineContext.minusKey(Job) + SupervisorJob())
+        val notes = numberedNotes(2)
+        val store = CountingStore(pairedSnapshot(notes))
+        val key = ByteArray(32) { 9 }
+        val decoy = UnlockedVault(store, SecretSlots(tmp.newFile().also { it.delete() }, key, SystemRandomSource()), key.copyOf(), decoy = true)
+        val sessions = SyncSessions { v ->
+            SyncCoordinator(
+                v.store,
+                SyncDependencies(
+                    slots = v.slots, folders = FakeFolders(MemoryFolder()), lan = FakeLan(), random = SystemRandomSource(),
+                    clock = TestClock(0), licenseKeys = emptyMap(),
+                ),
+                scope,
+                EnglishTxt(),
+            )
+        }
+        val c = sessions.forVault(decoy)
+        assertFalse(c.gate.isOpen)
+        sessions.appOpen(decoy)
+        assertEquals(0, c.completedRuns.value)
+        // Leave sync does nothing there either: the duress vault never keeps an identity (design 2026-11-17, rule 2).
+        val syncState = store.snapshot.sync
+        c.leave()
+        assertSame(syncState, store.snapshot.sync)
+        assertNull(decoy.slots.keptIdentity())
+        val features = sessions.featureStore(decoy)
+        assertSame(store, features)
+        val id = (notes[0].fields["id"] as JsonValue.Str).v
+        val trash = PhoneTrash(InMemoryLocalData(), features, { false }, TestClock(1_800_000_000), EnglishTxt(), null, io = kotlinx.coroutines.Dispatchers.Unconfined)
+        assertEquals(SaveResult.SAVED, trash.moveToTrash(id))
+        assertNull(store.snapshot.records[id])
+        val bytes = BackupExporter(features, TestClock(1_800_000_000), CountingRandom(), "1.0.0", installId = { INSTALL_ID }, kdf = TEST_KDF)
+            .export("correct horse battery staple 42")
+        assertEquals(2, PhoneBackupFormat.read(bytes, "correct horse battery staple 42").states.size)
+        // A normal vault's features still go through the coordinator's gated store.
+        val real = vault()
+        assertSame(sessions.forVault(real).store, sessions.featureStore(real))
+        sessions.end()
         scope.cancel()
     }
 }

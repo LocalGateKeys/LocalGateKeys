@@ -42,6 +42,11 @@ object ImportDetect {
         }
         val stripped = Py.lstrip(text, SPACE)
         if (stripped.startsWith("{")) {
+            // A JSON file past the import cap is not parsed here: a CXF account is named from its first 4 MiB so the
+            // import says "too large" instead of "not recognised".
+            if (data.size > ImportSource.MAX_SOURCE_BYTES && text.contains("\"credentials\"") && text.contains("\"items\"")) {
+                return ImportFormat.CXF
+            }
             val full = try {
                 ImportText.decode(data)
             } catch (e: ImportException) {
@@ -85,6 +90,7 @@ object ImportDetect {
             if (doc["passwordProtected"]?.truthy != true) return null
             if (doc.has("data")) return ImportFormat.BITWARDEN_ENCRYPTED
         }
+        if (CxfImport.isAccount(doc)) return ImportFormat.CXF
         if (doc["items"]?.isList == true) return ImportFormat.BITWARDEN
         if (doc["accounts"]?.isList == true) return ImportFormat.ONE_PASSWORD_1PUX
         return null

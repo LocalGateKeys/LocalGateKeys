@@ -1,10 +1,12 @@
 package app.localgatekeys.android.ui.editor
 import app.localgatekeys.android.R
+import app.localgatekeys.android.ui.collections.CollectionPicker
 import androidx.compose.ui.res.stringResource
 
 import app.localgatekeys.android.i18n.rememberTxt
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -43,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -77,6 +82,8 @@ import app.localgatekeys.android.editor.IsoDate
 import app.localgatekeys.android.editor.SaveResult
 import app.localgatekeys.android.pro.ProFeatures
 import app.localgatekeys.android.ui.theme.AuroraBackground
+import app.localgatekeys.android.trash.PhoneTrash
+import app.localgatekeys.android.trash.UndoToast
 import app.localgatekeys.android.ui.theme.LgkTheme
 import app.localgatekeys.android.ui.theme.warningText
 import app.localgatekeys.android.ui.theme.lgkSwitchColors
@@ -107,14 +114,24 @@ class EditorSeams(
     val onScanTotp: ((onResult: (String?) -> Unit) -> Unit)? = null,
     /** The unsaved-draft file for this unlock (Task 6); null: no drafts are kept. */
     val drafts: EditorDraftStore? = null,
+    /** Recently deleted for this unlock (UX workstream 3): deletes keep the item on this phone. Null: deletes are immediate. */
+    val trash: PhoneTrash? = null,
+    /** The Undo toast shown after a delete that went to Recently deleted (null: none). */
+    val undo: UndoToast? = null,
 ) {
+    /** After a delete that saved: "Moved to Recently deleted" with Undo (when both are set). */
+    fun offerUndo() {
+        val t = trash ?: return
+        undo?.let { t.offerUndo(it) }
+    }
+
     /** The same seams with [onGenerate] set (unless one was already given). */
     fun withGenerate(open: (onPassword: (String) -> Unit) -> Unit): EditorSeams =
-        if (onGenerate != null) this else EditorSeams(store, random, onLocalEdit, open, onScanTotp, drafts)
+        if (onGenerate != null) this else EditorSeams(store, random, onLocalEdit, open, onScanTotp, drafts, trash, undo)
 
     /** The same seams with [onScanTotp] set (unless one was already given): RootScaffold's QR scanner. */
     fun withScanTotp(open: (onResult: (String?) -> Unit) -> Unit): EditorSeams =
-        if (onScanTotp != null) this else EditorSeams(store, random, onLocalEdit, onGenerate, open, drafts)
+        if (onScanTotp != null) this else EditorSeams(store, random, onLocalEdit, onGenerate, open, drafts, trash, undo)
 
     override fun toString(): String = "EditorSeams"
 }
@@ -135,14 +152,16 @@ fun EditorScreen(
 ) {
     val txt = rememberTxt()
     // Task 6: leaving the app with the editor open keeps the form as an encrypted draft. This activity's ON_STOP comes
-    // before the process ON_STOP that locks (and zeroes the key), so the save runs while the vault is open. Save,
-    // Delete and Cancel (the editor's Discard) delete it.
+    // before the process ON_STOP that locks (and zeroes the key), so the key is taken while the vault is open; the
+    // sealing and the file write run off the main thread (EditorDraftStore.saveLater). Save, Delete and Cancel (the
+    // editor's Discard) delete it. The same draft brings the form back when the activity is recreated (dark mode,
+    // language, font size) or the process was killed (RootScaffold).
     val drafts = seams.drafts
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentModel by rememberUpdatedState(model)
     DisposableEffect(lifecycle, drafts) {
         val observer = LifecycleEventObserver { _, e ->
-            if (e == Lifecycle.Event.ON_STOP && drafts != null) drafts.save(currentModel.draft(clock.now))
+            if (e == Lifecycle.Event.ON_STOP && drafts != null) drafts.saveLater(currentModel.draft(clock.now))
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
@@ -154,6 +173,10 @@ fun EditorScreen(
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    // Collections (sub-plan 07): read once, off the main thread; typed items get the picker.
+    val collections by model.collections.collectAsStateWithLifecycle()
+    var picking by remember { mutableStateOf(false) }
+    LaunchedEffect(model) { withContext(Dispatchers.IO) { model.loadCollections() } }
     BackHandler(onBack = discard)
 
     fun save() {
@@ -177,9 +200,12 @@ fun EditorScreen(
         if (busy) return
         busy = true
         scope.launch {
-            val r = withContext(Dispatchers.IO) { model.delete() }
+            val r = withContext(Dispatchers.IO) { model.delete(seams.trash?.mover) }
             busy = false
-            if (r == SaveResult.SAVED) finish(SaveResult.SAVED)
+            if (r == SaveResult.SAVED) {
+                seams.offerUndo()
+                finish(SaveResult.SAVED)
+            }
         }
     }
 
@@ -199,6 +225,28 @@ fun EditorScreen(
                         if (index != fields.lastIndex) Separator()
                     }
                 }
+                if (model.offersCollections) {
+                    val summary = collections.pickedNames.map { app.localgatekeys.android.collections.collectionDisplayName(it) }.joinToString(", ").ifEmpty { stringResource(R.string.common_none) }
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.groupSurface)
+                            .clickable(enabled = !busy && !collections.isReadOnly, role = Role.Button) { picking = true }
+                            .padding(horizontal = 16.dp, vertical = 14.dp).testTag("editor-collections"),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(stringResource(R.string.collections_title), color = c.text, style = MaterialTheme.typography.bodyLarge)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            summary, color = c.secondaryText, style = MaterialTheme.typography.bodyLarge, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis, textAlign = TextAlign.End, modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                if (collections.isReadOnly && state.error == null) {
+                    Text(
+                        stringResource(R.string.collections_read_only_item), color = c.secondaryText, style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).testTag("editor-read-only"),
+                    )
+                }
                 state.error?.let { error ->
                     Text(
                         error, color = c.danger, style = MaterialTheme.typography.bodyMedium,
@@ -214,6 +262,12 @@ fun EditorScreen(
                 }
             }
         }
+    }
+    if (picking) {
+        CollectionPicker(
+            collections.collections, collections.readOnly, collections.picked,
+            onDone = { picking = false; model.setPicked(it) }, onDismiss = { picking = false },
+        )
     }
     if (confirmDelete) {
         ConfirmDelete(txt.s(EditorScreenText.DELETE_TITLE), txt.s(EditorScreenText.DELETE_MESSAGE), onDismiss = { confirmDelete = false }) {
@@ -336,7 +390,7 @@ private fun TextRow(model: EditorModel, field: EditorKind.Field, value: String, 
                 )
             }
         }
-        if (field.secret) {
+        if (field.secret && !model.secretsViewOnly) {
             val revealLabel = stringResource(if (revealed) R.string.common_hide else R.string.common_reveal)
             IconButton(
                 { revealed = !revealed },

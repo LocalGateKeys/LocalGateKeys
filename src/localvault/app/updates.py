@@ -30,13 +30,15 @@ class UpdatesService:
                  configuration: Callable[[], Any] = updates.release_configuration,
                  check: Callable[[], Any] = updates.check_for_updates,
                  managed: Callable[[], str | None] = updates.managed_update_channel,
-                 revocations: Callable[[], Any] = updates.fetch_revocations) -> None:
+                 revocations: Callable[[], Any] = updates.fetch_revocations,
+                 last_verified: Callable[[], Any] = updates.last_verified) -> None:
         self._controller = controller
         self._port = port
         self._configuration = configuration
         self._check = check
         self._managed = managed
         self._revocations = revocations
+        self._last_verified = last_verified
         self._in_flight = threading.Lock()
         self._snooze_lock = threading.Lock()
 
@@ -75,6 +77,12 @@ class UpdatesService:
         self._refresh_revocations()
         if result is None:
             return {"available": False, "message": t("updates.updateChecksAreNotConfigured")}
+        unsupported = bool(getattr(result, "is_unsupported", False))
+        if unsupported:
+            message = t("updates.thisVersionIsNoLongerSupported", current_version=result.current_version,
+                        min_supported_version=result.min_supported_version)
+            return {"available": bool(result.is_newer), "unsupported": True, "current": result.current_version,
+                    "latest": result.latest_version, "note": "", "message": message}
         if result.is_newer:
             try:
                 note = licensing.update_coverage_note(result.published)
@@ -101,6 +109,15 @@ class UpdatesService:
                 return {"due": False}
         except updates.UpdateCheckError:
             return {"due": False}
+        try:
+            verified = self._last_verified()
+        except Exception:  # noqa: BLE001
+            verified = None
+        if verified is not None and bool(getattr(verified, "is_unsupported", False)):
+            # A manifest verified earlier in this process: no network, and the snooze does not hide it.
+            return {"due": True, "unsupported": True, "title": t("updates.checkForUpdates"),
+                    "text": t("updates.thisVersionIsNoLongerSupported", current_version=verified.current_version,
+                              min_supported_version=verified.min_supported_version)}
         if not updates.update_reminder_due(self._controller.settings.update_reminder_snoozed_until):
             return {"due": False}
         days = updates.build_age_days()

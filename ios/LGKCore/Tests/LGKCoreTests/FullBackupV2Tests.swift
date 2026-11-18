@@ -3,7 +3,7 @@ import XCTest
 @testable import LGKCore
 
 /// Full backup v2 (`backup.py` `export_full_backup`) and the Windows `vault.json` envelope, pinned to
-/// `tests/vectors/backup/v2` (written by `scripts/gen_mac_backup_vectors.py backup`). `from_mac.lgkfull` is written
+/// `tests/vectors/backup/v2` (written by `scripts/gen_mac_backup_vectors.py backup`). `from_mac.lgkfull` is written (with `LGK_WRITE_FROM_MAC=1`)
 /// here and opened by Windows in `tests/test_mac_backup_vectors.py`.
 final class FullBackupV2Tests: XCTestCase {
     private static let repo: URL = Vectors.root.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -99,7 +99,8 @@ final class FullBackupV2Tests: XCTestCase {
             password: Self.string("backup_password"), random: random, progress: { _, _, _ in }, cancel: { false },
             profileName: Self.string("profile_name"), createdAt: 1_793_100_000, kdf: Self.cheap)
         let url = Self.dir.appendingPathComponent("from_mac.lgkfull")
-        if (try? Data(contentsOf: url)) != data { try data.write(to: url) }
+        // The tracked copy is rewritten only on request (`LGK_WRITE_FROM_MAC=1`): its bytes differ every run.
+        if ProcessInfo.processInfo.environment["LGK_WRITE_FROM_MAC"] == "1", (try? Data(contentsOf: url)) != data { try data.write(to: url) }
         let back = try FullBackupV2.open(data, password: Self.string("backup_password"))
         XCTAssertEqual(back.vault, vault)
         XCTAssertNil(back.generation)

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">非 HTTPS</string>
+    <string name="security_expl_http">这些登录使用未加密的地址。请检查，如果网站支持，请改用 https://。</string>
+    <string name="security_cat_passkey">可使用通行密钥</string>
+    <string name="security_expl_passkey">这些网站支持通行密钥，这是更安全的登录方式。请为每个网站保存一个。</string>
+</resources>

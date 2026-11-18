@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">显示二维码</string>
+    <string name="sync_host_copy_code">复制代码文本</string>
+    <string name="sync_host_code">代码：%1$s</string>
+    <string name="sync_host_expires_in">%1$s 后到期</string>
+    <string name="sync_host_expired">已过期</string>
+    <string name="sync_host_accept_hint">只有当另一台设备显示相同的验证码时，才选择“接受”。</string>
+    <string name="sync_host_decline_hint">否则请选择“拒绝”。</string>
+    <string name="sync_host_undo_hint">如果您不认识它，请选择“撤销”。</string>
+    <string name="sync_host_other_pc_hint">在另一台 PC 上，请使用“使用验证码加入”并改为粘贴验证码文本。</string>
+    <string name="sync_host_copied">代码文本已复制。</string>
+    <string name="sync_host_closed">此配对码已关闭。</string>
+    <string name="sync_host_not_waiting">该请求已不再等待。请显示新的代码后重试。</string>
+    <string name="sync_host_declined">已拒绝。该设备未被添加。请重新显示新代码再试。</string>
+    <string name="sync_host_not_listening">请先开启 Wi-Fi 同步。</string>
+    <string name="sync_host_confirm">%1$s 想要加入。只有当它显示的代码是 %2$s 时才选择“接受”。</string>
+    <string name="sync_host_adding">正在添加 %1$s…</string>
+    <string name="sync_host_adding_button">正在添加…</string>
+    <string name="sync_host_paired_key">已配对：%1$s（密钥 %2$s）。%3$s</string>
+    <string name="sync_host_paired_plain">已配对：%1$s。%2$s</string>
+    <string name="sync_host_paired_title">已配对：%1$s</string>
+    <string name="sync_host_declines_in">将在 %1$d 秒后自动拒绝。</string>
+    <string name="sync_host_stopped">Wi-Fi 同步已停止。请检查网络并重新开启。</string>
+    <string name="sync_host_accept">接受</string>
+    <string name="sync_host_decline">拒绝</string>
+    <string name="sync_host_undo">撤销</string>
+    <string name="sync_host_keep">保留</string>
+    <string name="sync_host_followed">现在正在 %1$s 上监听（地址已更改）。</string>
+    <string name="sync_host_scan_title">请在另一台设备上用 LocalGateKeys 扫描此二维码</string>
+    <string name="sync_host_qr_description">配对二维码</string>
+    <string name="sync_host_add_named">要添加 %1$s 吗？</string>
+    <string name="sync_host_add_device">添加此设备？</string>
+    <string name="sync_host_fingerprint">密钥指纹：%1$s</string>
+    <string name="sync_host_paired_heading">已配对的设备</string>
+    <string name="sync_host_no_peers">还没有配对的设备。</string>
+    <string name="sync_host_remove">移除…</string>
+    <string name="sync_host_toggle">在此手机上托管 Wi-Fi 同步</string>
+    <string name="sync_host_intro">当 LocalGateKeys 在此手机上打开并已解锁时，同一 Wi-Fi 上的其他设备可以与此手机配对并同步。</string>
+    <string name="sync_host_listens">此手机正在 %1$s 上监听。</string>
+    <string name="sync_host_free">在免费版中，此手机仅在显示配对码时以及“立即同步”后的 2 分钟内监听。</string>
+    <string name="sync_host_no_wifi">请将此手机连接到 Wi-Fi 以托管 Wi-Fi 同步。</string>
+    <string name="sync_host_pair_hint">两台设备必须连接到同一 Wi-Fi。</string>
+    <string name="sync_host_this_phone">此手机</string>
+    <string name="sync_host_remove_confirm">要从 Wi-Fi 同步中移除 %1$s 吗？它将不再与此手机同步，但会保留已有的内容。</string>
+    <string name="sync_host_could_not_listen">无法在此手机上启动 Wi-Fi 同步。请检查网络后重试。</string>
+</resources>

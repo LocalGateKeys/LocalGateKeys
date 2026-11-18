@@ -60,6 +60,9 @@ struct MacSyncStatusSheet: View {
                         Image(systemName: "laptopcomputer").font(.system(size: 18)).frame(width: 26).foregroundStyle(theme.accent)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(SyncStatusSummary.thisDevice).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(theme.text)
+                            if let label = summary.thisDeviceLabel {
+                                Text(label).font(.system(size: 12)).foregroundStyle(theme.textMuted)
+                            }
                             Text(summary.pill).font(.system(size: 12)).foregroundStyle(theme.textMuted)
                         }
                         Spacer()
@@ -76,7 +79,7 @@ struct MacSyncStatusSheet: View {
                     Text("Sync is not set up on this Mac.").font(.system(size: 13)).foregroundStyle(theme.textMuted)
                 }
                 HStack {
-                    Button(SyncStatusSummary.syncNow) { Task { await coordinator.sync(.manual) } }
+                    Button(SyncStatusSummary.syncNow) { Task { await coordinator.syncNow() } }
                         .buttonStyle(PillButtonStyle(primary: true))
                         .disabled(coordinator.phase != .idle || !coordinator.membership.joined)
                     Button(SyncStatusSummary.openSettings, action: onOpenSettings).buttonStyle(PillButtonStyle(primary: false))

@@ -46,11 +46,11 @@ final class EditorAndLimitTests: XCTestCase {
     // MARK: limit
 
     func test_over_limit_keeps_items_usable() async throws {
-        // Seven synced items on the free plan: everything existing stays editable, deletable and fillable.
-        let store = MemoryStore(snapshot(numberedNotes(6) + [webLogin]))
+        // One synced item past the free limit: everything existing stays editable, deletable and fillable.
+        let store = MemoryStore(snapshot(numberedNotes(ItemLimit.freeItems) + [webLogin]))
         let p = pro(); await p.refresh(); p.update(from: store.snapshot)
         XCTAssertFalse(p.isPro)
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 7)
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems + 1)
         XCTAssertFalse(ItemLimit.allows(.create, snapshot: store.snapshot, isPro: false))
         XCTAssertFalse(ItemLimit.allows(.restore, snapshot: store.snapshot, isPro: false))
         for action in [ItemLimit.Action.edit, .delete, .autofill] {
@@ -62,30 +62,43 @@ final class EditorAndLimitTests: XCTestCase {
             XCTAssertEqual(e.save(), .saved, "\(item.id): \(e.error ?? "")")
             XCTAssertFalse(e.showUpgrade)
         }
-        XCTAssertEqual(store.commits, 7)
+        XCTAssertEqual(store.commits, ItemLimit.freeItems + 1)
         XCTAssertTrue(VaultItem.items(from: store.snapshot).allSatisfy { $0.title.hasSuffix(" edited") })
         let victim = VaultItem.items(from: store.snapshot)[0]
         XCTAssertEqual(editor(store, p, item: victim, kind: EditorKind(kind: victim.kind)!).delete(), .saved)
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 6)
-        // Still over the limit: a new item is refused without writing anything.
-        let n = editor(store, p); n.set("title", "Eighth"); n.set("body", "x")
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems)
+        // Still at the limit: a new item is refused without writing anything.
+        let n = editor(store, p); n.set("title", "One more"); n.set("body", "x")
         XCTAssertEqual(n.save(), .needsPro)
         XCTAssertTrue(n.showUpgrade)
-        XCTAssertEqual(store.commits, 8)
+        XCTAssertEqual(store.commits, ItemLimit.freeItems + 2)
     }
 
-    func test_fifth_item_needs_pro() async throws {
-        let store = MemoryStore(snapshot(numberedNotes(3)))
+    func test_free_items_is_seven() {
+        XCTAssertEqual(ItemLimit.freeItems, 7)
+    }
+
+    func test_item_past_the_limit_hits_limit() {
+        let atLimit = snapshot(numberedNotes(ItemLimit.freeItems))
+        let belowLimit = snapshot(numberedNotes(ItemLimit.freeItems - 1))
+        XCTAssertFalse(ItemLimit.allows(.create, snapshot: atLimit, isPro: false))
+        XCTAssertTrue(ItemLimit.allows(.create, snapshot: belowLimit, isPro: false))
+        XCTAssertTrue(ItemLimit.allows(.edit, snapshot: atLimit, isPro: false))
+        XCTAssertTrue(ItemLimit.allows(.delete, snapshot: atLimit, isPro: false))
+    }
+
+    func test_item_past_the_limit_needs_pro() async throws {
+        let store = MemoryStore(snapshot(numberedNotes(ItemLimit.freeItems - 1)))
         let purchases = FakePurchases()
         let p = pro(purchases); await p.refresh(); p.update(from: store.snapshot)
-        let fourth = editor(store, p); fourth.set("title", "Fourth"); fourth.set("body", "b")
-        XCTAssertEqual(fourth.save(), .saved)
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 4)
+        let fifteenth = editor(store, p); fifteenth.set("title", "Fifteenth"); fifteenth.set("body", "b")
+        XCTAssertEqual(fifteenth.save(), .saved)
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems)
 
-        let fifth = editor(store, p); fifth.set("title", "Fifth"); fifth.set("body", "b")
-        XCTAssertEqual(fifth.save(), .needsPro)
-        XCTAssertTrue(fifth.showUpgrade)
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 4)
+        let sixteenth = editor(store, p); sixteenth.set("title", "Sixteenth"); sixteenth.set("body", "b")
+        XCTAssertEqual(sixteenth.save(), .needsPro)
+        XCTAssertTrue(sixteenth.showUpgrade)
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems)
 
         // Restore purchases with nothing to restore keeps the limit.
         await p.restore()
@@ -95,8 +108,8 @@ final class EditorAndLimitTests: XCTestCase {
         await p.buy()
         XCTAssertEqual(purchases.purchaseCalls, 1)
         XCTAssertTrue(p.isPro)
-        XCTAssertEqual(fifth.save(), .saved)
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 5)
+        XCTAssertEqual(sixteenth.save(), .saved)
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems + 1)
 
         // A cancelled purchase leaves the free plan in place.
         let other = FakePurchases(); other.purchaseResult = .cancelled
@@ -350,6 +363,12 @@ final class EditorAndLimitTests: XCTestCase {
 
 @MainActor
 final class ProOutcomeTests: XCTestCase {
+    let clock = TestClock(1_800_000_000)
+
+    func pro(_ purchases: FakePurchases = FakePurchases(), keys: [String: [UInt8]] = [:]) -> ProModel {
+        ProModel(purchases: purchases, licenseKeys: keys)
+    }
+
     func test_unverified_purchase_shows_an_error_not_cancelled() async {
         let fake = FakePurchases(); fake.purchaseResult = .unverified
         let p = ProModel(purchases: fake, licenseKeys: [:])
@@ -367,5 +386,75 @@ final class ProOutcomeTests: XCTestCase {
         XCTAssertEqual(EditorKind.web.friendlyError("origin is too long"), "Website is too long")
         XCTAssertEqual(EditorKind.note.friendlyError("item title cannot be empty"), "Title can't be empty")
         XCTAssertEqual(EditorKind.web.friendlyError("something else"), "something else")
+    }
+
+    // MARK: review M1 (another commit lands while saving)
+
+    /// Runs `race` once, right before the editor's first commit reaches `base` (a sync run committing in between).
+    final class RacingStore: ItemStore, @unchecked Sendable {
+        let base: MemoryStore
+        var race: ((MemoryStore) throws -> Void)?
+        init(_ base: MemoryStore, race: @escaping (MemoryStore) throws -> Void) { self.base = base; self.race = race }
+        func load() throws -> StoreSnapshot { try base.load() }
+        func commit(_ change: StoreChange) throws {
+            if let r = race { race = nil; try r(base) }
+            try base.commit(change)
+        }
+    }
+
+    nonisolated static func commitOther(_ store: MemoryStore, _ id: String, _ wrapper: JSONValue) throws {
+        var s = store.snapshot
+        s.records[id] = wrapper
+        try store.commit(StoreChange(baseRevision: s.revision, records: s.records, meta: s.meta, sync: s.sync))
+    }
+
+    func racingEditor(_ store: RacingStore, item: VaultItem?, kind: EditorKind) -> EditorModel {
+        EditorModel(store: store, pro: pro(), editing: item, kind: kind, clock: clock, random: CountingRandom(),
+                    background: FakeBackgroundTasks())
+    }
+
+    func test_save_retries_once_when_another_item_was_committed_meanwhile() throws {
+        let base = MemoryStore(snapshot([validCard]))
+        let (otherID, other) = noteRecord(31, title: "Synced")
+        let store = RacingStore(base) { try Self.commitOther($0, otherID, other) }
+        let card = try XCTUnwrap(VaultItem.items(from: base.snapshot).first)
+        let e = racingEditor(store, item: card, kind: .card)
+        e.set("title", "Travel card (mine)")
+        XCTAssertEqual(e.save(), .saved, e.error ?? "")
+        XCTAssertNil(e.error)
+        XCTAssertEqual(base.commits, 2)
+        XCTAssertEqual(base.snapshot.records[otherID], other, "the other commit is kept")
+        let saved = try XCTUnwrap(VaultItem.items(from: base.snapshot).first { $0.id == card.id })
+        XCTAssertEqual(saved.record["title"], .string("Travel card (mine)"))
+    }
+
+    func test_save_never_silently_overwrites_the_same_item_changed_meanwhile() throws {
+        let base = MemoryStore(snapshot([validCard]))
+        let card = try XCTUnwrap(VaultItem.items(from: base.snapshot).first)
+        guard case .object(var theirs) = validCard else { return XCTFail("card") }
+        theirs["title"] = .string("Changed elsewhere")
+        let cardID = card.id, changed = Wrapper.make(ns: .item, record: .object(theirs))
+        let store = RacingStore(base) { try Self.commitOther($0, cardID, changed) }
+        let e = racingEditor(store, item: card, kind: .card)
+        e.set("title", "Travel card (mine)")
+        XCTAssertEqual(e.save(), .failed)
+        XCTAssertEqual(e.error, EditorModel.changedWhileEditingText)
+        XCTAssertEqual(base.commits, 1, "only the other commit")
+        XCTAssertEqual(VaultItem.items(from: base.snapshot).first?.record["title"], .string("Changed elsewhere"))
+        // Saving again keeps this version, knowingly.
+        XCTAssertEqual(e.save(), .saved, e.error ?? "")
+        XCTAssertEqual(VaultItem.items(from: base.snapshot).first?.record["title"], .string("Travel card (mine)"))
+    }
+
+    func test_retried_save_checks_the_item_limit_again() throws {
+        let base = MemoryStore(snapshot(numberedNotes(ItemLimit.freeItems - 1)))
+        let last = try XCTUnwrap(numberedNotes(ItemLimit.freeItems).last)
+        guard case .object(let o) = last, case .string(let lastID)? = o["id"] else { return XCTFail("note") }
+        let store = RacingStore(base) { try Self.commitOther($0, lastID, Wrapper.make(ns: .item, record: last)) }
+        let e = racingEditor(store, item: nil, kind: .note)
+        e.set("title", "One more"); e.set("body", "x")
+        XCTAssertEqual(e.save(), .needsPro)
+        XCTAssertTrue(e.showUpgrade)
+        XCTAssertEqual(ItemLimit.liveCount(base.snapshot), ItemLimit.freeItems, "the new item was not added over the limit")
     }
 }

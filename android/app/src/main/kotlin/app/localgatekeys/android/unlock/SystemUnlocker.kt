@@ -36,10 +36,14 @@ class SystemUnlocker private constructor(inner: VaultUnlocker) : Unlocker by inn
         random: RandomSource,
         settings: AppSettings?,
         appPassword: AppPasswordLock? = null,
+        duress: app.localgatekeys.android.duress.DuressVault? = null,
     ) :
         this(
             VaultUnlocker(
-                VaultOpener(dirs, vaultKey, random, settings, cryptoBound = Build.VERSION.SDK_INT >= 30, appPassword = appPassword),
+                VaultOpener(
+                    dirs, vaultKey, random, settings, cryptoBound = Build.VERSION.SDK_INT >= 30, appPassword = appPassword,
+                    alwaysAskFactors = { settings?.factorsAlwaysAsk == true }, duress = duress,
+                ),
                 BiometricAuthenticator(activity),
             ),
         )

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">Códigos fijados</string>
+    <string name="tile_description">Tus códigos de dos factores fijados en LocalGateKeys en tu teléfono.</string>
+    <string name="tile_no_data">Abre LocalGateKeys en tu teléfono</string>
+    <string name="tile_locked">Desbloquea LocalGateKeys en tu teléfono para ver los códigos</string>
+    <string name="tile_locked_immediately">Configura el bloqueo automático del teléfono en 1 minuto o más para ver los códigos aquí</string>
+    <string name="tile_empty">Fija un código en LocalGateKeys</string>
+    <string name="tile_watch_locked">Desbloquea el reloj para ver los códigos</string>
+    <string name="tile_updated_now">Actualizado ahora mismo</string>
+    <string name="tile_updated_minutes">Actualizado hace %1$d min</string>
+    <string name="tile_updated_hours">Actualizado hace %1$d h</string>
+    <string name="tile_updated_days">Actualizado hace %1$d d</string>
+</resources>

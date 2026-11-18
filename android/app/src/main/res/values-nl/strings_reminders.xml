@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">Een herinnering is aan de beurt</string>
+    <string name="reminder_named_body">%1$s is aan de beurt</string>
+    <string name="reminder_save_failed">De herinnering kon niet op deze telefoon worden bewaard.</string>
+    <string name="reminder_channel_name">Herinneringen</string>
+    <string name="reminder_section">Herinnering</string>
+    <string name="reminder_due">Vervalt</string>
+    <string name="reminder_remind_me">Herinner mij</string>
+    <string name="reminder_change">Herinnering wijzigen</string>
+    <string name="reminder_remove">Herinnering verwijderen</string>
+    <string name="reminder_add">Herinnering toevoegen</string>
+    <string name="reminder_suggest_button">Herinner mij voordat het verloopt</string>
+    <string name="reminder_card_expires">Deze kaart verloopt op %1$s.</string>
+    <string name="reminder_due_date">Vervaldatum</string>
+    <string name="reminder_on_the_day">Op de dag zelf</string>
+    <string name="reminder_upcoming">Binnenkort</string>
+    <string name="reminder_nothing_upcoming">Niets gepland de komende 30 dagen.</string>
+    <string name="reminder_overdue_due">Te laat · vervaldatum %1$s</string>
+    <string name="reminder_due_on">Vervalt op %1$s</string>
+    <string name="reminder_snooze">Uitstellen</string>
+    <string name="reminder_snooze_day">Een dag uitstellen</string>
+    <string name="reminder_notifications_off">Meldingen staan uit voor LocalGateKeys. Herinneringen worden hier nog wel getoond.</string>
+    <string name="reminder_settings_title">Herinneringen</string>
+    <string name="reminder_show_names">Itemnamen tonen in meldingen</string>
+    <string name="reminder_settings_footer">Voeg een herinnering toe vanuit een kaart, document of abonnement. Uit: meldingen zeggen alleen “Een herinnering is aan de beurt”, zodat er niets over het item op het vergrendelscherm staat. Aan: de naam van het item kan ook op het vergrendelscherm staan, afhankelijk van de instelling voor meldingen op het vergrendelscherm van je telefoon.</string>
+    <string name="reminder_editor_footer">Op de dag zelf komt er om 9:00 een melding. Die zegt alleen “Een herinnering is aan de beurt” tenzij Instellingen › Herinneringen itemnamen toont. Herinneringen blijven op deze telefoon en worden nooit gesynchroniseerd.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d dag ervoor</item>
+        <item quantity="other">%1$d dagen ervoor</item>
+    </plurals>
+</resources>

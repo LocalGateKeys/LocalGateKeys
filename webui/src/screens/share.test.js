@@ -20,7 +20,7 @@ describe('ShareSheet', () => {
     render(ShareSheet, { item: REF, onclose: vi.fn() });
     await fireEvent.click(screen.getByRole('button', { name: 'Create share' }));
     expect(await screen.findByText('maple river onion seven lamp quote')).toBeInTheDocument();
-    expect(api.share_start).toHaveBeenCalledWith(REF);
+    expect(api.share_start).toHaveBeenCalledWith(REF, 24, false);
     await fireEvent.click(screen.getByRole('button', { name: 'Save as file…' }));
     await waitFor(() => expect(api.share_save_file).toHaveBeenCalledWith('h1'));
     await fireEvent.click(screen.getByRole('button', { name: 'Show QR code' }));

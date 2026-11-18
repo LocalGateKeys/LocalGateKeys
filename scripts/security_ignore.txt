@@ -1,0 +1,13 @@
+# Accepted security-scan findings (scripts/security_scan.py).
+# One per line: <pip|npm|bandit> <id> <reason>. The reason is required; say who
+# accepted it, why it does not apply, and when to revisit. Remove a line as soon
+# as the finding is fixed. An empty list is the goal.
+#
+#   pip     PYSEC-2026-1  not reachable: we never call the vulnerable parser (revisit 2026-12)
+#   npm     GHSA-xxxx-xxxx-xxxx  dev-only transitive, never bundled (revisit 2026-12)
+#   bandit  B324:src/localvault/example.py  SHA-1 mandated by an external API
+#
+# Nothing is ignored on 2026-10-30. (The two bandit HIGH findings of that day,
+# B324 in breach_check.py and B613 in passkeys.py, were fixed in the source.)
+
+npm GHSA-FC5Q-39XC-VJPF  picomatch ReDoS, webui dev-only via vite, vitest, tinyglobby, never bundled; no fixed release on 2026-11-18; accepted by the owner (revisit 2026-12)

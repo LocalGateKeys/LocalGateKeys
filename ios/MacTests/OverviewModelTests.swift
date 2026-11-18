@@ -7,7 +7,8 @@ final class OverviewModelTests: XCTestCase {
     private func login(_ id: String, title: String? = nil, user: String = "", password: String = "",
                        totp: [String: JSONValue]? = nil, strict: Bool = false, kind: String = "web") -> VaultItem {
         var r: [String: JSONValue] = ["kind": .string(kind), "title": .string(title ?? id), "username": .string(user),
-                                      "password": .string(password), "updated_at": .int(1_700_000_000)]
+                                      "password": .string(password), "updated_at": .int(1_700_000_000),
+                                      "scope": .object(["origin": .string("https://\(id).example.com")])]
         if let totp { r["totp"] = .object(totp) }
         if strict { r["policy"] = .object(["require_master_password": .bool(true)]) }
         return VaultItem(id: id, record: r)!
@@ -16,8 +17,13 @@ final class OverviewModelTests: XCTestCase {
     private let strong = "correct horse battery staple"
     private let secret: [String: JSONValue] = ["secret": .string("JBSWY3DPEHPK3PXP")]
 
+    /// Every test login lives on <id>.example.com, a site that offers 2FA codes (a one-rule suffix list: ".com").
+    private let exampleOffersTotp = SiteFeatures(
+        sites: ["example.com": ["totp"]], matcher: URLMatcher(rules: PublicSuffixRules.parse(lines: ["com"])))
+
     private func model(_ items: [VaultItem], now: Date = Date(timeIntervalSince1970: 1_790_000_000)) async -> OverviewModel {
-        let m = OverviewModel(cache: StrengthCache(), now: { now })
+        let features = exampleOffersTotp
+        let m = OverviewModel(cache: StrengthCache(), now: { now }, features: { features })
         m.items = items
         await m.recomputeHealth()
         return m
@@ -103,6 +109,16 @@ final class OverviewModelTests: XCTestCase {
         XCTAssertEqual(collapsed.toggle, "Show all 5")
         XCTAssertEqual(OverviewModel.visibleCodes(codes, expanded: true).toggle, "Show fewer")
         XCTAssertNil(OverviewModel.visibleCodes(Array(codes.prefix(4)), expanded: false).toggle)
+    }
+
+    func testCodesFoldedPreferenceDefaultsExpandedAndPersists() throws {
+        let suite = "OverviewModelTests.codesFolded"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        XCTAssertEqual(OverviewModel.codesFoldedKey, "overview.codesFolded")
+        XCTAssertFalse(OverviewModel.codesFolded(in: defaults))
+        defaults.set(true, forKey: OverviewModel.codesFoldedKey)
+        XCTAssertTrue(OverviewModel.codesFolded(in: defaults))
     }
 
     func testChipsHideZeroAndClearSelection() async {

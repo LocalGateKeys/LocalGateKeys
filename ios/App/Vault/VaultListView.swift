@@ -12,7 +12,7 @@ struct VaultListView: View {
     let onActivity: () -> Void
     /// The search screen is pushed on this tab's stack (the magnifying-glass button).
     @Binding var searching: Bool
-    /// Switches to the Settings tab on Import & Export (the empty vault's import card).
+    /// Switches to the Settings tab on Import & Export (the empty vault's import card and Restore from a backup).
     var openImport: () -> Void = {}
     /// Switches to the Sync tab (the Sync status sheet's Open sync settings).
     var openSync: () -> Void = {}
@@ -25,6 +25,8 @@ struct VaultListView: View {
     var onboarding: Onboarding? = nil
     /// `>` actions that leave the Vault tab (Security, Settings, Trash, AutoFill, setup); workstream 5.
     var onNavigate: (PhoneCommand) -> Void = { _ in }
+    /// The Collections menu's "Manage collections": pushes Vault › Collections (sub-plan 07).
+    var openCollections: () -> Void = {}
     /// "Generate password" from the `>` actions: the generator sheet (Use copies the value).
     @State private var showGenerator = false
     @State private var newKind: EditorKind?
@@ -48,13 +50,25 @@ struct VaultListView: View {
                 if let error = model.loadError {
                     Text(error).foregroundStyle(Palette.danger).padding(.horizontal, 4)
                 }
-                if let onboarding, let text = onboarding.cardText {
-                    SetupCard(text: text, onOpen: { onboarding.showAgain() }, onHide: { onboarding.hideCard() })
-                }
+                // The setup progress is a chip on the header's status line (UX refresh §4).
                 let codes = model.items.filter(\.hasTOTP)
                 if !codes.isEmpty, AppSettings.shared.showCodesRow { CodesRow(items: codes) }
-                if !model.items.isEmpty { VaultFilterBar(filter: $filter, options: model.filterOptions).padding(.top, 4) }
-                if let sorted = model.sortedItems(filter: filter) {
+                // The type chips offer only the types in the chosen collection; the Codes row above stays every code.
+                if !model.items.isEmpty { VaultFilterBar(filter: $filter, options: listFilterOptions).padding(.top, 4) }
+                if let name = model.collectionFilterName {
+                    // The Collections filter in use: a tap shows All items again.
+                    Button { model.collectionFilter = nil } label: {
+                        Label("Collection: \(name)", systemImage: "xmark.circle.fill").font(.subheadline)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .foregroundStyle(Palette.onAccent)
+                            .background(Palette.accent, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(Text("All items"))
+                }
+                if model.collectionFilter != nil && model.listItems.isEmpty && !model.items.isEmpty {
+                    Text("No items in this collection.").foregroundStyle(Palette.secondaryText).frame(maxWidth: .infinity).padding(.top, 24)
+                } else if let sorted = model.sortedItems(filter: filter) {
                     // A chosen sort shows one flat list in that order (no Logins / Cards and notes / Other groups).
                     if sorted.isEmpty {
                         if !model.items.isEmpty {
@@ -64,12 +78,12 @@ struct VaultListView: View {
                         VaultGroupView(items: sorted, onFavorite: toggleFavorite)
                     }
                 } else if filter == .all {
-                    ForEach(VaultGroup.groups(model.items)) { group in
+                    ForEach(VaultGroup.groups(model.listItems)) { group in
                         SectionHeader(title: group.title)
                         VaultGroupView(items: group.items, onFavorite: toggleFavorite)
                     }
                 } else {
-                    let matches = VaultSearch.apply(model.items, query: "", filter: filter)
+                    let matches = VaultSearch.apply(model.listItems, query: "", filter: filter)
                     if matches.isEmpty {
                         Text("No items of this type.").foregroundStyle(Palette.secondaryText).frame(maxWidth: .infinity).padding(.top, 24)
                     } else {
@@ -84,6 +98,9 @@ struct VaultListView: View {
                 if model.items.isEmpty && model.loadError == nil {
                     Text("No items yet. Tap + to add one.").foregroundStyle(Palette.secondaryText).padding(.top, 24)
                         .frame(maxWidth: .infinity)
+                    // A reinstalled iPhone or a new phone: the backup is restored from Import & Export.
+                    Button("Restore from a backup", action: openImport)
+                        .foregroundStyle(Palette.accentText).frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal, 16)
@@ -112,6 +129,10 @@ struct VaultListView: View {
         }) { scan in
             TwoFactorScanView(model: scan, onNewLogin: { pendingLogin = ScannedLogin(editor: $0) }, onSaved: edited)
         }
+        .onChange(of: TwoFactorLinkRoute.shared.pending, initial: true) { _, link in
+            guard link != nil, let link = TwoFactorLinkRoute.shared.take() else { return }
+            openTwoFactorLink(link)
+        }
         .sheet(item: $scannedLogin) { login in
             EditorView(model: login.editor, pro: pro) { _ in edited() }
         }
@@ -125,7 +146,7 @@ struct VaultListView: View {
             Task { @MainActor in barVisibility = .hidden }
         }
         .onChange(of: sync.completedRuns) { reload() }
-        .onChange(of: model.filterOptions) { if !model.filterOptions.contains(filter) { filter = .all } }
+        .onChange(of: listFilterOptions) { if !listFilterOptions.contains(filter) { filter = .all } }
         #if DEBUG
         .navigationDestination(item: $screenshotItem) { ItemDetailView(item: $0, store: store, pro: pro, onChange: edited) }
         .task { openScreenshotScreen() }
@@ -136,7 +157,7 @@ struct VaultListView: View {
     /// `-LGKScreen`: opens the requested screen once the list has loaded.
     private func openScreenshotScreen() {
         switch ScreenshotScreen.requested {
-        case .item: screenshotItem = model.items.first(where: \.favorite) ?? model.items.first
+        case .item, .edit: screenshotItem = model.items.first(where: \.favorite) ?? model.items.first
         case .new: newKind = .web
         case .upgrade: showUpgrade = true
         default: break
@@ -144,8 +165,10 @@ struct VaultListView: View {
     }
     #endif
 
+    /// UX refresh §4: title, one "more" menu and the + button (the only accent-filled control); the search field
+    /// below; then the sync status and the setup progress on one line.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Vault").font(.largeTitle.bold()).foregroundStyle(Palette.text)
                     .lineLimit(1).minimumScaleFactor(0.5)
@@ -154,8 +177,8 @@ struct VaultListView: View {
                 headerButtons
             }
             .frame(minHeight: 48)
-            // "Synced 2 min ago · 3 devices" (workstream 6); absent while this iPhone does not sync.
-            SyncStatusPill(sync: sync) { showSyncStatus = true }
+            searchField
+            statusLine
         }
         .padding(.horizontal, 16)
         .padding(.top, 8).padding(.bottom, 8)
@@ -164,25 +187,7 @@ struct VaultListView: View {
     private var headerButtons: some View {
             LGKGlassContainer(spacing: 12) {
                 HStack(spacing: 12) {
-                    Button(action: startScan) {
-                        GlassCircleLabel { Image(systemName: "qrcode.viewfinder").font(.system(size: 19, weight: .medium)) }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Scan QR code")
-                    Button { searching = true } label: {
-                        GlassCircleLabel { Image(systemName: "magnifyingglass").font(.system(size: 19, weight: .medium)) }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Search")
-                    .keyboardShortcut("f", modifiers: .command)
-                    .background {
-                        // ⌘K on a hardware keyboard: the search, already listing the `>` actions.
-                        Button("Actions") { model.query = "> "; searching = true }
-                            .keyboardShortcut("k", modifiers: .command)
-                            .frame(width: 0, height: 0).opacity(0)
-                            .accessibilityHidden(true)
-                    }
-                    sortMenu
+                    moreMenu
                     NewItemMenu(onPick: { kind in
                         // Creating needs a free slot or Pro; existing items are never blocked.
                         if ItemLimit.allows(.create, snapshot: model.snapshot, isPro: pro.isPro) { newKind = kind } else { showUpgrade = true }
@@ -190,31 +195,114 @@ struct VaultListView: View {
                         // Adding a file is a Pro feature; files already in the vault always open.
                         if pro.isPro { addingFile = true } else { showUpgrade = true }
                     }) {
-                        GlassCircleLabel { Image(systemName: "plus").font(.system(size: 20, weight: .medium)) }
+                        Image(systemName: "plus").font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(Palette.onAccent)
+                            .frame(width: 48, height: 48)
+                            .background(Palette.accent, in: Circle())
+                            .contentShape(Circle())
+                            .accessibilityShowsLargeContentViewer()
                     }
                     .accessibilityLabel("New item")
                 }
             }
     }
 
-    /// The list order: the default groups, or one flat list sorted by title or date, with Favorites first.
-    /// Stored on this device only.
-    private var sortMenu: some View {
-        Menu {
-            Picker("Sort by", selection: Binding(get: { model.sort }, set: { model.sort = $0 })) {
-                Text("Grouped by type").tag(VaultSortOption?.none)
-                ForEach(VaultSortOption.allCases) { option in
-                    Text(option.label).tag(VaultSortOption?.some(option))
-                }
+    /// A field-shaped button that opens the search screen (its filters and `>` actions are unchanged).
+    private var searchField: some View {
+        Button { searching = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundStyle(Palette.secondaryText)
+                Text("Search your vault").foregroundStyle(Palette.secondaryText).lineLimit(1)
+                Spacer(minLength: 0)
             }
-            Toggle("Favorites first", isOn: Binding(get: { model.favoritesFirst }, set: { model.favoritesFirst = $0 }))
-                .disabled(model.sort == nil)
-        } label: {
-            GlassCircleLabel { Image(systemName: "arrow.up.arrow.down").font(.system(size: 18, weight: .medium)) }
+            .font(.body)
+            .padding(.horizontal, 14).frame(minHeight: 44)
+            .lgkGlass(in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Sort")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Search")
+        .accessibilityAddTraits(.isSearchField)
+        .keyboardShortcut("f", modifiers: .command)
+        .background {
+            // ⌘K on a hardware keyboard: the search, already listing the `>` actions.
+            Button("Actions") { model.query = "> "; searching = true }
+                .keyboardShortcut("k", modifiers: .command)
+                .frame(width: 0, height: 0).opacity(0)
+                .accessibilityHidden(true)
+        }
     }
+
+    /// "Synced 2 min ago · 3 devices" (workstream 6; absent while this iPhone does not sync) and the
+    /// "Finish setting up · n of 5" chip (opens the setup pages; long press hides it) on one line. At large text
+    /// sizes the two stack.
+    private var statusLine: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) { syncPill; setupChip; Spacer(minLength: 0) }
+            VStack(alignment: .leading, spacing: 6) { syncPill; setupChip }
+        }
+    }
+
+    private var syncPill: some View {
+        SyncStatusPill(sync: sync) { showSyncStatus = true }
+    }
+
+    @ViewBuilder private var setupChip: some View {
+        if let onboarding, let text = onboarding.cardText {
+            Button { onboarding.showAgain() } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "checklist").foregroundStyle(Palette.accentText)
+                    Text(text).font(.subheadline).foregroundStyle(Palette.text).lineLimit(1)
+                }
+                .padding(.horizontal, 14).frame(minHeight: 44)
+                .lgkGlass(in: Capsule())
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .contextMenu {
+                Button(Onboarding.hide) { onboarding.hideCard() }
+            }
+        }
+    }
+
+    /// The one "more" menu: Sort (the default groups, or one flat list by title or date, with Favorites first;
+    /// stored on this device), Collections (sub-plan 07: All items or one collection; Manage collections opens
+    /// Vault › Collections) and Scan QR code.
+    private var moreMenu: some View {
+        Menu {
+            Menu {
+                Picker("Sort by", selection: Binding(get: { model.sort }, set: { model.sort = $0 })) {
+                    Text("Grouped by type").tag(VaultSortOption?.none)
+                    ForEach(VaultSortOption.allCases) { option in
+                        Text(option.label).tag(VaultSortOption?.some(option))
+                    }
+                }
+                Toggle("Favorites first", isOn: Binding(get: { model.favoritesFirst }, set: { model.favoritesFirst = $0 }))
+                    .disabled(model.sort == nil)
+            } label: { Label("Sort", systemImage: "arrow.up.arrow.down") }
+            Menu {
+                Picker("Collections", selection: Binding(get: { model.collectionFilter }, set: { model.collectionFilter = $0 })) {
+                    Text("All items").tag(String?.none)
+                    ForEach(model.collections, id: \.id) { collection in
+                        Text(verbatim: CollectionCatalog.displayName(collection.name)).tag(String?.some(collection.id))
+                    }
+                }
+                Divider()
+                Button("Manage collections", action: openCollections)
+            } label: {
+                Label("Collections", systemImage: model.collectionFilter == nil ? "folder" : "folder.fill")
+            }
+            Button(action: startScan) { Label("Scan QR code", systemImage: "qrcode.viewfinder") }
+        } label: {
+            GlassCircleLabel { Image(systemName: "ellipsis").font(.system(size: 19, weight: .medium)) }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("More")
+    }
+
+    /// The type chips for the list as filtered by collection.
+    private var listFilterOptions: [VaultFilter] { VaultSearch.filterOptions(model.listItems) }
 
     /// A `>` action from the search (workstream 5): the search closes, then the action runs.
     private func run(_ command: PhoneCommand) {
@@ -225,7 +313,7 @@ struct VaultListView: View {
         case .generatePassword: showGenerator = true
         case .scanQR: startScan()
         case .lockNow: lock.lock()
-        case .syncNow: Task { await sync.sync(.manual) }
+        case .syncNow: Task { await sync.syncNow() }
         case .syncStatus: showSyncStatus = true
         case .securityCheck, .trash, .settings, .importExport, .autoFill, .syncSettings, .showSetup: onNavigate(command)
         }
@@ -235,12 +323,20 @@ struct VaultListView: View {
     private func toggleFavorite(_ item: VaultItem) {
         let r = VaultListModel.setFavorite(!item.favorite, id: item.id, store: store, clock: SystemClock())
         if r == .saved { edited() }
+        // A view-only shared item keeps its star: say why instead of doing nothing.
+        if r == .invalid { CopyToast.shared.show(EditorModel.readOnlyItemText, for: .seconds(3)) }
     }
 
     /// 2FA keys are Pro (the editor's rule): the free plan gets the upgrade screen instead of the scanner.
     private func startScan() {
         guard pro.isPro else { showUpgrade = true; return }
         scanning = TwoFactorScanModel(store: store, pro: pro)
+    }
+
+    /// An `otpauth` link opened from outside: the scan flow at its next step, or the new login's editor.
+    private func openTwoFactorLink(_ link: String) {
+        guard let (scan, editor) = TwoFactorLinkRoute.scanFlow(link, store: store, pro: pro) else { showUpgrade = true; return }
+        if let editor { scannedLogin = ScannedLogin(editor: editor) } else { scanning = scan }
     }
 
     /// A local create, edit or delete: reload, then sync once editing has paused.
@@ -331,16 +427,40 @@ struct VaultGroupView: View {
     var body: some View {
         VStack(spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                NavigationLink(value: item) {
-                    HStack {
-                        VaultRow(item: item)
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Palette.secondaryText)
-                            .accessibilityHidden(true)
+                let password = item.isLogin ? item.copyablePassword : nil
+                HStack(spacing: 0) {
+                    NavigationLink(value: item) {
+                        HStack {
+                            VaultRow(item: item)
+                            if password == nil {
+                                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Palette.secondaryText)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .padding(.leading, 14).padding(.trailing, password == nil ? 14 : 4).padding(.vertical, 10)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 10)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    if let password {
+                        // UX refresh §4: copy without opening the item (the same clipboard and auto-clear path
+                        // as the long-press menu).
+                        Button {
+                            Task {
+                                guard await AccessGate.shared.mayCopy(item) else { return }
+                                QuickActionsMenu.copy(password, String(localized: "Password copied"),
+                                                      clearAfterAtMost: AccessGate.shared.copyLimit(item))
+                            }
+                        } label: {
+                            Image(systemName: "doc.on.doc").font(.body.weight(.medium)).foregroundStyle(Palette.accentText)
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 6)
+                        .accessibilityLabel("Copy password")
+                        .accessibilityShowsLargeContentViewer()
+                    }
                 }
-                .buttonStyle(.plain)
                 .contextMenu { QuickActionsMenu(item: item, onFavorite: onFavorite) }
                 if i < items.count - 1 { Rectangle().fill(Palette.separator).frame(height: 1).padding(.leading, 70) }
             }
@@ -368,6 +488,13 @@ struct VaultRow: View {
                     .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
             }
             Spacer()
+            if item.hasTOTP {
+                // Which logins have a one-time code (the Codes row lists the same items).
+                Text("2FA").font(.caption2.weight(.semibold)).foregroundStyle(Palette.accentText)
+                    .padding(.horizontal, 6).padding(.vertical, 2)
+                    .overlay(Capsule().strokeBorder(Palette.accentText.opacity(0.5)))
+                    .accessibilityLabel(Text("Has a 2FA code"))
+            }
             if item.favorite {
                 Image(systemName: "star.fill").font(.caption).foregroundStyle(Palette.warning).accessibilityLabel("Favorite")
             }
@@ -442,7 +569,16 @@ struct CodeTile: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let _ = context.date
-            Button { if model.copyTOTP() { CopyToast.shared.show(String(localized: "Code copied")) } } label: {
+            Button {
+                // Feature pack §4: the same access-rule check as the detail screen's copy (view only refuses,
+                // re-authenticate and copy once ask the owner).
+                Task {
+                    guard await AccessGate.shared.mayCopy(model.item) else { return }
+                    if model.copyTOTP(clearAfterAtMost: AccessGate.shared.copyLimit(model.item)) {
+                        CopyToast.shared.show(String(localized: "Code copied"))
+                    }
+                }
+            } label: {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         ItemAvatar(item: model.item, size: 20)
@@ -511,18 +647,25 @@ struct QuickActionsMenu: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        let payload = item.record["payload"]?.objectValue ?? [:]
         if !item.username.isEmpty {
-            Button { copy(item.username, String(localized: "Username copied")) } label: { Label("Copy username", systemImage: "person") }
+            // The username is not a secret: copy once neither counts it nor asks for it (feature pack §4.1).
+            Button { Task { if await AccessGate.shared.mayCopy(item, secret: false) { Self.copy(item.username, String(localized: "Username copied")) } } } label: { Label("Copy username", systemImage: "person") }
         }
-        if let password = item.record["password"]?.stringValue ?? (item.kind == "wifi" ? payload["password"]?.stringValue : nil),
-           !password.isEmpty {
-            Button { copy(password, String(localized: "Password copied")) } label: { Label("Copy password", systemImage: "key") }
+        if let password = item.copyablePassword {
+            Button {
+                Task {
+                    guard await AccessGate.shared.mayCopy(item) else { return }
+                    Self.copy(password, String(localized: "Password copied"), clearAfterAtMost: AccessGate.shared.copyLimit(item))
+                }
+            } label: { Label("Copy password", systemImage: "key") }
         }
         if item.hasTOTP {
             Button {
-                let m = ItemDetailModel(item: item, clipboard: SecretClipboard.shared, clock: SystemClock())
-                if m.copyTOTP() { CopyToast.shared.show(String(localized: "Code copied")) }
+                Task {
+                    guard await AccessGate.shared.mayCopy(item) else { return }
+                    let m = ItemDetailModel(item: item, clipboard: SecretClipboard.shared, clock: SystemClock())
+                    if m.copyTOTP(clearAfterAtMost: AccessGate.shared.copyLimit(item)) { CopyToast.shared.show(String(localized: "Code copied")) }
+                }
             } label: { Label("Copy 2FA code", systemImage: "number") }
         }
         if let url = item.openableURL {
@@ -535,13 +678,23 @@ struct QuickActionsMenu: View {
         }
     }
 
-    private func copy(_ text: String, _ message: String) {
-        SecretClipboard.shared.copy(text)
+    /// `limit`: cleared after at most that many seconds (copy once, feature pack §4.1); nil: the user's setting.
+    @MainActor static func copy(_ text: String, _ message: String, clearAfterAtMost limit: Int64? = nil) {
+        if let limit { SecretClipboard.shared.copy(text, clearAfterAtMost: limit) } else { SecretClipboard.shared.copy(text) }
         CopyToast.shared.show(message)
     }
 }
 
 extension VaultItem {
+    /// The password the long-press menu and the row's copy button copy: a login's password, or a Wi-Fi
+    /// network's; nil when empty.
+    var copyablePassword: String? {
+        let payload = record["payload"]?.objectValue ?? [:]
+        guard let password = record["password"]?.stringValue ?? (kind == "wifi" ? payload["password"]?.stringValue : nil),
+              !password.isEmpty else { return nil }
+        return password
+    }
+
     /// An http(s) address to open in Safari: a web login's site or a bookmark.
     var openableURL: URL? {
         let raw: String?

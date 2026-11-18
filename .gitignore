@@ -106,4 +106,31 @@ keystore.properties
 !tests/vectors/**/*.zip
 
 # Local agent reports
-.superpowers/
+
+# Throw-away browser profiles for store screenshots
+docs/store/campaign/prof-*/
+
+# Marketing videos stay local (large binaries)
+docs/marketing/**/*.mp4
+# Any Chromium/Edge/Firefox profile, wherever it lands (cookies, tokens, saved logins)
+**/Secure Preferences
+**/Local State
+**/Login Data*
+**/Cookies
+**/Cookies-journal
+**/Web Data*
+**/Default/Preferences
+**/Default/Cache/
+**/Default/Network/
+**/Default/Local Storage/
+**/Default/IndexedDB/
+**/cookies.sqlite*
+**/logins.json
+**/key4.db
+**/places.sqlite*
+
+# Giveaway / licence code lists and other customer data must never be committed.
+reddit-giveaway-codes.csv
+*giveaway-codes*.csv
+
+.wrangler/

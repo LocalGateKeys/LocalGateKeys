@@ -1,6 +1,8 @@
 /// Synced record namespaces.
 public enum Namespace: String, Sendable {
     case entry, item, license
+    /// The owner's emergency access plan (sub-plan 08), one state `heir:plan` (`Heir`).
+    case heir
 }
 
 /// A record-level sync failure. `reason`: `update-needed`, `bad-remote` (both name `itemID`) or
@@ -29,10 +31,34 @@ public enum Wrapper {
         return 0
     }
 
-    /// Wraps a record; a licence always ranks 0.
+    /// Wraps a record; a licence always ranks 0, the emergency access plan by its `created`.
     public static func make(ns: Namespace, record: JSONValue) -> JSONValue {
-        .object(["ns": .string(ns.rawValue), "schema": .int(schema), "updated_at": .int(ns == .license ? 0 : rank(record)),
-                 "record": record])
+        let updated: Int64
+        switch ns {
+        case .license: updated = 0
+        case .heir:
+            if case .object(let o) = record, case .int(let c)? = o["created"] { updated = c } else { updated = 0 }
+        default: updated = rank(record)
+        }
+        return .object(["ns": .string(ns.rawValue), "schema": .int(schema), "updated_at": .int(updated), "record": record])
+    }
+
+    static func isHeirID(_ id: String) -> Bool { id == Heir.stateID }
+
+    /// The checked synced plan record of a `heir` state (desktop `_unwrap_heir`): the live state is `heir:plan` with
+    /// no `id`; a conflict copy keeps its own id. The record must pass `merge_synced(None, record)` and the wrapper's
+    /// `updated_at` must be the record's `created`.
+    static func unwrapHeir(_ state: ItemState, _ item: [String: JSONValue], isCopy: Bool) throws -> JSONValue {
+        let id = state.itemID
+        func bad(_ d: String) -> RecordError { RecordError("bad-remote", id, d) }
+        if !isCopy && (item["id"] != nil || !isHeirID(id)) { throw bad("malformed emergency access state") }
+        if isCopy && (isHeirID(id) || item["id"] != .string(id)) { throw bad("malformed emergency access state") }
+        let record = item["record"]!
+        do { _ = try Heir.mergeSynced(local: nil, remote: record) } catch { throw bad("malformed emergency access plan") }
+        guard case .object(let r) = record, case .int(let created)? = r["created"], item["updated_at"] == .int(created) else {
+            throw bad("rank does not match its record")
+        }
+        return record
     }
 
     static func nsOf(_ record: [String: JSONValue]) -> Namespace {
@@ -66,10 +92,15 @@ public enum Wrapper {
         if item["ns"] == .string(Namespace.license.rawValue) {
             return (.license, try unwrapLicense(state, item, isCopy: isCopy, keys: licenseKeys))
         }
-        guard case .string(let nsText)? = item["ns"], let ns = Namespace(rawValue: nsText), ns != .license,
-              case .object(var record)? = item["record"], !isLicenseID(id) else {
+        if item["ns"] == .string(Namespace.heir.rawValue) {
+            return (.heir, try unwrapHeir(state, item, isCopy: isCopy))
+        }
+        guard case .string(let nsText)? = item["ns"], let ns = Namespace(rawValue: nsText), ns != .license, ns != .heir,
+              case .object(var record)? = item["record"], !isLicenseID(id), !isHeirID(id) else {
             throw bad("malformed wrapper")
         }
+        // Personal collection states (`col:`, `cm:`, `csl:`) are reserved ids: no entry or item may use one.
+        if CollectionStates.isStateID(id) { throw bad("reserved id") }
         guard case .int(let u)? = item["updated_at"], u == rank(.object(record)) else {
             throw bad("rank does not match its record")
         }

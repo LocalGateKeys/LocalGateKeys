@@ -762,8 +762,64 @@ def test_revoked_device_ids_are_reserved_for_enrollment(session) -> None:
     responder.start_enrollment(offer2, transport)
     _same, reply2 = _enroll(responder, offer2, identity)
     assert reply2 == pairing.enrollment_refusal()
-    assert load_sync_state(session).lan_peers == ()
+    # The entry stays listed as revoked, so the id stays reserved without the running listener.
+    (entry,) = load_sync_state(session).lan_peers
+    assert entry["device_id"] == identity.device_id and entry["revoked"] is True
     assert responder.pairing.attempts == 1
+
+
+def test_a_removed_peer_is_not_dialled_and_is_revoked_on_the_rebuilt_listener(session, monkeypatch) -> None:
+    _lan_group(session)
+    lease = FakeLease()
+    transport = FakeSyncTransport(lan.transport_state(load_sync_state(session), session, lease))
+    responder = lan.LanResponder(session, lease, install_id=INSTALL, clock=lambda: NOW)
+    ids = []
+    for _ in range(2):
+        offer = lan.begin_pairing(session, lease, ENDPOINT.host, ENDPOINT.port, install_id=INSTALL, now=NOW)
+        responder.start_enrollment(offer, transport)
+        identity, reply = _enroll(responder, offer)  # both listen (an endpoint is stored)
+        assert reply is not None
+        ids.append(identity.device_id)
+    kept, gone = ids
+    assert lan.remove_lan_peer(session, lease, gone, install_id=INSTALL, transport=transport)
+    dialled: list[str] = []
+    monkeypatch.setattr(svc, "sync_with", lambda _t, peer_id, *a, **k: dialled.append(peer_id) or RunReport())
+    adapter = svc.LanAdapter(install_id=INSTALL, endpoint=lambda: ENDPOINT, transport_factory=FakeSyncTransport,
+                             clock=FakeClock())
+    service, _sched, worker = _service(session, [adapter])
+    service.on_unlock()
+    worker.drain()
+    assert dialled == [kept]
+    assert gone in adapter.transport.state.revoked_devices and gone not in adapter.transport.state.trusted_peers
+
+
+def test_a_removed_device_id_stays_refused_after_a_restart(session) -> None:
+    """A restart rebuilds the listener from the vault: the removed id (same keys too) is still refused."""
+    _lan_group(session)
+    lease = FakeLease()
+    transport = FakeSyncTransport(lan.transport_state(load_sync_state(session), session, lease))
+    responder = lan.LanResponder(session, lease, install_id=INSTALL, clock=lambda: NOW)
+    offer = lan.begin_pairing(session, lease, ENDPOINT.host, ENDPOINT.port, install_id=INSTALL, now=NOW)
+    responder.start_enrollment(offer, transport)
+    identity, reply = _enroll(responder, offer)
+    assert reply is not None
+    assert lan.remove_lan_peer(session, lease, identity.device_id, install_id=INSTALL, transport=transport)
+    # Restart: a new transport state and responder, both read from the vault only.
+    tstate = lan.transport_state(load_sync_state(session), session, lease)
+    assert identity.device_id in tstate.revoked_devices and identity.device_id not in tstate.trusted_peers
+    transport = FakeSyncTransport(tstate)
+    responder = lan.LanResponder(session, lease, install_id=INSTALL, clock=lambda: NOW)
+    offer2 = lan.begin_pairing(session, lease, ENDPOINT.host, ENDPOINT.port, install_id=INSTALL, now=NOW)
+    responder.start_enrollment(offer2, transport)
+    _same, refused = _enroll(responder, offer2, identity)  # the kept id with its own pinned keys
+    assert refused == pairing.enrollment_refusal()
+    assert responder.pairing.attempts == 1 and not responder.pairing.exhausted
+    # The same device pairing again under a new id is accepted (the revoked entry stays as it is).
+    fresh, accepted = _enroll(responder, offer2)
+    assert accepted is not None and accepted != pairing.enrollment_refusal()
+    peers = {p["device_id"]: p["revoked"] for p in load_sync_state(session).lan_peers}
+    assert peers == {identity.device_id: True, fresh.device_id: False}
+    assert fresh.device_id in tstate.trusted_peers
 
 
 def test_responder_reports_each_merge_a_peer_started(session, monkeypatch) -> None:

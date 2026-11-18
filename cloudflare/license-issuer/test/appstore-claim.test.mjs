@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 
 import { handle } from "../src/index.js";
 import { makeTestCa, transactionPayload } from "./apple-test-ca.mjs";
-import { NOW, makeStoreEnv, postJson, verifyLicence } from "./store-helpers.mjs";
+import { NOW, makeStoreEnv, postJson, revokeKeys, verifyLicence } from "./store-helpers.mjs";
 
 const ca = await makeTestCa();
 const deps = { now: NOW, appleRootSha256: ca.rootSha256 };
@@ -66,7 +66,30 @@ test("revocationDate_403", async () => {
   const env = makeStoreEnv();
   const r = await claim(env, transactionPayload({ revocationDate: NOW - 1000, revocationReason: 0 }));
   assert.equal(r.status, 403);
-  assert.equal(env.CLAIMS.store.appstore_claims.size, 0);
+  // Never claimed: a revoked row with no licence, so no revoke: record and a later claim is refused.
+  const row = env.CLAIMS.store.appstore_claims.get("2000000111111111");
+  assert.equal(row.revoked, 1);
+  assert.equal(row.licence_id, null);
+  assert.deepEqual(revokeKeys(env), []);
+  assert.equal((await claim(env, transactionPayload())).status, 403);
+});
+
+test("revocationDate_claim_records_missed_refund_once (scan F3)", async () => {
+  const env = makeStoreEnv();
+  const lic = verifyLicence((await (await claim(env, transactionPayload())).json()).licence);
+  // The REFUND notification was missed; a later claim carries Apple's signed refund.
+  const refunded = transactionPayload({ revocationDate: NOW - 1000, revocationReason: 0 });
+  assert.equal((await claim(env, refunded)).status, 403);
+  const key = `revoke:${lic.license_id}:refund-2000000111111111`;
+  assert.deepEqual(revokeKeys(env), [key]);
+  const record = env.LICENSES.meta.get(key);
+  assert.equal(record.provider, "appstore");
+  assert.equal(record.revoke, true);
+  assert.equal(record.occurred_at, new Date(NOW - 1000).toISOString());
+  // Repeats overwrite the same record.
+  assert.equal((await claim(env, refunded)).status, 403);
+  assert.deepEqual(revokeKeys(env), [key]);
+  assert.equal(env.CLAIMS.store.appstore_claims.get("2000000111111111").revoked, 1);
 });
 
 test("sandbox_400_unless_APPSTORE_ALLOW_SANDBOX", async () => {
@@ -191,4 +214,13 @@ test("rate_limited_429", async () => {
   const keys = [...env.LICENSES.data.keys()].filter((k) => k.startsWith("store-claim-throttle:"));
   assert.equal(keys.length, 2);
   for (const key of keys) assert.doesNotMatch(key, /203\.0\.113|198\.51/);
+});
+
+test("ipv6_clients_share_one_limit_per_64", async () => {
+  const env = makeStoreEnv();
+  for (let i = 0; i < 20; i++) {
+    assert.equal((await claim(env, "x.y.z", { "CF-Connecting-IP": `2001:db8:1:2::${i.toString(16)}` })).status, 400);
+  }
+  assert.equal((await claim(env, transactionPayload(), { "CF-Connecting-IP": "2001:0db8:0001:0002:ffff:1:2:3" })).status, 429);
+  assert.equal((await claim(env, transactionPayload(), { "CF-Connecting-IP": "2001:db8:1:3::1" })).status, 200);
 });

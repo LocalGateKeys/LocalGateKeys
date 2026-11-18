@@ -29,18 +29,41 @@ struct DetailPanel: View {
     let collectionNames: [String]
     /// Share… (UX workstream 9); nil hides the button (passkeys, attached files).
     let onShare: (() -> Void)?
+    /// "Set expiry from token" (API keys): writes `expires` (`yyyy-MM-dd`) through the editor's save; nil hides the button.
+    let onSetExpiry: ((String) -> SaveResult)?
+    /// In a collection shared with this vault as view only (sub-plan 07): it says so, and the star is off (the window
+    /// also passes no Edit, Delete or Set expiry).
+    let readOnly: Bool
+    /// Feature pack §4.4: setting or tightening access rules needs Pro (`onNeedsPro` shows the upgrade prompt).
+    let pro: Bool
+    let onNeedsPro: () -> Void
+    /// Item history (feature pack §1); nil hides the section.
+    let history: MacItemHistoryModel?
+    /// This Mac's local data (the passkey upgrade card's "Not now", feature pack §6.3); nil hides the card.
+    let local: (any LocalDataHosting)?
     @State private var model: ItemDetailModel
     /// A strict login's code and notes stay hidden until "Show" is confirmed.
     @State private var codeShown = false
     @State private var notesShown = false
+    /// The Wi-Fi QR popover (after the password was revealed).
+    @State private var wifiQRShown = false
+    /// "Set expiry from token" could not be saved.
+    @State private var tokenExpiryFailed = false
+    /// The expiry was written: the stored item is reloaded by the list, this panel keeps its model, so hide the button.
+    @State private var tokenExpirySet = false
+    /// The per-device "Show formatting" switch under a note (Markdown, default on).
+    @AppStorage(NoteFormatting.settingKey) private var showFormatting = true
     @Environment(\.macTheme) private var theme
 
     init(item: VaultItem, clipboard: MacClipboard, gate: StrictItemGate, onToggleFavourite: @escaping () -> Void, onCopied: @escaping (String) -> Void,
          onEdit: (() -> Void)? = nil, onDelete: (() -> Void)? = nil, reminders: RemindersModel? = nil,
          extras: LoginExtrasModel? = nil, store: (any ItemStore)? = nil,
          onExtrasSaved: @escaping () -> Void = {}, onRevealed: @escaping () -> Void = {}, collectionNames: [String] = [],
-         onShare: (() -> Void)? = nil) {
-        self.collectionNames = collectionNames; self.onShare = onShare
+         onShare: (() -> Void)? = nil, onSetExpiry: ((String) -> SaveResult)? = nil, readOnly: Bool = false,
+         pro: Bool = false, onNeedsPro: @escaping () -> Void = {}, history: MacItemHistoryModel? = nil,
+         local: (any LocalDataHosting)? = nil) {
+        self.pro = pro; self.onNeedsPro = onNeedsPro; self.history = history; self.local = local
+        self.collectionNames = collectionNames; self.onShare = onShare; self.onSetExpiry = onSetExpiry; self.readOnly = readOnly
         self.extras = extras; self.store = store; self.onExtrasSaved = onExtrasSaved; self.onRevealed = onRevealed
         self.onEdit = onEdit; self.onDelete = onDelete; self.reminders = reminders
         self.item = item; self.clipboard = clipboard; self.gate = gate
@@ -53,18 +76,19 @@ struct DetailPanel: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header.padding(.bottom, 2)
+                if readOnly {
+                    Label(EditorModel.readOnlyItemText, systemImage: "lock")
+                        .font(.system(size: 13)).foregroundStyle(theme.textMuted).padding(.top, 8)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                accessBanner
+                if item.kind == "web", !readOnly, let store, let local {
+                    MacPasskeyUpgradeCard(item: item, store: store, local: local)
+                }
                 if item.isLogin { loginSections } else { otherSections }
                 if !item.tags.isEmpty || !collectionNames.isEmpty { organised }
                 if let reminders, RemindersModel.canHaveReminder(item) { ReminderSection(item: item, model: reminders) }
-                if let onDelete {
-                    HStack {
-                        Spacer()
-                        Button("Delete", action: onDelete)
-                            .buttonStyle(PillButtonStyle(primary: false)).foregroundStyle(theme.danger)
-                            .help("Move to Recently deleted (⌫)")
-                    }
-                    .padding(.top, 18)
-                }
+                if let history { ItemHistorySection(item: item, model: history, gate: gate, readOnly: readOnly, onRestored: onExtrasSaved) }
             }
             .padding(.horizontal, 18).padding(.vertical, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,6 +99,9 @@ struct DetailPanel: View {
         .font(.system(size: 14))
         .onAppear { extras?.select(item.id) }
         .onChange(of: item.id) { _, id in extras?.select(id) }
+        // Hiding the password (or anything that drops the reveal) closes the QR popover.
+        .onChange(of: model.wifiQRText) { _, text in if text == nil { wifiQRShown = false } }
+        .alert("Couldn't set the expiry.", isPresented: $tokenExpiryFailed) { Button("OK") {} }
         .task(id: item.id) {
             while !Task.isCancelled {
                 model.tick()
@@ -118,16 +145,31 @@ struct DetailPanel: View {
                 .frame(width: 26, height: 26).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(readOnly)
         .help(item.favorite ? String(localized: "Remove from Favourites") : String(localized: "Add to Favourites"))
         .accessibilityLabel(item.favorite ? String(localized: "Remove from Favourites") : String(localized: "Add to Favourites"))
         Button("Edit") { onEdit?() }
             .buttonStyle(PillButtonStyle(primary: false))
             .disabled(onEdit == nil)
-            .help(onEdit == nil ? String(localized: "Edit this item on your PC.") : String(localized: "Edit this item (⌘E)"))
-        if let onShare {
-            Button("Share…", action: onShare)
-                .buttonStyle(PillButtonStyle(primary: false))
-                .help("Share this item with another LocalGateKeys user, sealed with a six-word code")
+            .help(readOnly ? EditorModel.readOnlyItemText
+                  : (onEdit == nil ? String(localized: "detail.edit.unavailable", defaultValue: "This kind of item can't be edited on this Mac yet.")
+                                   : String(localized: "Edit this item (⌘E)")))
+        // Share and Move to Recently deleted sit in the menu beside Edit (UX refresh 2026-11-12).
+        if onShare != nil || onDelete != nil {
+            Menu {
+                if let onShare {
+                    Button(String(localized: "Share…"), action: onShare)
+                }
+                if let onDelete {
+                    Button(String(localized: "Move to Recently deleted"), role: .destructive, action: onDelete)
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle").font(.system(size: 15))
+            }
+            .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+            .foregroundStyle(theme.textMuted)
+            .help(String(localized: "detail.more", defaultValue: "More actions"))
+            .accessibilityLabel(String(localized: "detail.more", defaultValue: "More actions"))
         }
         if let url = ItemActions.website(item) {
             Button("Open website") { NSWorkspace.shared.open(url) }
@@ -153,7 +195,7 @@ struct DetailPanel: View {
     private var organised: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !item.tags.isEmpty { chipRow(String(localized: "Tags"), item.tags.map { "#" + VaultItem.safeDisplay($0) }) }
-            if !collectionNames.isEmpty { chipRow(String(localized: "Collections"), collectionNames.map { VaultItem.safeDisplay($0) }) }
+            if !collectionNames.isEmpty { chipRow(String(localized: "Collections"), collectionNames.map { VaultItem.safeDisplay(CollectionCatalog.displayName($0)) }) }
         }
         .padding(.top, 14)
     }
@@ -185,22 +227,31 @@ struct DetailPanel: View {
 
     @ViewBuilder private var loginSections: some View {
         let fields = Dictionary(model.fields.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        if fields["username"] != nil || fields["password"] != nil || model.totp != nil {
+        // Windows order: the live code first, under the header; then username, password and website together.
+        if let totp = model.totp {
+            SectionLabel(String(localized: "One-time code"))
+            codeRow(totp)
+        }
+        if fields["username"] != nil || fields["password"] != nil || fields["target"] != nil {
             SectionLabel(String(localized: "Sign-in"))
             if let f = fields["username"] { fieldRow(f) }
             if let f = fields["password"] { fieldRow(f) }
-            if let totp = model.totp { codeRow(totp) }
-        }
-        if let f = fields["target"] {
-            SectionLabel(item.kind == "web" ? String(localized: "Website") : String(localized: "Application"))
-            if item.kind == "web", let url = ItemActions.website(item) {
-                Button { NSWorkspace.shared.open(url) } label: {
-                    Text(f.value).foregroundStyle(theme.link).lineLimit(1).truncationMode(.middle)
+            if let f = fields["target"] {
+                KeyValueRow(label: item.kind == "web" ? String(localized: "Website") : String(localized: "Application")) {
+                    if item.kind == "web", let url = ItemActions.website(item) {
+                        Button { NSWorkspace.shared.open(url) } label: {
+                            Text(f.value).foregroundStyle(theme.link).lineLimit(1).truncationMode(.middle)
+                        }
+                        .buttonStyle(.plain).help("Open website")
+                    } else {
+                        Text(f.value).textSelection(.enabled).lineLimit(1).truncationMode(.middle)
+                    }
+                } actions: {
+                    CopyButton(label: item.kind == "web" ? String(localized: "Website") : String(localized: "Application")) {
+                        clipboard.copy(f.value, concealed: false)
+                        onCopied(item.kind == "web" ? String(localized: "Website") : String(localized: "Application"))
+                    }
                 }
-                .buttonStyle(.plain).padding(.vertical, 6)
-                .help("Open website")
-            } else {
-                Text(f.value).textSelection(.enabled).padding(.vertical, 6)
             }
         }
         SectionLabel(String(localized: "Notes"))
@@ -213,9 +264,15 @@ struct DetailPanel: View {
             }
             .padding(.vertical, 6)
         } else if let f = fields["notes"] {
-            Text(f.value).textSelection(.enabled).padding(.vertical, 6)
+            noteBody(f)
         } else {
             Text("No notes").foregroundStyle(theme.textMuted).padding(.vertical, 6)
+        }
+        if let store, !readOnly {
+            AutofillRulesSection(item: item, store: store, gate: gate, onSaved: onExtrasSaved)
+            if item.kind == "web" {
+                AccessRulesSection(item: item, store: store, gate: gate, pro: pro, onNeedsPro: onNeedsPro, onSaved: onExtrasSaved)
+            }
         }
         if let extras {
             LoginExtrasSections(item: item, model: extras, gate: gate, clipboard: clipboard, store: store,
@@ -236,16 +293,111 @@ struct DetailPanel: View {
             ForEach(rest) { fieldRow($0) }
             if let totp = model.totp { codeRow(totp) }
         }
+        ForEach(rest) { field in
+            if let info = model.token(for: field) { tokenSection(info, field: field) }
+        }
+        if item.kind == "wifi" { wifiQRRow }
         if let notes {
             SectionLabel(notes.label == "Body" ? String(localized: "Notes") : notes.label)
-            Text(notes.value).textSelection(.enabled).padding(.vertical, 6)
+            noteBody(notes)
         }
         if model.fields.isEmpty && model.totp == nil && item.kind != AttachmentDocuments.kind {
             Text("Nothing saved in this item yet.").foregroundStyle(theme.textMuted).padding(.vertical, 14)
         }
     }
 
+    /// The decoded token of a revealed API-key value: read-only, signature not checked.
+    @ViewBuilder private func tokenSection(_ info: JWTInfo, field: DetailField) -> some View {
+        let both = model.fields.filter { model.token(for: $0) != nil }.count > 1
+        SectionLabel(both ? "\(String(localized: "Token")) · \(field.label)" : String(localized: "Token"))
+        ForEach(model.tokenRows(info)) { row in
+            KeyValueRow(label: row.label) {
+                HStack(spacing: 8) {
+                    Text(row.value).textSelection(.enabled)
+                    if row.expired { Text("Expired").font(.system(size: 12, weight: .semibold)).foregroundStyle(theme.danger) }
+                }
+            } actions: {}
+        }
+        Text("Signature not checked").font(.system(size: 12)).foregroundStyle(theme.textMuted).padding(.top, 6)
+        if let onSetExpiry, !tokenExpirySet, model.canSetExpiry(from: info), let date = ItemDetailModel.expiryDate(info) {
+            HStack {
+                Button("Set expiry from token") {
+                    switch onSetExpiry(date) {
+                    case .saved, .unchanged: tokenExpirySet = true
+                    default: tokenExpiryFailed = true
+                    }
+                }
+                .buttonStyle(PillButtonStyle(primary: false))
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 8)
+        }
+    }
+
+    /// Show QR for a Wi-Fi network: revealing the password (with its re-authentication) is the permission;
+    /// enterprise types have no QR.
+    @ViewBuilder private var wifiQRRow: some View {
+        if model.offersWifiQR {
+            HStack {
+                Button("Show QR", action: showWifiQR)
+                    .buttonStyle(PillButtonStyle(primary: false))
+                    .popover(isPresented: $wifiQRShown, arrowEdge: .bottom) {
+                        if let text = model.wifiQRText { WifiQRPopover(text: text) }
+                    }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 10)
+        } else {
+            Text("Enterprise networks can't be shared with a QR code.")
+                .font(.system(size: 12)).foregroundStyle(theme.textMuted).padding(.top, 10)
+        }
+    }
+
+    private func showWifiQR() {
+        Self.requestWifiQR(model: model, item: item, gate: gate) { wifiQRShown = $0 }
+    }
+
+    /// The password is revealed through the gate (strict items ask for the master password first), then
+    /// `completion(true)` says the QR may be shown. Until the gate runs its action `wifiQRText` stays nil.
+    static func requestWifiQR(model: ItemDetailModel, item: VaultItem, gate: StrictItemGate,
+                              completion: @escaping (Bool) -> Void) {
+        guard let pw = model.wifiPasswordField, !model.isRevealed(pw) else { completion(model.wifiQRText != nil); return }
+        gate.release(item, action: String(localized: "Show QR")) {
+            model.toggleReveal(pw)
+            completion(model.wifiQRText != nil)
+        }
+    }
+
     private var strict: Bool { StrictItemGate.isStrict(item) }
+    /// Feature pack §4: the item's access rules on this Mac.
+    private var rules: AccessRules.Effective { MacAccess.rules(item.record) }
+
+    /// An expired rule or one from a newer version (§4.2): says that every use asks for the master password.
+    @ViewBuilder private var accessBanner: some View {
+        if item.isLogin, let text = MacAccess.banner(rules) {
+            Label(text, systemImage: rules.unknownRule ? "lock.shield" : "clock.badge.exclamationmark")
+                .font(.system(size: 13)).foregroundStyle(theme.textMuted).padding(.top, 8)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// A note's text (only called once it may be shown): Markdown when the switch under it is on, else plain.
+    @ViewBuilder private func noteBody(_ field: DetailField) -> some View {
+        let isNote = NoteFormatting.formats(kind: item.kind, fieldId: field.id)
+        VStack(alignment: .leading, spacing: 6) {
+            if isNote && showFormatting {
+                MarkdownNoteView(text: field.value,
+                                 colors: MarkdownNoteColors(text: theme.text, secondary: theme.textMuted, accent: theme.link,
+                                                            codeBackground: theme.chip),
+                                 selectable: true)
+            } else {
+                Text(field.value).textSelection(.enabled)
+            }
+            if isNote { ShowFormattingToggle(isOn: $showFormatting).controlSize(.small) }
+        }
+        .padding(.vertical, 6)
+    }
 
     // MARK: rows
 
@@ -255,8 +407,8 @@ struct DetailPanel: View {
             if masked {
                 Text(model.displayValue(field)).font(.system(size: 14, design: .monospaced)).lineLimit(1)
             } else {
-                // A strict login's values leave only through the gated copy buttons.
-                if strict {
+                // A strict or copy-once login's values leave only through the gated copy buttons.
+                if strict || rules.copyOnce {
                     Text(field.value).textSelection(.disabled)
                         .lineLimit(field.isMultiline ? nil : 1).truncationMode(.middle)
                 } else {
@@ -273,9 +425,18 @@ struct DetailPanel: View {
                     .buttonStyle(.plain).foregroundStyle(theme.link)
             }
             CopyButton(label: field.label) {
-                release(field, String(localized: "Copy \(EditorKind.midSentence(field.label))")) {
-                    clipboard.copy(field.value, concealed: field.isSecret)
-                    onCopied(field.label)
+                if field.isSecret {
+                    // Copy once (feature pack §4.1) counts every secret of the item.
+                    gate.releaseCopy(item, action: String(localized: "Copy \(EditorKind.midSentence(field.label))"),
+                                     routine: item.isLogin && field.id == "password") { limit in
+                        clipboard.copy(field.value, concealed: true, limit: limit)
+                        onCopied(field.label)
+                    }
+                } else {
+                    release(field, String(localized: "Copy \(EditorKind.midSentence(field.label))")) {
+                        clipboard.copy(field.value, concealed: false)
+                        onCopied(field.label)
+                    }
                 }
             }
         }
@@ -305,9 +466,11 @@ struct DetailPanel: View {
                     .buttonStyle(.plain).foregroundStyle(theme.link)
             }
             CopyButton(label: String(localized: "One-time code")) {
-                gate.release(item, action: String(localized: "Copy one-time code")) {
+                gate.releaseCopy(item, action: String(localized: "Copy one-time code")) { limit in
+                    // Settings › Locking › Ask before releasing 2FA codes (Windows `totp_confirm`).
+                    guard MacTOTPConfirm.allow(title: item.title) else { return }
                     // The code current when the password is confirmed.
-                    clipboard.copy(model.totp?.code ?? totp.code, concealed: true)
+                    clipboard.copy(model.totp?.code ?? totp.code, concealed: true, limit: limit)
                     onCopied(String(localized: "Code"))
                 }
             }
@@ -342,13 +505,16 @@ struct KeyValueRow<Value: View, Actions: View>: View {
     @Environment(\.macTheme) private var theme
 
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Text(label).font(.system(size: 13)).foregroundStyle(theme.textMuted)
-                .frame(width: 120, alignment: .leading).lineLimit(1)
-            value.frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 12) { actions }
+        // UX refresh 2026-11-12: the label above the value, the actions on the value's line.
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label).font(.system(size: 12)).foregroundStyle(theme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .center, spacing: 10) {
+                value.frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 12) { actions }
+            }
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 }
 
@@ -360,8 +526,11 @@ struct CopyButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "doc.on.doc").font(.system(size: 13)).foregroundStyle(theme.link)
-                .frame(width: 22, height: 22).contentShape(Rectangle())
+            Label(String(localized: "detail.copy", defaultValue: "Copy"), systemImage: "doc.on.doc")
+                .labelStyle(.titleAndIcon)
+                .font(.system(size: 12.5)).foregroundStyle(theme.link)
+                .fixedSize()
+                .frame(minHeight: 22).contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(String(localized: "Copy \(EditorKind.midSentence(label))"))
@@ -402,5 +571,32 @@ struct CopiedToast: View {
             .overlay(Capsule().strokeBorder(theme.panelBorder))
             .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
             .accessibilityAddTraits(.updatesFrequently)
+    }
+}
+
+/// The Wi-Fi QR code in a popover. The image is made when it opens and dropped when it closes.
+private struct WifiQRPopover: View {
+    let text: String
+    @State private var image: NSImage?
+    @Environment(\.macTheme) private var theme
+
+    var body: some View {
+        VStack(spacing: 12) {
+            if let image {
+                Image(nsImage: image).interpolation(.none).resizable().scaledToFit()
+                    .frame(width: 240, height: 240)
+                    .accessibilityHidden(true)
+            }
+            Text("The image contains the Wi-Fi password. Only show it to people you want to connect.")
+                .font(.system(size: 12)).foregroundStyle(theme.textMuted).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("This code does not expire: anyone who scans or photographs it keeps the Wi-Fi password. Change the Wi-Fi password to take it back.")
+                .font(.system(size: 12)).foregroundStyle(theme.textMuted).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .frame(width: 280)
+        .onAppear { image = QRImage.make(text, side: 240) }
+        .onDisappear { image = nil }
     }
 }

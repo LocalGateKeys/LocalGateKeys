@@ -124,12 +124,44 @@ export function encodePaste(bundle) {
   return `LGK1-${toBase64Url(encoder.encode(canonicalJson(bundle)))}`;
 }
 
+// The licence-signing key every client trusts for licences. Public, so pinning
+// it costs nothing; it stops a wrong secret (above all the release key, which
+// signs update manifests and revocation lists) from ever signing here.
+export const LICENSE_KEY_ID = "9f76e21ed03c0482";
+// Release-signing key ids: always refused, whatever LICENSE_KEY_ID_OVERRIDE says.
+export const RELEASE_KEY_IDS = Object.freeze(["6a892769c82386b3"]);
+
+// The key id issueBundle insists on. LICENSE_KEY_ID_OVERRIDE (a non-secret var,
+// set only by the tests and by test deployments with their own key) replaces
+// the pin, but never with a release key id or the empty string.
+export function expectedLicenseKeyId(env = {}) {
+  const override = typeof env.LICENSE_KEY_ID_OVERRIDE === "string" ? env.LICENSE_KEY_ID_OVERRIDE.trim() : "";
+  if (override === "") return LICENSE_KEY_ID;
+  if (RELEASE_KEY_IDS.includes(override) || !/^[0-9a-f]{16}$/.test(override)) {
+    throw new Error(`LICENSE_KEY_ID_OVERRIDE ${override} refused`);
+  }
+  return override;
+}
+
 // Signs with the key itself: key_id is derived from it, and the result is checked
 // against the derived public key, so a bad key throws instead of selling a dud.
-export async function issueBundle(license, pkcs8Base64) {
+// The derived key id must be the pinned licence key (see expectedLicenseKeyId).
+export async function issueBundle(license, pkcs8Base64, env = {}) {
   const privateKey = await importPrivateKey(pkcs8Base64);
   const publicRaw = await publicRawFromPrivate(privateKey);
-  const bundle = await signLicense(license, privateKey, await keyIdForPublic(publicRaw));
+  const keyId = await keyIdForPublic(publicRaw);
+  let expected;
+  try {
+    expected = expectedLicenseKeyId(env);
+  } catch (error) {
+    console.error(`license-issuer: ${error.message}; refusing to sign`);
+    throw error;
+  }
+  if (keyId !== expected || RELEASE_KEY_IDS.includes(keyId)) {
+    console.error(`license-issuer: LICENSE_PRIVATE_KEY has key id ${keyId}, expected ${expected}; refusing to sign`);
+    throw new Error(`licence key id ${keyId} is not the pinned licence key`);
+  }
+  const bundle = await signLicense(license, privateKey, keyId);
   const publicKey = await crypto.subtle.importKey("raw", publicRaw, { name: "Ed25519" }, false, ["verify"]);
   const ok = await crypto.subtle.verify(
     { name: "Ed25519" },

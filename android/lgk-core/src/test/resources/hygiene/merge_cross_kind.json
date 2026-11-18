@@ -1,0 +1,859 @@
+{
+ "merge": [
+  {
+   "expected": {
+    "favorite": true,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes\n\ndesk notes",
+    "password": "web-pw",
+    "password_history": [
+     {
+      "changed_at": 1800000000,
+      "password": "desk-pw"
+     }
+    ],
+    "policy": {
+     "fill": "never",
+     "require_master_password": true
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "copy": "once",
+      "expires": "2027-01-31",
+      "phones": "view"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 1800000000,
+    "username": "ana"
+   },
+   "keeper": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   },
+   "name": "web keeper, desktop other: web addresses unchanged, stricter rules, history, totp, codes",
+   "now": 1800000000,
+   "other": {
+    "favorite": true,
+    "id": "d1",
+    "kind": "desktop",
+    "label": "Example app",
+    "notes": "desk notes",
+    "password": "desk-pw",
+    "policy": {
+     "fill": "never",
+     "require_master_password": true,
+     "sign_in": "never"
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "expires": "2027-01-31",
+      "phones": "view"
+     },
+     "app": "example.exe"
+    },
+    "tags": [
+     "work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 50,
+    "username": "ana"
+   }
+  },
+  {
+   "expected": {
+    "favorite": true,
+    "id": "d1",
+    "kind": "desktop",
+    "label": "Example app",
+    "notes": "desk notes\n\nweb notes",
+    "password": "desk-pw",
+    "password_history": [
+     {
+      "changed_at": 1800000000,
+      "password": "web-pw"
+     }
+    ],
+    "policy": {
+     "fill": "never",
+     "require_master_password": true,
+     "sign_in": "never"
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "copy": "once",
+      "expires": "2027-01-31",
+      "phones": "view"
+     },
+     "app": "example.exe"
+    },
+    "tags": [
+     "work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 1800000000,
+    "username": "ana"
+   },
+   "keeper": {
+    "favorite": true,
+    "id": "d1",
+    "kind": "desktop",
+    "label": "Example app",
+    "notes": "desk notes",
+    "password": "desk-pw",
+    "policy": {
+     "fill": "never",
+     "require_master_password": true,
+     "sign_in": "never"
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "expires": "2027-01-31",
+      "phones": "view"
+     },
+     "app": "example.exe"
+    },
+    "tags": [
+     "work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 50,
+    "username": "ana"
+   },
+   "name": "desktop keeper, web other: no address rows added, keeper scope kept",
+   "now": 1800000000,
+   "other": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   }
+  },
+  {
+   "expected": {
+    "favorite": true,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes\n\ndesk notes",
+    "password": "web-pw",
+    "password_history": [
+     {
+      "changed_at": 1800000000,
+      "password": "desk-pw"
+     }
+    ],
+    "policy": {
+     "fill": "never",
+     "require_master_password": true
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com",
+     "urls": [
+      {
+       "match": "exact_origin",
+       "url": "https://example.com"
+      },
+      {
+       "match": "exact_origin",
+       "url": "https://app.example.net"
+      }
+     ]
+    },
+    "tags": [
+     "Work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 1800000000,
+    "username": "ana"
+   },
+   "keeper": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   },
+   "name": "web keeper gains a desktop login's origin as a row",
+   "now": 1800000000,
+   "other": {
+    "favorite": true,
+    "id": "d1",
+    "kind": "desktop",
+    "label": "Example app",
+    "notes": "desk notes",
+    "password": "desk-pw",
+    "policy": {
+     "fill": "never",
+     "require_master_password": true,
+     "sign_in": "never"
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "app": "x.exe",
+     "origin": "https://app.example.net"
+    },
+    "tags": [
+     "work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 50,
+    "username": "ana"
+   }
+  },
+  {
+   "expected": {
+    "favorite": true,
+    "id": "w2",
+    "kind": "web",
+    "notes": "desk notes",
+    "password": "web-pw",
+    "password_history": [
+     {
+      "changed_at": 1800000000,
+      "password": "desk-pw"
+     }
+    ],
+    "policy": {
+     "fill": "never",
+     "require_master_password": true
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "expires": "2027-01-31",
+      "phones": "view"
+     },
+     "origin": "https://example.com",
+     "urls": [
+      {
+       "match": "exact_origin",
+       "url": "https://example.com"
+      },
+      {
+       "match": "weird",
+       "url": "https://login.example.com"
+      }
+     ]
+    },
+    "tags": [
+     "work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 1800000000,
+    "username": "ana"
+   },
+   "keeper": {
+    "id": "w2",
+    "kind": "web",
+    "password": "web-pw",
+    "scope": {
+     "origin": "https://example.com",
+     "urls": [
+      {
+       "match": "exact_origin",
+       "url": "https://example.com"
+      },
+      {
+       "match": "weird",
+       "url": "https://login.example.com"
+      }
+     ]
+    },
+    "totp": "",
+    "updated_at": 1,
+    "username": "ana"
+   },
+   "name": "unknown match reads exact_origin; empty keeper totp takes the other's",
+   "now": 1800000000,
+   "other": {
+    "favorite": true,
+    "id": "d1",
+    "kind": "desktop",
+    "label": "Example app",
+    "notes": "desk notes",
+    "password": "desk-pw",
+    "policy": {
+     "fill": "never",
+     "require_master_password": true,
+     "sign_in": "never"
+    },
+    "recovery_codes": [
+     "a1",
+     "b2"
+    ],
+    "scope": {
+     "access": {
+      "expires": "2027-01-31",
+      "phones": "view"
+     },
+     "app": "example.exe"
+    },
+    "tags": [
+     "work",
+     "Desktop"
+    ],
+    "totp": {
+     "secret": "JBSWY3DPEHPK3PXP"
+    },
+    "updated_at": 50,
+    "username": "ana"
+   }
+  },
+  {
+   "error": "not_mergeable",
+   "keeper": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   },
+   "name": "login with a typed item refuses",
+   "now": 1800000000,
+   "other": {
+    "id": "n1",
+    "kind": "note",
+    "payload": {
+     "notes": "x"
+    },
+    "title": "N",
+    "updated_at": 1
+   }
+  },
+  {
+   "error": "not_mergeable",
+   "keeper": {
+    "id": "n1",
+    "kind": "note",
+    "payload": {
+     "notes": "x"
+    },
+    "title": "N",
+    "updated_at": 1
+   },
+   "name": "typed items of different kinds refuse",
+   "now": 1800000000,
+   "other": {
+    "id": "c1",
+    "kind": "card",
+    "title": "C",
+    "updated_at": 1
+   }
+  },
+  {
+   "expected": {
+    "collection_ids": [],
+    "favorite": false,
+    "id": "c1",
+    "kind": "card",
+    "payload": {},
+    "title": "C",
+    "updated_at": 1800000000
+   },
+   "keeper": {
+    "id": "c1",
+    "kind": "card",
+    "title": "C",
+    "updated_at": 1
+   },
+   "name": "typed keeper without payload gets one; favorite false kept; null collections become a list",
+   "now": 1800000000,
+   "other": {
+    "collection_ids": null,
+    "favorite": false,
+    "id": "c2",
+    "kind": "card",
+    "payload": {
+     "number": "1"
+    },
+    "title": "C",
+    "updated_at": 2
+   }
+  },
+  {
+   "expected": {
+    "favorite": false,
+    "id": "h1",
+    "kind": "web",
+    "notes": "web notes",
+    "password": "p0",
+    "password_history": [
+     {
+      "changed_at": 1800000000,
+      "password": "web-pw"
+     },
+     {
+      "password": "p-x"
+     },
+     {
+      "changed_at": 1799999990,
+      "extra": 1,
+      "password": "p-new"
+     }
+    ],
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://h.example",
+     "urls": [
+      {
+       "match": "exact_origin",
+       "url": "https://h.example"
+      },
+      {
+       "match": "exact_origin",
+       "url": "https://example.com"
+      }
+     ]
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 1800000000
+   },
+   "keeper": {
+    "id": "h1",
+    "kind": "web",
+    "password": "p0",
+    "password_history": [
+     {
+      "changed_at": 1765440000,
+      "password": "p-old"
+     },
+     {
+      "password": "p-x"
+     },
+     "junk",
+     {
+      "changed_at": 1799999990,
+      "extra": 1,
+      "password": "p-new"
+     }
+    ],
+    "scope": {
+     "origin": "https://h.example"
+    }
+   },
+   "name": "password history: old rows aged out, rows without a date kept, non-objects dropped",
+   "now": 1800000000,
+   "other": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   }
+  },
+  {
+   "error": "too_many_tags",
+   "keeper": {
+    "id": "t1",
+    "kind": "web",
+    "password": "",
+    "scope": {
+     "origin": "https://t.example"
+    },
+    "tags": [
+     "",
+     "x"
+    ]
+   },
+   "name": "an empty tag refuses like the normaliser",
+   "now": 1800000000,
+   "other": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   }
+  },
+  {
+   "error": "too_many_tags",
+   "keeper": {
+    "id": "t2",
+    "kind": "web",
+    "password": "",
+    "scope": {
+     "origin": "https://t.example"
+    },
+    "tags": [
+     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ]
+   },
+   "name": "a tag over 40 characters refuses",
+   "now": 1800000000,
+   "other": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "access": {
+      "copy": "once"
+     },
+     "origin": "https://example.com"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   }
+  },
+  {
+   "expected": {
+    "id": "p1",
+    "kind": "web",
+    "password": "",
+    "policy": {
+     "require_master_password": true,
+     "save_prompts": true
+    },
+    "scope": {
+     "origin": "https://p.example"
+    },
+    "updated_at": 1800000000
+   },
+   "keeper": {
+    "id": "p1",
+    "kind": "web",
+    "password": "",
+    "policy": {
+     "require_master_password": "yes",
+     "save_prompts": true
+    },
+    "scope": {
+     "origin": "https://p.example"
+    }
+   },
+   "name": "keeper's non-boolean re-authenticate written as true; other's loose policy copies nothing",
+   "now": 1800000000,
+   "other": {
+    "id": "p2",
+    "kind": "web",
+    "password": "",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false,
+     "sign_in": "enabled"
+    },
+    "scope": {
+     "origin": "https://p.example"
+    }
+   }
+  },
+  {
+   "expected": {
+    "id": "p2",
+    "kind": "web",
+    "password": "",
+    "policy": {
+     "fill": "never"
+    },
+    "scope": {
+     "origin": "https://p.example"
+    },
+    "updated_at": 1800000000
+   },
+   "keeper": {
+    "id": "p2",
+    "kind": "web",
+    "password": "",
+    "policy": null,
+    "scope": {
+     "origin": "https://p.example"
+    }
+   },
+   "name": "no keeper policy: only the other's tightening is taken",
+   "now": 1800000000,
+   "other": {
+    "id": "p3",
+    "kind": "desktop",
+    "password": "",
+    "policy": {
+     "fill": "auto",
+     "sign_in": "enabled"
+    },
+    "scope": {}
+   }
+  },
+  {
+   "expected": {
+    "favorite": false,
+    "id": "a1",
+    "kind": "web",
+    "notes": "web notes",
+    "password": "",
+    "password_history": [
+     {
+      "changed_at": 1800000000,
+      "password": "web-pw"
+     }
+    ],
+    "scope": {
+     "origin": "https://a.example"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 1800000000
+   },
+   "keeper": {
+    "id": "a1",
+    "kind": "web",
+    "password": "",
+    "scope": {
+     "access": {
+      "copy": "normal"
+     },
+     "origin": "https://a.example"
+    }
+   },
+   "name": "access left at defaults is removed",
+   "now": 1800000000,
+   "other": {
+    "favorite": false,
+    "id": "w1",
+    "kind": "web",
+    "label": "Example",
+    "notes": "web notes",
+    "password": "web-pw",
+    "policy": {
+     "fill": "click",
+     "require_master_password": false
+    },
+    "scope": {
+     "origin": "https://a.example"
+    },
+    "tags": [
+     "Work"
+    ],
+    "updated_at": 100,
+    "username": "ana"
+   }
+  }
+ ],
+ "stricter_policy": [
+  {
+   "a": null,
+   "b": {
+    "fill": "never",
+    "x": 1
+   },
+   "expected": {
+    "fill": "never"
+   }
+  },
+  {
+   "a": "text",
+   "b": {
+    "require_master_password": true
+   },
+   "expected": {
+    "require_master_password": true
+   }
+  },
+  {
+   "a": "text",
+   "b": null,
+   "expected": null
+  },
+  {
+   "a": {
+    "fill": "click",
+    "k": 1
+   },
+   "b": "text",
+   "expected": {
+    "fill": "click",
+    "k": 1
+   }
+  },
+  {
+   "a": null,
+   "b": {
+    "fill": "click"
+   },
+   "expected": null
+  },
+  {
+   "a": {},
+   "b": {},
+   "expected": {}
+  },
+  {
+   "a": {
+    "require_master_password": null
+   },
+   "b": null,
+   "expected": {
+    "require_master_password": true
+   }
+  }
+ ]
+}

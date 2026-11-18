@@ -68,12 +68,13 @@ class RecordingForm:
 def _app(**overrides):
     calls: list = []
     names = ("hello_settings_clicked", "face_settings_clicked", "change_master_clicked", "recovery_center_clicked",
-             "check_updates_clicked", "show_shortcuts_clicked", "onboarding_clicked", "connections_clicked",
-             "open_error_log_clicked", "licence_clicked", "sync_clicked")
+             "check_updates_clicked", "show_shortcuts_clicked", "onboarding_clicked", "connections_clicked", "passkey_doctor_clicked",
+             "open_error_log_clicked", "licence_clicked", "sync_clicked", "developer_clicked")
     app = SimpleNamespace(calls=calls, **{name: (lambda *a, n=name, **k: calls.append((n, a, k))) for name in names})
     app._unlock_methods = lambda: SimpleNamespace(hello_available=True, hello_enrolled=False, recovery_phrase=True)
     app._settings_face_state = lambda: {"label": "Set up", "status": "Not set up"}
-    app._settings_backup_state = lambda: {"has_password": True, "status": "Next backup tomorrow 08:30"}
+    app._settings_backup_state = lambda: {"has_password": True, "has_key": True, "set_by": "set", "set_at": 1793000000,
+                                         "status": "Next backup tomorrow 08:30"}
     app._settings_backup_password_action = lambda *a, **k: calls.append(("backup_password", a, k))
     for key, value in overrides.items():
         setattr(app, key, value)
@@ -91,8 +92,8 @@ def _all_keys() -> list[str]:
 
 def test_built_in_sections_follow_the_mockup_order():
     assert [s.title_text for s in sections()] == ["Locking", "Unlocking", "Privacy", "Autofill", "Appearance & app",
-                                             "Backups", "Plan & sync", "Help & diagnostics"]
-    assert [s.column for s in sections()] == [0, 0, 0, 1, 1, 1, 1, 1]
+                                             "Backups", "Plan & sync", "Developer", "Help & diagnostics"]
+    assert [s.column for s in sections()] == [0, 0, 0, 1, 1, 1, 1, 1, 1]
 
 
 def test_every_editable_preference_appears_exactly_once():
@@ -102,7 +103,8 @@ def test_every_editable_preference_appears_exactly_once():
                 "scheduled_backup_frequency", "scheduled_backup_time", "backup_mirror_dir"}
     keys = _all_keys()
     assert sorted(keys) == sorted(set(keys)), "a preference is shown twice"
-    assert set(keys) == editable
+    # The Windows passkey provider switch shows only in the packaged build on a supported Windows.
+    assert set(keys) == editable - {"windows_passkey_provider"}
     stored = {f.name for f in fields(AppSettings)}
     assert set(keys) <= stored
 
@@ -154,10 +156,10 @@ def test_buttons_call_the_existing_app_actions():
     for name in ("hello_settings_clicked", "face_settings_clicked", "change_master_clicked",
                  "recovery_center_clicked", "check_updates_clicked", "show_shortcuts_clicked",
                  "onboarding_clicked", "open_error_log_clicked", "backup_password",
-                 "licence_clicked", "sync_clicked"):
+                 "licence_clicked", "sync_clicked", "developer_clicked"):
         assert name in called, name
-    clears = [k for name, _a, k in app.calls if name == "backup_password"]
-    assert {"clear": False} in clears and {"clear": True} in clears
+    modes = [k for name, _a, k in app.calls if name == "backup_password"]
+    assert {"mode": "change"} in modes and {"mode": "remove"} in modes
 
 
 def test_unlocking_reflects_status_and_hides_hello_where_unavailable():
@@ -210,3 +212,43 @@ def test_recorded_link_rows_are_web_pages_only():
     assert form.rows == [{"type": "link", "title": "Privacy policy", "description": "How LocalGateKeys handles your data",
                           "label": "Open", "url": "https://localgatekeys.app/legal/privacy.html"}]
 
+
+def test_quick_access_palette_switch_is_in_autofill_and_on_by_default():
+    assert AppSettings().quick_access_palette is True
+    autofill = next(s for s in sections() if s.key == "autofill")
+    form = RecordingForm()
+    autofill.build(form)
+    assert ("switch", "quick_access_palette") in form.keys
+
+
+def _autofill_keys(monkeypatch, available: bool) -> list:
+    from localvault import windows_passkey_provider
+
+    monkeypatch.setattr(windows_passkey_provider, "available", lambda: available)
+    autofill = next(s for s in sections() if s.key == "autofill")
+    form = RecordingForm()
+    autofill.build(form)
+    return form.keys
+
+
+def test_switch_hidden_when_unavailable(monkeypatch):
+    assert AppSettings().windows_passkey_provider is False  # off by default
+    assert ("switch", "windows_passkey_provider") not in _autofill_keys(monkeypatch, False)
+
+
+def test_switch_shown_when_available(monkeypatch):
+    keys = _autofill_keys(monkeypatch, True)
+    index = keys.index(("switch", "windows_passkey_provider"))
+    assert keys[index - 1] == ("switch", "passkeys_enabled")  # right after the passkeys switch
+
+
+def test_unlocking_offers_the_duress_password_without_leaking_it():
+    off = RecordingForm(_app(_settings_duress_state=lambda: 0))
+    registry.build_unlocking(off)
+    assert off.buttons["Duress password"][0] == "Set up"
+    on = RecordingForm(_app(_settings_duress_state=lambda: 24))
+    registry.build_unlocking(on)
+    assert on.buttons["Duress password"][0] == "Manage"
+    locked = RecordingForm(_app(_settings_duress_state=lambda: None))
+    registry.build_unlocking(locked)
+    assert "Duress password" not in locked.buttons

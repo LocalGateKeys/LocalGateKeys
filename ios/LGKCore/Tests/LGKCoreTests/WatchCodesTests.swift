@@ -70,4 +70,66 @@ final class WatchCodesTests: XCTestCase {
         let wire = #"{"v":1,"op":"replace","codes":\#(String(decoding: try JSONEncoder().encode(dup), as: UTF8.self))}"#
         XCTAssertThrowsError(try WatchMessage.decode(Data(wire.utf8)), "duplicate ids are refused")
     }
+
+    /// Sub-plan 06: the send order travels with the message; the stored copy (no sequence) keeps its old bytes.
+    func testSequenceRoundTripAndStoredFormat() throws {
+        let c = WatchCode(id: "a", title: "A", secret: rfcSecret)
+        let sent = try WatchMessage.sequenced(from: try WatchMessage.replace([c]).userInfo(sequence: 42))
+        XCTAssertEqual(sent.message, .replace([c]))
+        XCTAssertEqual(sent.sequence, 42)
+        XCTAssertEqual(try WatchMessage.decodeSequenced(try WatchMessage.forget.encoded(sequence: 7)).sequence, 7)
+        let stored = try WatchMessage.replace([c]).encoded()
+        XCTAssertFalse(String(decoding: stored, as: UTF8.self).contains("seq"))
+        XCTAssertNil(try WatchMessage.decodeSequenced(stored).sequence)
+        XCTAssertEqual(try WatchMessage.decodeSequenced(Data(#"{"v":1,"op":"forget"}"#.utf8)).message, .forget)
+    }
+
+    func testNextSequenceAlwaysRises() {
+        let now = Date(timeIntervalSince1970: 1_767_225_610)
+        XCTAssertEqual(WatchMessage.nextSequence(after: 0, now: now), 1_767_225_610_000)
+        // The clock went back: still above the last one.
+        XCTAssertEqual(WatchMessage.nextSequence(after: 1_767_225_610_000, now: now.addingTimeInterval(-3600)),
+                       1_767_225_610_001)
+        XCTAssertEqual(WatchMessage.nextSequence(after: 5, now: Date(timeIntervalSince1970: .nan)), 6)
+        XCTAssertEqual(WatchMessage.nextSequence(after: .max, now: now), .max)
+    }
+
+    func testOlderMessageIsStale() {
+        XCTAssertTrue(WatchMessage.isStale(sequence: 2, lastApplied: 3))
+        XCTAssertTrue(WatchMessage.isStale(sequence: 3, lastApplied: 3), "a repeat is not applied twice")
+        XCTAssertFalse(WatchMessage.isStale(sequence: 4, lastApplied: 3))
+        XCTAssertFalse(WatchMessage.isStale(sequence: 1, lastApplied: nil))
+        XCTAssertFalse(WatchMessage.isStale(sequence: nil, lastApplied: 3), "an older iPhone build is applied as before")
+    }
+
+    /// Fix round 2: a forget is applied whatever its order and resets it, so an iPhone whose order went back
+    /// (reinstall, new phone, lost counter) is not locked out; an implausible stored order is dropped.
+    func testForgetAlwaysAppliesAndResetsTheOrder() {
+        let now = Date(timeIntervalSince1970: 1_767_225_610)
+        let c = WatchCode(id: "a", title: "A", secret: rfcSecret)
+        let forget = WatchMessage.ordering(of: .forget, sequence: 5, lastApplied: 1_767_225_000_000, now: now)
+        XCTAssertTrue(forget.apply, "a forget with an order below the last one still clears")
+        XCTAssertEqual(forget.lastApplied, 5)
+        let next = WatchMessage.ordering(of: .replace([c]), sequence: 6, lastApplied: forget.lastApplied, now: now)
+        XCTAssertTrue(next.apply, "the update after that forget is accepted")
+        XCTAssertEqual(next.lastApplied, 6)
+        let late = WatchMessage.ordering(of: .replace([c]), sequence: 4, lastApplied: 5, now: now)
+        XCTAssertFalse(late.apply)
+        XCTAssertEqual(late.lastApplied, 5)
+        let unordered = WatchMessage.ordering(of: .forget, sequence: nil, lastApplied: 5, now: now)
+        XCTAssertTrue(unordered.apply)
+        XCTAssertEqual(unordered.lastApplied, 5)
+    }
+
+    func testImplausibleStoredOrderIsDropped() {
+        let now = Date(timeIntervalSince1970: 1_767_225_610)
+        let c = WatchCode(id: "a", title: "A", secret: rfcSecret)
+        for bad: Int64 in [.max, -1, 1_767_225_610_000 + 2 * 86_400_000] {
+            let r = WatchMessage.ordering(of: .replace([c]), sequence: 7, lastApplied: bad, now: now)
+            XCTAssertTrue(r.apply, "\(bad)")
+            XCTAssertEqual(r.lastApplied, 7)
+        }
+        XCTAssertEqual(WatchMessage.plausible(1_767_225_610_000, now: now), 1_767_225_610_000)
+        XCTAssertNil(WatchMessage.plausible(.max, now: now))
+    }
 }

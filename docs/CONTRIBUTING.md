@@ -12,7 +12,7 @@ for the Python app and the extension; the security model is in
 - Windows 10/11 (the desktop, named-pipe and Windows Hello code paths only run here)
 - Python 3.12 or newer (CI runs 3.12 and 3.13)
 - Node.js 20+ for the browser-extension tests (CI uses Node 22)
-- Inno Setup 6 only if you build the installer
+- Windows SDK (MakeAppx) and the .NET 10 SDK (passkey provider) only if you build the Microsoft Store package (MSIX)
 
 ## Set up
 
@@ -36,7 +36,7 @@ installed editable without dependencies so the lock stays authoritative.
 | Fuzz | `pytest -m fuzz` / skip with `-m "not fuzz"` | Seeded mutation fuzzing of the vault, backup, transfer, IPC frame and otpauth-migration parsers (~20 s, part of the default run). `LGK_FUZZ_ITERATIONS` scales it. |
 | Coverage | `.\scripts\run_tests.ps1 -Coverage` | Writes `coverage.xml`; config under `[tool.coverage]`. |
 | Extension | `npm ci` then `npm test` | `node --test` over `tests\*.cjs` and `tests\extension\*.test.cjs` (jsdom is the only dev dependency; nothing from `node_modules` ships). Plus `node --check browser-extension\*.js`. |
-| Build smoke | `.\scripts\build_personal_installer.ps1 -SkipInstaller -OutputRoot ci-build` | Freezes both executables, runs `--check-build`, writes SBOM and manifest; no Inno Setup needed. |
+| Build smoke | `.\scripts\build_personal_installer.ps1 -SkipInstaller -OutputRoot ci-build` | Freezes both executables, runs `--check-build`, writes SBOM and manifest (the MSIX input). There is no Inno Setup installer (removed 2026-11-18). |
 
 Rules of thumb:
 

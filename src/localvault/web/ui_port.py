@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import secrets
 import threading
+import time
 from collections.abc import Callable
 from typing import Any, Literal, Protocol
 
@@ -53,10 +54,15 @@ class WebUiPort:
         Requests carry ``surface: "popup"``; ``on_show`` runs before each one and ``on_idle`` once none is left.
         Answers still arrive through this port's ``answer`` (the views share their pending requests).
         """
+        return self.surface_view("popup", on_show=on_show, on_idle=on_idle)
+
+    def surface_view(self, surface: str, *, on_show: Callable[[], None] | None = None,
+                     on_idle: Callable[[], None] | None = None) -> "WebUiPort":
+        """The same port for prompts another window shows (``popup``, or the quick-search ``palette``)."""
         import copy
 
         view = copy.copy(self)
-        view._surface, view._on_show, view._on_idle = "popup", on_show, on_idle
+        view._surface, view._on_show, view._on_idle = surface, on_show, on_idle
         return view
 
     def pending_on(self, surface: str) -> int:
@@ -74,8 +80,25 @@ class WebUiPort:
             self._bus.emit("modal.cancel", {"ids": ids})
 
     # ------------------------------------------------------------ requests
-    def _ask(self, detail: dict[str, Any], convert: Callable[[Any], Any] | None = None) -> Any:
-        """Emit the request and wait for its answer; ``convert`` runs on the answer before it leaves ``_Pending``."""
+    def _wait(self, pending: _Pending, cancel: threading.Event | None, timeout: float | None) -> bool:
+        """True once answered; False on the timeout or a set ``cancel`` (this request only)."""
+        limit = self._timeout if timeout is None else max(0.0, min(float(timeout), self._timeout))
+        if cancel is None:
+            return pending.event.wait(limit)
+        deadline = time.monotonic() + limit
+        while True:
+            remaining = deadline - time.monotonic()
+            if cancel.is_set() or remaining <= 0:
+                return pending.event.is_set() and not cancel.is_set()
+            if pending.event.wait(min(0.05, remaining)):
+                return True
+
+    def _ask(self, detail: dict[str, Any], convert: Callable[[Any], Any] | None = None, *,
+             cancel: threading.Event | None = None, timeout: float | None = None) -> Any:
+        """Emit the request and wait for its answer; ``convert`` runs on the answer before it leaves ``_Pending``.
+
+        ``cancel`` (set from another thread) and ``timeout`` end only this request, like an unanswered prompt.
+        """
         request_id = secrets.token_urlsafe(16)
         pending = _Pending()
         if self._surface:
@@ -89,7 +112,7 @@ class WebUiPort:
             if self._on_show is not None:
                 self._on_show()
             self._bus.emit("modal.request", {"id": request_id, **detail})
-            if not pending.event.wait(self._timeout):
+            if not self._wait(pending, cancel, timeout):
                 # Take the unanswered prompt off the page too.
                 self._bus.emit("modal.cancel", {"ids": [request_id]})
                 raise TimeoutError("The prompt was not answered")
@@ -120,17 +143,20 @@ class WebUiPort:
         self._bus.emit("toast", {"kind": kind, "title": title, "message": message})
 
     def ask_passkey(self, mode: str, *, origin: str, rp_id: str, profile_name: str,
-                    accounts: list[dict[str, Any]], excluded: bool) -> tuple[str, str | None]:
+                    accounts: list[dict[str, Any]], excluded: bool, surface: str = "browser",
+                    caller: dict[str, Any] | None = None, cancel: threading.Event | None = None,
+                    timeout: float | None = None, top_origin: str | None = None) -> tuple[str, str | None]:
         from ..passkey_dialog import dialog_text
 
         text = dialog_text(mode, origin=origin, rp_id=rp_id, profile_name=profile_name, accounts=accounts,
-                           excluded=excluded)
+                           excluded=excluded, surface=surface, caller=caller, top_origin=top_origin)
         # Only what the dialog shows: titles and ids, never key material.
         safe_accounts = [{"item_id": str(a.get("item_id") or a.get("id") or ""), "title": str(a.get("title") or ""),
                           "user_name": str(a.get("user_name") or "")} for a in accounts]
         try:
             # The page shows the prepared text; raw origin and profile values stay in Python.
-            answer = self._ask({"kind": "passkey", "mode": mode, "accounts": safe_accounts, "text": text})
+            answer = self._ask({"kind": "passkey", "mode": mode, "accounts": safe_accounts, "text": text},
+                               cancel=cancel, timeout=timeout)
         except TimeoutError:
             return ("cancel", None)
         if not isinstance(answer, dict):
@@ -139,6 +165,8 @@ class WebUiPort:
         item_id = answer.get("item_id")
         if choice not in ("approve", "browser", "cancel"):
             return ("cancel", None)
+        if choice == "browser" and not text["browser_label"]:
+            return ("cancel", None)  # the system dialog offers no browser fallback
         if choice != "approve" or not isinstance(item_id, str):
             return (choice, None)
         if item_id not in {a["item_id"] for a in safe_accounts}:
@@ -164,6 +192,26 @@ class WebUiPort:
         if not isinstance(answer, dict):
             return {"approved": False, "remember": False}
         return {"approved": answer.get("approved") is True, "remember": answer.get("remember") is True}
+
+    def confirm_agent(self, request: Any, *, timeout: float | None = None) -> bool:
+        """An AI agent's request (agent_gate.AgentRequest) in the approval view; only ``{"approved": true}`` approves.
+
+        Every field goes to the page as plain text (the view renders text, never markup). Cancel, timeout or any
+        other answer is a refusal; there is no "always" answer.
+        """
+        detail = {"kind": "agent", "action": str(request.action), "agent": str(request.agent),
+                  "process": str(request.process), "site": str(request.site), "purpose": str(request.purpose),
+                  "hello": bool(request.hello),
+                  "method": "passkey" if getattr(request, "method", "") == "passkey" else "password"}
+        if request.action == "run":  # run_with_secrets: the exact command line, its folder, each item and field
+            detail.update(command=str(request.command), cwd=str(request.cwd), timeout=int(request.timeout),
+                          secrets=[{"variable": str(variable), "item": str(item), "field": str(field)}
+                                   for variable, item, field in request.secrets])
+        try:
+            answer = self._ask(detail, timeout=timeout)
+        except TimeoutError:
+            return False
+        return isinstance(answer, dict) and answer.get("approved") is True
 
     def ask_password(self, title: str, message: str) -> SecretText | None:
         """Master-password prompt in the page; cancel, timeout or an empty, non-string or unencodable answer is None.

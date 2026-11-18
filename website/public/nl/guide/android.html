@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys voor Android: handleiding</title>
+  <meta name="description" content="Zo werkt de Android-app van LocalGateKeys: instellen, automatisch invullen, 2FA-codes, importeren, back-ups en synchronisatie.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/android">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/android">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/android">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/android">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/android">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/android">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys voor Android: handleiding">
+  <meta property="og:description" content="Zo werkt de Android-app van LocalGateKeys: instellen, automatisch invullen, 2FA-codes, importeren, back-ups en synchronisatie.">
+  <meta property="og:url" content="https://localgatekeys.app/nl/guide/android">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Het LocalGateKeys-logo: een wachtwoordbeheerder voor Windows, Mac en iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys voor Android: handleiding">
+  <meta name="twitter:description" content="Zo werkt de Android-app van LocalGateKeys: instellen, automatisch invullen, 2FA-codes, importeren, back-ups en synchronisatie.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Naar de inhoud</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../nl/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Hoofdmenu">
+        <ul class="nav">
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Hoofdmenu">
+          <ul class="nav nav-stack">
+            <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Taal</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys voor Android</h1>
+  <p class="lead">Stapsgewijze hulp bij elk scherm en elke functie op dit apparaat. Elke kop is een link die je kunt delen.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platforms">
+    <ul><li><a class="help-tab" href="../../nl/guide/windows">Windows</a></li><li><a class="help-tab" href="../../nl/guide/mac">Mac</a></li><li><a class="help-tab" href="../../nl/guide/iphone">iPhone en iPad</a></li><li><a class="help-tab" href="../../nl/guide/android" aria-current="page">Android</a></li><li><a class="help-tab" href="../../nl/guide/extension">Browserextensie</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Goed om te weten, op elk apparaat</h2>
+    <ul>
+      <li><strong>Je kluis blijft op je apparaten.</strong> Er is geen account en geen LocalGateKeys-server die je wachtwoorden bewaart.</li>
+      <li><strong>Niemand kan je hoofdwachtwoord of app-wachtwoord opnieuw instellen.</strong> Stel een herstelzin in en bewaar die op papier.</li>
+      <li><strong>Free</strong> bevat tot 7 items. <strong>Pro</strong> (US$29.99, eenmalig betaald) geeft onbeperkt items, tweestapscodes, bestanden en synchronisatie. Bewerken, verwijderen en invullen van items die je al hebt wordt nooit geblokkeerd.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Onderwerpen Android</h2>
+    <p class="callout-soon"><strong>Binnenkort beschikbaar.</strong> De Android-app staat nog niet in Google Play. Deze handleiding laat zien hoe hij gaat werken.</p>
+    <p class="panel-lead">De app heeft vier tabbladen: <strong>Kluis</strong>, <strong>Synchronisatie</strong>, <strong>Beveiliging</strong> en <strong>Instellingen</strong>. Zoeken is het vergrootglas boven in het tabblad Kluis.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Onderwerpen Android">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Op dit tabblad</summary>
+          <ol>
+            <li><a href="#and-setup">Eerste start en ontgrendelen</a></li>
+            <li><a href="#and-apppw">App-wachtwoord en herstel</a></li>
+            <li><a href="#and-items">Items</a></li>
+            <li><a href="#and-search">Zoeken en acties</a></li>
+            <li><a href="#and-generator">Wachtwoordgenerator</a></li>
+            <li><a href="#and-2fa">Tweestapscodes</a></li>
+            <li><a href="#and-autofill">Automatisch invullen</a></li>
+            <li><a href="#and-passkeys">Passkeys</a></li>
+            <li><a href="#and-import">Importeren</a></li>
+            <li><a href="#and-backups">Back-ups</a></li>
+            <li><a href="#and-sync">Synchronisatie</a></li>
+            <li><a href="#and-share">Delen</a></li>
+            <li><a href="#and-settings">Instellingen en Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">Eerste start en ontgrendelen</a></h3>
+          <p>Je kluis opent met de vingerafdruk, het gezicht of de schermvergrendeling van je telefoon. (De telefoon heeft een schermvergrendeling nodig.) Er volgt een korte configuratie: ontgrendelen met vingerafdruk, <strong>Importeren…</strong>, een optioneel app-wachtwoord en <strong>Instellingen voor automatisch invullen openen</strong>. Sla elke stap over; de kaart <em>Instellen afronden</em> brengt je terug.</p>
+          <p>Instellingen › Vergrendeling en beveiliging stelt <strong>Automatisch vergrendelen na het verlaten van de app</strong> in (Direct tot 1 uur) en <strong>Vergrendelen bij inactiviteit</strong> (1 tot 30 minuten, of Nooit), en heeft <strong>Nu vergrendelen</strong>. De app is verborgen in het overzicht van recente apps.</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">App-wachtwoord en herstelzin</a></h3>
+          <ol>
+            <li>Instellingen › Vergrendeling en beveiliging › zet <strong>Een app-wachtwoord gebruiken</strong> aan, kies er een en tik op <strong>Doorgaan</strong>. Vanaf dan opent dat LocalGateKeys, niet de schermvergrendeling.</li>
+            <li>Schrijf de herstelzin van 24 woorden op, tik op <strong>Ik heb ze opgeschreven</strong>, typ de gevraagde woorden en tik op <strong>App-wachtwoord aanzetten</strong>.</li>
+          </ol>
+          <p>Vergeten? Tik op <strong>App-wachtwoord vergeten?</strong>, typ de 24 woorden en kies een nieuw. <strong>App-wachtwoord wijzigen</strong>, en de schakelaar <strong>Een app-wachtwoord gebruiken</strong> om het uit te zetten, staan in Instellingen › Vergrendeling en beveiliging.</p>
+          <p class="note">Na het herstellen van een telefoon uit een Google-back-up kan de kluis niet worden geopend (de sleutel wordt niet meegenomen in de back-up). Kies <strong>Opnieuw beginnen</strong> en synchroniseer dan met je pc om alles terug te krijgen.</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">Items</a></h3>
+          <ul>
+            <li>Tik op <strong>+</strong> en kies een soort: Website-login, Notitie, Betaalkaart, Identiteit, Bankrekening, Aankoop, Abonnement, Garantie, Wifinetwerk, Licentie, API-sleutel, SSH-sleutel, Bladwijzer.</li>
+            <li>Open een item om velden te kopiëren, <strong>Website openen</strong>, <strong>Bewerken</strong>, <strong>Verwijderen</strong> of <strong>Toevoegen aan favorieten</strong>.</li>
+            <li><strong>Wachtwoordgeschiedenis</strong>: kopieer of herstel een eerder wachtwoord.</li>
+            <li><strong>Bestand toevoegen</strong> (Pro): maak een foto, kies een foto of een bestand, tot 25 MB elk.</li>
+            <li><strong>Sorteren</strong> op titel of datum, favorieten eerst.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">Zoeken en acties</a></h3>
+          <p>Tik op het vergrootglas op het tabblad Kluis en typ een naam, of begin met <code>&gt;</code> voor acties zoals Back-up exporteren, Wachtwoord genereren, Wachtwoorden importeren, Vergrendelen, Gedeeld item ontvangen, QR-code scannen om te koppelen en Nu synchroniseren.</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">Wachtwoordgenerator</a></h3>
+          <p><strong>Wachtwoord</strong> (lengte, hoofd- en kleine letters, cijfers, symbolen, gelijkende tekens vermijden) of <strong>Wachtwoordzin</strong> (woorden, hoofdletters, getal toevoegen, scheidingsteken). <strong>Opnieuw genereren</strong>, dan <strong>Kopiëren</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">Tweestapscodes</a> <span class="badge-pro">Pro</span></h3>
+          <p>Bewerk een login en tik op <strong>QR-code scannen</strong> naast het 2FA-veld, of typ de instelsleutel. Codes verschijnen in het item en in de regel <strong>Codes</strong>: tik op een code om hem te kopiëren.</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">Automatisch invullen</a></h3>
+          <ol>
+            <li>Instellingen › Automatisch invullen › <strong>Instellingen voor automatisch invullen openen</strong> en kies LocalGateKeys. (Opent het niet, zoek dan in de instellingen van de telefoon naar <em>Service voor automatisch invullen</em>.)</li>
+            <li>Tik in een willekeurige app of website op een inlogvak en kies je login uit de suggesties. Ontgrendel als daarom wordt gevraagd.</li>
+            <li>Kies na het inloggen op een nieuwe plek <strong>Opslaan</strong> bij <em>Login opslaan?</em>, of <strong>Wachtwoord bijwerken</strong> als het is veranderd.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">Passkeys</a></h3>
+          <p>Zet Instellingen › Automatisch invullen › <strong>LocalGateKeys aanbieden voor passkeys</strong> aan. Biedt een site of app een passkey aan, kies dan LocalGateKeys; log later in met <strong>Gebruik je passkey</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">Importeren</a></h3>
+          <p>Instellingen › Synchronisatie en gegevens › <strong>Importeren uit een bestand</strong> › <strong>Exportbestand kiezen</strong>: Chrome, Edge, Brave, Firefox, Apple Wachtwoorden, Bitwarden <code>.json</code> (ook met wachtwoord beveiligd), 1Password <code>.1pux</code> of een willekeurige CSV. Controleer alles en importeer dan. Verwijder daarna het exportbestand.</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">Back-ups</a></h3>
+          <p><strong>Back-up exporteren…</strong> slaat een versleuteld <code>.lgkm</code>-bestand op met een wachtwoord dat je kiest (dat kan niet worden hersteld). <strong>Herstellen uit een back-up…</strong> opent er een, toont een voorvertoning en overschrijft nooit een nieuwer item. Werkt ook met de pc en de iPhone.</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">Synchroniseren met je pc</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>Kies op de pc <strong>QR-code tonen</strong> op de wifikaart.</li>
+            <li>Op de telefoon: tabblad Synchronisatie › <strong>QR-code scannen</strong> (of <strong>Codetekst plakken</strong>).</li>
+            <li>Controleer of beide dezelfde code tonen en accepteer op de pc.</li>
+          </ol>
+          <p>Of <strong>Deelnemen aan een map…</strong> in Dropbox of Nextcloud met het synchronisatiewachtwoord. De pc heeft ook Pro nodig.</p>
+          <p class="note">OneDrive en Google Drive zijn voorlopig niet beschikbaar voor synchronisatie, tot een probleem met Apple is opgelost. Gebruik Dropbox, Nextcloud of wifi-synchronisatie.</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">Delen</a></h3>
+          <p>Open een item, tik op Delen en dan <strong>Als bestand versturen…</strong> of <strong>Als QR-code tonen</strong>, en vertel de zes woorden apart. Ontvangen: Instellingen › Synchronisatie en gegevens › <strong>Een gedeeld item ontvangen</strong>, typ de zes woorden, tik op <strong>Openen</strong> en dan <strong>Aan kluis toevoegen</strong>. De deling opent één keer binnen 24 uur; drie foute codes verwijderen hem. Passkeys en bestanden kunnen niet worden gedeeld.</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">Instellingen en Pro</a></h3>
+          <ul>
+            <li><strong>Weergave</strong>: Systeem, Licht of Donker, en je initialen.</li>
+            <li><strong>Vergrendeling en beveiliging</strong> heeft <strong>Klembord wissen na</strong>, <strong>Privacy</strong> heeft <strong>Wachtwoorden verbergen tot erop wordt getikt</strong>, en <strong>Synchronisatie en gegevens</strong> heeft <strong>De kluis van deze telefoon wissen</strong> (alleen deze telefoon). Android laat de app het klembord alleen controleren terwijl de app open is: een kopie vanuit de snelle-instellingentegel of vlak voordat je van app wisselt, wordt gewist zodra je LocalGateKeys weer opent.</li>
+            <li><strong>Pro</strong> (boven in Instellingen): <strong>Upgraden</strong> en één keer kopen via Google Play, <strong>Aankopen herstellen</strong> op een andere telefoon met hetzelfde Google-account, en <strong>Sleutel kopiëren</strong> om ook Windows te ontgrendelen.</li>
+            <li><strong>Dwangwachtwoord</strong> (Pro): een tweede appwachtwoord voor als iemand je dwingt te ontgrendelen. Het opent een aparte kluis met alleen de items die je kiest, en je kluis weigert daarna zijn appwachtwoord voor het aantal uren dat je instelt. Zet eerst het appwachtwoord aan en stel het daarna in bij Instellingen onder <strong>Dwangwachtwoord</strong>.</li>
+            <li><strong>Exporteren naar een CXF-bestand…</strong> schrijft de logins, notities en passkeys die je kiest naar een Credential Exchange-bestand dat andere wachtwoordmanagers kunnen importeren. Het bestand is niet versleuteld.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../nl/help">De hele handleiding op één pagina</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Een wachtwoordmanager voor Windows, Mac en iPhone die je kluis op je eigen apparaten bewaart.</p>
+        <p class="quiet">Deze website telt bezoeken met Cloudflare Web Analytics, dat geen cookies gebruikt. Ze gebruikt geen advertentietrackers en plaatst geen cookies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/download">Downloaden</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/switch/">Overstappen</a></li>
+          <li><a href="../../buy">Pro kopen</a></li>
+          <li><a href="../../nl/licence">Je Pro-licentie</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Licentie terugvinden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hulp">
+        <h2>Hulp</h2>
+        <ul>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/support">Support en veelgestelde vragen</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Een kwetsbaarheid melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Juridisch">
+        <h2>Juridisch</h2>
+        <p class="quiet">Deze documenten zijn in het Engels, en de Engelse versie is van toepassing en bindend.</p>
+        <ul>
+          <li><a href="../../legal/eula">Licentieovereenkomst</a></li>
+          <li><a href="../../legal/privacy">Privacybeleid</a></li>
+          <li><a href="../../legal/terms-of-sale">Verkoopvoorwaarden</a></li>
+          <li><a href="../../legal/refunds">Terugbetalingsbeleid</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is een handelsmerk van de Microsoft-groep van bedrijven. Chrome is een handelsmerk van Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID en Safari zijn handelsmerken van Apple Inc., geregistreerd in de VS en andere landen.</p>
+      <nav class="lang-switch" aria-label="Taal"><ul><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

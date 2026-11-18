@@ -1,9 +1,13 @@
 <script>
-  /** The item list: icon tiles, title, username, type and target; arrow keys move the selection. */
+  /** The item list: icon tiles, title, username, type and target; arrow keys move the selection.
+   *  The selected login shows Copy user and Copy password in place of its target (oncopyfield(ref, field)). */
   import { t } from '../lib/i18n.svelte.js';
+  import Button from './Button.svelte';
   import ItemTile from './ItemTile.svelte';
 
-  let { items = [], selected = null, empty = null, onselect, onopen, onmenu, onemptyaction, ontrash, oncopy } = $props();
+  let { items = [], selected = null, empty = null, onselect, onopen, onmenu, onemptyaction, ontrash, oncopy,
+    oncopyfield = undefined } = $props();
+  const isSelected = (item) => !!selected && item.ref.id === selected.id && item.ref.source === selected.source;
 
   let list = $state();
   const index = $derived(items.findIndex((i) => selected && i.ref.id === selected.id && i.ref.source === selected.source));
@@ -65,10 +69,18 @@
           <span class="title">{item.favorite ? '★ ' : ''}{item.title}</span>
           <span class="sub">{item.username || item.kind_label}</span>
         </span>
-        <span class="meta">
-          {#if item.flag}<span class="flag {item.flag}">{t(FLAG[item.flag])}</span>{/if}
-          <span class="target">{item.target}</span>
-        </span>
+        {#if oncopyfield && isSelected(item) && item.ref.source === 'credential'}
+          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+          <span class="copy" onclick={(e) => e.stopPropagation()} ondblclick={(e) => e.stopPropagation()}>
+            {#if item.username}<Button label={t('itemList.copyUser')} onclick={() => oncopyfield(item.ref, 'username')} />{/if}
+            <Button label={t('itemMenu.copyPassword')} onclick={() => oncopyfield(item.ref, 'password')} />
+          </span>
+        {:else}
+          <span class="meta">
+            {#if item.flag}<span class="flag {item.flag}">{t(FLAG[item.flag])}</span>{/if}
+            <span class="target">{item.target}</span>
+          </span>
+        {/if}
       </div>
     {/each}
   </div>
@@ -88,6 +100,8 @@
   .title, .sub, .target { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { color: var(--text-muted); font-size: 12.5px; }
   .meta { display: grid; justify-items: end; max-width: 40%; font-size: 12px; color: var(--text-faint); }
+  .copy { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex-shrink: 0; max-width: 60%; }
+  .copy :global(.btn) { height: 26px; padding: 0 10px; font-size: 12px; }
   .flag { font-size: 11px; padding: 1px 7px; border-radius: 9px; background: rgba(255, 120, 100, 0.16); color: var(--danger); }
   .empty { padding: 48px 24px; text-align: center; color: var(--text-muted); }
   .empty h2 { margin: 0 0 6px; color: var(--text); font: 600 17px var(--font-display); }

@@ -163,4 +163,79 @@ final class ItemDetailModelTests: XCTestCase {
                                      clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)), clock: TestClock(0))
         XCTAssertEqual(backup.fields.last?.value, "Backup only")
     }
+
+    // MARK: Wi-Fi QR
+
+    private func wifiItem(security: String, password: String = "p;ss", hidden: Bool = false) -> VaultItem {
+        var payload: [String: JSONValue] = ["ssid": .string("Home"), "security": .string(security)]
+        if !password.isEmpty { payload["password"] = .string(password) }
+        if hidden { payload["hidden"] = .bool(true) }
+        return item(rec(["id": .string("wf1"), "kind": .string("wifi"), "title": .string("Home"), "payload": .object(payload),
+                         "tags": strs([]), "favorite": .bool(false), "updated_at": .int(1_790_000_500)]))
+    }
+
+    func testWifiQRTextNeedsReveal() throws {
+        let m = ItemDetailModel(item: wifiItem(security: "wpa2", hidden: true),
+                                clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)), clock: TestClock(0))
+        XCTAssertTrue(m.offersWifiQR)
+        XCTAssertNil(m.wifiQRText, "no QR while the password is masked")
+        m.toggleReveal(try XCTUnwrap(m.wifiPasswordField))
+        XCTAssertEqual(m.wifiQRText, #"WIFI:T:WPA;S:Home;P:p\;ss;H:true;;"#)
+        m.screenCaptured = true
+        XCTAssertNil(m.wifiQRText, "a screen capture drops the reveal and the QR")
+        let open = ItemDetailModel(item: wifiItem(security: "none", password: ""),
+                                   clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)), clock: TestClock(0))
+        XCTAssertEqual(open.wifiQRText, "WIFI:T:nopass;S:Home;;", "an open network has no password to reveal")
+    }
+
+    func testWifiEnterpriseHasNoQR() throws {
+        let m = ItemDetailModel(item: wifiItem(security: "wpa2-enterprise"),
+                                clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)), clock: TestClock(0))
+        XCTAssertFalse(m.offersWifiQR)
+        m.toggleReveal(try XCTUnwrap(m.wifiPasswordField))
+        XCTAssertNil(m.wifiQRText)
+    }
+
+    // MARK: JWT token (Developer Pack)
+
+    private let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJpZHAiLCJleHAiOjQwMDAwMDAwMDB9.c2ln"
+
+    private func apiKeyItem(key: String, expires: String? = nil) -> VaultItem {
+        var payload: [String: JSONValue] = ["service": .string("svc"), "key": .string(key)]
+        if let expires { payload["expires"] = .string(expires) }
+        return item(rec(["id": .string("0a000000-0000-4000-8000-000000000001"), "kind": .string("api_key"), "title": .string("API"),
+                         "payload": .object(payload), "created_at": .int(1_700_000_000), "updated_at": .int(1_700_000_100),
+                         "favorite": .bool(false), "tags": .array([])]))
+    }
+
+    func testTokenOnlyAfterReveal() throws {
+        let m = ItemDetailModel(item: apiKeyItem(key: jwt), clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)),
+                                clock: TestClock(1_790_000_000))
+        let key = try XCTUnwrap(m.fields.first { $0.id == "key" })
+        XCTAssertNil(m.token(for: key), "a masked value is never decoded")
+        m.toggleReveal(key)
+        let info = try XCTUnwrap(m.token(for: key))
+        XCTAssertEqual(info.alg, "HS256")
+        XCTAssertFalse(m.tokenRows(info).contains { $0.expired })
+        m.toggleReveal(key)
+        XCTAssertNil(m.token(for: key))
+        let plain = ItemDetailModel(item: apiKeyItem(key: "sk-not-a-token"), clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)),
+                                    clock: TestClock(0))
+        let plainKey = try XCTUnwrap(plain.fields.first { $0.id == "key" })
+        plain.toggleReveal(plainKey)
+        XCTAssertNil(plain.token(for: plainKey))
+    }
+
+    func testSetExpiryFromToken() throws {
+        let m = ItemDetailModel(item: apiKeyItem(key: jwt), clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)),
+                                clock: TestClock(0))
+        let key = try XCTUnwrap(m.fields.first { $0.id == "key" })
+        m.toggleReveal(key)
+        let info = try XCTUnwrap(m.token(for: key))
+        XCTAssertTrue(m.canSetExpiry(from: info))
+        XCTAssertEqual(ItemDetailModel.expiryDate(info)?.count, 10)
+        let withExpiry = ItemDetailModel(item: apiKeyItem(key: jwt, expires: "2030-01-01"),
+                                         clipboard: SecretClipboard(pasteboard: FakePasteboard(), clock: TestClock(0)), clock: TestClock(0))
+        XCTAssertFalse(withExpiry.canSetExpiry(from: info), "the item already has an expiry")
+    }
 }

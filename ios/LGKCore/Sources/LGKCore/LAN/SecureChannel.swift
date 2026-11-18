@@ -4,7 +4,8 @@ import Crypto
 ///
 /// Key (protocol version 2) = HKDF-SHA256(ikm = X25519(own ephemeral, peer ephemeral) ||
 /// X25519(own static, peer pinned static), salt = SHA-256(`session-salt|v2|` + sorted hellos),
-/// info = `session-key|v2|` + session id): recorded traffic stays sealed after a long-term exchange key
+/// info = `session-key|v2|` + session id; `v3` in both labels for version-3 hellos, whose frames keep metadata
+/// version 2): recorded traffic stays sealed after a long-term exchange key
 /// leaks. The local hello's ephemeral private key is used for exactly one derivation and dropped; an
 /// all-zero X25519 result is refused. Nonce = 4-byte direction prefix + 8-byte big-endian counter; each
 /// direction starts at counter 1 and a receiver refuses a counter that does not increase. The desktop
@@ -36,6 +37,9 @@ public struct SecureChannel: Sendable {
     public init(local: DeviceIdentity, remote: PinnedPeer, groupID: String, sessionID: [UInt8], role: Role,
                 localHello: SessionHello, remoteHello: SessionHello) throws {
         try SessionHello.verify(remoteHello, pinned: remote, groupID: groupID)
+        guard localHello.version == remoteHello.version else {
+            throw LanTransportError.authentication("Session hellos have different versions")
+        }
         guard localHello.groupID == groupID, localHello.deviceID == local.deviceID,
               localHello.sessionID == sessionID, remoteHello.sessionID == sessionID else {
             throw LanTransportError.authentication("Session hello binding is invalid")
@@ -57,7 +61,7 @@ public struct SecureChannel: Sendable {
         do { staticShared = try local.exchange(with: remote.exchangePublic) }
         catch { throw LanTransportError.authentication("Peer exchange key is malformed") }
         try self.init(key: Self.deriveKey(ephemeralShared: ephemeral, staticShared: staticShared, sessionID: sessionID,
-                                          transcript: transcript),
+                                          transcript: transcript, version: localHello.version),
                       sessionID: sessionID, role: role)
     }
 
@@ -85,21 +89,25 @@ public struct SecureChannel: Sendable {
         return t
     }
 
-    public static func salt(transcript: [UInt8]) -> [UInt8] {
-        Array(SHA256.hash(data: Array("localgatekeys|sync|session-salt|v2|".utf8) + transcript))
+    /// `version` is the hellos' version: 2 (`session-salt|v2|`) or 3 (`session-salt|v3|`).
+    public static func salt(transcript: [UInt8], version: Int64 = LanTransport.plainHelloVersion) -> [UInt8] {
+        Array(SHA256.hash(data: Array("localgatekeys|sync|session-salt|v\(version)|".utf8) + transcript))
     }
 
-    public static func info(sessionID: [UInt8]) -> [UInt8] { Array("localgatekeys|sync|session-key|v2|".utf8) + sessionID }
+    public static func info(sessionID: [UInt8], version: Int64 = LanTransport.plainHelloVersion) -> [UInt8] {
+        Array("localgatekeys|sync|session-key|v\(version)|".utf8) + sessionID
+    }
 
     /// HKDF over `ephemeralShared || staticShared` (64 bytes; never the static secret alone).
     public static func deriveKey(ephemeralShared: [UInt8], staticShared: [UInt8], sessionID: [UInt8],
-                                 transcript: [UInt8]) throws -> [UInt8] {
+                                 transcript: [UInt8], version: Int64 = LanTransport.plainHelloVersion) throws -> [UInt8] {
         guard sessionID.count == LanTransport.sessionIDBytes, ephemeralShared.count == 32, staticShared.count == 32,
-              ephemeralShared.contains(where: { $0 != 0 }), staticShared.contains(where: { $0 != 0 }) else {
+              ephemeralShared.contains(where: { $0 != 0 }), staticShared.contains(where: { $0 != 0 }),
+              version == LanTransport.plainHelloVersion || version == LanTransport.version else {
             throw LanTransportError.authentication("Session transcript is malformed")
         }
-        return CryptoBox.hkdf(ikm: ephemeralShared + staticShared, salt: salt(transcript: transcript),
-                              info: info(sessionID: sessionID), length: 32)
+        return CryptoBox.hkdf(ikm: ephemeralShared + staticShared, salt: salt(transcript: transcript, version: version),
+                              info: info(sessionID: sessionID, version: version), length: 32)
     }
 
     /// First 4 bytes of SHA-256(key + `send|` + sender role).
@@ -108,7 +116,7 @@ public struct SecureChannel: Sendable {
     }
 
     private func metadata(counter: Int64, nonce: [UInt8]) -> [String: JSONValue] {
-        ["version": .int(LanTransport.version), "session_id": .string(Base64.encode(sessionID)),
+        ["version": .int(LanTransport.frameVersion), "session_id": .string(Base64.encode(sessionID)),
          "counter": .int(counter), "nonce": .string(Base64.encode(nonce))]
     }
 
@@ -160,7 +168,7 @@ public struct SecureChannel: Sendable {
         guard case .object(let o)? = try? CanonicalJSON.parse(payload), Set(o.keys) == frameFields else {
             throw LanTransportError.malformed("Encrypted frame is malformed")
         }
-        guard o["version"] == .int(LanTransport.version) else { throw LanTransportError.malformed("Unsupported encrypted frame") }
+        guard o["version"] == .int(LanTransport.frameVersion) else { throw LanTransportError.malformed("Unsupported encrypted frame") }
         return o
     }
 }

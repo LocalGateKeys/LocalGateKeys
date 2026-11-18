@@ -6,9 +6,9 @@ import LGKCore
 /// cleanup (Windows `plan_backup_rotation` / `cleanup_recovery_artifacts`, keep 3) and its copy.
 @MainActor
 final class RecoveryCentreModelTests: XCTestCase {
-    private var dir: URL!
-    private var suite: String!
-    private var defaults: UserDefaults!
+    nonisolated(unsafe) private var dir: URL!
+    nonisolated(unsafe) private var suite: String!
+    nonisolated(unsafe) private var defaults: UserDefaults!
     private var now = Date(timeIntervalSince1970: 1_800_000_000)
     private var phrase = false
 

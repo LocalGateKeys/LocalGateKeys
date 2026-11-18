@@ -14,6 +14,7 @@ updates and small ``qr.frame`` JPEG previews.
 from __future__ import annotations
 
 import base64
+import functools
 import threading
 import time
 from collections.abc import Callable
@@ -21,6 +22,7 @@ from typing import Any
 
 from ..api.result import ApiError
 from ..totp import TotpError, parse_otpauth_uri
+from ..face_unlock import FaceCancelled
 from .face_capture import _open_camera
 from ..i18n import t
 
@@ -168,6 +170,9 @@ class QrImportService:
         self._emit = emit
         self._accounts = accounts
         self._load_cv = load_cv
+        if open_camera is _open_camera:
+            # Cancel and vault lock stop a slow camera search before the webcam turns on.
+            open_camera = functools.partial(_open_camera, stop=lambda: not self._should_scan())
         self._open_camera = open_camera
         self._clock = clock
         self._sleep = sleep
@@ -365,6 +370,9 @@ class QrImportService:
     def _camera(self, cv2: Any, start: int) -> tuple[Any, int]:
         try:
             capture, index = self._open_camera(cv2, start)
+        except FaceCancelled:
+            self._say(t("qrImport.scanCancelled"), "", "cancelled")
+            raise ApiError("cancelled", t("error.cancelled")) from None
         except Exception as exc:  # noqa: BLE001 - shown as the face check shows it
             self._say(str(exc), "", "failed")
             raise ApiError("unavailable", str(exc)) from None

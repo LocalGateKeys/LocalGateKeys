@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">Geen HTTPS</string>
+    <string name="security_expl_http">Deze logins gebruiken een niet-versleuteld adres. Controleer het en schakel over op https:// als de site dat ondersteunt.</string>
+    <string name="security_cat_passkey">Passkey beschikbaar</string>
+    <string name="security_expl_passkey">Deze sites ondersteunen passkeys, een veiligere manier om in te loggen. Sla voor elk een passkey op.</string>
+</resources>

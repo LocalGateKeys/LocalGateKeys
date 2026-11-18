@@ -75,6 +75,25 @@ final class PhoneTrashTests: XCTestCase {
         XCTAssertTrue(trash.rows.isEmpty)
     }
 
+    func testDeletingForGoodForgetsTheItemHistory() throws {
+        // Scan 2026-11-15 W-M5, A-M3: earlier versions (with old passwords) leave with the item.
+        let other = "22222222-2222-4222-8222-222222222222"
+        let store = MemoryStore(synced([noteRecord(id), noteRecord(other)]))
+        let local = InMemoryPhoneLocal()
+        let trash = PhoneTrash(local: local, store: store, isPro: { true }, clock: clock, background: FakeBackgroundTasks())
+        XCTAssertEqual(trash.moveToTrash(id: id), .saved)
+        var data = try XCTUnwrap(local.localData)
+        data.itemHistory = try [id, other].map {
+            try ItemHistory.Row(snapshotID: "s-\($0)", itemID: $0, ns: "item", createdAt: 1, changeType: .update,
+                                record: noteRecord($0))
+        }
+        try local.commitLocalData(data)
+        trash.purgeExpired()
+        XCTAssertEqual(local.localData?.itemHistory.count, 2, "in Recently deleted: kept, it can still come back")
+        try trash.emptyAll()
+        XCTAssertEqual(local.localData?.itemHistory.map(\.itemID), [other], "only the live item keeps its history")
+    }
+
     func testRestoreIsRefusedOverTheFreeLimit() throws {
         // Free plan: the vault already holds the free limit of live items.
         var records: [JSONValue] = []
@@ -87,6 +106,29 @@ final class PhoneTrashTests: XCTestCase {
         XCTAssertEqual(trash.restore(trash.rows[0].id, isPro: false), .limit)
         XCTAssertEqual(trash.rows.count, 1)
         XCTAssertEqual(trash.restore(trash.rows[0].id, isPro: true), .restored)
+    }
+
+    func testTravelModeHidesRowsOfHiddenItems() throws {
+        // Final review S-M1: Recently deleted leaves out travel-hidden items as the list does (feature pack §2).
+        let other = "22222222-2222-4222-8222-222222222222"
+        var tagged = noteRecord(id).objectValue ?? [:]
+        tagged["tags"] = .array([.string("trip")])
+        let store = MemoryStore(synced([rec(tagged), noteRecord(other)]))
+        let local = InMemoryPhoneLocal()
+        let trash = PhoneTrash(local: local, store: store, isPro: { true }, clock: clock, background: FakeBackgroundTasks())
+        XCTAssertEqual(trash.moveToTrash(id: id), .saved)
+        XCTAssertEqual(trash.moveToTrash(id: other), .saved)
+        var data = try XCTUnwrap(local.localData)
+        data.travelMode = TravelMode(on: true, tags: ["trip"])
+        try local.commitLocalData(data)
+        XCTAssertEqual(trash.rows.map(\.itemID), [other])
+        XCTAssertEqual(trash.restoreItems([id], isPro: true), 0, "a hidden row can't be restored")
+        try trash.emptyAll()
+        XCTAssertEqual(local.localData?.trash.count, 1, "Empty leaves the hidden row alone")
+        data = try XCTUnwrap(local.localData)
+        data.travelMode = .off
+        try local.commitLocalData(data)
+        XCTAssertEqual(trash.rows.map(\.itemID), [id])
     }
 
     func testEmptyAll() throws {

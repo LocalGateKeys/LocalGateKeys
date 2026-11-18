@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">QRコードを表示</string>
+    <string name="sync_host_copy_code">コードのテキストをコピー</string>
+    <string name="sync_host_code">コード: %1$s</string>
+    <string name="sync_host_expires_in">%1$s後に期限切れ</string>
+    <string name="sync_host_expired">期限切れ</string>
+    <string name="sync_host_accept_hint">もう一方のデバイスにも同じコードが表示されている場合にのみ、「承認」を選んでください。</string>
+    <string name="sync_host_decline_hint">そうでない場合は、「拒否」を選んでください。</string>
+    <string name="sync_host_undo_hint">見覚えがない場合は、「取り消す」を選んでください。</string>
+    <string name="sync_host_other_pc_hint">別のPCでは、「コードで参加」を使い、代わりにコードのテキストを貼り付けてください。</string>
+    <string name="sync_host_copied">コードのテキストをコピーしました。</string>
+    <string name="sync_host_closed">このペアリングコードは閉じられました。</string>
+    <string name="sync_host_not_waiting">そのリクエストは、もう待機していません。新しいコードを表示して、もう一度お試しください。</string>
+    <string name="sync_host_declined">拒否しました。デバイスは追加されませんでした。新しいコードを表示して、もう一度お試しください。</string>
+    <string name="sync_host_not_listening">先にWi-Fi同期をオンにしてください。</string>
+    <string name="sync_host_confirm">%1$sが参加を希望しています。コード %2$s が表示されている場合のみ「承認」を選んでください。</string>
+    <string name="sync_host_adding">%1$sを追加しています…</string>
+    <string name="sync_host_adding_button">追加中…</string>
+    <string name="sync_host_paired_key">ペアリング済み: %1$s(キー %2$s)。%3$s</string>
+    <string name="sync_host_paired_plain">ペアリング済み: %1$s。%2$s</string>
+    <string name="sync_host_paired_title">ペアリングしました: %1$s</string>
+    <string name="sync_host_declines_in">%1$d秒後に自動で拒否されます。</string>
+    <string name="sync_host_stopped">Wi-Fi同期が停止しました。ネットワークを確認して、もう一度オンにしてください。</string>
+    <string name="sync_host_accept">承認</string>
+    <string name="sync_host_decline">拒否</string>
+    <string name="sync_host_undo">元に戻す</string>
+    <string name="sync_host_keep">維持</string>
+    <string name="sync_host_followed">%1$sで待ち受け中です(アドレスが変更されました)。</string>
+    <string name="sync_host_scan_title">もう一方のデバイスのLocalGateKeysで、このコードをスキャンしてください</string>
+    <string name="sync_host_qr_description">ペアリング用QRコード</string>
+    <string name="sync_host_add_named">%1$sを追加しますか?</string>
+    <string name="sync_host_add_device">このデバイスを追加しますか?</string>
+    <string name="sync_host_fingerprint">キーのフィンガープリント: %1$s</string>
+    <string name="sync_host_paired_heading">ペアリング済みのデバイス</string>
+    <string name="sync_host_no_peers">ペアリング済みのデバイスはまだありません。</string>
+    <string name="sync_host_remove">削除…</string>
+    <string name="sync_host_toggle">このスマートフォンでWi-Fi同期をホストする</string>
+    <string name="sync_host_intro">同じWi-Fi上の他のデバイスは、このスマートフォンでLocalGateKeysが開いていてロック解除されている間、このスマートフォンとペアリングして同期できます。</string>
+    <string name="sync_host_listens">このスマートフォンは %1$s で待ち受けています。</string>
+    <string name="sync_host_free">無料プランでは、このスマートフォンはペアリングコードの表示中と「今すぐ同期」の後2分間だけ待ち受けます。</string>
+    <string name="sync_host_no_wifi">Wi-Fi同期をホストするには、このスマートフォンをWi-Fiに接続してください。</string>
+    <string name="sync_host_pair_hint">両方のデバイスが同じWi-Fiに接続している必要があります。</string>
+    <string name="sync_host_this_phone">このスマートフォン</string>
+    <string name="sync_host_remove_confirm">%1$s をWi-Fi同期から削除しますか？このスマートフォンとの同期は止まりますが、すでにあるデータは残ります。</string>
+    <string name="sync_host_could_not_listen">このスマートフォンでWi-Fi同期を開始できませんでした。ネットワークを確認して、もう一度お試しください。</string>
+</resources>

@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>安全 | LocalGateKeys</title>
-  <meta name="description" content="LocalGateKeys 如何保护您的保管库，以及它无法防范什么。">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys 安全模型</title>
+  <meta name="description" content="如何用 Argon2id 和 AES-256-GCM 保护保险库，以及为何没有账户和服务器。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/zh-hans/security">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys 安全模型">
+  <meta property="og:description" content="如何用 Argon2id 和 AES-256-GCM 保护保险库，以及为何没有账户和服务器。">
+  <meta property="og:url" content="https://localgatekeys.app/zh-hans/security">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 标志：适用于 Windows、Mac 和 iPhone 的密码管理器。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys 安全模型">
+  <meta name="twitter:description" content="如何用 Argon2id 和 AES-256-GCM 保护保险库，以及为何没有账户和服务器。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,22 +44,39 @@
   <a class="skip" href="#main">跳到正文</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../zh-hans/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../zh-hans/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="主导航">
+      <nav class="nav-wide" aria-label="主导航">
         <ul class="nav">
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/security.html" aria-current="page">安全</a></li>
-          <li><a href="../zh-hans/get-started.html">入门</a></li>
-          <li><a href="../zh-hans/help.html">指南</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/support.html">支持</a></li>
-          <li><a href="../buy.html">购买 Pro</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help">指南</a></li>
+          <li><a href="../zh-hans/security" aria-current="page">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>菜单</summary>
+        <nav aria-label="主导航">
+          <ul class="nav nav-stack">
+            <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help">指南</a></li>
+          <li><a href="../zh-hans/security" aria-current="page">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>语言</span></summary>
+        <ul class="lang-menu-list"><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -62,13 +93,14 @@
   </div>
   <dl class="spec">
     <dt>保管库加密</dt><dd>AES-256-GCM，每次保存都使用全新的随机 nonce</dd>
-    <dt>主密码</dt><dd>Argon2id，64 MiB 内存，3 轮，并行度 4，每个包裹使用随机盐值</dd>
+    <dt>主密码</dt><dd>Argon2id，3 轮，并行度 4，每个包裹使用随机盐值；Windows 应用使用 256 MiB 内存（内存少于 4 GB 的电脑使用 64 MiB），Mac、iPhone 和 Android 应用使用 64 MiB</dd>
     <dt>恢复短语</dt><dd>可选的 24 词 BIP39 短语（256 位），通过 HKDF-SHA256 扩展</dd>
-    <dt>Windows Hello</dt><dd>包裹保管库密钥，绝不包裹主密码</dd>
+    <dt>Windows Hello、Touch ID、Face ID 和指纹</dt><dd>从设备保护的存储中取出保管库密钥；绝不保存主密码</dd>
     <dt>备份和传输</dt><dd>Argon2id 和 AES-256-GCM，参数存储在经过认证的头部中</dd>
     <dt>设备同步</dt><dd>一个随机的群组密钥，通过 X25519 和 HKDF-SHA256 交给每台设备；对于云文件夹，还会由您的同步密码通过 Argon2id 再次包裹；每条记录都用 AES-256-GCM 密封，并绑定到其项目、版本和密钥纪元；每个设备文件都绑定到写入它的设备</dd>
-    <dt>通行密钥</dt><dd>ES256 (P-256) 密钥保存在加密的保管库中；应用根据浏览器报告的来源构造签名数据，绝不根据页面构造</dd>
+    <dt>通行密钥</dt><dd>ES256（P-256）密钥保存在加密的保管库中；应用根据浏览器报告的来源构建签名数据，绝不根据页面。Microsoft Store 版应用还可以作为 Windows 11 的通行密钥提供程序（默认关闭）；此时 Windows 会在自己的列表中保存您的通行密钥网站和账户名称，但绝不保存密钥</dd>
     <dt>写入磁盘</dt><dd>先写临时文件，刷新，再原子替换，因此崩溃不会留下写了一半的保管库</dd>
+    <dt>AI 代理</dt><dd>默认关闭（Pro）。代理只能通过您自己设备上的 lgk mcp 访问应用，并且只能看到您允许的登录信息和项目。每个请求都由您批准；登录由应用自己填写，发给代理的任何回复都不包含密码。每个请求都会写入访问日志，日志条目用 SHA-256 哈希串成链，安全检查会显示这条链是否完好</dd>
   </dl>
 
   <div class="ledger">
@@ -82,6 +114,8 @@
         <li>密码以未加密形式存放在磁盘上</li>
         <li>表单在没有您参与的情况下被提交</li>
         <li>您的云服务商读取已同步的数据：它只存储密文</li>
+        <li>网页读取 LocalGateKeys 为您提供的账户：在 Chrome、Edge 和 Firefox 中，该列表绘制在页面无法读取的独立扩展框架中</li>
+        <li>AI 代理从 LocalGateKeys 获取密码：发给代理的回复都不包含密码，代理也只能看到您允许的登录信息</li>
       </ul>
     </section>
     <section class="not" aria-labelledby="not-protects">
@@ -93,6 +127,7 @@
         <li>在保管库解锁期间使用您电脑的人</li>
         <li>在显示攻击者控制内容的正规应用内部进行的网络钓鱼</li>
         <li>在没有恢复短语的情况下，丢失了保管库、备份和主密码：任何人，包括我们，都无法打开它</li>
+        <li>控制您浏览器的 AI 代理在 LocalGateKeys 把密码填入页面后读取它，或您批准的命令把收到的机密转交出去</li>
       </ul>
     </section>
   </div>
@@ -110,28 +145,34 @@
       <li>提交并非由您发起的登录</li>
     </ul>
 
-    <h2>坦诚谈网络</h2>
+    <h2 id="network">坦诚谈网络</h2>
     <p>没有 LocalGateKeys 账户，也没有保存保管库的服务器。应用只在以下情况下连接互联网：</p>
     <ul>
-      <li><strong>更新检查。</strong>当您选择“检查更新”时，应用会下载一个小文件，并用内置于应用的密钥验证其签名。它绝不会自行下载或运行安装程序。</li>
-      <li><strong>许可证吊销列表。</strong>每次检查更新时，应用还会下载一份已退款许可证的签名列表，并在您的电脑上用它核对您的许可证。它不会发送任何有关您许可证的信息。</li>
+      <li><strong>更新。</strong>Windows 应用由 Microsoft Store 更新，Mac 和 iPhone 应用由 App Store 更新；LocalGateKeys 本身绝不会下载或运行安装程序。已停用的 Windows 安装程序版本（直到最后一版 0.4.12）在您选择“检查更新”时从我们的服务器下载一个小文件，并用内置于应用的密钥验证其签名。</li>
+      <li><strong>许可证吊销列表。</strong>安装程序版本每次检查更新时，以及在关闭严格离线模式的情况下于 Microsoft Store 版应用中选择“检查更新”时，应用会下载一份已签名的已退款许可证列表，并在您的电脑上核对您的许可证。它不会发送任何关于您许可证的信息。</li>
       <li><strong>网站图标。</strong>为了显示网站图标，应用会从该网站自己的地址下载。不会发送用户名、密码或保管库数据，但每次下载都会让该网站以及任何监视网络的人知道，您的保管库在那里有账户。此项默认关闭，只有在您于“设置”中开启“显示网站图标”时才会发生；严格离线模式会阻止它。</li>
       <li><strong>泄露检查（如果您开启）。</strong>当您启动检查时，应用会把每个密码 SHA-1 哈希的前五个字符发送给 Have I Been Pwned。该服务能看到您的 IP 地址，但绝不会看到密码、完整哈希、用户名或网站。</li>
       <li><strong>同步（如果您设置）。</strong>在家庭网络中，设备之间直接通信。通过云文件夹时，由您的云盘应用负责上传。</li>
+      <li><strong>在 Mac、iPhone 或 Android 应用中购买 Pro。</strong>应用会把商店签名的购买记录发送到我们的许可证服务器，服务器返回您的许可证密钥。不会发送电子邮件地址或设备数据。</li>
+      <li><strong>已验证的网站。</strong>相似地址检查在您的设备上进行。已保存的网站绝不会离开应用，也不会向任何服务器发送内容。</li>
     </ul>
-    <p>严格离线模式默认开启。它会阻止后台互联网请求、网站图标和泄露检查，检查更新前会先询问您。<a href="../legal/privacy.html">隐私政策</a>准确列出了您检查更新时我们的服务器能看到什么。</p>
+    <p>在 Windows 应用中，“安全中心 › 网络活动”会列出每一次这类连接及其时间、主机和结果。您保存的网站名称只在应用运行期间显示，绝不写入磁盘；您自己网络中的设备显示为“本地网络”。</p>
+    <p>严格离线模式默认开启。它会阻止后台互联网请求、网站图标和泄露检查，检查更新前会先询问您。<a href="../legal/privacy">隐私政策</a>准确列出了您检查更新时我们的服务器能看到什么。</p>
 
     <h2>已知限制</h2>
     <ul>
-      <li>主密码一进入应用就会被放入可擦除的缓冲区，并在需要它的操作结束时被擦除。您输入密码的页面运行在 Microsoft Edge WebView2 中，从该页面到应用的传递会产生一份短暂存在的副本；应用无法擦除这两份副本。</li>
-      <li>摄像头解锁只是便利性检查，并非经过认证的、能防范照片或面具的保护。Windows Hello 是更强的选择。</li>
+      <li>主密码一进入应用就会被放入可擦除的缓冲区，并在需要它的操作结束时被擦除。您输入密码的页面运行在 Microsoft Edge WebView2 中。在计算您的密钥之前，页面会清空输入框，应用也会释放传递过程中产生的副本；但这两份副本都无法在内存中被覆盖，因此短时间内内存里可能残留痕迹。</li>
+      <li>摄像头解锁会要求您随机转动头部，因此平举在摄像头前的照片或屏幕上的静态图片无法通过。但它仍然只是便利性检查，而非经过认证的保护：弯折或对折的照片、按提示动作的视频或面具可能会通过。Windows Hello 是更强的选择。</li>
       <li>Windows 应用填充不适用于以管理员身份运行的程序、自绘的游戏界面，或无法验证的嵌入式网页视图。</li>
-      <li>保管库能检测到被回滚到较旧的副本。如果您使用同步，您的其他设备也会记住保管库有多新，因此同时删除保管库及其锚点文件会在下次同步时被发现（目前适用于 Windows 电脑；iPhone、Mac 和 Android 应用随后跟进）。没有同步时，能同时替换这两个文件的人仍可绕过这项检查。</li>
-      <li>通行密钥只在 Chrome 和 Edge 中可用，并且只针对页面本身：在另一网站框架内的登录使用浏览器自带的通行密钥对话框。如果您批准新通行密钥后网站取消了操作，该通行密钥可能仍留在您的保管库中；请在应用中删除它。</li>
+      <li>保管库能检测到被回滚到较旧的副本。如果您使用同步，您的其他设备会记住保管库有多新，因此在某台设备上放回较旧的副本时，下次同步会在每个应用中提示。没有同步时，Windows 电脑会在保管库文件夹之外另存一份记录，因此连同锚点文件一起放回的较旧保管库会被拒绝；能更改您 Windows 账户设置的人也可以删除这份记录。iPhone、Mac 和 Android 应用会阻止其他应用访问自己的文件，但没有同步时，不会察觉被换成较旧的副本。</li>
+      <li>通行密钥可在 Chrome、Edge 和 Firefox 中使用。在另一网站的框架内使用通行密钥登录，在外层网站允许时可在 Chrome 和 Edge 中使用；在 Firefox 中，以及在另一网站的框架内创建通行密钥时，会使用浏览器自带的通行密钥对话框。如果您批准新通行密钥后网站取消了操作，应用会再次将其删除；如果应用无法确定网站是否保留了它，该通行密钥会留在您的保管库中，您可以在应用中删除它。</li>
+      <li>相似地址警告只是提示，不是屏障：页面自己的脚本可以绕过它，例如不提交表单就发送密码。请自行核对地址。</li>
+      <li>紧急访问没有服务器,所以只有应用本身会强制执行等待期和您的否决。任何持有足够份数的人都可以立刻恢复您的备份,无需等待。请选择不会联手的持有人,并把各份分开保管。</li>
+      <li>胁迫密码用来应对被迫解锁应用的情形。它不能防范检查您磁盘文件的人,细心的人可以发现存在第二个保管库。适用于 Windows、Mac、iPhone 和 Android。</li>
     </ul>
 
     <h2>报告漏洞</h2>
-    <p>请发邮件到 <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>。<a href="../legal/vulnerability-disclosure.html">漏洞披露政策</a>说明了适用范围、我们的响应速度，以及如何致谢研究人员。</p>
+    <p>请发邮件到 <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>。<a href="../legal/vulnerability-disclosure">漏洞披露政策</a>说明了适用范围、我们的响应速度，以及如何致谢研究人员。</p>
   </div>
 </div>
   </main>
@@ -139,43 +180,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>一款 Windows 密码管理器，把您的保管库保存在您自己的设备上。</p>
-        <p class="quiet">本网站不设置 Cookie，不运行统计分析，也不加载其他公司的任何内容。</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>适用于 Windows、Mac 和 iPhone 的密码管理器，让保管库留在您自己的设备上。</p>
+        <p class="quiet">本网站使用不依赖 Cookie 的 Cloudflare Web Analytics 统计页面访问量。网站不使用广告追踪器，也不设置 Cookie。</p>
       </div>
       <nav aria-label="产品">
         <h2>产品</h2>
         <ul>
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/licence.html">您的 Pro 许可证</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/download">下载</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/switch/">迁移</a></li>
+          <li><a href="../buy">购买 Pro</a></li>
+          <li><a href="../zh-hans/licence">您的 Pro 许可证</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">找回许可证</a></li>
         </ul>
       </nav>
       <nav aria-label="帮助">
         <h2>帮助</h2>
         <ul>
-          <li><a href="../zh-hans/help.html">用户指南</a></li>
-          <li><a href="../zh-hans/support.html">支持与常见问题</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">报告漏洞</a></li>
+          <li><a href="../zh-hans/help">用户指南</a></li>
+          <li><a href="../zh-hans/support">支持与常见问题</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../legal/vulnerability-disclosure">报告漏洞</a></li>
         </ul>
       </nav>
       <nav aria-label="法律">
         <h2>法律</h2>
         <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
         <ul>
-          <li><a href="../legal/eula.html">许可协议</a></li>
-          <li><a href="../legal/privacy.html">隐私政策</a></li>
-          <li><a href="../legal/terms-of-sale.html">销售条款</a></li>
-          <li><a href="../legal/refunds.html">退款政策</a></li>
+          <li><a href="../legal/eula">许可协议</a></li>
+          <li><a href="../legal/privacy">隐私政策</a></li>
+          <li><a href="../legal/terms-of-sale">销售条款</a></li>
+          <li><a href="../legal/refunds">退款政策</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。</p>
-      <p class="lang-switch" role="navigation" aria-label="语言"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。Apple、iPhone、Apple Watch、Face ID、Touch ID 和 Safari 是 Apple Inc. 在美国及其他国家/地区注册的商标。</p>
+      <nav class="lang-switch" aria-label="语言"><ul><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

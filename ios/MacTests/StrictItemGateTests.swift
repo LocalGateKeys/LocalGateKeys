@@ -105,5 +105,75 @@ final class StrictItemGateTests: XCTestCase {
         XCTAssertEqual(second, 0)
         XCTAssertTrue(gate.confirmMasterPassword(title: "Exporting passwords", action: "Export encrypted backup") { second += 1 })
     }
+
+    // MARK: emergency access (audit 2026-11-10)
+
+    /// Granting emergency access now and showing a recovered phrase ask for the master password: never Touch ID (the
+    /// Mac's Touch ID check releases no vault key) and never the Mac's login password. No gate refuses.
+    func testEmergencyOwnerCheckAsksTheMasterPassword() async {
+        let refused = await OwnerCheck.confirm("Grant access now", gate: nil)
+        XCTAssertFalse(refused, "no gate: refused")
+
+        let vault = FakeVault(), gate = StrictItemGate(passwords: vault)
+        let answer = Task { await OwnerCheck.confirm("Grant access now", gate: gate) }
+        for _ in 0..<10_000 where gate.pending == nil { await Task.yield() }
+        XCTAssertEqual(gate.pending?.level, .strict)
+        XCTAssertEqual(gate.pending?.offersTouchID, false)
+        XCTAssertEqual(gate.pending?.title, EmergencyAccessText.title)
+        await gate.submit("wrong")
+        XCTAssertNotNil(gate.pending, "a wrong password keeps the prompt")
+        await gate.submit("correct horse")
+        XCTAssertNil(gate.pending)
+        let confirmed = await answer.value
+        XCTAssertTrue(confirmed)
+
+        let cancelled = Task { await OwnerCheck.confirm("Show recovery phrase", gate: gate) }
+        for _ in 0..<10_000 where gate.pending == nil { await Task.yield() }
+        gate.cancel()
+        let afterCancel = await cancelled.value
+        XCTAssertFalse(afterCancel)
+
+        let dropped = Task { await OwnerCheck.confirm("Show recovery phrase", gate: gate) }
+        for _ in 0..<10_000 where gate.pending == nil { await Task.yield() }
+        gate.lockReset()
+        let afterLock = await dropped.value
+        XCTAssertFalse(afterLock, "a lock drops the prompt")
+    }
+
+    // MARK: Wi-Fi QR
+
+    private func wifi(strict: Bool) -> VaultItem {
+        var r: [String: JSONValue] = ["kind": .string("wifi"), "title": .string("Home"),
+                                      "payload": .object(["ssid": .string("Home"), "password": .string("pw"), "security": .string("wpa2")])]
+        if strict { r["policy"] = .object(["require_master_password": .bool(true)]) }
+        return VaultItem(id: "w", record: r)!
+    }
+
+    private func detail(_ item: VaultItem) -> ItemDetailModel {
+        ItemDetailModel(item: item, clipboard: MacClipboard.shared, clock: SystemClock(), concealSecrets: true)
+    }
+
+    func testWifiQRWaitsForTheGateOnStrictItems() {
+        let gate = StrictItemGate(passwords: FakeVault())
+        let item = wifi(strict: true), model = detail(item)
+        var result: Bool?
+        DetailPanel.requestWifiQR(model: model, item: item, gate: gate) { result = $0 }
+        XCTAssertNotNil(gate.pending, "the master password is asked first")
+        XCTAssertNil(model.wifiQRText)
+        XCTAssertNil(result)
+        gate.pending?.perform()
+        XCTAssertEqual(result, true)
+        XCTAssertNotNil(model.wifiQRText)
+    }
+
+    func testWifiQRShowsAtOnceOnOrdinaryItems() {
+        let gate = StrictItemGate(passwords: FakeVault())
+        let item = wifi(strict: false), model = detail(item)
+        var result: Bool?
+        DetailPanel.requestWifiQR(model: model, item: item, gate: gate) { result = $0 }
+        XCTAssertNil(gate.pending)
+        XCTAssertEqual(result, true)
+        XCTAssertNotNil(model.wifiQRText)
+    }
 }
 

@@ -24,7 +24,7 @@ def run() -> None:
     from ..settings import AppSettings
     from .bus import EventBus, QueuedSink
     from .ui_port import WebUiPort
-    from .window import (FileDialogs, PopupWindow, WindowOps, apply_glass, block_foreign_navigation,
+    from .window import (FileDialogs, PaletteWindow, PopupWindow, WindowOps, apply_glass, block_foreign_navigation,
                          install_call_guard, native_handle, origin_of, ui_index_path)
 
     index = ui_index_path()
@@ -51,6 +51,9 @@ def run() -> None:
         try:
             if profiles.active_profile() is not None:
                 cleanup_open_copies(profiles.profile_dir())
+                second = profiles.profile_dir() / ".lgk-d"  # a duress vault's own folder (duress.DECOY_DIR)
+                if second.is_dir():
+                    cleanup_open_copies(second)
         except OSError:
             pass
 
@@ -149,7 +152,27 @@ def run() -> None:
     )
     popup = PopupWindow(popup_window)
     host = WebAgentHost(controller, port, bus, window=late_ops, popup=popup)
+    # The quick-search palette the quick-access shortcut opens (setting quick_access_palette).
+    palette_window = webview.create_window(
+        BRAND_NAME, url=str(index.with_name("palette.html")), js_api=js_api, width=640, height=420,
+        frameless=True, resizable=False, on_top=True, hidden=True, background_color="#0C1424", text_select=False,
+    )
+    palette = PaletteWindow(palette_window)
+    palette.disabled = True  # until its navigation lock is installed (attach_palette)
+    host.palette = palette
+    api._palette_hide = host.hide_palette
+    api._palette_hide_window = palette.hide
+    api._palette_show_again = palette.show
+    api._palette_target = lambda: palette.target_hwnd
+    api._start_autotype_watch()  # auto-type: remembers the last non-LocalGateKeys window while it is on
+    controller.on_lock.append(host.hide_palette)  # the palette locks with the vault
     api._connections._extension = lambda: (host.last_extension_version, host.last_extension_seen)
+    api._passkey_doctor.extension = lambda: (host.last_extension_version, host.last_extension_seen)
+    api._developer.apply_agent = host.apply_ssh_agent
+    api._developer.agent_status = host.ssh_agent_status
+    # A pipe name held by another account: SSH_AUTH_SOCK is removed until the agent starts properly again.
+    host.on_ssh_agent_status = api._developer.agent_pipe_status
+    api._developer.agent_pipe_status(host.ssh_agent_status())
     from ..app.icons import IconProvider
 
     # Item icons (memory only): app icons for desktop logins; website icons only while
@@ -160,7 +183,19 @@ def run() -> None:
     api._home.icons = icons
     controller.on_lock.append(icons.clear)
 
+    from .. import windows_passkey_provider
+
+    # Windows passkey provider (MSIX): start-up clean-up, the switch, and the names-only metadata sync after unlock
+    # and item changes. Nothing on lock: Windows keeps the names (owner decision).
+    passkey_provider = windows_passkey_provider.attach(controller=controller, bus=bus, run_on_ui=host.run_on_ui,
+                                                       toast=lambda kind, text: host.set_status(text, kind))
+
     def settings_changed(key: str) -> None:
+        if key == "windows_passkey_provider":
+            passkey_provider.changed()
+            return
+        if key == "passkeys_enabled":
+            passkey_provider.passkeys_changed()  # off: Windows drops the names; on: full sync
         if key == "quick_access_hotkey":
             host.restart_hotkeys()
             return
@@ -168,6 +203,7 @@ def run() -> None:
             hide = controller.settings.hide_from_capture
             ops["ops"].set_capture_protection(hide)
             popup.set_capture_protection(hide)
+            palette.set_capture_protection(hide)
             return
         if key in ("strict_offline_mode", "website_icons"):
             icons.clear()  # a policy change never carries icons fetched under the old one
@@ -218,6 +254,10 @@ def run() -> None:
             popup_window.destroy()
         except Exception:  # noqa: BLE001 - already gone
             pass
+        try:
+            palette_window.destroy()
+        except Exception:  # noqa: BLE001, S110 - already gone
+            pass
         window.destroy()
 
     host.on_exit = exit_app
@@ -240,6 +280,7 @@ def run() -> None:
         # the page is detached before anything below emits.
         bus.attach(lambda _js: None)
         bus.attach(lambda _js: None, key="popup")
+        bus.attach(lambda _js: None, key="palette")
         # Revoke leases first: a desktop fill or browser request still running stops before its next write.
         controller.guard.invalidate()
         port.cancel_all()  # wake prompts first: their threads must not hold up stopping the pipe server
@@ -257,7 +298,14 @@ def run() -> None:
         from ..open_copy_watch import finish_at_exit
 
         try:
-            finish_at_exit(controller.profiles.profile_dir() if controller.profiles.active_profile() else None)
+            folder = controller.profiles.profile_dir() if controller.profiles.active_profile() else None
+            finish_at_exit(folder)
+            from ..duress import DECOY_DIR
+
+            # The other folder too: the real one after a duress session, or a duress vault's own folder.
+            other = (folder.parent if folder.name == DECOY_DIR else folder / DECOY_DIR) if folder else None
+            if other is not None and other.is_dir():
+                finish_at_exit(other)
         except Exception:  # noqa: BLE001 - the next launch still sweeps
             _log.warning("Open documents could not be handed over at exit", exc_info=True)
         port.cancel_all()
@@ -271,6 +319,28 @@ def run() -> None:
         return False
 
     popup_window.events.closing += on_popup_closing
+
+    def on_palette_closing() -> Any:
+        if exiting["value"]:
+            return True
+        host.hide_palette()  # Alt+F4 hides the palette; the window is kept for the next shortcut
+        return False
+
+    palette_window.events.closing += on_palette_closing
+
+    def attach_palette(app_origin: str) -> None:
+        # Fail closed like the popup: without its navigation lock the palette stays disabled and
+        # the shortcut opens the app's Quick access page instead.
+        if not palette_window.events.loaded.wait(_LOAD_TIMEOUT):
+            _log.error("The palette page did not load; the quick-access shortcut opens the app instead")
+            return
+        try:
+            block_foreign_navigation(palette_window, app_origin)
+        except Exception:  # noqa: BLE001 - logged; the palette stays disabled
+            _log.error("Navigation lock not installed on the palette; it is disabled", exc_info=True)
+            return
+        bus.attach(QueuedSink(palette_window.evaluate_js), key="palette")
+        palette.disabled = False
 
     def attach_popup(app_origin: str) -> None:
         # Fail closed: a popup whose navigation lock is missing is never shown or attached.
@@ -307,6 +377,7 @@ def run() -> None:
         hide_from_capture = getattr(controller.settings, "hide_from_capture", True) is not False
         ops["ops"].set_capture_protection(hide_from_capture)
         popup.set_capture_protection(hide_from_capture)
+        palette.set_capture_protection(hide_from_capture)
         glass = apply_glass(win)
         ops["ops"].set_theme(controller.settings.appearance)
         api._glass = glass
@@ -315,9 +386,11 @@ def run() -> None:
         import threading
 
         threading.Thread(target=attach_popup, args=(app_origin,), name="lgk-popup-attach", daemon=True).start()
+        threading.Thread(target=attach_palette, args=(app_origin,), name="lgk-palette-attach", daemon=True).start()
         controller.start()
         api._schedule.start()
         api._sync.enable()  # background sync while unlocked (never in tests)
+        api._removal.start()  # erase a vault another device removed from sync (signed notice; setting)
         api._licence.on_plan_change.append(api._sync.plan_changed)  # Pro-only: follow licence changes
         try:
             from ..browser_bridge import ensure_packaged_registration

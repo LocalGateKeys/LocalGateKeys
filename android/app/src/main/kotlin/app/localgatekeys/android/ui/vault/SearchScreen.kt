@@ -22,10 +22,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,7 +49,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,9 +71,11 @@ import kotlinx.coroutines.withContext
 @StringRes val NO_ACTIONS = R.string.vault_no_actions
 
 /**
- * The Search tab: a search field, a type filter menu and the matches as one solid group, over the same list model.
- * A query starting with `>` lists actions instead (workstream 5, [SearchCommand]); [focusKey] above 0 focuses the field
- * (Ctrl+K), again each time it changes.
+ * The vault search (pushed from the Vault tab's search button, as on the iPhone's `VaultSearchView`): a search field, a
+ * type filter menu and the matches as one solid group, over the same list model. While the field is empty it shows the
+ * recent searches of this unlock (tap searches again) and the recently changed items. A query starting with `>` lists
+ * actions instead (workstream 5, [SearchCommand]); Return runs the first action, or keeps an item search as a recent
+ * search. [focusKey] above 0 focuses the field (on arrival and Ctrl+K), again each time it changes.
  */
 @Composable
 fun SearchScreen(model: VaultListModel, seams: VaultSeams, focusKey: Int = 0) {
@@ -87,7 +93,20 @@ fun SearchScreen(model: VaultListModel, seams: VaultSeams, focusKey: Int = 0) {
     val options = remember(items) { VaultSearch.filterOptions(items, txt) }
     val tickClock = seams.clock
     val commands = remember(query, seams.commands) { SearchCommand.parse(query, txt, seams.commands) }
+    val recentSearches by model.recentSearches.collectAsStateWithLifecycle()
+    val recentItems = remember(items) { VaultListModel.recentItems(items) }
+    val submit: () -> Unit = {
+        val found = commands
+        if (found != null) {
+            found.firstOrNull()?.let { cmd -> model.query.value = ""; seams.onCommand(cmd) }
+        } else {
+            model.noteSearch()
+        }
+    }
     val focus = remember { FocusRequester() }
+    // The field's own value (text and cursor); a query set from outside (Ctrl+K's "> ", a recent search) puts the cursor
+    // at its end.
+    var field by remember { mutableStateOf(TextFieldValue(query, TextRange(query.length))) }
     val searchLabel = txt.s(R.string.search_hint)
     LaunchedEffect(focusKey) { if (focusKey > 0) runCatching { focus.requestFocus() } }
 
@@ -102,15 +121,17 @@ fun SearchScreen(model: VaultListModel, seams: VaultSeams, focusKey: Int = 0) {
                 Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                     if (query.isEmpty()) Text(stringResource(if (seams.commands.isEmpty()) R.string.search_hint else R.string.search_hint_actions), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
                     BasicTextField(
-                        value = query,
+                        value = syncedSearchField(field, query),
                         onValueChange = {
                             monitor?.textChanged()
-                            model.query.value = it
+                            field = it
+                            model.query.value = it.text
                         },
                         singleLine = true,
                         textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.text),
                         cursorBrush = SolidColor(c.accent),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { submit() }),
                         modifier = Modifier.fillMaxWidth().focusRequester(focus).testTag("search-field").semantics { contentDescription = searchLabel },
                     )
                 }
@@ -141,16 +162,40 @@ fun SearchScreen(model: VaultListModel, seams: VaultSeams, focusKey: Int = 0) {
                         }
                     }
                 }
+            } else if (query.isEmpty()) {
+                if (recentSearches.isNotEmpty()) {
+                    item(key = "recent-searches") {
+                        Column(Modifier.fillMaxWidth()) {
+                            SectionHeader(stringResource(R.string.search_recent_searches))
+                            Column(Modifier.fillMaxWidth().lgkGroupSurface().testTag("recent-searches")) {
+                                for (q in recentSearches) RecentSearchRow(q) { model.query.value = q }
+                            }
+                        }
+                    }
+                }
+                if (recentItems.isNotEmpty()) {
+                    item(key = "recent-items-header") { SectionHeader(stringResource(R.string.search_recent_items)) }
+                    itemsIndexed(recentItems, key = { _, it -> "recent:" + it.id }) { index, it ->
+                        VaultRow(it, index == 0, index == recentItems.lastIndex, seams.onOpenItem, seams.clipboard, tickClock, toggleFavorite)
+                    }
+                } else if (recentSearches.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(NO_ITEMS), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("search-empty"),
+                        )
+                    }
+                }
             } else if (visible.isEmpty()) {
                 item {
                     Text(
-                        stringResource(if (query.isEmpty()) NO_ITEMS else NO_MATCHES),
+                        stringResource(NO_MATCHES),
                         color = c.secondaryText, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("search-empty"),
                     )
                 }
             }
-            if (commands == null) {
+            if (commands == null && query.isNotEmpty()) {
                 itemsIndexed(visible, key = { _, it -> it.id }) { index, it ->
                     VaultRow(it, index == 0, index == visible.lastIndex, seams.onOpenItem, seams.clipboard, tickClock, toggleFavorite)
                 }
@@ -196,6 +241,26 @@ private fun TypeFilterMenu(
     }
 }
 
+/** One recent search: tapping it searches again. */
+@Composable
+private fun RecentSearchRow(query: String, onClick: () -> Unit) {
+    val c = LgkTheme.colors
+    val hint = stringResource(R.string.search_again_hint)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClickLabel = hint, onClick = onClick)
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .testTag("recent-search"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.History, null, Modifier.size(20.dp), tint = c.secondaryText)
+        Spacer(Modifier.width(12.dp))
+        Text(query, color = c.text, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+    }
+}
+
 /** One action row of a `>` search. */
 @Composable
 private fun CommandRow(cmd: SearchCommand, onClick: () -> Unit) {
@@ -212,3 +277,11 @@ private fun CommandRow(cmd: SearchCommand, onClick: () -> Unit) {
             .testTag("command-row"),
     )
 }
+
+/**
+ * What the search field shows: [field] while it holds [query] (typing, with its cursor and selection), otherwise [query]
+ * with the cursor at the end. A query set from outside (Ctrl+K's "> ", a recent search, a cleared field) would
+ * otherwise keep the old cursor, and Ctrl+K then typing gave "sec> " instead of "> sec" (release check 2026-11-01).
+ */
+internal fun syncedSearchField(field: TextFieldValue, query: String): TextFieldValue =
+    if (field.text == query) field else TextFieldValue(query, TextRange(query.length))

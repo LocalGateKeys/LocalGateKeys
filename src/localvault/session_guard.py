@@ -45,6 +45,9 @@ class SessionGuard:
             self._grants.clear()
             if profile_id is not None:
                 self.profile_id = profile_id
+        # Lock, profile switch and unlock end every remembered local-client (SSH, CLI) approval.
+        from .local_clients.approvals import default_approvals
+        default_approvals().revoke_all()
 
     def open(self, max_seconds: int) -> Lease:
         with self._lock:

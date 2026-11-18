@@ -275,7 +275,7 @@ def test_v2_kdf_header_uses_vault_defaults_and_accepts_only_bounded_parameters(c
         header = json.loads(archive.read("header.json"))
     assert header["version"] == 2
     assert {key: header["kdf"][key] for key in ("name", "time_cost", "memory_cost_kib", "parallelism")} == {
-        "name": "argon2id", "time_cost": 3, "memory_cost_kib": 65536, "parallelism": 4}
+        "name": "argon2id", "time_cost": 3, "memory_cost_kib": 262144, "parallelism": 4}
 
     fast = case_dir / "fast.lgk"
     export_full_backup(fast, profile_dir=profile, profile_name="Synthetic profile",
@@ -332,6 +332,35 @@ def test_v2_full_backup_keeps_the_per_device_language_out(case_dir: Path) -> Non
     atomic_write_json(restored / "settings.json", {"version": SETTINGS_VERSION, "language": "fr"})
     _restore(backup, restored, replace=True, allow_rollback=True)
     assert json.loads((restored / "settings.json").read_text("utf-8"))["language"] == "fr"
+
+
+def test_v2_full_backup_keeps_the_developer_settings_per_device(case_dir: Path) -> None:
+    import json
+
+    profile, _item_id, _marker = _profile(case_dir / "source")
+    atomic_write_json(profile / "settings.json", {"version": SETTINGS_VERSION, "developer_ssh_agent": True,
+                                                  "developer_ssh_keys": ["source-key"]})
+    backup = _export(case_dir, profile)
+    restored = case_dir / "restored"
+    _restore(backup, restored)
+    first = json.loads((restored / "settings.json").read_text("utf-8"))
+    assert first.get("developer_ssh_agent", False) is False and first.get("developer_ssh_keys", []) == []
+    # Restoring over this device keeps its own switch and allow-list.
+    atomic_write_json(restored / "settings.json", {"version": SETTINGS_VERSION, "developer_ssh_agent": True,
+                                                   "developer_ssh_keys": ["device-key"],
+                                                   "developer_saved_env": {"SSH_AUTH_SOCK": None}})
+    _restore(backup, restored, replace=True, allow_rollback=True)
+    after = json.loads((restored / "settings.json").read_text("utf-8"))
+    assert after["developer_ssh_agent"] is True and after["developer_ssh_keys"] == ["device-key"]
+    assert after["developer_saved_env"] == {"SSH_AUTH_SOCK": None}
+
+
+def test_validated_full_settings_drop_the_developer_settings() -> None:
+    from localvault.backup import _full_validate_settings
+
+    exported = _full_validate_settings({"version": SETTINGS_VERSION, "developer_ssh_agent": True,
+                                        "developer_ssh_keys": ["k"], "developer_saved_git": {"a": "b"}})
+    assert not [name for name in exported if name.startswith("developer_")]
 
 
 def test_validated_full_settings_ignore_a_language_key() -> None:

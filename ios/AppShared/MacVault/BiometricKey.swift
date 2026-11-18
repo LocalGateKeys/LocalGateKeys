@@ -25,13 +25,17 @@ public final class SystemBiometricKeyStore: BiometricKeyStore {
     public static let service = "com.localgatekeys.mac.touchid"
     public static let account = "local-key"
     public let accessGroup: String?
+    /// Mac profiles: `"<profile id>/"` before the account; empty for the default profile.
+    public let accountPrefix: String
 
-    public init(accessGroup: String? = nil) { self.accessGroup = accessGroup }
+    public init(accessGroup: String? = nil, accountPrefix: String = "") {
+        self.accessGroup = accessGroup; self.accountPrefix = accountPrefix
+    }
 
     private func base() -> [String: Any] {
         var q: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
                                 kSecAttrService as String: Self.service,
-                                kSecAttrAccount as String: Self.account,
+                                kSecAttrAccount as String: accountPrefix + Self.account,
                                 kSecAttrSynchronizable as String: false,
                                 kSecUseDataProtectionKeychain as String: true]
         if let accessGroup { q[kSecAttrAccessGroup as String] = accessGroup }

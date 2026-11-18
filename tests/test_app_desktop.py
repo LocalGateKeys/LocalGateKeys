@@ -302,3 +302,63 @@ def test_a_sign_in_scan_cannot_be_used_to_rebind(env):
         env.service.binding_form(form["token"])
     with pytest.raises(ApiError):
         env.service.save_binding(form["token"], 0, 1)
+
+
+def _palette_fill(env, entry_id, *, front):
+    marks = []
+    env.service._activate = lambda hwnd: marks.append(("activate", hwnd))
+    env.service._uia.foreground_hwnd = lambda: front
+    try:
+        env.service.fill_entry_into(entry_id, 7, hide=lambda: marks.append("hide"),
+                                    show_again=lambda: marks.append("show"))
+    except ApiError as exc:
+        marks.append(exc.code)
+    return marks
+
+
+def test_the_palette_fills_the_chosen_login_into_the_saved_window(env):
+    entry_id = _bind(env)["entry_id"]
+    assert _palette_fill(env, entry_id, front=7) == ["hide", ("activate", 7)]
+    assert env.filled == ["ann"]
+
+
+def test_the_palette_refuses_when_the_saved_window_is_not_back_in_front(env):
+    entry_id = _bind(env)["entry_id"]
+    assert _palette_fill(env, entry_id, front=8) == ["hide", ("activate", 7), "show", "not_front"]
+    assert env.filled == []
+
+
+def test_the_palette_refuses_a_login_not_bound_to_the_saved_window(env):
+    entry_id = _bind(env)["entry_id"]
+    env.state.snap = snapshot(exe=r"C:\Program Files\Other\other.exe")
+    assert _palette_fill(env, entry_id, front=7) == ["cannot_fill"]
+    assert env.filled == []
+
+
+def test_the_palette_refuses_without_a_saved_window(env):
+    entry_id = _bind(env)["entry_id"]
+    with pytest.raises(ApiError) as caught:
+        env.service.fill_entry_into(entry_id, 0, hide=lambda: None, show_again=lambda: None)
+    assert caught.value.code == "not_front" and env.filled == []
+
+
+def test_a_refused_palette_fill_shows_the_palette_again_with_the_reason(env, monkeypatch):
+    entry_id = _bind(env)["entry_id"]
+    from localvault import access_policy
+
+    original = access_policy.normalized_policy
+    monkeypatch.setattr(access_policy, "normalized_policy", lambda p: {**original(p), "fill": "never"})
+    assert _palette_fill(env, entry_id, front=7) == ["hide", ("activate", 7), "show", "fill_refused"]
+    assert env.filled == []
+
+
+def test_a_declined_reauth_is_reported_back_to_the_palette(env, monkeypatch):
+    entry_id = _bind(env)["entry_id"]
+    from localvault import access_policy
+
+    original = access_policy.normalized_policy
+    monkeypatch.setattr(access_policy, "normalized_policy",
+                        lambda p: {**original(p), "require_master_password": True})
+    env.service._reauthenticate = lambda title, lease: False
+    assert _palette_fill(env, entry_id, front=7)[-2:] == ["show", "fill_refused"]
+    assert env.filled == []

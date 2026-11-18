@@ -7,6 +7,7 @@ import app.localgatekeys.core.records.Namespace
 import app.localgatekeys.core.records.Origin
 import app.localgatekeys.core.sync.StoreSnapshot
 import java.net.URI
+import app.localgatekeys.core.sync.itemRecords
 
 internal fun JsonValue?.stringOrNull(): String? = (this as? JsonValue.Str)?.v
 
@@ -113,12 +114,12 @@ data class VaultItem(
             return origin
         }
 
-        /** Live records of the snapshot: no tombstones, no licence states, nothing without a record and a kind. */
-        fun items(snapshot: StoreSnapshot): List<VaultItem> = snapshot.records.mapNotNull { (id, wrapper) ->
+        /** Live records of the snapshot: no tombstones, no licence states or emergency access plan, nothing without a record and a kind. */
+        fun items(snapshot: StoreSnapshot): List<VaultItem> = snapshot.itemRecords.mapNotNull { (id, wrapper) ->
             if (snapshot.meta[id]?.deleted == true) return@mapNotNull null
             val w = wrapper.objectOrNull() ?: return@mapNotNull null
             val ns = w["ns"].stringOrNull() ?: return@mapNotNull null
-            if (ns == Namespace.LICENSE.wire) return@mapNotNull null
+            if (ns == Namespace.LICENSE.wire || ns == Namespace.HEIR.wire) return@mapNotNull null
             val r = w["record"] as? JsonValue.Obj ?: return@mapNotNull null
             of(id, r)
         }

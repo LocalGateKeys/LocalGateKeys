@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">Um lembrete vence</string>
+    <string name="reminder_named_body">%1$s vence</string>
+    <string name="reminder_save_failed">Não foi possível salvar o lembrete neste celular.</string>
+    <string name="reminder_channel_name">Lembretes</string>
+    <string name="reminder_section">Lembrete</string>
+    <string name="reminder_due">Vencimento</string>
+    <string name="reminder_remind_me">Lembrar-me</string>
+    <string name="reminder_change">Alterar lembrete</string>
+    <string name="reminder_remove">Remover lembrete</string>
+    <string name="reminder_add">Adicionar lembrete</string>
+    <string name="reminder_suggest_button">Lembrar-me antes de expirar</string>
+    <string name="reminder_card_expires">Este cartão expira em %1$s.</string>
+    <string name="reminder_due_date">Data de vencimento</string>
+    <string name="reminder_on_the_day">No dia</string>
+    <string name="reminder_upcoming">Próximos</string>
+    <string name="reminder_nothing_upcoming">Nada previsto para os próximos 30 dias.</string>
+    <string name="reminder_overdue_due">Atrasado · vencia em %1$s</string>
+    <string name="reminder_due_on">Vence em %1$s</string>
+    <string name="reminder_snooze">Adiar</string>
+    <string name="reminder_snooze_day">Adiar por um dia</string>
+    <string name="reminder_notifications_off">As notificações estão desativadas para o LocalGateKeys. Os lembretes ainda aparecem aqui.</string>
+    <string name="reminder_settings_title">Lembretes</string>
+    <string name="reminder_show_names">Mostrar os nomes dos itens nas notificações</string>
+    <string name="reminder_settings_footer">Adicione um lembrete a partir de um cartão, documento ou assinatura. Desativado: as notificações dizem apenas “Um lembrete vence”, então nada sobre o item aparece na tela bloqueada. Ativado: o nome do item também pode aparecer na tela bloqueada, dependendo da configuração de notificações na tela bloqueada do seu celular.</string>
+    <string name="reminder_editor_footer">Uma notificação chega às 9:00 do dia. Ela diz apenas “Um lembrete vence” a menos que Ajustes › Lembretes mostre os nomes dos itens. Os lembretes ficam neste celular e nunca são sincronizados.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d dia antes</item>
+        <item quantity="other">%1$d dias antes</item>
+    </plurals>
+</resources>

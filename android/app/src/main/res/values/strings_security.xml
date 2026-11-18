@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Security</string>
+    <string name="security_cat_breached">Breached</string>
+    <string name="security_cat_reused">Reused</string>
+    <string name="security_cat_weak">Weak</string>
+    <string name="security_cat_old">Old</string>
+    <string name="security_cat_no_2fa">2FA available</string>
+    <string name="security_expl_breached">These passwords appear in known data breaches. Change them first.</string>
+    <string name="security_expl_reused">These passwords are used for more than one login. If one site leaks, the others are exposed.</string>
+    <string name="security_expl_weak">These passwords are short or easy to guess.</string>
+    <string name="security_expl_old">These passwords have not changed for over a year. Age alone is not a reason to change them.</string>
+    <string name="security_expl_no_2fa">This site offers two-factor codes, but this login has none.</string>
+    <string name="security_blocked_offline">Strict offline mode is on, so breach checks are blocked. Turn it off in Settings › Breach checks.</string>
+    <string name="security_blocked_disabled">Breach checks are off. Turn them on in Settings › Breach checks.</string>
+    <string name="security_status_cancelled">Breach check cancelled.</string>
+    <string name="security_status_checking">Checking passwords…</string>
+    <string name="security_status_none_found">No breached passwords found.</string>
+    <string name="security_status_found">%1$d breached password(s) found.</string>
+    <string name="security_status_some_failed">Some passwords could not be checked. Try again later.</string>
+    <string name="security_band_none">No logins yet</string>
+    <string name="security_band_good">Good</string>
+    <string name="security_band_fair">Fair</string>
+    <string name="security_band_poor">Poor</string>
+    <string name="security_empty_hint">Add logins to see how healthy your passwords are.</string>
+    <string name="security_score_description">Security score %1$d out of 100</string>
+    <string name="security_no_score">No security score yet</string>
+    <string name="security_checks_header">Checks</string>
+    <string name="security_breach_header">Breach check</string>
+    <string name="security_breach_start">Check for breached passwords</string>
+    <string name="security_cancel">Cancel</string>
+    <string name="security_checking">Checking…</string>
+    <string name="security_show_dismissed">Show dismissed items again</string>
+    <string name="security_confirm_title">Check every password with Have I Been Pwned?</string>
+    <string name="security_confirm_action">Check</string>
+    <string name="security_consent">Breach checks send only the first 5 characters of each password\'s SHA-1 hash to Have I Been Pwned, over HTTPS with padding, and only when you start one. No password, full hash, username or website is sent. The service sees your IP address.</string>
+    <string name="security_nothing_to_fix">Nothing to fix here.</string>
+    <string name="security_dismiss">Dismiss</string>
+    <string name="security_change_password">Change password</string>
+    <string name="security_dismiss_item">Dismiss for this item</string>
+    <string name="security_row_description">%1$s, %2$d items</string>
+    <string name="security_checks_footer">Local checks are guidance, not a guarantee. Nothing leaves this phone unless you start a breach check.</string>
+    <string name="security_issue_footer">%1$s Use the menu on a login to change its password or dismiss it here.</string>
+    <string name="security_row_menu">More actions for %1$s</string>
+    <string name="security_untitled">Untitled login</string>
+</resources>

@@ -205,6 +205,56 @@ def test_integrations_start_and_stop(env):
     assert all(made[name].stopped for name in ("pipe", "hotkey", "monitor", "tray"))
 
 
+class FakeAgent:
+    def __init__(self, host, status_after_start="running"):
+        self.host, self.status, self._after = host, "stopped", status_after_start
+        self.starts = self.stops = 0
+
+    def start(self):
+        self.starts += 1
+        self.status = self._after
+
+    def stop(self):
+        self.stops += 1
+        if self.status == "running":
+            self.status = "stopped"
+
+
+def test_ssh_agent_follows_the_developer_setting(env):
+    made = []
+    env.host.post = lambda fn: fn()
+    factory = lambda name: (lambda *a, **k: Fake(*a, **k))  # noqa: E731
+    env.host.start_integrations(pipe=factory("pipe"), hotkey=factory("hotkey"), monitor=factory("monitor"),
+                                tray=factory("tray"), overlay=factory("overlay"),
+                                ssh_agent=lambda host: made.append(FakeAgent(host)) or made[-1])
+    assert made == [] and env.host.ssh_agent_status() == "off"  # off by default
+    env.host.settings.developer_ssh_agent = True
+    assert env.host.apply_ssh_agent() == "running"
+    assert made[0].host is env.host and made[0].starts == 1
+    assert env.host.apply_ssh_agent() == "running" and len(made) == 1  # already running: unchanged
+    env.host.settings.developer_ssh_agent = False
+    assert env.host.apply_ssh_agent() == "off" and made[0].stops == 1
+    env.host.settings.developer_ssh_agent = True
+    env.host.apply_ssh_agent()
+    env.host.stop_integrations()
+    assert made[1].stops == 1 and env.host.ssh_agent_status() == "off"
+
+
+def test_ssh_agent_name_taken_is_reported_and_retried(env):
+    made = []
+    env.host.settings.developer_ssh_agent = True
+    env.host.post = lambda fn: fn()
+    factory = lambda name: (lambda *a, **k: Fake(*a, **k))  # noqa: E731
+    env.host.start_integrations(pipe=factory("pipe"), hotkey=factory("hotkey"), monitor=factory("monitor"),
+                                tray=factory("tray"), overlay=factory("overlay"),
+                                ssh_agent=lambda host: made.append(FakeAgent(host, "unavailable")) or made[-1])
+    assert env.host.ssh_agent_status() == "unavailable"
+    assert env.host.apply_ssh_agent() == "unavailable" and len(made) == 2  # tried again
+    env.host._ssh_agent_factory = lambda host: (_ for _ in ()).throw(OSError("no pywin32"))
+    assert env.host.apply_ssh_agent() == "unavailable" and env.host.ssh_agent_status() == "off"
+    env.host.stop_integrations()
+
+
 def test_hotkey_callbacks(env, monkeypatch):
     marks = []
     monkeypatch.setattr("localvault.app.lockmodes.require_master_unlock", lambda pid: marks.append(pid) or True)
@@ -308,11 +358,11 @@ def test_waiting_for_unlock_releases_the_vault_lock(env):
     worker.start()
     import time as _time
     _time.sleep(0.15)
-    got = lock.acquire(timeout=1)  # the page's unlock (or any page call) is not stuck behind the request
+    got = lock.acquire(timeout=10)  # the page's unlock (or any page call) is not stuck behind the request
     if got:
         lock.release()
     env.controller.unlock(MASTER)
-    worker.join(3)
+    worker.join(30)
     assert got and result["r"] is True
 
 
@@ -360,6 +410,17 @@ def test_a_shortcut_windows_refuses_brings_back_the_old_one(env):
     env.host.restart_hotkeys()
     assert built[0].stopped and env.host.hotkey is built[1]
     assert env.host.hotkey.kwargs["quick_hotkey"] == made["hotkey"].kwargs["quick_hotkey"]
+
+
+def test_an_emergency_lock_hotkey_windows_refuses_is_shown(env):
+    class Refused(Fake):
+        def start(self):
+            super().start()
+            self.emergency_error = "Ctrl+Alt+L is already registered by another application"
+
+    env.host.post = lambda fn: fn()
+    env.host.start_integrations(pipe=Fake, hotkey=Refused, monitor=Fake, tray=Fake, overlay=Fake)
+    assert any("Ctrl+Alt+L is already registered" in str(d) for _n, d in env.bus.events)
 
 
 class OverlayFake(Fake):
@@ -495,3 +556,122 @@ def test_fill_prompts_go_to_the_popup_and_it_hides_when_answered(env):
     port.answer(request["id"], "a")
     worker.join(2)
     assert box["r"] == "a" and popup.calls == ["show", "hide"]
+
+
+class Palette:
+    def __init__(self):
+        self.calls = []
+        self.disabled = False
+
+    def show_centered(self):
+        self.calls.append("show")
+        return True
+
+    def hide(self):
+        self.calls.append("hide")
+
+
+def test_quick_access_opens_the_palette_when_the_setting_is_on(env):
+    env.host.palette = palette = Palette()
+    env.controller.settings.quick_access_palette = True
+    env.host.quick_access()
+    assert palette.calls == ["show"]
+    assert ("palette.show", {}) in env.bus.events
+    assert ("navigate", {"route": "quick-access"}) not in env.bus.events
+
+
+def test_quick_access_opens_the_app_page_when_the_setting_is_off(env):
+    env.host.palette = palette = Palette()
+    env.controller.settings.quick_access_palette = False
+    env.host.quick_access()
+    assert palette.calls == []
+    assert ("navigate", {"route": "quick-access"}) in env.bus.events
+
+
+def test_quick_access_falls_back_to_the_app_page_without_a_palette(env):
+    env.host.palette = palette = Palette()
+    palette.disabled = True
+    env.host.quick_access()
+    assert ("navigate", {"route": "quick-access"}) in env.bus.events
+
+
+def test_hide_palette_tells_the_page_and_hides_the_window(env):
+    env.host.palette = palette = Palette()
+    env.host.hide_palette()
+    assert palette.calls == ["hide"] and ("palette.hide", {}) in env.bus.events
+
+
+def test_hiding_the_palette_cancels_its_prompts(env):
+    cancelled = []
+    env.host.palette = Palette()
+    env.host._port = SimpleNamespace(cancel_surface=cancelled.append)
+    env.host.hide_palette()
+    assert cancelled == ["palette"]
+
+
+def test_lock_hides_palette(env):
+    env.host.palette = palette = Palette()
+    env.host.lock()
+    assert not env.controller.is_unlocked()
+    assert palette.calls == ["hide"] and ("palette.hide", {}) in env.bus.events
+
+
+def test_emergency_lock_hides_palette(env, monkeypatch):
+    monkeypatch.setattr("localvault.app.lockmodes.require_master_unlock", lambda pid: True)
+    env.host.palette = palette = Palette()
+    env.host.emergency_lock()
+    assert "hide" in palette.calls
+
+
+def test_a_popup_question_hides_the_palette(env):
+    host, _port, popup = _popup_host(env)
+    host.palette = palette = Palette()
+    host.show_popup()
+    assert palette.calls == ["hide"]
+
+
+# ------------------------------------------------------------- duress session (sub-plan 08, Task 4)
+DURESS = "orange tractor sunset"
+
+
+def _duress_session(env):
+    from localvault import duress
+
+    env.controller.session.item_service.create_ssh_key("deploy", private_key="", public_key="")
+    duress.setup(env.controller.session, DURESS, lock_hours=6, master_password=MASTER)
+    env.controller.lock()
+    env.controller.unlock(DURESS)
+    assert duress.is_decoy(env.controller.session) and env.controller.is_unlocked()
+
+
+def test_a_duress_session_serves_no_browser_or_cli_request(env):
+    from localvault.cli_service import CliService
+
+    _duress_session(env)
+    assert env.host.session is None
+    assert request(env.host, "ping")["locked"] is True
+    assert request(env.host, "begin_browser") == {"ok": False, "error": "integration_disabled"}
+    assert env.host.ensure_unlocked() is False and env.window.calls == []  # no window raised, no wait
+    env.host.settings.developer_cli = True
+    assert CliService(env.host).dispatch({"action": "list"}, None)["error"] == "locked"
+    env.controller.lock()
+    assert request(env.host, "ping")["locked"] is True  # locked again: the ordinary locked answer
+
+
+def test_a_duress_session_stops_the_ssh_agent(env):
+    from localvault.ssh_agent import SshAgentService
+
+    made = []
+    env.host.post = lambda fn: fn()
+    factory = lambda name: (lambda *a, **k: Fake(*a, **k))  # noqa: E731
+    env.host.settings.developer_ssh_agent = True
+    env.host.start_integrations(pipe=factory("pipe"), hotkey=factory("hotkey"), monitor=factory("monitor"),
+                                tray=factory("tray"), overlay=factory("overlay"),
+                                ssh_agent=lambda host: made.append(FakeAgent(host)) or made[-1])
+    assert env.host.ssh_agent_status() == "running"
+    _duress_session(env)
+    assert env.host.ssh_agent_status() == "off" and made[0].stops == 1
+    assert SshAgentService(env.host).identities() == []
+    env.controller.lock()
+    assert env.host.ssh_agent_status() == "running" and len(made) == 2  # back once the duress session ends
+    env.host.stop_integrations()

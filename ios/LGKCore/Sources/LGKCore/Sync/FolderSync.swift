@@ -88,16 +88,38 @@ public struct FolderSync {
     /// This device's own attachment files (attachment sync). nil: no capability file is written, received
     /// documents wait (`attachment-missing`) and documents are never published.
     public let attachmentBlobs: (any AttachmentBlobStore)?
+    /// The removal watch file next to the vault (desktop `_watch_path`): refreshed from the trusted state on every
+    /// run, deleted when the store has no group. nil: no file (a stopped run still checks for a notice).
+    public let removalWatch: (any RemovalWatchStore)?
+    /// Personal collections (sub-plan 07 Task 5d; desktop `folder_transport` gate): this device writes its signed
+    /// `.lgkcol` capability file, and collection states are merged and published only when every other member of the
+    /// accepted keyring wrote a valid one (`FeatureCapability`, counter 1). false: the v1 behaviour (no file, no
+    /// collection states), what an older app does.
+    public let collections: Bool
+    /// This device's share records (`CollectionShares`): links it speaks for and read-only collections, applied in
+    /// every run.
+    public let collectionShares: CollectionShares
+    /// Shared collections (sub-plan 07; desktop `FolderSync(share=)`): this folder holds that share group, not the
+    /// personal one, and `runOnce` runs it (`runShare`). nil: the personal group (the default; nothing changes for it).
+    public let share: Share?
 
     public init(access: any FolderAccess, installID: String, licenseKeys: [String: [UInt8]] = [:],
                 pairedKeys: [String: String] = [:], witnessMemory: WitnessMemory = WitnessMemory(),
-                attachmentBlobs: (any AttachmentBlobStore)? = nil) throws {
+                attachmentBlobs: (any AttachmentBlobStore)? = nil, removalWatch: (any RemovalWatchStore)? = nil,
+                collections: Bool = false, collectionShares: CollectionShares = .none, share: Share? = nil) throws {
         guard !installID.isEmpty, installID.unicodeScalars.count <= Self.maxInstallID, !installID.contains("\u{0}") else {
             throw FolderSyncError("bad-install-id", "install id must be a non-empty bounded string")
+        }
+        if let share, !Identifier.isValid(share.groupID) {
+            throw FolderSyncError("bad-share", "share group id is malformed")
         }
         self.access = access; self.installID = installID; self.licenseKeys = licenseKeys; self.pairedKeys = pairedKeys
         self.witnessMemory = witnessMemory
         self.attachmentBlobs = attachmentBlobs
+        self.removalWatch = removalWatch
+        self.collections = collections
+        self.collectionShares = collectionShares
+        self.share = share
     }
 
     // MARK: keyring
@@ -192,6 +214,28 @@ public struct FolderSync {
               let other = try? Keyring.unwrapDevice(ring, identity: state.identity),
               Keyring.macOK(ring, key: other) else { return false }
         return other.key != trusted.key
+    }
+
+    /// `removal-notice` (detail: the signer) when a member this device trusted signed that it was removed (desktop
+    /// `_removal_issues`; never throws). Checked only when a run stops without a trusted keyring; the watch file is
+    /// refreshed from the trusted state first, so the app's locked check sees the same thing.
+    func removalIssues(_ state: SyncGroupState) -> [SyncIssue] {
+        guard let fresh = RemovalWatch.derive(state, folder: removalWatch?.folder ?? "") else { return [] }
+        let watch = RemovalWatch.refresh(removalWatch, fresh)
+        guard let notice = RemovalNotice.check(watch, access: access, installID: installID) else { return [] }
+        return [SyncIssue(RemovalNotice.issueKind, notice.signer)]
+    }
+
+    /// Writes the signed notice that `deviceID` was removed at `epoch` (desktop `write_removal_notice`); false when
+    /// it could not be written. Best effort: the rotation already happened; without the notice the removed device
+    /// only stops syncing (it is never erased).
+    @discardableResult
+    func writeRemovalNotice(_ identity: DeviceIdentity, groupID: String, deviceID: String, epoch: Int64, now: Int64) -> Bool {
+        guard let path = RemovalNotice.path(deviceID),
+              let data = try? RemovalNotice.make(identity: identity, groupID: groupID, deviceID: deviceID, epoch: epoch,
+                                                 issuedAt: now),
+              (try? access.writeAtomic(path, data)) != nil else { return false }
+        return true
     }
 
     static func memberIDs(_ ring: JSONValue) -> Set<String> {
@@ -410,7 +454,38 @@ public struct FolderSync {
     // MARK: one run
 
     /// One full folder sync (desktop `run_once`). Never throws: every problem is an issue in the report.
+    /// A device rewrites its heartbeat at most this often (desktop seen.HEARTBEAT_SECONDS).
+    public static let heartbeatSeconds: Int64 = 15 * 60
+    static let heartbeatMaxBytes = 64 * 1024
+
+    /// The time in deviceID's heartbeat, or nil (missing, bad, or not signed by signer).
+    public func readHeartbeat(_ gk: GroupKey, deviceID: String, signer: String?) -> Int64? {
+        guard let signer, let path = FolderLayout.heartbeatFile(deviceID),
+              let sigPath = FolderLayout.heartbeatSignatureFile(deviceID),
+              let raw = try? access.read(path, limit: Self.heartbeatMaxBytes + 1), raw.count <= Self.heartbeatMaxBytes,
+              let sig = try? access.read(sigPath, limit: ViewSignature.maxBytes + 1), sig.count <= ViewSignature.maxBytes,
+              let view = try? ViewFile.decode(raw, key: gk, expectedDeviceID: deviceID, maxBytes: Self.heartbeatMaxBytes,
+                                              maxRecords: 0),
+              let key = try? ViewSignature.verify(sig, raw: raw, header: view.header),
+              Base64.encode(key) == signer else { return nil }
+        return view.header.writtenAt
+    }
+
+    /// Writes this device's heartbeat unless its own valid one is younger than heartbeatSeconds.
+    func writeHeartbeat(_ gk: GroupKey, identity: DeviceIdentity, clock: some UnixClock, random: some RandomSource) throws {
+        let own = Base64.encode(identity.signingPublicKey)
+        if let last = readHeartbeat(gk, deviceID: identity.deviceID, signer: own),
+           (0..<Self.heartbeatSeconds).contains(clock.now - last) { return }
+        guard let path = FolderLayout.heartbeatFile(identity.deviceID),
+              let sigPath = FolderLayout.heartbeatSignatureFile(identity.deviceID) else { return }
+        let raw = try ViewFile.encode(key: gk, deviceID: identity.deviceID, counter: 0, states: [], now: clock, random: random)
+        let sig = try ViewSignature.sign(raw, header: try ViewFile.decodeHeader(raw), identity: identity)
+        try access.writeAtomic(path, raw)
+        try access.writeAtomic(sigPath, sig)
+    }
+
     public func runOnce(store: any ItemStore, random: some RandomSource, clock: some UnixClock) -> RunReport {
+        if let share { return runShare(store: store, share: share, random: random, clock: clock) }
         let now = clock.now
         var fail = RunReport()
         let snapshot: StoreSnapshot
@@ -418,7 +493,11 @@ public struct FolderSync {
             fail.issues = [SyncIssue("local-data", "\(error)")]
             return fail
         }
-        guard var state = snapshot.sync else { fail.issues = [SyncIssue("not-joined")]; return fail }
+        guard var state = snapshot.sync else {
+            removalWatch?.forget()   // left or reset: a later notice must not erase this vault
+            fail.issues = [SyncIssue("not-joined")]
+            return fail
+        }
         guard state.installID == installID else { fail.issues = [SyncIssue("rejoin-required", "install-mismatch")]; return fail }
         guard state.hasFolder, access.exists(FolderLayout.syncDir) else {
             fail.issues = [SyncIssue("folder-missing", FolderLayout.syncDir)]
@@ -426,12 +505,19 @@ public struct FolderSync {
         }
         var (issues, gkOpt, ringOpt, ringBytesOpt) = trustedKeyring(state)
         guard let gk = gkOpt, let ring = ringOpt, let ringBytes = ringBytesOpt else {
-            fail.issues = issues.isEmpty ? [SyncIssue("keyring-corrupt")] : issues
+            fail.issues = (issues.isEmpty ? [SyncIssue("keyring-corrupt")] : issues) + removalIssues(state)
             return fail
         }
         let original = state
         let current = Self.memberIDs(ring)
         let unacked = Self.unackedMembers(state, current: current)
+        // What the app checks for a removal notice, also while locked (desktop run_once).
+        if let store = removalWatch,
+           let trusted = RemovalWatch.derive(groupID: state.groupID, deviceID: state.deviceID, epoch: gk.epoch,
+                                             installID: state.installID, keyring: ringBytes, unacked: unacked,
+                                             folder: store.folder) {
+            RemovalWatch.refresh(store, trusted)
+        }
         if gk.epoch != state.epoch {
             state = Self.epochReset(state)
             state.epoch = gk.epoch; state.key = gk.key; state.membersEpoch = gk.epoch
@@ -467,8 +553,15 @@ public struct FolderSync {
             issues += folderBlobs.importMissing(peers.views.flatMap(\.states), into: local)
         }
         let knownDevices = members.union(state.lastSeen.keys).union([state.deviceID])
+        // Personal collections sync only when every other member wrote a valid signed collections capability file:
+        // the view file is read by all of them (an older app would refuse the states). Desktop `col_signers`.
+        let capabilitySigners = state.viewSigners.merging(peers.signers) { $1 }.merging(ringKeys) { $1 }
+        let withCollections = collections && current.subtracting([state.deviceID]).allSatisfy {
+            folderBlobs.capable(gk, deviceID: $0, signer: capabilitySigners[$0], feature: .collections)
+        }
         var report = SyncRunner.run(store: snapshot, views: peers.views, device: state.deviceID, now: now,
-                                    licenseKeys: licenseKeys, known: knownDevices, blobs: attachmentBlobs)
+                                    licenseKeys: licenseKeys, known: knownDevices, blobs: attachmentBlobs,
+                                    collections: withCollections, shares: collectionShares)
         issues += report.issues
 
         // Rollback witnesses (desktop run_once step 9): check every accepted peer generation against this vault's.
@@ -513,7 +606,11 @@ public struct FolderSync {
         // Documents are published only when every other member wrote a valid signed capability file.
         let documents = attachmentBlobs != nil
             && others.allSatisfy { folderBlobs.capable(gk, deviceID: $0, signer: signers[$0]) }
-        report.ownStates = report.ownStates.map { AttachmentDocuments.publishable($0, documents: documents) }
+        // The emergency access plan only when every other member advertised the heir feature (sub-plan 08).
+        let heirCapable = others.allSatisfy { folderBlobs.capable(gk, deviceID: $0, signer: signers[$0], heir: true) }
+        report.ownStates = report.ownStates.map {
+            Heir.publishable(AttachmentDocuments.publishable($0, documents: documents), heir: heirCapable)
+        }
         var newState = state
         newState.lastSeen = lastSeen; newState.peerDigests = digests; newState.viewSigners = signers
         newState.membersEpoch = gk.epoch; newState.members = members.sorted(); newState.keyring = ringBytes
@@ -578,6 +675,26 @@ public struct FolderSync {
             do { try folderBlobs.writeCapability(gk, identity: state.identity, clock: clock, random: random) } catch {
                 issues.append(SyncIssue("write-failed", "capability: \(error)"))
             }
+        }
+        if collections {
+            do {
+                try folderBlobs.writeCapability(gk, identity: state.identity, clock: clock, random: random, feature: .collections)
+            } catch {
+                issues.append(SyncIssue("write-failed", "capability: \(error)"))
+            }
+        }
+        // Emergency access (sub-plan 08): this device reads the `heir` namespace (`.lgkheircap`).
+        do { try folderBlobs.writeCapability(gk, identity: state.identity, clock: clock, random: random, feature: .heir) } catch {
+            issues.append(SyncIssue("write-failed", "capability: \(error)"))
+        }
+        // Heartbeats: when each device last ran here, even with no changes (sync status only, kept in memory).
+        do { try writeHeartbeat(gk, identity: state.identity, clock: clock, random: random) } catch {
+            issues.append(SyncIssue("write-failed", "heartbeat: \(error)"))
+        }
+        let trusted = signers.merging(pairedKeys.filter { $0.key != state.deviceID }) { $1 }.merging(ringKeys) { $1 }
+        for peer in others.sorted() {
+            guard let at = readHeartbeat(gk, deviceID: peer, signer: trusted[peer]) else { continue }
+            PeerSeenAt.note(groupID: state.groupID, peer: peer, now: min(at, now))
         }
         if needsWrite, documents, let own = report.ownStates, let local = attachmentBlobs {
             issues += folderBlobs.publishOwn(own, from: local, now: now)
@@ -670,8 +787,19 @@ public struct FolderSync {
                     throw FolderSyncError("already-joined", "this vault is already a member")
                 }
             }
-            let identity = try DeviceIdentity.generate(random: random)
-            let (newRing, gk) = try Keyring.join(ring, identity: identity, name: deviceName, random: random, now: clock) {
+            // The identity this device kept when it left this group (rule 3) is reused when the folder still allows
+            // it (rule 6); otherwise it is dropped and the join makes a new one, as for any other group. An identity
+            // kept for another group is left alone.
+            var dropKept = false
+            var reuse: KeptIdentity?
+            if snapshot.sync == nil, let kept = snapshot.keptIdentity,
+               let group = Keyring.str(Keyring.obj(ring)["group_id"]), kept.fits(groupID: group) {
+                dropKept = true
+                if keptUsable(kept, ring: ring) { reuse = kept }
+            }
+            let identity = try reuse?.identity ?? DeviceIdentity.generate(random: random)
+            let (newRing, gk) = try Keyring.join(ring, identity: identity, name: deviceName, random: random, now: clock,
+                                                 rejoin: reuse != nil) {
                 try passwordKey(ring)
             }
             let written = try CanonicalJSON.encode(newRing, dialect: .utf8)
@@ -680,14 +808,19 @@ public struct FolderSync {
             // Counters seen at another epoch are dropped (see `epochReset`); the new identity signs afresh.
             let same = old != nil && old!.epoch == gk.epoch
             // The generation offset belongs to the vault, not the identity: a re-join never lowers the generation.
-            let newState = SyncGroupState(
+            var newState = SyncGroupState(
                 groupID: gk.groupID, epoch: gk.epoch, key: gk.key, identity: identity, installID: installID,
                 hasFolder: true, lastSeen: same ? old!.lastSeen : [:], peerDigests: same ? old!.peerDigests : [:],
                 membersEpoch: gk.epoch, members: Self.memberIDs(newRing).sorted(), keyring: written, ownCounter: 0,
                 generationOffset: old?.generationOffset ?? 0)
+            if let reuse {
+                // The kept counters continue: peers refuse a lower view counter or generation from this device id.
+                newState.ownCounter = reuse.ownCounter
+                newState.generationOffset = reuse.generationOffset
+            }
             do {
                 try store.commit(StoreChange(baseRevision: snapshot.revision, records: snapshot.records,
-                                             meta: snapshot.meta, sync: newState))
+                                             meta: snapshot.meta, sync: newState, keptIdentity: dropKept ? .set(nil) : .keep))
             } catch {
                 undoKeyringWrite(written: written, previous: raw)
                 throw error
@@ -746,6 +879,16 @@ public struct FolderSync {
             }
         }
         return runOnce(store: store, random: random, clock: clock)
+    }
+
+    /// Whether a join of `ring`'s group may reuse `kept` (rule 6): the keyring is not at an older epoch than the one
+    /// it last held, the folder holds no removal notice for its id (any notice file: who wrote it cannot be checked
+    /// after a Leave, and refusing only makes a new id) and the keyring lists the id, if at all, with its exchange key.
+    func keptUsable(_ kept: KeptIdentity, ring: JSONValue) -> Bool {
+        guard let epoch = Keyring.int(Keyring.obj(ring)["epoch"]), epoch >= kept.epoch,
+              let notice = RemovalNotice.path(kept.deviceID), !access.exists(notice) else { return false }
+        let listed = Self.memberIDs(ring).contains(kept.deviceID)
+        return !listed || Keyring.listsSameExchangeKey(ring, kept.identity)
     }
 
     func healthyMember(_ ring: JSONValue, _ state: SyncGroupState) -> Bool {

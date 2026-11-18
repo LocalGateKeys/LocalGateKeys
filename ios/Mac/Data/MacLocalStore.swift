@@ -2,8 +2,8 @@ import Foundation
 import Darwin
 import LGKCore
 
-/// The Mac-only data file `local-data.bin` in the vault directory: Recently deleted, activity, reminders and
-/// collections. It never syncs. Sealed with AES-GCM under a key derived from the vault's local key; a file
+/// The Mac-only data file `local-data.bin` in the vault directory: Recently deleted, activity and reminders (and,
+/// from Macs before sub-plan 07, collections, which move into the item store at unlock). It never syncs. Sealed with AES-GCM under a key derived from the vault's local key; a file
 /// that can't be read (corrupt, another vault's key) is set aside as `local-data.bin.bad` and starts empty,
 /// so it can never block unlock.
 @MainActor
@@ -41,13 +41,12 @@ final class MacLocalStore {
 
     var fileURL: URL { directory.appendingPathComponent(Self.fileName) }
 
-    /// The stored data (starter collections added on first use), or empty data and the reset message when the
-    /// file can't be read. Never throws.
+    /// The stored data (empty on first use: no starter collections, which come only from "Add starter collections"),
+    /// or empty data and the reset message when the file can't be read. Never throws.
     func load() -> (LocalData, message: String?) {
         let fm = FileManager.default
         let now = Int64(clock().timeIntervalSince1970)
-        var fresh = LocalData.empty
-        fresh.ensureStarterCollections(now: now)
+        let fresh = LocalData.empty
         // Missing (never written) is the only case that starts empty without a message.
         guard fm.fileExists(atPath: fileURL.path) else {
             return (fresh, nil)

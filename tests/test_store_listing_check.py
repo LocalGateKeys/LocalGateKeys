@@ -8,13 +8,13 @@ spec = importlib.util.spec_from_file_location("store_listing_check", ROOT / "scr
 slc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(slc)
 
-LANGS = ["es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl"]
+LANGS = ["es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl", "fr"]
 
 
 def _copy_tree(tmp_path: Path) -> Path:
     shutil.copytree(ROOT / "docs" / "store" / "listings", tmp_path / "docs" / "store" / "listings")
     (tmp_path / "ios" / "appstore").mkdir(parents=True)
-    for p in (ROOT / "ios" / "appstore").glob("listing-1.1*.json"):
+    for p in (ROOT / "ios" / "appstore").glob("listing-*.json"):
         shutil.copy(p, tmp_path / "ios" / "appstore" / p.name)
     return tmp_path
 
@@ -24,7 +24,7 @@ def test_repo_listings_are_clean():
 
 
 def test_every_language_present():
-    for store in ("microsoft", "edge", "play"):
+    for store in ("microsoft", "edge", "firefox", "play"):
         for lang in ["en", *LANGS]:
             assert (ROOT / "docs" / "store" / "listings" / store / f"{lang}.md").exists(), (store, lang)
     for lang in LANGS:
@@ -75,3 +75,13 @@ def test_edge_description_minimum(tmp_path):
     head = path.read_text(encoding="utf-8").split("## Description")[0]
     path.write_text(head + "## Description\n\nTroppo corto.\n", encoding="utf-8")
     assert any("Description is 13 characters, allowed 250-10000" in p for p in slc.check_all(root))
+
+
+def test_firefox_summary_limit(tmp_path):
+    root = _copy_tree(tmp_path)
+    path = root / "docs" / "store" / "listings" / "firefox" / "de.md"
+    text = path.read_text(encoding="utf-8")
+    head, rest = text.split("## Summary", 1)
+    _, tail = rest.split("## Description", 1)
+    path.write_text(head + "## Summary\n\n" + "x" * 251 + "\n\n## Description" + tail, encoding="utf-8")
+    assert any("firefox" in p and "Summary is 251" in p for p in slc.check_all(root))

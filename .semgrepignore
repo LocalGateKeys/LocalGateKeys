@@ -1,0 +1,10 @@
+# Semgrep (.github/workflows/security.yml): test fixtures and demo data hold fake secrets on purpose.
+tests/
+**/test/
+**/src/test/
+ios/**/*Tests/
+ios/**/*Tests.swift
+webui/src/screenshot/
+node_modules/
+**/*.min.js
+docs/

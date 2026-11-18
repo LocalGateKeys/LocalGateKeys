@@ -82,6 +82,16 @@ class ClipboardGuard:
         with self._lock:
             self._copy_locked(text)
 
+    def copy_for(self, text: str, seconds: int) -> None:
+        """Copy with a clear after ``seconds`` or the user's shorter setting (access rule "copy once")."""
+        with self._lock:
+            saved = self.timeout_seconds
+            self.timeout_seconds = max(1, min(int(seconds), saved) if saved else int(seconds))
+            try:
+                self._copy_locked(text)
+            finally:
+                self.timeout_seconds = saved
+
     def _copy_locked(self, text: str) -> None:
         self.clear()
         self._generation += 1
@@ -89,7 +99,8 @@ class ClipboardGuard:
         if os.name == "nt":
             import win32clipboard as cb
             import win32con
-            cb.OpenClipboard()
+            if not self._open_clipboard(cb):  # another app is holding the clipboard
+                raise RuntimeError("Could not copy: the clipboard is busy. Try again.")
             try:
                 cb.EmptyClipboard()
                 # Set exclusion formats BEFORE exposing any plaintext.

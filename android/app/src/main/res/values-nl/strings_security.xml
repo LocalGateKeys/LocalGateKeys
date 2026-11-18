@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Beveiliging</string>
+    <string name="security_cat_breached">Gelekt</string>
+    <string name="security_cat_reused">Hergebruikt</string>
+    <string name="security_cat_weak">Zwak</string>
+    <string name="security_cat_old">Oud</string>
+    <string name="security_cat_no_2fa">2FA beschikbaar</string>
+    <string name="security_expl_breached">Deze wachtwoorden komen voor in bekende datalekken. Wijzig ze eerst.</string>
+    <string name="security_expl_reused">Deze wachtwoorden worden voor meer dan één login gebruikt. Als één site lekt, zijn de andere blootgesteld.</string>
+    <string name="security_expl_weak">Deze wachtwoorden zijn kort of makkelijk te raden.</string>
+    <string name="security_expl_old">Deze wachtwoorden zijn al langer dan een jaar niet gewijzigd. Leeftijd alleen is geen reden om ze te wijzigen.</string>
+    <string name="security_expl_no_2fa">Deze site biedt tweestapscodes aan, maar deze login heeft er geen.</string>
+    <string name="security_blocked_offline">Strikte offlinemodus staat aan, dus datalekcontroles zijn geblokkeerd. Schakel die uit via Instellingen › Datalekcontroles.</string>
+    <string name="security_blocked_disabled">Datalekcontroles staan uit. Schakel ze in via Instellingen › Datalekcontroles.</string>
+    <string name="security_status_cancelled">Datalekcontrole geannuleerd.</string>
+    <string name="security_status_checking">Wachtwoorden controleren…</string>
+    <string name="security_status_none_found">Geen gelekte wachtwoorden gevonden.</string>
+    <string name="security_status_found">%1$d gelekte wachtwoord(en) gevonden.</string>
+    <string name="security_status_some_failed">Sommige wachtwoorden konden niet worden gecontroleerd. Probeer het later opnieuw.</string>
+    <string name="security_band_none">Nog geen logins</string>
+    <string name="security_band_good">Goed</string>
+    <string name="security_band_fair">Redelijk</string>
+    <string name="security_band_poor">Slecht</string>
+    <string name="security_empty_hint">Voeg logins toe om te zien hoe gezond je wachtwoorden zijn.</string>
+    <string name="security_score_description">Beveiligingsscore %1$d van 100</string>
+    <string name="security_no_score">Nog geen beveiligingsscore</string>
+    <string name="security_checks_header">Controles</string>
+    <string name="security_breach_header">Datalekcontrole</string>
+    <string name="security_breach_start">Controleren op gelekte wachtwoorden</string>
+    <string name="security_cancel">Annuleren</string>
+    <string name="security_checking">Controleren…</string>
+    <string name="security_show_dismissed">Genegeerde items opnieuw tonen</string>
+    <string name="security_confirm_title">Elk wachtwoord controleren met Have I Been Pwned?</string>
+    <string name="security_confirm_action">Controleren</string>
+    <string name="security_consent">Datalekcontroles sturen alleen de eerste 5 tekens van de SHA-1-hash van elk wachtwoord naar Have I Been Pwned, via HTTPS met padding, en alleen wanneer je er een start. Er wordt geen wachtwoord, volledige hash, gebruikersnaam of website verstuurd. De dienst ziet je IP-adres.</string>
+    <string name="security_nothing_to_fix">Hier is niets op te lossen.</string>
+    <string name="security_dismiss">Sluiten</string>
+    <string name="security_change_password">Wachtwoord wijzigen</string>
+    <string name="security_dismiss_item">Negeren voor dit item</string>
+    <string name="security_row_description">%1$s, %2$d items</string>
+    <string name="security_checks_footer">Lokale controles zijn een richtlijn, geen garantie. Er verlaat niets deze telefoon tenzij u een lekcontrole start.</string>
+    <string name="security_issue_footer">%1$s Gebruik het menu van een login om het wachtwoord te wijzigen of de melding hier te sluiten.</string>
+    <string name="security_row_menu">Meer acties voor %1$s</string>
+    <string name="security_untitled">Login zonder titel</string>
+</resources>

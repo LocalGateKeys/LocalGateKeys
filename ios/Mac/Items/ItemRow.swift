@@ -7,6 +7,9 @@ struct ItemRow: View {
     let item: VaultItem
     let selected: Bool
     var tag: String?
+    /// The selected row's "Copy user" and "Copy password" buttons (nil hides each).
+    var onCopyUsername: (() -> Void)? = nil
+    var onCopyPassword: (() -> Void)? = nil
     @Environment(\.macTheme) private var theme
 
     var body: some View {
@@ -18,7 +21,19 @@ struct ItemRow: View {
             }
             Spacer(minLength: 8)
             let target = !item.target.isEmpty && item.target != item.listSubtitle ? item.target : nil
-            if tag != nil || target != nil {
+            if onCopyUsername != nil || onCopyPassword != nil {
+                HStack(spacing: 6) {
+                    if let onCopyUsername {
+                        Button(String(localized: "row.copyUser", defaultValue: "Copy user"), action: onCopyUsername)
+                            .help(String(localized: "Copy username"))
+                    }
+                    if let onCopyPassword {
+                        Button(String(localized: "row.copyPassword", defaultValue: "Copy password"), action: onCopyPassword)
+                            .help(String(localized: "Copy password"))
+                    }
+                }
+                .buttonStyle(RowCopyButtonStyle())
+            } else if tag != nil || target != nil {
                 VStack(alignment: .trailing, spacing: 2) {
                     if let tag {
                         Text(tag).font(.system(size: 12)).foregroundStyle(theme.danger)
@@ -35,6 +50,22 @@ struct ItemRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? [.isSelected, .isButton] : .isButton)
+    }
+}
+
+/// The small capsule buttons on the selected row.
+private struct RowCopyButtonStyle: ButtonStyle {
+    @Environment(\.macTheme) private var theme
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .medium)).lineLimit(1)
+            .foregroundStyle(theme.text)
+            .padding(.horizontal, 9).padding(.vertical, 3)
+            .background(theme.card, in: Capsule())
+            .overlay(Capsule().strokeBorder(theme.panelBorder))
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .fixedSize()
     }
 }
 

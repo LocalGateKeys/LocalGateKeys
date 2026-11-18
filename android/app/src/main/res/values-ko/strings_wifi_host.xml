@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">QR 코드 표시</string>
+    <string name="sync_host_copy_code">코드 텍스트 복사</string>
+    <string name="sync_host_code">코드: %1$s</string>
+    <string name="sync_host_expires_in">%1$s 후 만료</string>
+    <string name="sync_host_expired">만료됨</string>
+    <string name="sync_host_accept_hint">다른 기기에 이 코드와 같은 코드가 표시될 때만 수락을 선택하세요.</string>
+    <string name="sync_host_decline_hint">그렇지 않으면 거부를 선택하세요.</string>
+    <string name="sync_host_undo_hint">본인이 아니라면 실행 취소를 선택하세요.</string>
+    <string name="sync_host_other_pc_hint">다른 PC에서는 코드로 참여를 사용하고 대신 코드 텍스트를 붙여넣으세요.</string>
+    <string name="sync_host_copied">코드 텍스트를 복사했습니다.</string>
+    <string name="sync_host_closed">이 페어링 코드가 닫혔습니다.</string>
+    <string name="sync_host_not_waiting">해당 요청은 더 이상 대기 중이 아닙니다. 다시 시도하려면 새 코드를 표시하세요.</string>
+    <string name="sync_host_declined">거절되었습니다. 기기가 추가되지 않았습니다. 다시 시도하려면 새 코드를 표시하세요.</string>
+    <string name="sync_host_not_listening">먼저 Wi-Fi 동기화를 켜세요.</string>
+    <string name="sync_host_confirm">%1$s이(가) 참여를 요청합니다. 코드 %2$s이(가) 표시되는 경우에만 수락을 선택하세요.</string>
+    <string name="sync_host_adding">%1$s 추가 중…</string>
+    <string name="sync_host_adding_button">추가하는 중…</string>
+    <string name="sync_host_paired_key">페어링됨: %1$s(키 %2$s). %3$s</string>
+    <string name="sync_host_paired_plain">페어링됨: %1$s. %2$s</string>
+    <string name="sync_host_paired_title">페어링됨: %1$s</string>
+    <string name="sync_host_declines_in">%1$d초 후 자동으로 거절됩니다.</string>
+    <string name="sync_host_stopped">Wi-Fi 동기화가 중지되었습니다. 네트워크를 확인하고 다시 켜세요.</string>
+    <string name="sync_host_accept">수락</string>
+    <string name="sync_host_decline">거절</string>
+    <string name="sync_host_undo">실행 취소</string>
+    <string name="sync_host_keep">유지</string>
+    <string name="sync_host_followed">이제 %1$s에서 수신 대기 중입니다(주소 변경됨).</string>
+    <string name="sync_host_scan_title">다른 기기의 LocalGateKeys로 이 코드를 스캔하세요</string>
+    <string name="sync_host_qr_description">페어링 QR 코드</string>
+    <string name="sync_host_add_named">%1$s을(를) 추가하시겠습니까?</string>
+    <string name="sync_host_add_device">이 기기를 추가할까요?</string>
+    <string name="sync_host_fingerprint">키 지문: %1$s</string>
+    <string name="sync_host_paired_heading">페어링된 기기</string>
+    <string name="sync_host_no_peers">아직 페어링된 기기가 없습니다.</string>
+    <string name="sync_host_remove">제거…</string>
+    <string name="sync_host_toggle">이 휴대폰에서 Wi-Fi 동기화 호스팅</string>
+    <string name="sync_host_intro">같은 Wi-Fi에 있는 다른 기기는 이 휴대폰에서 LocalGateKeys가 열려 있고 잠금 해제된 동안 이 휴대폰과 페어링하고 동기화할 수 있습니다.</string>
+    <string name="sync_host_listens">이 휴대폰은 %1$s에서 수신 대기 중입니다.</string>
+    <string name="sync_host_free">무료 플랜에서는 페어링 코드가 표시되는 동안과 지금 동기화 후 2분 동안만 이 휴대폰이 수신 대기합니다.</string>
+    <string name="sync_host_no_wifi">Wi-Fi 동기화를 호스팅하려면 이 휴대폰을 Wi-Fi에 연결하세요.</string>
+    <string name="sync_host_pair_hint">두 기기가 같은 Wi-Fi에 연결되어 있어야 합니다.</string>
+    <string name="sync_host_this_phone">이 휴대폰</string>
+    <string name="sync_host_remove_confirm">Wi-Fi 동기화에서 %1$s을(를) 제거할까요? 이 휴대폰과의 동기화는 중단되지만 이미 가진 데이터는 유지됩니다.</string>
+    <string name="sync_host_could_not_listen">이 휴대폰에서 Wi-Fi 동기화를 시작할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.</string>
+</resources>

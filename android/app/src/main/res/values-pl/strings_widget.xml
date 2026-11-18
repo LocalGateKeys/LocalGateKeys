@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">Przypięte kody</string>
+    <string name="widget_codes_description">Twoje przypięte kody dwuskładnikowe.</string>
+    <string name="widget_codes_locked">Odblokuj, aby zobaczyć kody</string>
+    <string name="widget_codes_empty">Przypnij kod w LocalGateKeys</string>
+    <string name="detail_pin_code">Pokaż w widżecie</string>
+    <string name="detail_pin_code_note">Widżet na ekranie głównym pokazuje ten kod, dopóki LocalGateKeys jest odblokowany, aż do automatycznej blokady.</string>
+    <string name="detail_pin_full">Możesz przypiąć do %1$d kodów.</string>
+    <string name="widget_codes_locked_immediately">Ustaw automatyczną blokadę na 1 minutę lub dłużej, aby widzieć tu kody</string>
+    <string name="detail_pin_code_note_immediately">Automatyczna blokada jest ustawiona na Natychmiast, więc LocalGateKeys blokuje się po wyjściu z aplikacji i widżet nie może pokazać tego kodu. Ustaw w Ustawieniach 1 minutę lub dłużej, aby widzieć go na ekranie głównym.</string>
+    <string name="tile_codes_name">Kopiuj kod</string>
+    <string name="tile_codes_empty">Brak przypiętych kodów</string>
+    <string name="tile_codes_locked">Odblokuj, aby skopiować</string>
+    <string name="tile_codes_locked_subtitle">Zablokowane</string>
+    <string name="tile_codes_tap_to_copy">Dotknij, aby skopiować</string>
+    <string name="tile_codes_copied">Skopiowano</string>
+    <string name="tile_codes_no_code">Brak kodu</string>
+</resources>

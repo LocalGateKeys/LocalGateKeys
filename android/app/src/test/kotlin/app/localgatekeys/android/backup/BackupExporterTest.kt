@@ -57,6 +57,25 @@ class BackupExporterTest {
         assertTrue(backup.states[2].deleted)
     }
 
+    // Sub-plan 07: collection states (catalog, memberships, share links) never go into a backup, and their meta stays.
+    @Test fun a_backup_carries_no_collection_states() {
+        val s = store(joined = true)
+        val cid = "f0000000-0000-4000-8000-000000000001"
+        val states = mapOf(
+            "col:$cid" to app.localgatekeys.core.sync.CollectionStates.wrapper(
+                app.localgatekeys.core.sync.CollectionStates.catalog(cid, "Family", "", 1, 1),
+            ),
+            "cm:${noteId(1)}" to app.localgatekeys.core.sync.CollectionStates.wrapper(
+                app.localgatekeys.core.sync.CollectionStates.membership(noteId(1), listOf(cid)),
+            ),
+        )
+        val stateMeta = states.mapValues { SyncMeta.live(it.value, mapOf("desk" to 1L)) }
+        s.snapshot = s.snapshot.copy(records = s.snapshot.records + states, meta = s.snapshot.meta + stateMeta)
+        val backup = PhoneBackupFormat.read(exporter(s).export(password), password)
+        assertEquals(listOf(noteId(1), noteId(2), noteId(9)), backup.states.map { it.itemId })
+        for ((id, m) in stateMeta) assertEquals(m, s.snapshot.meta[id])
+    }
+
     @Test fun export_uses_the_production_kdf_by_default() {
         val bytes = BackupExporter(store(true), TestClock(now), CountingRandom(), "1.0.0", installId = { INSTALL_ID }).export(password)
         val kdf = PhoneBackupFormat.inspect(bytes).kdf

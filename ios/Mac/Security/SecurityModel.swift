@@ -8,7 +8,7 @@ enum SecurityTone: Equatable { case neutral, accent, success, warning, danger }
 
 /// The Security centre's login filters (Windows `health.FILTERS`).
 enum SecurityFilter: String, CaseIterable, Identifiable, Hashable {
-    case all, weak, reused, noTwoFactor, old, exposed
+    case all, weak, reused, noTwoFactor, old, http, passkey, exposed
     var id: String { rawValue }
 
     var label: String {
@@ -18,6 +18,8 @@ enum SecurityFilter: String, CaseIterable, Identifiable, Hashable {
         case .reused: String(localized: "Reused")
         case .noTwoFactor: String(localized: "No 2FA")
         case .old: String(localized: "Old (>1 year)")
+        case .http: String(localized: "Not HTTPS")
+        case .passkey: String(localized: "Passkey available")
         case .exposed: String(localized: "Exposed (HIBP)")
         }
     }
@@ -25,7 +27,7 @@ enum SecurityFilter: String, CaseIterable, Identifiable, Hashable {
 
 /// One "issue to fix" row (Windows `security_model.Issue`); its button applies `filter`.
 struct SecurityIssue: Equatable, Identifiable {
-    enum Key: String { case breached, weak, reused, noTwoFactor, old }
+    enum Key: String { case breached, weak, reused, noTwoFactor, old, http, passkey }
     let key: Key
     let count: Int
     let title: String
@@ -44,6 +46,8 @@ struct SecurityPanelRow: Equatable, Identifiable {
         case importExport
         /// Opens the Recovery centre, optionally starting one of its actions.
         case recoveryCentre(RecoveryCentreModel.Initial?)
+        /// Opens Activity history.
+        case activity
         /// Not on the Mac yet (encrypted transfer): no button.
         case later
     }
@@ -328,6 +332,16 @@ final class SecurityModel {
                                      description: String(localized: "Low risk; change when convenient"), tone: .neutral,
                                      actionLabel: String(localized: "Review \(health.old.count)"), filter: .old))
         }
+        if !health.insecure.isEmpty {
+            out.append(SecurityIssue(key: .http, count: health.insecure.count, title: String(localized: "Saved with a plain http:// address"),
+                                     description: String(localized: "These logins use an unencrypted address. Check it and switch to https:// if the site supports it."),
+                                     tone: .accent, actionLabel: String(localized: "Review addresses"), filter: .http))
+        }
+        if !health.passkeyAvailable.isEmpty {
+            out.append(SecurityIssue(key: .passkey, count: health.passkeyAvailable.count, title: String(localized: "Passkey available"),
+                                     description: String(localized: "These sites support passkeys, a safer way to sign in. Save one for each."),
+                                     tone: .accent, actionLabel: String(localized: "Review sites"), filter: .passkey))
+        }
         return out
     }
 
@@ -348,6 +362,8 @@ final class SecurityModel {
         case .reused: return health.reused
         case .noTwoFactor: return health.noTwoFactor
         case .old: return health.old
+        case .http: return health.insecure
+        case .passkey: return health.passkeyAvailable
         case .exposed: return health.breached
         }
     }
@@ -361,8 +377,20 @@ final class SecurityModel {
     }
 
     /// The four panels: How you unlock, Backups, Moving data and Privacy.
-    func panels(touchIDAvailable: Bool, backup: RecoveryStatus? = nil, now: Date = Date()) -> [SecurityPanel] {
-        Self.panels(settings: settings, touchIDAvailable: touchIDAvailable, backup: backup, now: now)
+    func panels(touchIDAvailable: Bool, backup: RecoveryStatus? = nil, accessLogOK: Bool? = nil,
+                now: Date = Date()) -> [SecurityPanel] {
+        Self.panels(settings: settings, touchIDAvailable: touchIDAvailable, backup: backup, accessLogOK: accessLogOK, now: now)
+    }
+
+    /// Windows `access_log_row`: the hash-chained access log, verified or altered outside the app.
+    nonisolated static func accessLogRow(verified: Bool) -> SecurityPanelRow {
+        verified
+            ? SecurityPanelRow(label: String(localized: "Access log verified"),
+                               meta: String(localized: "Every entry links to the one before it; nothing was changed or removed."),
+                               buttonLabel: String(localized: "Review"), action: .activity)
+            : SecurityPanelRow(label: String(localized: "Access log altered"),
+                               meta: String(localized: "An entry no longer matches the chain. Check AI agent access and export the log."),
+                               buttonLabel: String(localized: "Review"), action: .activity, tone: .warning)
     }
 
     /// Windows `unlock_panel`'s Recovery phrase row.
@@ -395,7 +423,7 @@ final class SecurityModel {
     }
 
     static func panels(settings: AppSettings, touchIDAvailable: Bool, backup: RecoveryStatus? = nil,
-                       now: Date = Date()) -> [SecurityPanel] {
+                       accessLogOK: Bool? = nil, now: Date = Date()) -> [SecurityPanel] {
         var unlock = [SecurityPanelRow(label: String(localized: "Master password"), meta: String(localized: "Always works, even when other methods are off"),
                                        buttonLabel: String(localized: "Change…"), action: .settings)]
         if touchIDAvailable || settings.touchIDUnlock {
@@ -427,7 +455,7 @@ final class SecurityModel {
                 SecurityPanelRow(label: String(localized: "Strict offline mode"),
                                  meta: offline ? String(localized: "On · no background network access") : String(localized: "Off · no network access at all when on"),
                                  buttonLabel: offline ? String(localized: "Turn off") : String(localized: "Turn on"), action: .toggleStrictOffline),
-            ]),
+            ] + (accessLogOK.map { [accessLogRow(verified: $0)] } ?? [])),
         ]
     }
 }

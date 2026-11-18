@@ -6,8 +6,8 @@ and carries the resulting bundle through a trusted out-of-band channel.  The
 offer contains both a short human code and a high-entropy one-use secret; a
 code by itself can never enroll a peer.
 
-Format rules (version 1; the iOS app implements these byte for byte)
---------------------------------------------------------------------
+Format rules (offer versions 1 and 2; the iOS app implements these byte for byte)
+---------------------------------------------------------------------------------
 * Canonical JSON here is ``json.dumps(value, ensure_ascii=True, sort_keys=True,
   separators=(",", ":"))`` encoded as UTF-8, at most 64 KiB.  This differs from the sealed-view
   and keyring canonical JSON (``ensure_ascii=False``; see ``keyring.py``).  Every number in this
@@ -21,27 +21,33 @@ Format rules (version 1; the iOS app implements these byte for byte)
   inviter signing public key; ``transcript_nonce`` and ``pairing_secret`` are base64 of 32 random
   bytes; ``code`` is 8 ASCII digits; ``endpoint.host`` is a literal private/loopback/link-local IP;
   ``expires_at`` is an int in 1..2**53-1.  ``public_dict`` is the bundle without ``pairing_secret``
-  and ``code``.
+  and ``code``.  Offer version 2 (``OFFER_COMMIT_VERSION``, what this build creates) adds
+  ``"commit"``: base64 of SHA-256(``b"localgatekeys|sync|enroll-commit|v3|"`` + reveal), where the
+  reveal is 32 random bytes the inviter keeps (never in the QR); ``public_dict`` keeps ``commit``.
+  docs/formats/LAN_SYNC_V3.md has the commit-then-reveal rules.
 * QR text: ``"lgk-pair:"`` + base64url (alphabet ``A-Za-z0-9-_``, NO padding) of the canonical
   bundle JSON, at most 1200 characters.  A reader rejects other prefixes, padding, other
   characters, non-canonical base64 and JSON that is not byte-identical to its own canonical form.
 * Enrollment transcript = canonical JSON of ``{"protocol":"localgatekeys-sync-enrollment",
   "version":2,"offer":public_dict,"code":code,"invitee_device_id","invitee_signing_public"
   (base64),"invitee_exchange_public" (base64),"invitee_endpoint":null|{"host","port"},
-  "invitee_name"}`` (``ENROLL_VERSION``; version 1 had no ``invitee_name``).  ``invitee_name`` is
+  "invitee_name"}`` (``LEGACY_ENROLL_VERSION`` 2 for a version-1 offer, ``ENROLL_VERSION`` 3 for a
+  version-2 offer; version 1 had no ``invitee_name``).  ``invitee_name`` is
   the new device's name for the inviter's Accept prompt: 1..64 UTF-8 bytes, no control
   character (U+0000..U+001F, U+007F).
 * Verification code (``verification_code``): the first 4 bytes of SHA-256(
   ``b"localgatekeys|sync|enroll-verify|v2|"`` + transcript) as a big-endian unsigned integer,
-  modulo 10**6, as 6 ASCII digits.  The new device shows it while it waits; the inviter shows it
-  next to the device name with Accept and Decline, and answers only after Accept.
+  modulo 10**6, as 6 ASCII digits.  For a version-2 offer the input is
+  ``b"localgatekeys|sync|enroll-verify|v3|"`` + transcript + reveal (raw 32).  The new device shows
+  it while it waits (for a version-2 offer only once the reveal matched the commitment); the inviter
+  shows it next to the device name with Accept and Decline, and answers only after Accept.
 * Request (new device -> inviter): ``b"LGKENROLL1\\n"`` + canonical JSON ``{"offer_id","eph",
   "nonce","ct"}`` with ``eph`` the base64 of a fresh X25519 public key (32 raw), ``nonce`` 12 random
   bytes.  Key = ``HKDF(SHA256, 32, salt=transcript_nonce (raw 32),
   info=b"localgatekeys|sync|enroll-request|v1|" + offer_id).derive(X25519(eph_private,
   inviter_exchange_public))``.  ``ct`` = AES-256-GCM(key, nonce, plaintext, AAD) (ciphertext
   followed by the 16-byte tag, base64), AAD = canonical JSON ``{"offer_id","eph"}``.  The
-  plaintext is canonical JSON of ``{"version":2,"offer_id","device_id","signing_public",
+  plaintext is canonical JSON of ``{"version":2|3 (the transcript's),"offer_id","device_id","signing_public",
   "exchange_public","endpoint":null|{"host","port"},"name","signature","mac"}`` with ``signature`` =
   Ed25519(invitee signing key) over ``b"localgatekeys|sync|enroll-sig|v1|" + transcript`` (base64
   of 64 bytes) and ``mac`` = HMAC-SHA256(pairing_secret raw,
@@ -56,9 +62,14 @@ Format rules (version 1; the iOS app implements these byte for byte)
   group key; ``device_id`` and ``signing_public`` repeat the invitee's, which it must check).
   ``sig`` = Ed25519(inviter signing key) over ``b"localgatekeys|sync|enroll-reply-sig|v1|" + bound
   + canonical(header) + ct`` (``ct`` as raw bytes), checked against the signing key pinned by the QR.
+* Reveal (version-2 offer only; inviter -> new device, once, right after a request verified and
+  consumed the offer, before the reply on the same connection): ``b"LGKENROLLRV1\\n"`` + canonical
+  JSON ``{"reveal"}`` (base64 of the 32 raw bytes).  The new device checks it against ``commit``
+  and refuses a reply that came without a matching reveal.
 * Refusal: ``b"LGKENROLLNO1\\n"`` + canonical JSON ``{"reason"}`` with a reason from
   ``REFUSAL_REASONS``: ``declined`` (the user chose Decline, or did not answer within the
-  Accept timeout), ``update-needed`` (a version-1 request: the new device needs an update).
+  Accept timeout), ``update-needed`` (a request body older than the offer takes, version 1, or
+  version 2 for a version-2 offer: the new device needs an update).
   Requests and replies are at most 16 KiB.
 """
 from __future__ import annotations
@@ -86,6 +97,8 @@ from .engine import is_valid_id
 from .lan_address import is_lan_address
 
 PAIRING_PROTOCOL_VERSION = 1
+#: Offer bundle version 2 carries ``commit`` (the commit-reveal step of the verification code).
+OFFER_COMMIT_VERSION = 2
 PAIRING_TTL_SECONDS = 120
 PAIRING_MAX_ATTEMPTS = 5
 PAIRING_SECRET_BYTES = 32
@@ -276,6 +289,10 @@ class PairingOffer:
     pairing_secret: bytes = field(repr=False)
     code: str = field(repr=False)
     version: int = PAIRING_PROTOCOL_VERSION
+    #: Version 2: SHA-256(``ENROLL_COMMIT_LABEL`` + reveal), in the QR.  None in a version-1 offer.
+    commit: bytes | None = None
+    #: The 32 random bytes behind ``commit``: only in the inviter's own offer, never in the QR.
+    reveal: bytes | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         _ident(self.offer_id, "offer id")
@@ -295,6 +312,15 @@ class PairingOffer:
         if (not isinstance(self.code, str) or len(self.code) != PAIRING_CODE_DIGITS
                 or not self.code.isascii() or not self.code.isdigit()):
             raise PairingError("Pairing code is malformed")
+        if type(self.version) is int and self.version >= OFFER_COMMIT_VERSION:
+            if not isinstance(self.commit, bytes) or len(self.commit) != 32:
+                raise PairingError("Pairing commitment is malformed")
+            if self.reveal is not None and (
+                    not isinstance(self.reveal, bytes) or len(self.reveal) != 32
+                    or not hmac.compare_digest(enrollment_commit(self.reveal), self.commit)):
+                raise PairingError("Pairing reveal does not match its commitment")
+        elif self.commit is not None or self.reveal is not None:
+            raise PairingError("A version-1 pairing offer has no commitment")
 
     @property
     def endpoint(self) -> tuple[str, int]:
@@ -318,6 +344,7 @@ class PairingOffer:
             "certificate_fingerprint": self.certificate_fingerprint,
             "expires_at": self.expires_at,
             "transcript_nonce": _b64e(self.transcript_nonce),
+            **({} if self.commit is None else {"commit": _b64e(self.commit)}),
         }
 
     def bundle_dict(self) -> dict[str, Any]:
@@ -344,6 +371,10 @@ class PairingOffer:
         if not isinstance(endpoint, Mapping):
             raise PairingError("Pairing endpoint is malformed")
         host, port = _private_lan_endpoint(endpoint.get("host"), endpoint.get("port"))
+        version = value.get("version", PAIRING_PROTOCOL_VERSION)
+        commit = None
+        if type(version) is int and version >= OFFER_COMMIT_VERSION:
+            commit = _b64d(value.get("commit"), length=32, field="pairing commitment")
         return cls(
             offer_id=_ident(value.get("offer_id"), "offer id"),
             group_id=_ident(value.get("group_id"), "group id"),
@@ -362,7 +393,7 @@ class PairingOffer:
             pairing_secret=_b64d(value.get("pairing_secret"), length=PAIRING_SECRET_BYTES,
                                   field="pairing secret"),
             code=_text(value.get("code"), "pairing code", PAIRING_CODE_DIGITS),
-            version=value.get("version", PAIRING_PROTOCOL_VERSION),
+            version=version, commit=commit,
         )
 
 
@@ -479,15 +510,21 @@ def create_pairing_offer(identity: DeviceIdentity, group_id: str, endpoint_host:
     if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= PAIRING_TTL_SECONDS:
         raise PairingError("Pairing lifetime is outside the accepted bound")
     created = _now(now)
+    # Read order (the Mac vector generator relies on it): offer id, nonce, secret, code, reveal.
+    offer_id = str(uuid.uuid4())
+    nonce = secrets.token_bytes(32)
+    secret = secrets.token_bytes(PAIRING_SECRET_BYTES)
+    code = f"{secrets.randbelow(10**PAIRING_CODE_DIGITS):0{PAIRING_CODE_DIGITS}d}"
+    reveal = secrets.token_bytes(32)
     return PairingOffer(
-        offer_id=str(uuid.uuid4()), group_id=group_id, endpoint_host=host,
+        offer_id=offer_id, group_id=group_id, endpoint_host=host,
         endpoint_port=port, inviter_device_id=identity.device_id,
         inviter_signing_public=identity.signing_public_key,
         inviter_exchange_public=identity.exchange_public_key,
         certificate_fingerprint=identity.fingerprint,
-        expires_at=math.ceil(created) + ttl_seconds, transcript_nonce=secrets.token_bytes(32),
-        pairing_secret=secrets.token_bytes(PAIRING_SECRET_BYTES),
-        code=f"{secrets.randbelow(10**PAIRING_CODE_DIGITS):0{PAIRING_CODE_DIGITS}d}",
+        expires_at=math.ceil(created) + ttl_seconds, transcript_nonce=nonce,
+        pairing_secret=secret, code=code, version=OFFER_COMMIT_VERSION,
+        commit=enrollment_commit(reveal), reveal=reveal,
     )
 
 
@@ -620,6 +657,8 @@ class PairingSession:
     def accept_enrollment(self, inviter: DeviceIdentity, raw: bytes, *,
                           now: float | int | None = None,
                           reserved_ids: frozenset[str] | set[str] = frozenset(),
+                          known_keys: Mapping[str, tuple[bytes, bytes]] | None = None,
+                          full: bool = False,
                           ) -> tuple[PairedDevice, EnrollmentRequest]:
         """Verify one network enrollment request (see :func:`build_enrollment_request`).
 
@@ -630,6 +669,12 @@ class PairingSession:
         *reserved_ids* or the inviter's own) counts as an attempt; after
         ``max_attempts`` failures the offer is dead.  An expired offer raises
         ``PairingExpired`` without counting.
+
+        *known_keys* maps an already paired device id to its pinned ``(signing, exchange)``
+        public keys: a request for that id passes the *reserved_ids* check only when both
+        keys are equal (the same device pairing again after it left).  *full*: the peer list
+        is full, so only such a known device may go on; any other request (one that does not
+        even decrypt included) raises ``EnrollmentFull`` without counting or consuming.
         """
         if self.exhausted:
             raise PairingReplayError("Pairing offer was already consumed or exhausted")
@@ -638,9 +683,22 @@ class PairingSession:
         if (not isinstance(inviter, DeviceIdentity) or inviter.device_id != self.offer.inviter_device_id
                 or inviter.fingerprint != self.offer.certificate_fingerprint):
             raise PairingAuthenticationError("Inviter identity does not match the offer")
-        plain = _decrypt_enrollment_request(self.offer, inviter, raw)
+        if self.offer.commit is not None and self.offer.reveal is None:
+            raise PairingError("This offer was not created on this device")
+        known = dict(known_keys or {})
+        if full:
+            try:
+                plain = _decrypt_enrollment_request(self.offer, inviter, raw)
+                body = _strict_json(plain)
+            except PairingError:
+                raise EnrollmentFull("The peer list is full") from None
+            if not isinstance(body, dict) or not isinstance(body.get("device_id"), str) \
+                    or body["device_id"] not in known:
+                raise EnrollmentFull("The peer list is full")
+        else:
+            plain = _decrypt_enrollment_request(self.offer, inviter, raw)
         try:
-            request = _verify_enrollment_body(self.offer, plain, frozenset(reserved_ids))
+            request = _verify_enrollment_body(self.offer, plain, frozenset(reserved_ids), known)
         except PairingError:
             self.attempts += 1
             if self.attempts >= self.max_attempts:
@@ -674,6 +732,8 @@ class PairingSession:
 ENROLL_REQUEST_MAGIC = b"LGKENROLL1\n"
 ENROLL_REPLY_MAGIC = b"LGKENROLLOK1\n"
 ENROLL_REFUSED_MAGIC = b"LGKENROLLNO1\n"
+#: Interim frame of a version-2 offer: the inviter's reveal, sent once a request verified.
+ENROLL_REVEAL_MAGIC = b"LGKENROLLRV1\n"
 MAX_ENROLL_BYTES = 16 * 1024
 _REQUEST_INFO = b"localgatekeys|sync|enroll-request|v1|"
 _REPLY_INFO = b"localgatekeys|sync|enroll-reply|v1|"
@@ -681,8 +741,13 @@ _MAC_LABEL = b"localgatekeys|sync|enroll-mac|v1|"
 _SIG_LABEL = b"localgatekeys|sync|enroll-sig|v1|"
 _REPLY_SIG_LABEL = b"localgatekeys|sync|enroll-reply-sig|v1|"
 _VERIFY_LABEL = b"localgatekeys|sync|enroll-verify|v2|"
-#: Version of the enrollment request body and transcript (2 added the device name and the Accept step).
-ENROLL_VERSION = 2
+_VERIFY_LABEL_V3 = b"localgatekeys|sync|enroll-verify|v3|"
+ENROLL_COMMIT_LABEL = b"localgatekeys|sync|enroll-commit|v3|"
+#: Version of the enrollment request body and transcript (2 added the device name and the Accept step;
+#: 3, used for and required by a version-2 offer, adds the commit-reveal step to the code).
+ENROLL_VERSION = 3
+#: The body and transcript version for a version-1 offer (an older QR).
+LEGACY_ENROLL_VERSION = 2
 _REQUEST_FIELDS = frozenset({"version", "offer_id", "device_id", "signing_public", "exchange_public",
                              "endpoint", "name", "signature", "mac"})
 _REPLY_FIELDS = frozenset({"group_id", "epoch", "key", "device_id", "signing_public"})
@@ -710,14 +775,64 @@ def check_device_name(name: Any) -> str:
     return name
 
 
-def verification_code(transcript: bytes) -> str:
-    """The 6-digit code both screens show for one enrollment (see the module docstring)."""
-    digest = hashlib.sha256(_VERIFY_LABEL + transcript).digest()
+def verification_code(transcript: bytes, reveal: bytes | None = None) -> str:
+    """The 6-digit code both screens show for one enrollment (see the module docstring).
+
+    With *reveal* (a version-2 offer) the code also covers the inviter's reveal, which the new
+    device learns only after its request is fixed, so it cannot pick a device id that gives a
+    chosen code.
+    """
+    if reveal is None:
+        digest = hashlib.sha256(_VERIFY_LABEL + transcript).digest()
+    else:
+        if not isinstance(reveal, bytes) or len(reveal) != 32:
+            raise PairingError("Pairing reveal is malformed")
+        digest = hashlib.sha256(_VERIFY_LABEL_V3 + transcript + reveal).digest()
     return f"{int.from_bytes(digest[:4], 'big') % 10**6:06d}"
+
+
+def enrollment_commit(reveal: bytes) -> bytes:
+    """The commitment a version-2 offer carries: SHA-256(``ENROLL_COMMIT_LABEL`` + reveal)."""
+    if not isinstance(reveal, bytes) or len(reveal) != 32:
+        raise PairingError("Pairing reveal is malformed")
+    return hashlib.sha256(ENROLL_COMMIT_LABEL + reveal).digest()
+
+
+def enroll_version(offer: PairingOffer) -> int:
+    """The request body and transcript version an offer takes (3 for a version-2 offer, else 2)."""
+    return ENROLL_VERSION if offer.commit is not None else LEGACY_ENROLL_VERSION
+
+
+def enrollment_reveal(offer: PairingOffer) -> bytes | None:
+    """Inviter side: the interim reveal frame for a verified request; None for a version-1 offer."""
+    if offer.commit is None:
+        return None
+    if offer.reveal is None:
+        raise PairingError("This offer was not created on this device")
+    return ENROLL_REVEAL_MAGIC + _canonical({"reveal": _b64e(offer.reveal)})
+
+
+def open_enrollment_reveal(offer: PairingOffer, raw: Any) -> bytes:
+    """New-device side: the reveal from the interim frame, checked against the QR's commitment."""
+    if offer.commit is None:
+        raise PairingError("This offer has no commitment")
+    if not isinstance(raw, bytes) or len(raw) > 256 or not raw.startswith(ENROLL_REVEAL_MAGIC):
+        raise PairingError("Enrollment reveal is malformed")
+    value = _strict_json(raw[len(ENROLL_REVEAL_MAGIC):])
+    if not isinstance(value, dict) or set(value) != {"reveal"}:
+        raise PairingError("Enrollment reveal is malformed")
+    reveal = _b64d(value["reveal"], length=32, field="pairing reveal")
+    if not hmac.compare_digest(enrollment_commit(reveal), offer.commit):
+        raise PairingAuthenticationError("Enrollment reveal does not match the QR code")
+    return reveal
 
 
 class EnrollmentOutdated(PairingError):
     """A request that decrypted but has the version-1 body: the new device needs an update."""
+
+
+class EnrollmentFull(PairingError):
+    """The inviter's peer list is full and the request is not from a device it already pairs with."""
 
 
 class EnrollmentRefused(PairingAuthenticationError):
@@ -743,11 +858,13 @@ class EnrollmentRequest:
     endpoint: tuple[str, int] | None
     transcript: bytes = field(repr=False)
     name: str = DEFAULT_ENROLL_NAME
+    #: The inviter's reveal (version-2 offer), which the code covers; None for a version-1 offer.
+    reveal: bytes | None = field(default=None, repr=False)
 
     @property
     def code(self) -> str:
         """The verification code the new device shows (``verification_code``)."""
-        return verification_code(self.transcript)
+        return verification_code(self.transcript, self.reveal)
 
 
 def _hkdf(shared: bytes, salt: bytes, info: bytes) -> bytes:
@@ -779,7 +896,7 @@ def enrollment_transcript(offer: PairingOffer, device_id: str, signing_public: b
                           name: str = DEFAULT_ENROLL_NAME) -> bytes:
     return _canonical({
         "protocol": "localgatekeys-sync-enrollment",
-        "version": ENROLL_VERSION,
+        "version": enroll_version(offer),
         "offer": offer.public_dict(),
         "code": offer.code,
         "invitee_device_id": _ident(device_id, "invitee device id"),
@@ -813,7 +930,7 @@ def build_enrollment_request(offer: PairingOffer, identity: DeviceIdentity, *,
     transcript = enrollment_transcript(offer, identity.device_id, identity.signing_public_key,
                                        identity.exchange_public_key, endpoint, name)
     body = {
-        "version": ENROLL_VERSION, "offer_id": offer.offer_id, "device_id": identity.device_id,
+        "version": enroll_version(offer), "offer_id": offer.offer_id, "device_id": identity.device_id,
         "signing_public": _b64e(identity.signing_public_key),
         "exchange_public": _b64e(identity.exchange_public_key),
         "endpoint": _endpoint_dict(endpoint), "name": name,
@@ -879,21 +996,31 @@ def _decrypt_enrollment_request(offer: PairingOffer, inviter: DeviceIdentity, ra
     return plain
 
 
-def _verify_enrollment_body(offer: PairingOffer, plain: bytes,
-                            reserved_ids: frozenset[str]) -> EnrollmentRequest:
-    """Checks after a successful decrypt (the sender holds the QR); failures count as attempts."""
+def _verify_enrollment_body(offer: PairingOffer, plain: bytes, reserved_ids: frozenset[str],
+                            known_keys: Mapping[str, tuple[bytes, bytes]] | None = None) -> EnrollmentRequest:
+    """Checks after a successful decrypt (the sender holds the QR); failures count as attempts.
+
+    A reserved device id is refused unless *known_keys* pins it to exactly the request's keys.
+    """
     body = _strict_json(plain)
-    if (isinstance(body, dict) and type(body.get("version")) is int and body["version"] < ENROLL_VERSION
+    expected = enroll_version(offer)
+    if (isinstance(body, dict) and type(body.get("version")) is int and body["version"] < expected
             and body.get("offer_id") == offer.offer_id):
-        raise EnrollmentOutdated("The new device needs an update (enrollment version 1)")
+        # Also a version-2 body for a version-2 offer: without the reveal its code could be ground.
+        raise EnrollmentOutdated("The new device needs an update (older enrollment version)")
     if (not isinstance(body, dict) or set(body) != _REQUEST_FIELDS or type(body["version"]) is not int
-            or body["version"] != ENROLL_VERSION or body["offer_id"] != offer.offer_id):
+            or body["version"] != expected or body["offer_id"] != offer.offer_id):
         raise PairingError("Enrollment request is malformed")
     device_id = _ident(body["device_id"], "invitee device id")
-    if device_id == offer.inviter_device_id or device_id in reserved_ids:
+    pinned = None if device_id == offer.inviter_device_id else (known_keys or {}).get(device_id)
+    if device_id == offer.inviter_device_id or (device_id in reserved_ids and pinned is None):
         raise PairingAuthenticationError("This device id is already in use in the group")
     signing = _b64d(body["signing_public"], length=32, field="invitee signing key")
     exchange = _b64d(body["exchange_public"], length=32, field="invitee exchange key")
+    if pinned is not None and not (hmac.compare_digest(signing, pinned[0])
+                                   & hmac.compare_digest(exchange, pinned[1])):
+        # A known id with other keys is another device (or a forgery): refused as before.
+        raise PairingAuthenticationError("This device id is already in use in the group")
     endpoint = _parse_endpoint(body["endpoint"])
     name = check_device_name(body["name"])
     transcript = enrollment_transcript(offer, device_id, signing, exchange, endpoint, name)
@@ -905,7 +1032,7 @@ def _verify_enrollment_body(offer: PairingOffer, plain: bytes,
             _b64d(body["signature"], length=64, field="enrollment signature"), _SIG_LABEL + transcript)
     except (InvalidSignature, ValueError) as exc:
         raise PairingAuthenticationError("Enrollment signature is invalid") from exc
-    return EnrollmentRequest(device_id, signing, exchange, endpoint, transcript, name)
+    return EnrollmentRequest(device_id, signing, exchange, endpoint, transcript, name, offer.reveal)
 
 
 def seal_enrollment_reply(inviter: DeviceIdentity, offer: PairingOffer, request: EnrollmentRequest,
@@ -936,8 +1063,13 @@ def seal_enrollment_reply(inviter: DeviceIdentity, offer: PairingOffer, request:
 
 def open_enrollment_reply(offer: PairingOffer, identity: DeviceIdentity, raw: Any, *,
                           endpoint: tuple[str, int] | None = None,
-                          name: str = DEFAULT_ENROLL_NAME) -> tuple[str, int, bytes]:
-    """New-device side: verify the inviter's reply and return (group_id, epoch, key)."""
+                          name: str = DEFAULT_ENROLL_NAME,
+                          reveal: bytes | None = None) -> tuple[str, int, bytes]:
+    """New-device side: verify the inviter's reply and return (group_id, epoch, key).
+
+    For a version-2 offer *reveal* must be the reveal checked by :func:`open_enrollment_reveal`
+    (the one the code shown to the user covered): a key reply without it is refused.
+    """
     if isinstance(raw, bytes) and raw.startswith(ENROLL_REFUSED_MAGIC):
         reason = "refused"
         try:
@@ -949,6 +1081,9 @@ def open_enrollment_reply(offer: PairingOffer, identity: DeviceIdentity, raw: An
         raise EnrollmentRefused(reason)
     if not isinstance(raw, bytes) or len(raw) > MAX_ENROLL_BYTES or not raw.startswith(ENROLL_REPLY_MAGIC):
         raise PairingError("Enrollment reply is malformed")
+    if offer.commit is not None and (not isinstance(reveal, bytes) or len(reveal) != 32
+                                     or not hmac.compare_digest(enrollment_commit(reveal), offer.commit)):
+        raise PairingAuthenticationError("The inviting device sent no valid reveal before its reply")
     outer = _strict_json(raw[len(ENROLL_REPLY_MAGIC):])
     if not isinstance(outer, dict) or set(outer) != {"eph", "nonce", "ct", "sig"}:
         raise PairingError("Enrollment reply is malformed")
@@ -1069,7 +1204,8 @@ __all__ = [
     "confirm_pairing_offer", "complete_pairing", "PAIRING_TTL_SECONDS",
     "PAIRING_MAX_ATTEMPTS", "MAX_QR_PAYLOAD", "QR_PREFIX", "offer_qr_payload", "parse_qr_payload",
     "render_qr_png", "EnrollmentRequest", "ENROLL_REQUEST_MAGIC", "ENROLL_REPLY_MAGIC",
-    "ENROLL_REFUSED_MAGIC", "MAX_ENROLL_BYTES", "build_enrollment_request", "enrollment_transcript",
-    "open_enrollment_reply", "seal_enrollment_reply", "EnrollmentRefused", "REFUSAL_REASONS",
+    "ENROLL_REFUSED_MAGIC", "ENROLL_REVEAL_MAGIC", "MAX_ENROLL_BYTES", "OFFER_COMMIT_VERSION",
+    "enrollment_commit", "enrollment_reveal", "open_enrollment_reveal", "enroll_version", "build_enrollment_request", "enrollment_transcript",
+    "open_enrollment_reply", "seal_enrollment_reply", "EnrollmentFull", "EnrollmentRefused", "REFUSAL_REASONS",
     "enrollment_refusal",
 ]

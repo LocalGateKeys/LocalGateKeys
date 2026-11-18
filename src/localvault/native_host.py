@@ -133,7 +133,8 @@ def _read_native_message(stream: BinaryIO) -> dict[str, Any] | None:
     payload = _read_exact(stream, length)
     try:
         value = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
+    except (ValueError, RecursionError) as exc:
+        # ValueError covers bad UTF-8, bad JSON and integers past Python's digit limit.
         # RecursionError: Python 3.14's C decoder raises it for deeply nested input.
         raise NativeBridgeError("Invalid native message JSON") from exc
     if not isinstance(value, dict):
@@ -141,10 +142,24 @@ def _read_native_message(stream: BinaryIO) -> dict[str, Any] | None:
     return value
 
 
+class NativeResponseTooLarge(NativeBridgeError):
+    """A reply over the native messaging limit; nothing was written."""
+
+
+def _send_response(stream: BinaryIO, response: dict[str, Any]) -> None:
+    """Write one reply; an oversized reply becomes a small error and the host keeps running."""
+    try:
+        _write_native_message(stream, response)
+    except NativeResponseTooLarge:
+        _log("native_response_too_large")
+        _write_native_message(stream, {"ok": False, "error": "response_too_large",
+                                       "message": "The reply was too large to send."})
+
+
 def _write_native_message(stream: BinaryIO, value: dict[str, Any]) -> None:
     payload = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(payload) > _MAX_NATIVE_MESSAGE:
-        raise NativeBridgeError("Native response is too large")
+        raise NativeResponseTooLarge("Native response is too large")
     stream.write(struct.pack("=I", len(payload)))
     stream.write(payload)
     stream.flush()
@@ -248,7 +263,10 @@ def tcp_fallback_allowed() -> bool:
 
     Enabled by ``LOCALGATEKEYS_ALLOW_TCP_FALLBACK=1`` (exactly "1") or
     implicitly inside pytest, where the portable framing tests use it.
+    A frozen (release) build ignores both toggles: the fallback is never on there.
     """
+    if getattr(sys, "frozen", False):
+        return False
     environ = os.environ
     if environ.get("PYTEST_CURRENT_TEST"):
         return True
@@ -354,7 +372,36 @@ def self_test() -> dict[str, Any]:
     return result
 
 
+def _cli_arguments(argv: list[str]) -> list[str] | None:
+    """The lgk arguments when the host runs as the command line tool, else None (a browser launch).
+
+    The Store package may declare one execution alias, so ``LocalGateKeysNativeHost.exe lgk <args>`` runs
+    ``lgk <args>`` and ``LocalGateKeysNativeHost.exe mcp`` runs ``lgk mcp``. Browsers always pass an origin
+    or a manifest path first, never these bare words, so their launches keep the host below.
+    """
+    if len(argv) == 2 and argv[1] == "mcp":
+        return ["mcp"]
+    if len(argv) >= 2 and argv[1] == "lgk":
+        return list(argv[2:])
+    return None
+
+
+def _run_cli(arguments: list[str]) -> int:
+    """Exactly what lgk.exe does; the app gives this peer the CLI service only, never the broker."""
+    from .cli.main import main as cli_main
+
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+        except (AttributeError, ValueError, OSError):
+            pass
+    return cli_main(arguments)
+
+
 def main() -> None:
+    cli_arguments = _cli_arguments(sys.argv)
+    if cli_arguments is not None:
+        raise SystemExit(_run_cli(cli_arguments))
     try:
         _configure_binary_stdio()
     except Exception as exc:
@@ -395,7 +442,7 @@ def main() -> None:
                 _write_native_message(sys.stdout.buffer, _unverified_caller_response())
                 continue
             response = _forward(request)
-            _write_native_message(sys.stdout.buffer, response)
+            _send_response(sys.stdout.buffer, response)
         except (EOFError, NativeBridgeError) as exc:
             _log("native_protocol_error", exc)
             try:

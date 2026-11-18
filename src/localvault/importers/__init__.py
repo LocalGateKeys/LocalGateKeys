@@ -19,7 +19,7 @@ MAX_RECORDS = 5_000
 # and keeps a crafted document's object graph to a few hundred MiB.
 MAX_JSON_BYTES = 16 * 1024 * 1024
 MAX_DIAGNOSTICS = 50
-RECORD_KINDS = ("login", "note", "identity", "card", "other")
+RECORD_KINDS = ("login", "note", "identity", "card", "passkey", "other")
 CARD_KEYS = ("cardholder", "number", "expiry", "cvv", "pin", "brand")
 _MONTHS = {name: index for index, name in enumerate(
     ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
@@ -69,6 +69,12 @@ class ImportedRecord:
     identity: dict[str, str] = field(default_factory=dict, repr=False)
     card: dict[str, str] = field(default_factory=dict, repr=False)
     source_row: int | None = None
+    # Custom fields add_custom_field could not keep (past its safety cap).
+    dropped_fields: int = 0
+    # Switch report: custom-field fitting events ("split", "moved", "dropped") and how many attached files the
+    # source named that the import cannot bring over.
+    field_events: dict[str, int] = field(default_factory=dict, repr=False)
+    attachments: int = 0
 
     def __post_init__(self) -> None:
         if self.kind not in RECORD_KINDS:
@@ -119,14 +125,24 @@ class ImportResult:
         self.records.clear()
 
 
+# Safety caps only: the import workflow fits fields to the vault limits (50
+# fields, 4,096-character values) by splitting long values and moving extra
+# fields into the notes, and reports each case.  Nothing is cut here.
+MAX_IMPORTED_FIELDS = 1000
+MAX_IMPORTED_FIELD_VALUE = 1024 * 1024
+
+
 def add_custom_field(record: ImportedRecord, name: str, value: Any, *, hidden: bool = False) -> None:
-    """Append a custom field, skipping blanks and capping at 50 fields."""
+    """Append a custom field, skipping blanks; counts (never silently drops) fields past the cap."""
     if value is None:
         return
     text = str(value)
-    if not name or not text or len(record.custom_fields) >= 50:
+    if not name or not text:
         return
-    record.custom_fields.append({"name": str(name)[:100], "value": text[:4096], "hidden": bool(hidden)})
+    if len(record.custom_fields) >= MAX_IMPORTED_FIELDS or len(text) > MAX_IMPORTED_FIELD_VALUE:
+        record.dropped_fields += 1
+        return
+    record.custom_fields.append({"name": str(name)[:100], "value": text, "hidden": bool(hidden)})
 
 
 def totp_uri_from_secret(secret: str, *, label: str = "", issuer: str = "", digits: int = 6,
@@ -145,7 +161,10 @@ def totp_uri_from_secret(secret: str, *, label: str = "", issuer: str = "", digi
     if not compact:
         return ""
     name = quote(label or "account", safe="@:")
-    query = [f"secret={compact}"]
+    # Quoted, so a damaged export value such as ``ABC&digits=8`` cannot add otpauth parameters: it stays one
+    # (invalid) secret, which the import workflow reports and keeps as a hidden field (scan core 3, L2).
+    # A valid Base32 secret (A-Z, 2-7) is unchanged by quoting.
+    query = [f"secret={quote(compact, safe='')}"]
     if issuer:
         query.append(f"issuer={quote(issuer, safe='')}")
     if int(digits) != 6:

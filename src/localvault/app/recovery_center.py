@@ -11,10 +11,12 @@ from pathlib import Path
 from typing import Any
 
 from ..backup import (
+    VAULT_PROMPT_ERRORS,
     BackupError,
     export_encrypted_backup,
     restore_verified_backup,
     verify_encrypted_backup,
+    without_share_records,
 )
 from ..config import BRAND_NAME
 from ..profiles import ProfileError, ProfileManager, ProfileRecord
@@ -33,6 +35,7 @@ from ..recovery import (
 )
 from ..secret_text import SecretText, is_blank_secret, secrets_match
 from ..vault import (
+    FactorSecrets,
     VaultError,
     VaultSession,
     unlock_with_recovery_phrase,
@@ -54,7 +57,7 @@ def summarize_recovery(result: Mapping[str, Any] | BackupInventory) -> dict[str,
         "format", "format_kind", "new_profile_name", "deleted_entries",
         "created_at", "verified", "verified_at", "same_disk", "warnings", "safety", "dry_run",
         "requires_confirmation", "committed", "disk", "manifest", "manifest_path", "remove",
-        "retained", "orphan_manifests", "keep", "recovery_phrase_enrolled",
+        "retained", "orphan_manifests", "keep", "recovery_phrase_enrolled", "factors_removed",
     }
     safe = {key: raw[key] for key in allowed if key in raw}
     if "warnings" in safe:
@@ -75,9 +78,10 @@ def recovery_phrase_change_warnings(change: Mapping[str, Any]) -> list[str]:
     if change.get("operation") not in {"replace", "remove"}:
         return []
     notes = [t("recoveryCenter.thePreviousRecoveryPhraseNo")]
-    reenroll = [name for name in change.get("reenroll_required", ()) if name in {"hello", "face"}]
+    reenroll = [name for name in change.get("reenroll_required", ()) if name in {"hello", "face", "fido"}]
     if reenroll:
-        names = t("common.listAnd").join({"hello": t("settings.hello.title"), "face": t("recoveryCenter.cameraVerification")}[name] for name in reenroll)
+        names = t("common.listAnd").join({"hello": t("settings.hello.title"), "face": t("recoveryCenter.cameraVerification"),
+                                          "fido": t("settings.securityKey.title")}[name] for name in reenroll)
         notes.append(t("recoveryCenter.setUpAgainTheVault", names=names))
     retained = int(change.get("retained_old_copies", 0) or 0)
     if retained:
@@ -126,7 +130,8 @@ class RecoveryPhraseChallenge:
 
 def recover_with_phrase(path: Path | str, phrase: str, new_password: str | SecretText, *,
                         backup_dir: Path | None = None, backup_count: int = 0,
-                        report: dict[str, Any] | None = None) -> VaultSession:
+                        report: dict[str, Any] | None = None,
+                        check_new: Callable[[VaultSession], None] | None = None) -> VaultSession:
     """Open the vault with its recovery phrase and immediately set a new master password.
 
     The returned session is an ordinary unlocked session.  The new master
@@ -138,13 +143,18 @@ def recover_with_phrase(path: Path | str, phrase: str, new_password: str | Secre
     key are deleted.  A ``report`` dict, when given, receives non-secret
     results; ``unlock_cleanup_complete`` is False when some stale key material
     could not be removed (it only wraps the retired data key).  A ``SecretText``
-    new password stays the caller's to wipe.
+    new password stays the caller's to wipe.  A key file / YubiKey set on the
+    vault is removed by the reset (format 3 again); ``factors_removed`` in the
+    report lists them so the UI can say to add them again.
     """
     from ..face_unlock import cleanup_after_password_change as cleanup_face
+    from ..fido_unlock import cleanup_after_password_change as cleanup_fido
     from ..hello_unlock import cleanup_after_password_change as cleanup_hello
 
     session = unlock_with_recovery_phrase(Path(path), phrase, backup_dir=backup_dir, backup_count=backup_count)
     try:
+        if check_new is not None:
+            check_new(session)  # e.g. the new password must not be the duress password (sub-plan 08)
         record_id = session.hello_binding()
         vault_path = session.path
         result = session.set_master_password_after_recovery(new_password)
@@ -161,13 +171,15 @@ def recover_with_phrase(path: Path | str, phrase: str, new_password: str | Secre
         face_cleaned = cleanup_face(vault_path)
     except Exception:  # noqa: BLE001
         face_cleaned = False
+    fido_cleaned = cleanup_fido(vault_path)
     if report is not None:
         report.update({
             "key_generation": result.get("key_generation"),
             "recovery_phrase_invalidated": bool(result.get("recovery_phrase_invalidated")),
             "reenroll_required": list(result.get("reenroll_required", [])),
             "purged_backups": int(result.get("purged_backups", 0)),
-            "unlock_cleanup_complete": bool(hello_cleaned and face_cleaned),
+            "unlock_cleanup_complete": bool(hello_cleaned and face_cleaned and fido_cleaned),
+            "factors_removed": [str(kind) for kind in result.get("factors_removed", [])],
         })
     return session
 
@@ -426,6 +438,8 @@ class RecoveryCenter:
                         vault_password=kwargs["vault_password"],
                         replace=False,
                         allow_rollback=allow_rollback,
+                        factors=kwargs.get("factors"),
+                        recovery_phrase=kwargs.get("recovery_phrase"),
                     )
                 except (BackupError, OSError, ValueError) as exc:
                     if record is not None and destination.exists():
@@ -440,6 +454,8 @@ class RecoveryCenter:
                     result = (self.drill.test_restore(snapshot, destination, **kwargs) if self.drill is not None else
                               self.controller.restore(snapshot, destination, **kwargs) if self.controller is not None
                               else restore_as_new_profile(snapshot, destination, **kwargs))
+                except VAULT_PROMPT_ERRORS:
+                    raise  # the key file / YubiKey prompt; nothing was published
                 except Exception as exc:
                     if record is not None and destination.exists():
                         raise RecoveryError(
@@ -457,7 +473,8 @@ class RecoveryCenter:
 
     def create_catalog_backup(self, destination: Path | str, *, backup_password: str | SecretText,
                               backup_password_confirmation: str | SecretText,
-                              vault_password: str | SecretText) -> dict[str, Any]:
+                              vault_password: str | SecretText,
+                              factors: FactorSecrets | None = None) -> dict[str, Any]:
         if self.profiles is None:
             raise RecoveryError(t("recoveryCenter.profileStorageIsUnavailable"))
         if not secrets_match(backup_password, backup_password_confirmation):
@@ -482,13 +499,13 @@ class RecoveryCenter:
         if not profile_dir.is_dir():
             raise RecoveryError(t("recoveryCenter.theProfileToBackUp"))
         from ..vault import unlock_vault
-        checked_session = unlock_vault(profile_dir / "vault.json", vault_password)
+        checked_session = unlock_vault(profile_dir / "vault.json", vault_password, factors=factors)
         try:
             self._require_current()
             export_encrypted_backup(
                 Path(destination), vault_file=profile_dir / "vault.json",
                 settings_file=profile_dir / "settings.json", profile_name=active.name,
-                backup_password=backup_password,
+                backup_password=backup_password, vault_filter=without_share_records(checked_session),
             )
         except (BackupError, OSError, ValueError) as exc:
             raise RecoveryError(str(exc)) from exc

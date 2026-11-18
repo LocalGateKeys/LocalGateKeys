@@ -1,0 +1,382 @@
+{
+  "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+  "description": "A share view of collection_id from a mixed vault (vault_bridge._wrapper with a share scope) and incoming share records (vault_bridge._unwrap_remote with that scope).",
+  "incoming": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "shared_note",
+      "verdict": "ok",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "created_at": 1799999500,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "shared_licence",
+      "verdict": "ok",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "created_at": 1799999500,
+          "id": "22222222-2222-4222-8222-222222222222",
+          "kind": "license",
+          "payload": {
+            "expiration_date": "",
+            "license_value": "ABCD-EFGH",
+            "notes": "",
+            "product": "Office",
+            "purchase_date": "",
+            "template_id": null,
+            "vendor": "Vendor"
+          },
+          "title": "Family office licence",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "peer_tags_and_favourite_are_dropped_not_refused",
+      "verdict": "ok",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "created_at": 1799999500,
+          "favorite": true,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "tags": [
+            "peer tag"
+          ],
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "claims_two_collections",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          ],
+          "created_at": 1799999500,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "claims_another_collection",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          ],
+          "created_at": 1799999500,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "claims_no_collection",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "created_at": 1799999500,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "77777777-7777-4777-8777-777777777777",
+      "name": "login",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "entry",
+        "record": {
+          "created_at": 1799999500,
+          "custom_fields": [],
+          "favorite": false,
+          "id": "77777777-7777-4777-8777-777777777777",
+          "kind": "web",
+          "label": "Bank",
+          "notes": "",
+          "password": "p",
+          "password_history": [],
+          "policy": {},
+          "recovery_codes": [],
+          "scope": {
+            "match_mode": "exact_origin",
+            "origins": [
+              "https://bank.example"
+            ]
+          },
+          "tags": [],
+          "totp": null,
+          "updated_at": 1799999900,
+          "username": "u"
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "id": "55555555-5555-4555-8555-555555555555",
+      "name": "document",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "created_at": 1799999500,
+          "id": "55555555-5555-4555-8555-555555555555",
+          "kind": "document",
+          "payload": {
+            "attachment_id": "66666666-6666-4666-8666-666666666666",
+            "description": "",
+            "template_id": null
+          },
+          "title": "Passport scan",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    }
+  ],
+  "local_only_item_payload_fields": [
+    "document_ids"
+  ],
+  "share_local_only_item_fields": [
+    "revision",
+    "tags",
+    "favorite"
+  ],
+  "shared": [
+    {
+      "digest": "f06baac7222b7e2149d2fd3d5423fca7650f9322cbc1af0876ea5e9c4f3c8219",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "created_at": 1799999500,
+          "id": "11111111-1111-4111-8111-111111111111",
+          "kind": "note",
+          "payload": {
+            "body": "router in the hall",
+            "fields": [],
+            "template_id": null
+          },
+          "title": "Wi-Fi at grandma's",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    },
+    {
+      "digest": "e7e5c7bd30e7f146fa3f4906dcbaa87e2b9644cfabeed4c56aaa8de9d4691905",
+      "id": "22222222-2222-4222-8222-222222222222",
+      "wrapper": {
+        "ns": "item",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "created_at": 1799999500,
+          "id": "22222222-2222-4222-8222-222222222222",
+          "kind": "license",
+          "payload": {
+            "expiration_date": "",
+            "license_value": "ABCD-EFGH",
+            "notes": "",
+            "product": "Office",
+            "purchase_date": "",
+            "template_id": null,
+            "vendor": "Vendor"
+          },
+          "title": "Family office licence",
+          "updated_at": 1799999900
+        },
+        "schema": 1,
+        "updated_at": 1799999900
+      }
+    }
+  ],
+  "vault_items": [
+    {
+      "collection_ids": [
+        "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+        "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+      ],
+      "created_at": 1799999500,
+      "favorite": true,
+      "id": "11111111-1111-4111-8111-111111111111",
+      "kind": "note",
+      "payload": {
+        "body": "router in the hall",
+        "fields": [],
+        "template_id": null
+      },
+      "revision": 3,
+      "tags": [
+        "home"
+      ],
+      "title": "Wi-Fi at grandma's",
+      "updated_at": 1799999900
+    },
+    {
+      "collection_ids": [
+        "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+      ],
+      "created_at": 1799999500,
+      "favorite": false,
+      "id": "22222222-2222-4222-8222-222222222222",
+      "kind": "license",
+      "payload": {
+        "document_ids": [
+          "55555555-5555-4555-8555-555555555555"
+        ],
+        "expiration_date": "",
+        "license_value": "ABCD-EFGH",
+        "notes": "",
+        "product": "Office",
+        "purchase_date": "",
+        "template_id": null,
+        "vendor": "Vendor"
+      },
+      "revision": 3,
+      "tags": [],
+      "title": "Family office licence",
+      "updated_at": 1799999900
+    },
+    {
+      "collection_ids": [],
+      "created_at": 1799999500,
+      "favorite": false,
+      "id": "33333333-3333-4333-8333-333333333333",
+      "kind": "note",
+      "payload": {
+        "body": "mine",
+        "fields": [],
+        "template_id": null
+      },
+      "revision": 3,
+      "tags": [],
+      "title": "Private",
+      "updated_at": 1799999900
+    },
+    {
+      "collection_ids": [
+        "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+      ],
+      "created_at": 1799999500,
+      "favorite": false,
+      "id": "44444444-4444-4444-8444-444444444444",
+      "kind": "note",
+      "payload": {
+        "body": "x",
+        "fields": [],
+        "template_id": null
+      },
+      "revision": 3,
+      "tags": [],
+      "title": "Elsewhere",
+      "updated_at": 1799999900
+    },
+    {
+      "collection_ids": [
+        "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+      ],
+      "created_at": 1799999500,
+      "favorite": false,
+      "id": "55555555-5555-4555-8555-555555555555",
+      "kind": "document",
+      "payload": {
+        "attachment_id": "66666666-6666-4666-8666-666666666666",
+        "description": "",
+        "template_id": null
+      },
+      "revision": 3,
+      "tags": [],
+      "title": "Passport scan",
+      "updated_at": 1799999900
+    }
+  ]
+}

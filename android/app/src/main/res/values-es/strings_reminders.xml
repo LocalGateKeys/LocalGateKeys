@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">Hay un recordatorio pendiente</string>
+    <string name="reminder_named_body">%1$s vence</string>
+    <string name="reminder_save_failed">No se pudo guardar el recordatorio en este teléfono.</string>
+    <string name="reminder_channel_name">Recordatorios</string>
+    <string name="reminder_section">Recordatorio</string>
+    <string name="reminder_due">Vencimiento</string>
+    <string name="reminder_remind_me">Recuérdamelo</string>
+    <string name="reminder_change">Cambiar recordatorio</string>
+    <string name="reminder_remove">Quitar recordatorio</string>
+    <string name="reminder_add">Añadir recordatorio</string>
+    <string name="reminder_suggest_button">Recuérdamelo antes de que caduque</string>
+    <string name="reminder_card_expires">Esta tarjeta caduca %1$s.</string>
+    <string name="reminder_due_date">Fecha de vencimiento</string>
+    <string name="reminder_on_the_day">El mismo día</string>
+    <string name="reminder_upcoming">Próximos</string>
+    <string name="reminder_nothing_upcoming">Nada próximo en los siguientes 30 días.</string>
+    <string name="reminder_overdue_due">Vencido · vencía %1$s</string>
+    <string name="reminder_due_on">Vence %1$s</string>
+    <string name="reminder_snooze">Posponer</string>
+    <string name="reminder_snooze_day">Posponer un día</string>
+    <string name="reminder_notifications_off">Las notificaciones están desactivadas para LocalGateKeys. Los recordatorios siguen apareciendo aquí.</string>
+    <string name="reminder_settings_title">Recordatorios</string>
+    <string name="reminder_show_names">Mostrar los nombres de los elementos en las notificaciones</string>
+    <string name="reminder_settings_footer">Añade un recordatorio de una tarjeta, un documento o una suscripción. Desactivado: las notificaciones solo dicen “Hay un recordatorio pendiente”, así que nada sobre el elemento aparece en la pantalla de bloqueo. Activado: el nombre del elemento también puede aparecer en la pantalla de bloqueo, según el ajuste de notificaciones en la pantalla de bloqueo de tu teléfono.</string>
+    <string name="reminder_editor_footer">Llega una notificación a las 9:00 del día. Solo dice “Hay un recordatorio pendiente” a menos que Ajustes › Recordatorios muestre los nombres de los elementos. Los recordatorios se quedan en este teléfono y nunca se sincronizan.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d día antes</item>
+        <item quantity="other">%1$d días antes</item>
+    </plurals>
+</resources>

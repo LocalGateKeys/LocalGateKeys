@@ -31,17 +31,26 @@ const PACKAGE_FILES = Object.freeze([
   "api.js",
   "background.js",
   "content.js",
+  "generator.js",
   "heuristics.js",
   "icons/icon128.png",
   "icons/icon16.png",
   "icons/icon32.png",
   "icons/icon48.png",
   "login-safety.js",
+  "lookalike.js",
+  "panel.html",
+  "panel.js",
+  "popup-generator.js",
+  "popup-logins.js",
   "popup.html",
   "popup.js",
+  "psl-min.json",
   "site-logos.json",
+  "THIRD-PARTY-NOTICES.txt",
   "webauthn-bridge.js",
   "webauthn-page.js",
+  "wordlist.txt",
 ]);
 
 function chromiumStoreManifest(sourceManifest) {
@@ -63,8 +72,12 @@ function referencedFiles(manifest) {
   for (const file of Object.values(manifest.action?.default_icon || {})) refs.add(file);
   for (const file of Object.values(manifest.icons || {})) refs.add(file);
   const popup = manifest.action?.default_popup;
-  if (popup) {
-    const html = fs.readFileSync(path.join(SOURCE_DIR, popup), "utf8");
+  // Web-accessible resources (panel.html, which content.js frames into pages).
+  const pages = [];
+  for (const entry of manifest.web_accessible_resources || []) for (const file of entry.resources || []) { refs.add(file); if (file.endsWith(".html")) pages.push(file); }
+  // The scripts and styles the extension pages load.
+  for (const page of popup ? [popup, ...pages] : pages) {
+    const html = fs.readFileSync(path.join(SOURCE_DIR, page), "utf8");
     for (const match of html.matchAll(/\b(?:src|href)="([^":#?]+)"/g)) refs.add(match[1]);
   }
   // __MSG_*__ in the manifest and tr() in the scripts read the default locale.
@@ -73,6 +86,13 @@ function referencedFiles(manifest) {
   refs.add("api.js");
   // background.js fetches the bundled site logos with runtime.getURL.
   refs.add("site-logos.json");
+  // The lookalike classifier: importScripts on Chromium (Firefox lists it in
+  // background.scripts), its packaged suffix list, and the list's MPL notice.
+  refs.add("lookalike.js");
+  refs.add("psl-min.json");
+  refs.add("THIRD-PARTY-NOTICES.txt");
+  // popup-generator.js fetches the passphrase word list with runtime.getURL.
+  if (popup) refs.add("wordlist.txt");
   return [...refs].sort();
 }
 

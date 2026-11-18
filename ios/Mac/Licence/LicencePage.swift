@@ -16,11 +16,20 @@ struct LicencePage: View {
     static let alsoUnlocksWindows = String(localized: "Also unlocks Windows: pair your PC")
     static let copyKeyLabel = String(localized: "Copy key")
 
+    /// The updates_until date of a lifetime licence (ISO dates compare as strings).
+    static let lifetimeUntil = "9999-12-31"
+
     /// The status line under the title.
     static func status(purchased: Bool, license: LicenseInfo?) -> String {
         if purchased { return String(localized: "Pro, bought on the App Store. Everything is unlocked on this Mac.") }
-        if let license { return String(localized: "\(syncedText). Updates until \(license.updatesUntil).") }
-        return String(localized: "Free plan: up to 4 items. Upgrade to Pro to add more.")
+        if let license {
+            // Every licence issued is lifetime (updates_until 9999-12-31): no date to show, every update stays free.
+            if license.updatesUntil >= lifetimeUntil {
+                return String(localized: "\(syncedText). Lifetime Pro: every update, forever, free.")
+            }
+            return String(localized: "\(syncedText). Updates until \(license.updatesUntil).")
+        }
+        return String(localized: "Free plan: up to \(ItemLimit.freeItems) items. Upgrade to Pro to add more.")
     }
 
     var body: some View {
@@ -34,10 +43,13 @@ struct LicencePage: View {
                         .font(.system(size: 12.5)).fixedSize(horizontal: false, vertical: true)
                     if !pro.purchased {
                         HStack(spacing: 8) {
-                            Button(action: { Task { await pro.buy() } }) {
-                                Text(pro.price.map { String(localized: "Buy Pro – \($0)") } ?? String(localized: "Buy Pro"))
+                            // Pro users (e.g. by sync) see no price and no Buy button.
+                            if !pro.isPro {
+                                Button(action: { Task { await pro.buy() } }) {
+                                    Text(pro.price.map { String(localized: "Buy Pro – \($0)") } ?? String(localized: "Buy Pro"))
+                                }
+                                .buttonStyle(PillButtonStyle(primary: true)).disabled(pro.busy || !pro.canBuy)
                             }
-                            .buttonStyle(PillButtonStyle(primary: !pro.isPro)).disabled(pro.busy || !pro.canBuy)
                             Button("Restore purchases") { Task { await pro.restore() } }
                                 .buttonStyle(PillButtonStyle(primary: false)).disabled(pro.busy)
                             if pro.busy { ProgressView().controlSize(.small) }

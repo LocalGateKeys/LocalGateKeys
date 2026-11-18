@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Przejdź z KeePass na LocalGateKeys</title>
+  <meta name="description" content="Jak wyeksportować hasła z KeePass, zaimportować je do LocalGateKeys i co nie zostanie przeniesione.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pl/switch/keepass">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/switch/keepass">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/switch/keepass">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/switch/keepass">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/switch/keepass">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/switch/keepass">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/switch/keepass">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/switch/keepass">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/switch/keepass">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/switch/keepass">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/switch/keepass">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/switch/keepass">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/switch/keepass">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Przejdź z KeePass na LocalGateKeys">
+  <meta property="og:description" content="Jak wyeksportować hasła z KeePass, zaimportować je do LocalGateKeys i co nie zostanie przeniesione.">
+  <meta property="og:url" content="https://localgatekeys.app/pl/switch/keepass">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Logo LocalGateKeys: menedżer haseł na Windows, Mac i iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Przejdź z KeePass na LocalGateKeys">
+  <meta name="twitter:description" content="Jak wyeksportować hasła z KeePass, zaimportować je do LocalGateKeys i co nie zostanie przeniesione.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Przejdź do treści</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../pl/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Główne">
+        <ul class="nav">
+          <li><a href="../../pl/features">Funkcje</a></li>
+          <li><a href="../../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../../pl/help">Przewodnik</a></li>
+          <li><a href="../../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../../pl/pricing">Cennik</a></li>
+          <li><a href="../../pl/support">Wsparcie</a></li>
+          <li><a class="nav-cta" href="../../pl/download">Pobierz</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Główne">
+          <ul class="nav nav-stack">
+            <li><a href="../../pl/features">Funkcje</a></li>
+          <li><a href="../../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../../pl/help">Przewodnik</a></li>
+          <li><a href="../../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../../pl/pricing">Cennik</a></li>
+          <li><a href="../../pl/support">Wsparcie</a></li>
+          <li><a class="nav-cta" href="../../pl/download">Pobierz</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Język</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../switch/keepass" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/keepass" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/keepass" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/keepass" hreflang="pl" lang="pl" aria-current="true">Polski</a></li><li><a href="../../zh-hans/switch/keepass" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/keepass" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/keepass" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/keepass" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/keepass" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/keepass" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/keepass" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Przejdź z KeePass na LocalGateKeys</h1>
+  <p class="lead">LocalGateKeys przechowuje sejf na Twoich urządzeniach, bez konta i bez serwera. Przeprowadzka z KeePass zajmuje kilka minut.</p>
+  <p class="price-strip"><strong>Pro kosztuje US$29.99 jednorazowo.</strong> <span>Za darmo do 7 elementów, bez limitu czasu.</span></p>
+  <ul class="trust-row" aria-label="Czym się wyróżnia">
+    <li>Bez konta</li>
+    <li>Żaden serwer nie przechowuje Twojego sejfu</li>
+    <li>Jak jest zabezpieczony: <a href="../../pl/security">dokumentacja bezpieczeństwa</a></li>
+  </ul>
+</div>
+
+<div class="wrap page-body prose">
+  <h2>1. Eksport z KeePass</h2>
+  <ol>
+    <li>Nie trzeba nic eksportować: LocalGateKeys odczytuje bazę KeePass .kdbx bezpośrednio.</li>
+    <li>Jeśli chcesz, zachowaj kopię pliku .kdbx. KeePassXC i inne aplikacje KeePass używają tego samego pliku.</li>
+  </ol>
+
+  <h2>2. Import do LocalGateKeys</h2>
+  <p>W LocalGateKeys wybierz Importuj, wskaż bazę .kdbx i wpisz jej hasło główne. Plik KeePass jest tylko odczytywany, nigdy zmieniany.</p>
+  <p class="quiet">LocalGateKeys odczytuje go jako: KeePass 2 database (.kdbx)</p>
+  <p class="callout">Klucze dostępu nie są przenoszone w eksporcie CSV; LocalGateKeys importuje je z plików CXF (Hasła Apple i inne aplikacje eksportujące CXF) na PC, Androidzie, iPhonie i Macu.</p>
+
+  <h2>Co nie zostanie przeniesione</h2>
+  <ul>
+    <li>Klucze dostępu, chyba że zostaną przeniesione przez CXF (zobacz uwagę powyżej).</li>
+    <li>Załączniki. Zapisz je osobno, zanim zamkniesz stare konto.</li>
+  </ul>
+
+  <h2>Ile to kosztuje</h2>
+  <p>LocalGateKeys Pro kosztuje US$29.99 jednorazowo. Jedna płatność. Każda aktualizacja, na zawsze, za darmo. Wersja bezpłatna mieści do 7 elementów, bez limitu czasu.</p>
+  <p class="actions"><a class="button primary" href="../../pl/download">Pobierz LocalGateKeys</a> <a class="button" href="../../pl/pricing">Zobacz ceny</a></p>
+  <p class="quiet"><a href="../../pl/switch/">Wszystkie instrukcje przesiadki</a></p>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Menedżer haseł dla Windows, Maca i iPhone'a, który trzyma Twój sejf na Twoich własnych urządzeniach.</p>
+        <p class="quiet">Ta strona liczy odwiedziny za pomocą Cloudflare Web Analytics, które nie używa plików cookie. Nie używa trackerów reklamowych i nie zapisuje plików cookie.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../../pl/features">Funkcje</a></li>
+          <li><a href="../../pl/pricing">Cennik</a></li>
+          <li><a href="../../pl/download">Pobierz</a></li>
+          <li><a href="../../pl/get-started">Pierwsze kroki</a></li>
+          <li><a href="../../pl/switch/">Przesiadka</a></li>
+          <li><a href="../../buy">Kup Pro</a></li>
+          <li><a href="../../pl/licence">Twoja licencja Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Odzyskaj licencję</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Pomoc">
+        <h2>Pomoc</h2>
+        <ul>
+          <li><a href="../../pl/help">Przewodnik</a></li>
+          <li><a href="../../pl/support">Wsparcie i FAQ</a></li>
+          <li><a href="../../pl/security">Bezpieczeństwo</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Zgłoś lukę w zabezpieczeniach</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Prawne">
+        <h2>Prawne</h2>
+        <p class="quiet">Te dokumenty są w języku angielskim, a obowiązuje i jest wiążąca wersja angielska.</p>
+        <ul>
+          <li><a href="../../legal/eula">Umowa licencyjna</a></li>
+          <li><a href="../../legal/privacy">Polityka prywatności</a></li>
+          <li><a href="../../legal/terms-of-sale">Warunki sprzedaży</a></li>
+          <li><a href="../../legal/refunds">Polityka zwrotów</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows jest znakiem towarowym grupy firm Microsoft. Chrome jest znakiem towarowym Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID i Safari są znakami towarowymi Apple Inc., zarejestrowanymi w USA i innych krajach.</p>
+      <nav class="lang-switch" aria-label="Język"><ul><li><a href="../../switch/keepass" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/keepass" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/keepass" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/keepass" hreflang="pl" lang="pl" aria-current="true">Polski</a></li><li><a href="../../zh-hans/switch/keepass" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/keepass" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/keepass" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/keepass" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/keepass" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/keepass" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/keepass" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

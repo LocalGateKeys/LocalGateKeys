@@ -79,13 +79,6 @@ final class SyncPageModel {
         var unconfirmed = false
     }
 
-    /// The folder device being removed with a new sync password (Windows rotation form).
-    struct Removal: Equatable {
-        let id: String
-        let name: String
-        let intro: String
-        let keep: [String]
-    }
 
     /// The cloud folder action waiting for its sync password, after the folder was picked.
     struct FolderForm: Equatable, Identifiable {
@@ -113,7 +106,14 @@ final class SyncPageModel {
     /// Keyring member names (`[device id: name]`) of the stored group.
     private(set) var names: [String: String] = [:]
     var confirmation: Confirmation?
-    var removal: Removal?
+    /// The cloud-folder removal waiting for its new sync password (one or several devices; Windows rotation form).
+    var removal: DeviceRemoval.Plan?
+    /// Choosing the devices for "Remove a device…" (false) or "I lost a device…" (true); nil: not choosing.
+    var choosing: Bool?
+    /// "I lost a device" removed it: the checklist is shown.
+    var showChecklist = false
+    /// The checklist waits for the password sheet to close (macOS drops a sheet presented while another dismisses).
+    @ObservationIgnored private(set) var checklistPending = false
     var joinText = ""
     var addressText = ""
     private(set) var addressError: String?
@@ -239,20 +239,17 @@ final class SyncPageModel {
         if addressText.isEmpty, let saved = settings.wifiSyncEndpoint { addressText = saved }
     }
 
-    nonisolated static func memberNames(_ state: SyncGroupState?) -> [String: String] {
-        guard let state, let bytes = state.keyring, let ring = try? CanonicalJSON.parse(bytes),
-              let gk = try? GroupKey(groupID: state.groupID, epoch: state.epoch, key: state.key) else { return [:] }
-        var out: [String: String] = [:]
-        for (id, name) in Keyring.memberNames(ring, key: gk) {
-            out[id] = name.map { SyncWording.sanitize($0) } ?? SyncWording.unnamedDevice
-        }
-        return out
+    /// "This device: <name> · Device 54cf9842": this Mac's own label, shown while a sync group exists.
+    var ownDeviceLabel: String? {
+        guard let id = state?.deviceID, !id.isEmpty else { return nil }
+        return SyncWording.thisDevice(name: coordinator?.membership.names[id], id: id)
     }
+
+    nonisolated static func memberNames(_ state: SyncGroupState?) -> [String: String] { DeviceRemoval.memberNames(state) }
 
     private func name(_ id: String, fallback: String? = nil) -> String {
         if let n = names[id] { return n }
-        if let fallback, !fallback.isEmpty { return SyncWording.sanitize(fallback) }
-        return SyncWording.shortID(id)
+        return SyncWording.labeled(fallback, id)
     }
 
     /// The Wi-Fi card's paired devices (removed ones are not shown; they stay listed so they cannot come back).
@@ -262,7 +259,7 @@ final class SyncPageModel {
         #endif
         return (state?.lanPeers ?? []).filter { !$0.revoked }.map { p in
             Device(id: p.deviceID, name: name(p.deviceID, fallback: p.name),
-                   detail: p.endpoint.map { String(localized: "At \(SyncWording.hostPort($0))") } ?? String(localized: "Connects to this Mac"))
+                   detail: detail(p.endpoint.map { String(localized: "At \(SyncWording.hostPort($0))") } ?? String(localized: "Connects to this Mac"), p.deviceID))
         }
     }
 
@@ -275,7 +272,7 @@ final class SyncPageModel {
         let unacked = Set(state.unackedMembers)
         return state.members.map { id in
             let me = id == state.deviceID
-            return Device(id: id, name: name(id), detail: me ? String(localized: "This Mac") : (unacked.contains(id) ? Self.unackedDetail : ""),
+            return Device(id: id, name: name(id), detail: me ? String(localized: "This Mac") : (unacked.contains(id) ? Self.unackedDetail : detail("", id)),
                           isSelf: me, unconfirmed: !me && unacked.contains(id))
         }
     }
@@ -315,6 +312,22 @@ final class SyncPageModel {
         if let preview { return preview.lastSync }
         #endif
         guard let at = coordinator?.lastSyncedAt else { return state == nil ? "" : String(localized: "Not synced yet") }
+        return Self.syncedText(at)
+    }
+
+    /// When another device last synced with this Mac (Wi-Fi or its cloud folder heartbeat), even with no changes.
+    private var peerTimes: [String: Int64] {
+        guard let state else { return [:] }
+        return PeerSeenAt.merged(groupID: state.groupID, saved: state.peerSyncedAt)
+    }
+
+    /// The detail line of another device: ase, then its last sync time when one is known.
+    private func detail(_ base: String, _ id: String) -> String {
+        guard let at = peerTimes[id] else { return base }
+        return base.isEmpty ? Self.syncedText(at) : "\(base) · \(Self.syncedText(at))"
+    }
+
+    static func syncedText(_ at: Int64) -> String {
         let age = max(0, Int64(Date().timeIntervalSince1970) - at)
         if age < 60 { return String(localized: "Last synced just now") }
         if age < 3600 { return String(localized: "Last synced \(age / 60) min ago") }
@@ -631,21 +644,10 @@ final class SyncPageModel {
 
     // MARK: cloud folder members
 
-    /// The group's folder for actions on its keyring (the stored bookmark).
+    /// The group's folder for actions on its keyring (the stored bookmark; `SyncCoordinator.folderSync`).
     private func folderSync() throws -> FolderSync {
         guard let coordinator else { throw SyncActionError("not-joined") }
-        return try Self.folderSync(coordinator.deps)
-    }
-
-    nonisolated private static func folderSync(_ deps: SyncDependencies) throws -> FolderSync {
-        guard let bookmark = try deps.keychain.readSlot(.folderBookmark) else {
-            throw FolderSyncError("folder-missing", String(localized: "no folder chosen on this device"))
-        }
-        let (folder, refreshed) = try deps.folders.open(bookmark: bookmark)
-        if let refreshed { try? deps.keychain.writeSlot(.folderBookmark, refreshed) }
-        return try FolderSync(access: folder, installID: try deps.keychain.installID(random: deps.random),
-                              licenseKeys: deps.licenseKeys, pairedKeys: SyncCoordinator.pairedKeys(deps),
-                              attachmentBlobs: deps.attachmentBlobs)
+        return try SyncCoordinator.folderSync(coordinator.deps, store: coordinator.store)
     }
 
     /// "These are my devices": the members shown as unconfirmed stop being unconfirmed (only those ids, so one
@@ -663,79 +665,71 @@ final class SyncPageModel {
         reload()
     }
 
-    /// Who keeps the group key when `removing` is removed (Windows `rotation_plan`, audit M10): the confirmed
-    /// members other than this Mac; unconfirmed members are left out and lose access.
+    /// Who keeps the group key when `removing` is removed (Windows `rotation_plan`, audit M10; `DeviceRemoval`).
     nonisolated static func keepList(_ state: SyncGroupState, removing: Set<String>) -> [String] {
-        let unacked = Set(state.unackedMembers)
-        return state.members.filter { $0 != state.deviceID && !removing.contains($0) && !unacked.contains($0) }
+        DeviceRemoval.keepList(state, removing: removing)
     }
 
-    /// Windows `rotation_plan` text.
+    /// Windows `rotation_plan` text ("this Mac" for "this PC").
     nonisolated static func keepText(_ state: SyncGroupState, removing: Set<String>, names: [String: String]) -> String {
-        func shown(_ id: String) -> String { names[id] ?? SyncWording.shortID(id) }
-        let keep = keepList(state, removing: removing).map(shown) + [String(localized: "this Mac")]
-        var text = String(localized: "The new sync key goes only to: \(keep.joined(separator: ", ")).")
-        let lose = state.members.filter { Set(state.unackedMembers).contains($0) && !removing.contains($0) && $0 != state.deviceID }
-        if !lose.isEmpty {
-            text += String(localized: " Not confirmed, so they lose access: \(lose.map(shown).joined(separator: ", ")). To keep one, cancel and choose These are my devices first.")
-        }
-        return text
+        DeviceRemoval.keepText(state, removing: removing, names: names)
     }
 
-    /// "Remove a device…" on the Cloud folder card: a new sync key and password without it (Pro).
+    /// "Remove…" on a device of the Cloud folder card: a new sync key and password without it (Pro).
     func requestRemoveMember(_ device: Device) {
         error = nil; info = nil
-        guard let state, !device.isSelf else { return }
+        guard !device.isSelf else { return }
         guard requirePro() else { return }
-        let gone: Set<String> = [device.id]
-        var intro = Self.rotationIntro
-        let others = peers.filter { $0.id != device.id }
-        if !others.isEmpty {
-            intro += String(localized: "\n\nDevices paired by QR code can't follow a password change and must be paired again afterwards: \(others.map(\.name).joined(separator: ", ")).")
-        }
-        intro += "\n\n" + Self.keepText(state, removing: gone, names: names)
-        removal = Removal(id: device.id, name: device.name, intro: intro, keep: Self.keepList(state, removing: gone))
+        removal = plan([device.id], lost: false)
     }
 
-    /// Removes the device with the new password, wrapping the new key only to the confirmed members (`keep`).
+    /// "Remove a device…" (several at once) or "I lost a device…" on the Cloud folder card (Pro): choose first.
+    func requestChoose(lost: Bool) {
+        error = nil; info = nil
+        guard state != nil, requirePro() else { return }
+        choosing = lost
+    }
+
+    /// The devices chosen in the sheet: their removal waits for the new sync password.
+    func choose(_ ids: [String], lost: Bool) {
+        choosing = nil
+        removal = plan(ids, lost: lost)
+    }
+
+    /// The members this Mac may remove (every keyring member but itself).
+    var removable: [Device] { members.filter { !$0.isSelf } }
+
+    private func plan(_ ids: [String], lost: Bool) -> DeviceRemoval.Plan? {
+        guard let state else { return nil }
+        let qr = peers.filter { !ids.contains($0.id) }.map(\.name)
+        return DeviceRemoval.plan(state, removing: ids, names: names, qrPeers: qr, lost: lost)
+    }
+
+    /// Removes the chosen devices in one rotation with the new password: the new key goes only to the confirmed
+    /// members (`keep`), and each removed device gets a signed removal notice (`SyncCoordinator.removeMembers`).
     func removeMember(password: String, again: String) async -> Bool {
         guard let removal, let coordinator else { return false }
         guard password == again else { error = Self.mismatchText; return false }
         guard requirePro() else { return false }
         error = nil; working = true
         defer { working = false }
-        do {
-            let store = coordinator.store, deps = coordinator.deps
-            let id = removal.id, keep = removal.keep
-            try await Task.detached {
-                let fs = try Self.folderSync(deps)
-                _ = try fs.rotate(store: store, newPassword: password, remove: [id], keep: keep, random: deps.random, clock: deps.clock)
-            }.value
-            info = Self.removedText(removal.name)
+        let ok = await coordinator.removeMembers(removal, password: password, again: again)
+        if ok {
+            info = coordinator.actionInfo
+            if removal.lost { checklistPending = true }   // shown by `removalSheetClosed`
             self.removal = nil
-            reload()
-            return true
-        } catch {
-            self.error = SyncCoordinator.text(for: error)
-            return false
+        } else {
+            error = coordinator.actionError
         }
+        reload()
+        return ok
     }
 
-    // MARK: QR image
-
-    /// The pairing QR code (CoreImage, medium error correction), each module a whole number of pixels.
-    nonisolated static func qrImage(_ text: String, side: CGFloat = 260) -> NSImage? {
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(text.utf8)
-        filter.correctionLevel = "M"
-        guard let output = filter.outputImage else { return nil }
-        let modules = output.extent.width + 8   // a 4-module quiet zone on each side
-        let scale = max(1, (side * 2 / modules).rounded(.down))   // drawn at 2x for Retina
-        let padded = output.transformed(by: CGAffineTransform(translationX: 4, y: 4))
-            .composited(over: CIImage(color: .white).cropped(to: CGRect(x: 0, y: 0, width: modules, height: modules)))
-            .transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-        guard let cg = CIContext().createCGImage(padded, from: padded.extent) else { return nil }
-        return NSImage(cgImage: cg, size: NSSize(width: padded.extent.width / 2, height: padded.extent.height / 2))
+    /// The password sheet closed (its `onDismiss`): the lost-device checklist follows, if a removal asked for it.
+    func removalSheetClosed() {
+        guard checklistPending else { return }
+        checklistPending = false
+        showChecklist = true
     }
 }
 
@@ -745,11 +739,12 @@ final class SyncPageModel {
 enum SyncPagePreview {
     static func make(_ kind: String) -> SyncPageModel.Preview {
         var p = SyncPageModel.Preview()
-        p.wifiText = "On. " + SyncPageModel.listensText("192.168.1.20:47821")
-        p.peers = [SyncPageModel.Device(id: "p1", name: "iPhone", detail: "Connects to this Mac"),
-                   SyncPageModel.Device(id: "p2", name: "Windows PC", detail: "At 192.168.1.31:47821")]
+        p.wifiText = String(localized: "On. \(SyncPageModel.listensText("192.168.1.20:47821"))")
+        p.peers = [SyncPageModel.Device(id: "p1", name: "iPhone", detail: String(localized: "Connects to this Mac")),
+                   SyncPageModel.Device(id: "p2", name: "Windows PC",
+                                        detail: String(localized: "At \("192.168.1.31:47821")"))]
         p.folderText = SyncPageModel.lanOnlyFolderText
-        p.lastSync = "Last synced 2 min ago"
+        p.lastSync = String(localized: "Last synced \(2) min ago")
         p.messages = SyncPageModel.messages(host: [SyncIssue("unreachable", "192.168.1.31:47821")], coordinator: [])
         p.endpoint = "192.168.1.20:47821"
         p.offerCode = "4821 7730"

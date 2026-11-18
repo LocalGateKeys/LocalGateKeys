@@ -62,7 +62,7 @@ struct ReminderEditor: View {
                         ForEach(PhoneReminders.leadChoices, id: \.self) { Text(ReminderText.lead($0)).tag($0) }
                     }
                 } footer: {
-                    Text("A notification comes at 9:00 on the day. It says only \u{201C}A reminder is due\u{201D} unless Settings › Reminders shows item names. Reminders stay on this iPhone and never sync.")
+                    Text(DeviceText.isPad ? String(localized: "ipad.reminderViews.notificationComesAtDay", defaultValue: "A notification comes at 9:00 on the day. It says only \u{201C}A reminder is due\u{201D} unless Settings › Reminders shows item names. Reminders stay on this iPad and never sync.") : String(localized: "A notification comes at 9:00 on the day. It says only \u{201C}A reminder is due\u{201D} unless Settings › Reminders shows item names. Reminders stay on this iPhone and never sync."))
                 }
                 .listRowBackground(Palette.groupSurface)
                 if failed {

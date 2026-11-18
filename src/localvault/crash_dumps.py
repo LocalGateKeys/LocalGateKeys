@@ -54,7 +54,9 @@ def suppress_fault_dialogs() -> bool:
 def disable_crash_dumps() -> None:
     """Run both at startup.  Never raises."""
     try:
-        exclude_from_error_reporting()
+        # The exclusion is stored per user and by file name only, so from source it would cover python.exe.
+        if getattr(sys, "frozen", False):
+            exclude_from_error_reporting()
         suppress_fault_dialogs()
     except Exception:  # noqa: BLE001 - never fail startup
         pass

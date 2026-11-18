@@ -115,4 +115,26 @@ final class EditorDraftTests: XCTestCase {
         m.restore(draft().values)
         XCTAssertEqual(m.value("password"), secret)
     }
+
+    /// Review L2: an editor opened and left untouched leaves no draft on lock.
+    func test_only_a_changed_form_counts_as_a_draft() throws {
+        guard case .object(let r) = validCard, let item = VaultItem(id: "0c000000-0000-4000-8000-000000000001", record: r) else {
+            return XCTFail("card")
+        }
+        let pro = ProModel(purchases: FakePurchases(), licenseKeys: [:])
+        let edit = EditorModel(store: MemoryStore(), pro: pro, editing: item, kind: .card, clock: clock, random: CountingRandom(),
+                               background: FakeBackgroundTasks())
+        XCTAssertFalse(edit.formChanged)
+        edit.set("title", "Changed title")
+        XCTAssertTrue(edit.formChanged)
+        edit.set("title", "Travel card")
+        XCTAssertFalse(edit.formChanged, "typed back to what it was")
+        let new = EditorModel(store: MemoryStore(), pro: pro, editing: nil, kind: .web, clock: clock, random: CountingRandom(),
+                              background: FakeBackgroundTasks())
+        XCTAssertFalse(new.formChanged)
+        new.set("username", "someone")
+        XCTAssertTrue(new.formChanged)
+        new.set("username", "")
+        XCTAssertFalse(new.formChanged, "an emptied field counts as never typed")
+    }
 }

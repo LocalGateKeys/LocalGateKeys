@@ -27,13 +27,16 @@
   // Non-secret settings go in "vars" (never `secret put`); see README.md:
   //   PRODUCT_IDS (required: unset/empty makes every webhook 500), PROVIDER,
   //   ALLOW_TEST_MODE, SUPPORT_EMAIL
+  //   LICENSE_KEY_ID_OVERRIDE: leave unset in production. The Worker signs only with the licence
+  //   key 9f76e21ed03c0482 (src/sign.js); a test deployment with its own key sets its key id here.
+  //   Release key ids are always refused.
   //   APPSTORE_BUNDLE_IDS (iPhone and Mac bundle id, ios/project.yml), APPSTORE_ALLOW_SANDBOX
   //   ("1" only on test deployments), PLAY_ALLOW_TEST ("1" only on test deployments)
   // Secrets (`wrangler secret put`): PLAY_SERVICE_ACCOUNT_JSON; optional App Store Server API
   // key APPSTORE_API_ISSUER_ID, APPSTORE_API_KEY_ID, APPSTORE_API_PRIVATE_KEY (README, "Store purchases").
   // Optional SALES_NTFY_TOPIC: a push to the owner's phone (ntfy app) for each store sale and refund
   // (src/sales-alert.js; SALES_NTFY_SERVER var overrides https://ntfy.sh).
-  // Paddle live product "LocalGateKeys Pro" (price pri_01m58y8e705ns678gmwpzfefwj, US$4.99 one-time).
+  // Paddle live product "LocalGateKeys Pro" (price pri_01m58y8e705ns678gmwpzfefwj, US$29.99 one-time; was US$4.99).
   "vars": {
     "PROVIDER": "paddle",
     "PRODUCT_IDS": "pro_01m58y778xrg43pvvznfhy5k0d",
@@ -46,7 +49,12 @@
     // Email of the service account the push subscription authenticates as. Empty: every push is 401.
     "PLAY_PUSH_SERVICE_ACCOUNT": ""
   },
+  // Email copy of each sales alert (src/sales-alert.js), sent to the secret SALES_EMAIL_TO,
+  // which must be a verified Email Routing destination of the localgatekeys.app zone.
+  "send_email": [{ "name": "SALES_EMAIL" }],
   // Daily Play voided-purchases backstop for missed refund pushes.
   "triggers": { "crons": ["0 4 * * *"] },
-  "observability": { "enabled": true }
+  // Operator messages (console.warn/error: a licence needs revoking, a misconfiguration) are kept;
+  // per-request invocation logs are off, so request URLs such as /license/<token> are never stored.
+  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false } }
 }

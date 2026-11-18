@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">セキュリティ</string>
+    <string name="security_cat_breached">漏えい</string>
+    <string name="security_cat_reused">使い回し</string>
+    <string name="security_cat_weak">脆弱</string>
+    <string name="security_cat_old">古い</string>
+    <string name="security_cat_no_2fa">2FAを利用可能</string>
+    <string name="security_expl_breached">これらのパスワードは、既知のデータ漏えいに含まれています。最初に変更してください。</string>
+    <string name="security_expl_reused">これらのパスワードは、複数のログインで使われています。1つのサイトから漏えいすると、他のサイトも危険にさらされます。</string>
+    <string name="security_expl_weak">これらのパスワードは短いか、推測されやすいものです。</string>
+    <string name="security_expl_old">これらのパスワードは、1年以上変更されていません。古いというだけでは、変更する理由にはなりません。</string>
+    <string name="security_expl_no_2fa">このサイトは2要素コードに対応していますが、このログインには設定されていません。</string>
+    <string name="security_blocked_offline">厳格オフラインモードがオンのため、漏えいチェックはブロックされています。設定 › 漏えいチェックでオフにしてください。</string>
+    <string name="security_blocked_disabled">漏えいチェックはオフです。設定 › 漏えいチェックでオンにしてください。</string>
+    <string name="security_status_cancelled">漏えいの確認をキャンセルしました。</string>
+    <string name="security_status_checking">パスワードをチェック中…</string>
+    <string name="security_status_none_found">漏えいしたパスワードは見つかりませんでした。</string>
+    <string name="security_status_found">漏えいしたパスワードが%1$d件見つかりました。</string>
+    <string name="security_status_some_failed">一部のパスワードをチェックできませんでした。しばらくしてからもう一度お試しください。</string>
+    <string name="security_band_none">ログインはまだありません</string>
+    <string name="security_band_good">良好</string>
+    <string name="security_band_fair">普通</string>
+    <string name="security_band_poor">不良</string>
+    <string name="security_empty_hint">ログインを追加すると、パスワードの健全性を確認できます。</string>
+    <string name="security_score_description">セキュリティスコア: 100点中%1$d点</string>
+    <string name="security_no_score">セキュリティスコアはまだありません</string>
+    <string name="security_checks_header">チェック</string>
+    <string name="security_breach_header">漏えいチェック</string>
+    <string name="security_breach_start">漏えいしたパスワードをチェック</string>
+    <string name="security_cancel">キャンセル</string>
+    <string name="security_checking">確認中…</string>
+    <string name="security_show_dismissed">非表示にした項目をもう一度表示</string>
+    <string name="security_confirm_title">すべてのパスワードをHave I Been Pwnedでチェックしますか?</string>
+    <string name="security_confirm_action">チェック</string>
+    <string name="security_consent">漏えいチェックでは、各パスワードのSHA-1ハッシュの最初の5文字のみが、パディング付きのHTTPSでHave I Been Pwnedに送信されます。送信されるのは、チェックを開始したときだけです。パスワード、完全なハッシュ、ユーザ名、ウェブサイトは送信されません。サービスにはIPアドレスが見えます。</string>
+    <string name="security_nothing_to_fix">修正するものはありません。</string>
+    <string name="security_dismiss">閉じる</string>
+    <string name="security_change_password">パスワードを変更</string>
+    <string name="security_dismiss_item">この項目については非表示</string>
+    <string name="security_row_description">%1$s、%2$d件の項目</string>
+    <string name="security_checks_footer">この端末内のチェックは目安であり、保証ではありません。漏えいチェックを開始しない限り、データがこのスマートフォンから出ることはありません。</string>
+    <string name="security_issue_footer">%1$s ログインのメニューから、パスワードの変更やここでの非表示ができます。</string>
+    <string name="security_row_menu">%1$sのその他の操作</string>
+    <string name="security_untitled">名称未設定のログイン</string>
+</resources>

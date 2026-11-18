@@ -115,6 +115,30 @@ class ItemDetailModelTest {
         assertNotEquals(t.code, m.totp.value?.code)
     }
 
+    @Test fun test_code_is_hidden_like_the_password_on_restricted_logins() {
+        val plain = model(webLogin)
+        assertTrue(plain.codeRevealed.value)
+        assertEquals(app.localgatekeys.android.access.AccessGate.Need.NOTHING, plain.codeRevealNeed())
+        assertEquals(plain.totp.value!!.code, plain.displayCode())
+        val scope = (webLogin.fields["scope"] as Obj).fields
+        val restricted = listOf(
+            Obj(webLogin.fields + ("policy" to rec("require_master_password" to Bool(true)))),
+            Obj(webLogin.fields + ("scope" to Obj(scope + ("access" to rec("phones" to s("view")))))),
+            Obj(webLogin.fields + ("scope" to Obj(scope + ("access" to rec("zzz" to s("1")))))),
+        )
+        for (r in restricted) {
+            val m = model(r)
+            assertFalse(m.codeRevealed.value)
+            assertEquals(ItemDetailModel.MASK, m.displayCode())
+            assertEquals(app.localgatekeys.android.access.AccessGate.Need.OWNER, m.codeRevealNeed())
+            m.toggleCodeReveal()
+            assertEquals(m.totp.value!!.code, m.displayCode())
+            assertEquals("hiding needs nothing", app.localgatekeys.android.access.AccessGate.Need.NOTHING, m.codeRevealNeed())
+            m.toggleCodeReveal()
+            assertEquals(ItemDetailModel.MASK, m.displayCode())
+        }
+    }
+
     @Test fun test_code_tile_rebuilds_its_model_when_the_totp_secret_changes() {
         val clock = TestClock(1_790_000_500)
         val c = Clip(clock)
@@ -297,5 +321,89 @@ class ItemDetailModelTest {
     @Test fun tags_and_title_do_not_become_fields() {
         val m = model(rec("id" to s("n3"), "kind" to s("note"), "title" to s("T"), "tags" to strs("a"), "payload" to rec("body" to s("b"))))
         assertEquals(listOf("Body"), m.fields.map { it.label })
+    }
+
+    private fun wifiItem(security: String, password: String? = "p;ss", hidden: Boolean = false): Obj {
+        val payload = linkedMapOf<String, JsonValue>("ssid" to s("Home"), "security" to s(security))
+        if (password != null) payload["password"] = s(password)
+        if (hidden) payload["hidden"] = Bool(true)
+        return rec("id" to s("wf1"), "kind" to s("wifi"), "title" to s("Home"), "payload" to Obj(payload))
+    }
+
+    @Test fun wifiQrTextNeedsReveal() {
+        val m = model(wifiItem("wpa2", hidden = true))
+        assertTrue(m.offersWifiQr)
+        assertNull("no QR while the password is masked", m.wifiQrText())
+        m.toggleReveal(m.fields.first { it.id == "password" })
+        assertEquals("WIFI:T:WPA;S:Home;P:p\\;ss;H:true;;", m.wifiQrText())
+        m.toggleReveal(m.fields.first { it.id == "password" })
+        assertNull("hiding the password drops the QR", m.wifiQrText())
+        val open = model(wifiItem("none", password = null))
+        assertEquals("an open network has no password to reveal", "WIFI:T:nopass;S:Home;;", open.wifiQrText())
+        assertFalse(model(webLogin).offersWifiQr)
+    }
+
+    @Test fun enterpriseHasNoQr() {
+        val m = model(wifiItem("wpa2-enterprise"))
+        assertFalse(m.offersWifiQr)
+        assertTrue(m.isWifiEnterprise)
+        m.toggleReveal(m.fields.first { it.id == "password" })
+        assertNull(m.wifiQrText())
+    }
+
+    private fun jwtOf(claims: String): String {
+        fun part(text: String) = app.localgatekeys.core.primitives.Base64Url.encodeNoPad(text.toByteArray())
+        return part("""{"alg":"HS256","typ":"JWT"}""") + "." + part(claims) + ".c2ln"
+    }
+
+    private fun apiKey(key: String, expires: String? = null): Obj {
+        val payload = linkedMapOf<String, JsonValue>("service" to s("svc"), "key" to s(key))
+        if (expires != null) payload["expires"] = s(expires)
+        return rec(
+            "id" to s("0a000000-0000-4000-8000-000000000001"), "kind" to s("api_key"), "title" to s("API"),
+            "created_at" to i(1_700_000_000), "updated_at" to i(1_700_000_100), "favorite" to Bool(false), "tags" to strs(),
+            "payload" to Obj(payload),
+        )
+    }
+
+    @Test fun tokenOnlyAfterReveal() {
+        val m = model(apiKey(jwtOf("""{"iss":"idp","exp":1700000000}""")), TestClock(1_790_000_000))
+        val key = m.fields.first { it.id == "key" }
+        assertNull("a masked value is never decoded", m.token(key))
+        m.toggleReveal(key)
+        val info = m.token(key)!!
+        assertEquals("HS256", info.alg)
+        assertTrue(m.tokenExpired(info))
+        m.toggleReveal(key)
+        assertNull(m.token(key))
+        val plain = model(apiKey("sk-not-a-token"))
+        plain.toggleReveal(plain.fields.first { it.id == "key" })
+        assertNull(plain.token(plain.fields.first { it.id == "key" }))
+        val login = model(webLogin)
+        assertNull(login.token(login.fields.first { it.id == "password" }))
+    }
+
+    @Test fun setExpiryFromTokenWritesTheDateThroughTheEditor() {
+        val record = apiKey(jwtOf("""{"exp":4000000000}"""))
+        val m = model(record)
+        m.toggleReveal(m.fields.first { it.id == "key" })
+        val info = m.token(m.fields.first { it.id == "key" })!!
+        assertTrue(m.canSetExpiryFrom(info))
+        assertEquals("2096-10-02", m.expiryDate(info, java.time.ZoneOffset.UTC))
+        val store = app.localgatekeys.android.editor.CountingStore(snapshot(listOf(record)))
+        val ed = app.localgatekeys.android.editor.editor(store, item(record), app.localgatekeys.android.editor.EditorKind.API_KEY)
+        ed.set("expires", "2096-10-02")
+        assertEquals(app.localgatekeys.android.editor.SaveResult.SAVED, ed.save())
+        val saved = VaultItem.items(store.snapshot)[0]
+        assertEquals("2096-10-02", ((saved.record["payload"] as Obj).fields["expires"] as JsonValue.Str).v)
+        // With an expiry on the item, the action is not offered again.
+        assertFalse(model(apiKey(jwtOf("""{"exp":4000000000}"""), expires = "2030-01-01")).let { dm ->
+            dm.toggleReveal(dm.fields.first { it.id == "key" })
+            dm.canSetExpiryFrom(dm.token(dm.fields.first { it.id == "key" })!!)
+        })
+        // A token without exp has nothing to set.
+        val noExp = model(apiKey(jwtOf("""{"sub":"x"}""")))
+        noExp.toggleReveal(noExp.fields.first { it.id == "key" })
+        assertFalse(noExp.canSetExpiryFrom(noExp.token(noExp.fields.first { it.id == "key" })!!))
     }
 }

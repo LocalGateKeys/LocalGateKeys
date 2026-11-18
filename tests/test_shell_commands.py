@@ -29,7 +29,7 @@ def test_kwargs_values():
     assert dict(by_title["Restore from backup…"].kwargs) == {"initial": "restore"}
     assert dict(by_title["Write recovery kit"].kwargs) == {"initial": "kit"}
     sections = [dict(c.kwargs)["section"] for c in COMMANDS if "section" in dict(c.kwargs)]
-    assert sections == ["locking", "unlocking", "privacy", "autofill", "appearance", "backups", "plan", "help"]
+    assert sections == ["locking", "unlocking", "privacy", "autofill", "appearance", "backups", "plan", "developer", "help"]
     assert all(c.method == "settings_clicked" and c.group == "Settings" for c in COMMANDS if "section" in dict(c.kwargs))
 
 

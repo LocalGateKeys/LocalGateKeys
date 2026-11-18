@@ -13,6 +13,8 @@ PURCHASE_URL = "https://localgatekeys.app/buy"
 
 
 PRO_PITCH = ("licenceView.localgatekeysProUnlimitedItemsDevice")
+# Shown to Pro users: the promise without a price.
+PRO_LIFETIME = "licenceView.lifetimeProEveryUpdate"
 
 
 def limit_headline(limit: int = FREE_ITEM_LIMIT) -> str:
@@ -27,14 +29,21 @@ class LicenceView:
     warning: bool
 
 
+def _is_lifetime(st: LicenseStatus) -> bool:
+    return st.license is not None and st.license.updates_until >= licensing.LIFETIME_UNTIL
+
+
 def _holder_lines(st: LicenseStatus) -> tuple[str, ...]:
     lic = st.license
     if lic is None:
         return ()
     # Paddle's checkout asks for no name, so the name is often the email itself.
     holder = lic.email if lic.name == lic.email else f"{lic.name} ({lic.email})"
-    return (t("licenceView.licensedTo", holder=holder),
-            t("licenceView.updatesUntil", v1=lic.updates_until.isoformat()))
+    licensed = (t("licenceView.licensedTo", holder=holder),)
+    if _is_lifetime(st):
+        # A lifetime licence gets every update; a 9999 date would only confuse.
+        return licensed + (t(PRO_LIFETIME),)
+    return licensed + (t("licenceView.updatesUntil", v1=lic.updates_until.isoformat()),)
 
 
 def _usage_lines(st: LicenseStatus, item_count: int | None) -> tuple[str, ...]:

@@ -1,6 +1,7 @@
 package app.localgatekeys.android.editor
 
 import app.localgatekeys.android.R
+import app.localgatekeys.android.collections.CollectionsModel
 import app.localgatekeys.android.i18n.Txt
 import androidx.annotation.StringRes
 import app.localgatekeys.android.vault.VaultItem
@@ -61,6 +62,11 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
                 _error.value = t.s(R.string.passkey_gone)
                 return SaveResult.FAILED
             }
+            // In a collection shared with this vault as view only (sub-plan 07): never renamed here.
+            if (CollectionsModel.itemIsReadOnly(id, snap)) {
+                _error.value = t.s(R.string.collections_read_only_item)
+                return SaveResult.INVALID
+            }
             val changed = LinkedHashMap(r)
             changed["title"] = JsonValue.Str(title)
             changed["updated_at"] = JsonValue.Int(clock.now)
@@ -87,10 +93,15 @@ class PasskeyRenameModel(private val store: ItemStore, item: VaultItem, private 
         _alreadyRemoved.value = false
     }
 
-    /** Removes the item and writes its tombstone, as for every other item ([EditorModel.delete]). */
-    fun delete(): SaveResult {
-        val r = EditorModel.delete(id, store, clock)
+    /**
+     * Removes the item and writes its tombstone, as for every other item ([EditorModel.delete]). With [move] (Recently
+     * deleted, `PhoneTrash.mover`) the item is kept on this phone first.
+     */
+    fun delete(move: ((String) -> SaveResult)? = null): SaveResult {
+        val r = move?.invoke(id) ?: EditorModel.delete(id, store, clock)
         if (r == SaveResult.FAILED) _error.value = t.s(R.string.passkey_delete_failed)
+        // In a collection shared with this vault as view only (sub-plan 07): refused, and said so.
+        if (r == SaveResult.INVALID) _error.value = t.s(R.string.collections_read_only_item)
         _alreadyRemoved.value = r == SaveResult.UNCHANGED
         return r
     }

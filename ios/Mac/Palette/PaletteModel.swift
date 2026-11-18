@@ -150,11 +150,11 @@ final class PaletteModel {
     /// The highlighted row (↑/↓, Return runs it).
     var highlighted = 0
     @ObservationIgnored private let items: () -> [VaultItem]
-    @ObservationIgnored private let collections: () -> [LocalData.Collection]
+    @ObservationIgnored private let collections: () -> [CollectionCatalog.Collection]
     @ObservationIgnored private let memberships: () -> [String: [String]]
     @ObservationIgnored private let isUnlocked: () -> Bool
 
-    init(items: @escaping () -> [VaultItem], collections: @escaping () -> [LocalData.Collection] = { [] },
+    init(items: @escaping () -> [VaultItem], collections: @escaping () -> [CollectionCatalog.Collection] = { [] },
          memberships: @escaping () -> [String: [String]] = { [:] }, isUnlocked: @escaping () -> Bool) {
         self.items = items; self.collections = collections; self.memberships = memberships; self.isUnlocked = isUnlocked
     }
@@ -180,7 +180,7 @@ final class PaletteModel {
 
     // MARK: results
 
-    static func results(_ query: String, items: [VaultItem], collections: [LocalData.Collection] = [],
+    static func results(_ query: String, items: [VaultItem], collections: [CollectionCatalog.Collection] = [],
                         memberships: [String: [String]] = [:], unlocked: Bool, limit: Int = limit) -> [PaletteRow] {
         var text = query.trimmingCharacters(in: .whitespaces)
         var scope: Group?
@@ -192,7 +192,7 @@ final class PaletteModel {
             guard unlocked else { return [] }
             let needle = Casefold.fold(String(text.dropFirst()).trimmingCharacters(in: .whitespaces))
             let ids = Set(collections.filter { needle.isEmpty || Casefold.fold($0.name).contains(needle) }.map(\.id))
-            let matched = items.filter { CollectionsModel.canBeMember($0) && !(Set(memberships[$0.id] ?? []).isDisjoint(with: ids)) }
+            let matched = items.filter { MacCollectionsModel.canBeMember($0) && !(Set(memberships[$0.id] ?? []).isDisjoint(with: ids)) }
                 .sorted { (Casefold.fold($0.title), $0.id) < (Casefold.fold($1.title), $1.id) }
             return matched.prefix(min(limit, 12)).map(itemRow)
         }

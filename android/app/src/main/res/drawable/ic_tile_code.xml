@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sub-plan 06: the Quick Settings tile's icon (a code field); the system tints it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M4,5h16a2,2 0,0 1,2 2v10a2,2 0,0 1,-2 2H4a2,2 0,0 1,-2 -2V7a2,2 0,0 1,2 -2zM4,7v10h16V7z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M6.5,12a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0zM10.5,12a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0zM14.5,12a1.5,1.5 0,1 0,3 0a1.5,1.5 0,1 0,-3 0z" />
+</vector>

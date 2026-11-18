@@ -6,7 +6,10 @@ import UIKit
 
 /// Keeps the app running while it holds the store's `flock` in the app-group container: iOS kills an app
 /// suspended while holding a file lock there (0xdead10cc). Sync runs and editor/delete commits run inside
-/// one. Tests use a fake that records `begin`/`end` pairing.
+/// one. Shared collections (sub-plan 07) stay inside the same time budget: every share group's run is part of the
+/// coordinator's one sync task (an expiry cancels the run, which finishes the share in flight and starts no other),
+/// and each share action (create, join, approve, remove, leave) holds its own task. Tests use a fake that records
+/// `begin`/`end` pairing.
 @MainActor
 protocol BackgroundTasking: AnyObject {
     /// Starts a task; `expiration` is called if iOS is about to suspend the app before `end`.

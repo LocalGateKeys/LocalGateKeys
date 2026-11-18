@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Sicherheit</string>
+    <string name="security_cat_breached">Kompromittiert</string>
+    <string name="security_cat_reused">Mehrfach verwendet</string>
+    <string name="security_cat_weak">Schwach</string>
+    <string name="security_cat_old">Alt</string>
+    <string name="security_cat_no_2fa">2FA verfügbar</string>
+    <string name="security_expl_breached">Diese Passwörter tauchen in bekannten Datenlecks auf. Ändern Sie sie zuerst.</string>
+    <string name="security_expl_reused">Diese Passwörter werden für mehr als eine Anmeldung verwendet. Wenn eine Website ein Datenleck hat, sind die anderen gefährdet.</string>
+    <string name="security_expl_weak">Diese Passwörter sind kurz oder leicht zu erraten.</string>
+    <string name="security_expl_old">Diese Passwörter haben sich seit über einem Jahr nicht geändert. Das Alter allein ist kein Grund, sie zu ändern.</string>
+    <string name="security_expl_no_2fa">Diese Website bietet Zwei-Faktor-Codes an, aber dieser Login hat keinen.</string>
+    <string name="security_blocked_offline">Der strikte Offline-Modus ist an, daher sind Kompromittierungsprüfungen blockiert. Schalten Sie ihn unter Einstellungen › Kompromittierungsprüfungen aus.</string>
+    <string name="security_blocked_disabled">Kompromittierungsprüfungen sind aus. Aktivieren Sie sie unter Einstellungen › Kompromittierungsprüfungen.</string>
+    <string name="security_status_cancelled">Die Datenleck-Prüfung wurde abgebrochen.</string>
+    <string name="security_status_checking">Passwörter werden geprüft …</string>
+    <string name="security_status_none_found">Keine kompromittierten Passwörter gefunden.</string>
+    <string name="security_status_found">%1$d kompromittierte(s) Passwort/Passwörter gefunden.</string>
+    <string name="security_status_some_failed">Einige Passwörter konnten nicht geprüft werden. Versuchen Sie es später erneut.</string>
+    <string name="security_band_none">Noch keine Anmeldungen</string>
+    <string name="security_band_good">Gut</string>
+    <string name="security_band_fair">Mittel</string>
+    <string name="security_band_poor">Schlecht</string>
+    <string name="security_empty_hint">Fügen Sie Anmeldungen hinzu, um zu sehen, wie sicher Ihre Passwörter sind.</string>
+    <string name="security_score_description">Sicherheitsbewertung %1$d von 100</string>
+    <string name="security_no_score">Noch keine Sicherheitsbewertung</string>
+    <string name="security_checks_header">Prüfungen</string>
+    <string name="security_breach_header">Kompromittierungsprüfung</string>
+    <string name="security_breach_start">Auf kompromittierte Passwörter prüfen</string>
+    <string name="security_cancel">Abbrechen</string>
+    <string name="security_checking">Wird geprüft…</string>
+    <string name="security_show_dismissed">Ausgeblendete Einträge wieder anzeigen</string>
+    <string name="security_confirm_title">Jedes Passwort mit Have I Been Pwned prüfen?</string>
+    <string name="security_confirm_action">Prüfen</string>
+    <string name="security_consent">Kompromittierungsprüfungen senden nur die ersten 5 Zeichen des SHA-1-Hashs jedes Passworts an Have I Been Pwned, per HTTPS mit Padding und nur, wenn Sie eine starten. Es werden weder Passwort, vollständiger Hash, Benutzername noch Website gesendet. Der Dienst sieht Ihre IP-Adresse.</string>
+    <string name="security_nothing_to_fix">Hier gibt es nichts zu beheben.</string>
+    <string name="security_dismiss">Schließen</string>
+    <string name="security_change_password">Passwort ändern</string>
+    <string name="security_dismiss_item">Für diesen Eintrag ausblenden</string>
+    <string name="security_row_description">%1$s, %2$d Einträge</string>
+    <string name="security_checks_footer">Lokale Prüfungen sind eine Orientierung, keine Garantie. Nichts verlässt dieses Telefon, solange Sie keine Prüfung auf kompromittierte Passwörter starten.</string>
+    <string name="security_issue_footer">%1$s Über das Menü einer Anmeldung können Sie ihr Passwort ändern oder sie hier ausblenden.</string>
+    <string name="security_row_menu">Weitere Aktionen für %1$s</string>
+    <string name="security_untitled">Anmeldung ohne Titel</string>
+</resources>

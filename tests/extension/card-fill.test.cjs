@@ -34,7 +34,7 @@ function cardResponder(state = {}, { choices = [choice()] } = {}) {
     }
   };
 }
-function panelButtons(p) { const root = p.shadows.get(p.panelHost()); return root ? Array.from(root.querySelectorAll("button")) : []; }
+function panelButtons(p) { const root = p.panelRoot(); return root ? Array.from(root.querySelectorAll("button")) : []; }
 function clickPanelButton(p, text) {
   const button = panelButtons(p).find(b => b.textContent.includes(text));
   if (!button) throw new Error(`no panel button containing "${text}" in: ${panelButtons(p).map(b => b.textContent).join(" | ")}`);
@@ -127,6 +127,26 @@ test("fill_card: the approval checklist offers the tokens present on the page, t
   assert.equal(p.panelVisible(), false);
   assert.deepEqual({ ...state.lastValues }, { "cc-name": "", "cc-number": "", "cc-exp": "" }, "released values are blanked after the fill");
   assert.equal(state.lastRelease.values, null, "and the reply no longer references them");
+});
+
+test("keyboard: Enter on card picker rows is left to the button's own activation", async () => {
+  const p = await loaded({ html: AUTOCOMPLETE_FORM, respond: cardResponder({}) });
+  await p.command("fill_card");
+  await p.tick(6);
+  const root = p.panelRoot();
+  const rows = panelButtons(p);
+  assert.ok(rows.length > 1);
+  for (const row of rows) {
+    row.focus();
+    assert.equal(root.activeElement, row);
+    const notCancelled = p.trusted(row, "keydown", { key: "Enter", composed: true }, p.impls.KeyboardEventImpl);
+    assert.equal(notCancelled, true, `Enter on "${row.textContent}" must keep its native activation`);
+  }
+  // Arrow keys still move between the rows.
+  rows[0].focus();
+  p.trusted(rows[0], "keydown", { key: "ArrowDown", composed: true }, p.impls.KeyboardEventImpl);
+  assert.equal(root.activeElement, rows[1]);
+  p.window.dispatchEvent(new p.window.Event("pagehide"));
 });
 
 test("fill_card: ticking the CVV releases and fills it", async () => {

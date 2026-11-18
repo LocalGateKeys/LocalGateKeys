@@ -53,13 +53,70 @@ class ItemSharingTest {
         box.opened(p)
         assertNull(box.pending.value)
         assertEquals(0, tmp.root.resolve("inbox").listFiles()!!.size)
-        // Open once: the same package again is refused.
-        val again = box.accept(out.bytes, keepFile = false)
+        // Open once: the same package again is refused on arrival (as on Windows and the iPhone).
         try {
-            box.open(again, out.code); fail()
+            box.accept(out.bytes, keepFile = false); fail()
         } catch (e: ShareException) {
             assertEquals("already-opened", e.reason)
         }
+    }
+
+    @Test fun expires_in_and_one_use_reach_the_package() {
+        val day = ItemSharing.prepare(card(), clock, random)
+        assertEquals(NOW + Share.LIFETIME, Share.open(day.bytes, day.code, NOW).expiresAt)
+        val hour = ItemSharing.prepare(card(), clock, random, lifetime = ItemSharing.Lifetime.HOUR, oneUse = true)
+        assertEquals(NOW + 3600, Share.open(hour.bytes, hour.code, NOW).expiresAt)
+        val e = try {
+            Share.open(hour.bytes, hour.code, NOW + 3600); null
+        } catch (e: ShareException) {
+            e
+        }
+        assertEquals("expired", e?.reason)
+    }
+
+    @Test fun a_revoked_package_is_refused_in_the_persons_language_and_deleted() {
+        val out = ItemSharing.prepare(card(), clock, random)
+        val id = Share.readHeader(out.bytes).id
+        val box = ShareInbox(tmp.newFolder("inbox"), java.io.File(tmp.root, "opened.json"), clock) { setOf(id) }
+        val p = box.accept(out.bytes, keepFile = true)
+        try {
+            box.open(p, out.code); fail()
+        } catch (e: ShareException) {
+            assertEquals("revoked", e.reason)
+            assertEquals("The sender took this shared item back.", ShareText.refusal(e, EnglishTxt()))
+        }
+        assertNull(box.pending.value)
+        assertEquals(0, tmp.root.resolve("inbox").listFiles()!!.size)
+    }
+
+    @Test fun a_failing_revoke_reader_is_ignored() {
+        val out = ItemSharing.prepare(card(), clock, random)
+        val box = ShareInbox(tmp.newFolder("inbox"), java.io.File(tmp.root, "opened.json"), clock) { error("no folder") }
+        box.open(box.accept(out.bytes, keepFile = false), out.code)
+    }
+
+    @Test fun a_delivered_file_never_replaces_a_waiting_package() {
+        val first = ItemSharing.prepare(card(), clock, random)
+        val second = ItemSharing.prepare(card(), clock, random)
+        val box = inbox()
+        val p = box.accept(first.bytes, keepFile = true)
+        try {
+            box.accept(second.bytes, keepFile = true, replacePending = false); fail()
+        } catch (e: ShareException) {
+            assertEquals("pending-waiting", e.code)
+            assertEquals("Another shared item is still waiting. Add or reject it first, then open the new file again.", ShareText.refusal(e, EnglishTxt()))
+        }
+        assertTrue(box.pending.value === p)
+        assertEquals(1, tmp.root.resolve("inbox").listFiles()!!.size)
+        // The same package delivered again keeps the waiting one (and its copy).
+        assertTrue(box.accept(first.bytes, keepFile = true, replacePending = false) === p)
+        assertEquals(1, tmp.root.resolve("inbox").listFiles()!!.size)
+        // Picked on the Receive page: replaces it.
+        val q = box.accept(second.bytes, keepFile = true)
+        assertTrue(box.pending.value === q)
+        // Nothing waiting: a delivered file is kept.
+        box.discard(q)
+        assertTrue(box.accept(second.bytes, keepFile = true, replacePending = false) === box.pending.value)
     }
 
     @Test fun three_wrong_codes_delete_the_package() {
@@ -87,11 +144,11 @@ class ItemSharingTest {
     @Test fun the_free_limit_holds_and_pro_lifts_it() {
         val out = ItemSharing.prepare(card(), clock, random)
         val opened = Share.open(out.bytes, out.code, NOW)
-        val full = CountingStore(snapshot(numberedNotes(4)))
+        val full = CountingStore(snapshot(numberedNotes(app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS)))
         assertEquals(ItemSharing.SaveOutcome.NEEDS_PRO, ItemSharing.save(opened, full, isPro = false, clock, random))
         assertEquals(0, full.commits)
         assertEquals(ItemSharing.SaveOutcome.SAVED, ItemSharing.save(opened, full, isPro = true, clock, random))
-        assertEquals(5, VaultItem.items(full.snapshot).size)
+        assertEquals(app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS + 1, VaultItem.items(full.snapshot).size)
     }
 
     @Test fun documents_and_passkeys_are_not_offered() {
@@ -182,11 +239,28 @@ class ItemSharingTest {
         val p = box.accept(out.bytes, keepFile = false)
         val wrong = Share.generateCode(random).let { if (it == out.code) Share.generateCode(random) else it }
         repeat(3) { runCatching { box.open(p, wrong) } }
-        val again = box.accept(out.bytes, keepFile = false)
+        // Delivered again: refused on arrival, before any code is asked for.
         try {
-            box.open(again, out.code); fail()
+            box.accept(out.bytes, keepFile = false); fail()
         } catch (e: ShareException) {
             assertEquals("already-opened", e.reason)
+        }
+    }
+
+    @Test fun after_a_burn_right_and_wrong_codes_get_the_same_answer() {
+        // No oracle: once burned, the package never tells a right code from a wrong one.
+        val out = ItemSharing.prepare(card(), clock, random)
+        val box = inbox()
+        val p = box.accept(out.bytes, keepFile = false)
+        val wrong = Share.generateCode(random).let { if (it == out.code) Share.generateCode(random) else it }
+        repeat(3) { runCatching { box.open(p, wrong) } }
+        val header = Share.readHeader(out.bytes)
+        for (code in listOf(out.code, wrong)) {
+            try {
+                Share.open(header, code, clock.now, box.openedIds()); fail()
+            } catch (e: ShareException) {
+                assertEquals("already-opened", e.reason)
+            }
         }
     }
 }

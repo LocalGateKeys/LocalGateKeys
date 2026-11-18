@@ -199,7 +199,7 @@ def test_coverage_note_for_uncovered_release():
 
     note = licensing.update_coverage_note("2027-10-16T00:00:00Z", _pro_status())
     assert note == (
-        "This update isn't covered by your licence: the free plan would apply (4 items, no device sync). "
+        "This update isn't covered by your licence: the free plan would apply (7 items, no device sync). "
         f"Get a current licence, or stay on {APP_VERSION}."
     )
     assert "desktop" not in note
@@ -442,8 +442,8 @@ def test_item_limit_per_state(state, expected):
     assert licensing.item_limit(licensing.LicenseStatus(state, None, "")) == expected
 
 
-def test_free_item_limit_is_four():
-    assert licensing.FREE_ITEM_LIMIT == 4
+def test_free_item_limit_is_seven():
+    assert licensing.FREE_ITEM_LIMIT == 7
     assert licensing.Feature.UNLIMITED_ITEMS.value == "unlimited_items"
 
 
@@ -580,8 +580,10 @@ def test_restore_without_copy_or_when_unconfigured(vault_session, tmp_path, monk
     assert licensing.restore_file_from_vault(vault_session) is False
 
 
-def test_features_are_items_sync_totp_and_attachments():
-    assert [f.name for f in licensing.Feature] == ["UNLIMITED_ITEMS", "SYNC", "TOTP", "ATTACHMENTS"]
+def test_features_are_items_sync_totp_attachments_emergency_access_and_duress():
+    assert [f.name for f in licensing.Feature] == ["UNLIMITED_ITEMS", "SYNC", "TOTP", "ATTACHMENTS",
+                                                   "EMERGENCY_ACCESS", "DURESS", "ITEM_HISTORY_LONG", "TRAVEL",
+                                                   "HYGIENE_BULK", "ACCESS_POLICIES"]
 
 
 # --- reconcile the licence file with the vault copy (after unlock / install / remove) ---
@@ -711,3 +713,14 @@ def test_newer_format_needs_a_valid_signature(signer):
     tampered = make_bundle(signer, format=2)
     tampered["license"]["name"] = "Mallory"
     assert not licensing.newer_format(tampered)
+
+
+def test_free_vault_limit_is_one():
+    # Owner decision 2026-11-09: free holds exactly one vault, Pro unlimited (the plan's old name said two).
+    assert licensing.vault_limit(licensing.LicenseStatus("free", None, "")) == 1
+    assert licensing.vault_limit(licensing.LicenseStatus("pro", None, "")) is None
+
+
+def test_vault_limit_fails_closed(monkeypatch):
+    monkeypatch.setattr(licensing, "status", lambda: (_ for _ in ()).throw(RuntimeError("x")))
+    assert licensing.vault_limit() == licensing.FREE_VAULT_LIMIT

@@ -4,9 +4,11 @@ import Foundation
 /// the responder side of its channel (one request, one response).
 public struct LanResponderConnection: Sendable {
     public let peer: LanPeer
-    /// The responder's hello, framed: send it before reading the request.
+    /// The responder's hello, framed: send it before reading the request (sealed when `sealed`).
     public let helloFrame: [UInt8]
     var channel: SecureChannel
+    /// The initiator sent a sealed version-3 hello: once its request opens, the peer is pinned to it.
+    public var sealed: Bool = false
 }
 
 /// The responder of LAN sync (desktop `transport._handle_inbound` for a session hello plus
@@ -39,6 +41,18 @@ public final class LanResponder: @unchecked Sendable {
     /// Licence-only mode (a free Mac host, desktop licence-only sync): of a peer's view only licence states
     /// (`lic:` ids) are merged, and this device answers with a view of no states (it publishes nothing).
     let licenceOnly: @Sendable () -> Bool
+    /// Personal collections (sub-plan 07 Task 5d): this device answers `features` and records the initiator in
+    /// `SyncGroupState.collectionPeers`; views with a listed peer carry collection states both ways. false: it answers
+    /// `features` with `bad-message`, like an older app, and never builds or merges collection states.
+    let collections: Bool
+    /// This device's share records (links it speaks for, read-only collections), read for each merge.
+    let collectionShares: @Sendable () -> CollectionShares
+    /// The same, read from the very snapshot a merge uses (sub-plan 07 Task 5g): no second load that could fail and
+    /// leave read-only protection off for that merge. Wins over `collectionShares` when set.
+    let collectionSharesOf: (@Sendable (StoreSnapshot) -> CollectionShares)?
+    /// Peers pinned to the sealed hello since this responder started (desktop `SyncState.sealed_peers`); the
+    /// stored pin is `LanPeer.hello`.
+    let sealedPeers = SealedPeerMemory()
     private let lock = NSLock()
     var inbox = LanInbox()   // internal for tests (guarded by `lock`)
     /// The blob being served to each peer (desktop `inbox.blobs`), so later chunks do not re-read the file.
@@ -50,12 +64,17 @@ public final class LanResponder: @unchecked Sendable {
     public init(store: any ItemStore, installID: String, counters: HelloCounterSource, random: any RandomSource,
                 clock: any UnixClock, licenseKeys: [String: [UInt8]] = [:], witnessMemory: WitnessMemory = WitnessMemory(),
                 blobs: (any AttachmentBlobStore)? = nil, attachmentPeers: AttachmentPeerMemory = AttachmentPeerMemory(),
-                licenceOnly: @escaping @Sendable () -> Bool = { false }) {
+                licenceOnly: @escaping @Sendable () -> Bool = { false }, collections: Bool = false,
+                collectionShares: @escaping @Sendable () -> CollectionShares = { .none },
+                collectionSharesOf: (@Sendable (StoreSnapshot) -> CollectionShares)? = nil) {
         self.store = store; self.installID = installID; self.counters = counters
         self.random = random; self.clock = clock; self.licenseKeys = licenseKeys
         self.witnessMemory = witnessMemory
         self.blobs = blobs; self.attachmentPeers = attachmentPeers
         self.licenceOnly = licenceOnly
+        self.collections = collections
+        self.collectionShares = collectionShares
+        self.collectionSharesOf = collectionSharesOf
     }
 
     /// The report of the last request that merged or refused a view (desktop `last_report`).
@@ -68,18 +87,32 @@ public final class LanResponder: @unchecked Sendable {
 
     // MARK: handshake
 
-    /// The first frame of a connection (4-byte length prefix included). A signed hello of another version
-    /// gets the version refusal; a hello of a device that is not a listed, unrevoked peer of this group,
-    /// a bad signature, unpinned keys or a counter that did not increase throw. Otherwise the counter is
-    /// saved (`HelloCounterSource.acceptInbound`) and this device's hello (same session id, a new counter,
-    /// a fresh ephemeral key) derives the responder channel.
+    /// The first frame of a connection (4-byte length prefix included), LAN protocol version 3
+    /// (docs/formats/LAN_SYNC_V3.md 2.3). A sealed version-3 hello is opened with this device's exchange key and
+    /// answered with this device's sealed hello; anything about it that fails throws (closed without an answer).
+    /// A clear-text version-2 hello is answered in clear text only for a peer not pinned to the sealed hello
+    /// (`LanPeer.sealed`); a pinned peer's verified clear-text hello gets the version refusal. A signed hello of
+    /// any other version gets the version refusal. A hello of a device that is not a listed, unrevoked peer of
+    /// this group, a bad signature, unpinned keys or a counter that did not increase throw. Otherwise the counter
+    /// is saved (`HelloCounterSource.acceptInbound`) and this device's hello (same session id and version, a new
+    /// counter, a fresh ephemeral key) derives the responder channel.
     public func accept(helloFrame frame: [UInt8]) throws -> Opening {
         let payload = try LanTransport.decodeFrame(frame)
-        if SessionHello.otherVersion(payload) != nil {
+        let announced = SessionHello.otherVersion(payload)
+        if let announced, announced != LanTransport.version {
             return .refuse(try LanTransport.encodeFrame(try LanTransport.versionRefusal()))
         }
-        let remote = try SessionHello.parse(payload)
         guard let state = try store.load().sync else { throw LanTransportError.authentication("A protected paired-device state is required") }
+        let remote: SessionHello
+        var seal: SealContext?
+        defer { seal?.wipe() }
+        if announced == nil {
+            remote = try SessionHello.parse(payload)
+        } else {
+            let opened = try SealedHello.openInitiator(payload, identity: state.identity)
+            seal = opened.context
+            remote = opened.hello
+        }
         guard state.installID == installID else { throw LanTransportError.authentication("The sync state belongs to another install") }
         guard let peer = LanPeers.entry(state, remote.deviceID), peer.deviceID != state.deviceID else {
             throw LanTransportError.authentication("Peer is not explicitly paired")
@@ -88,18 +121,38 @@ public final class LanResponder: @unchecked Sendable {
         let pinned = peer.pinned
         try SessionHello.verify(remote, pinned: pinned, groupID: state.groupID)
         try counters.acceptInbound(remote.counter, peer: peer.deviceID)
+        if seal == nil && (peer.sealed || sealedPeers.contains(peer.deviceID)) {
+            // Downgrade: this peer has used the sealed hello, so its clear-text hello is refused (only after it
+            // verified, so the answer tells nothing to anyone else).
+            return .refuse(try LanTransport.encodeFrame(try LanTransport.versionRefusal()))
+        }
         let local = try SessionHello.make(identity: state.identity, groupID: state.groupID, sessionID: remote.sessionID,
-                                          counter: try counters.nextCounter(), random: RandomBox(random))
+                                          counter: try counters.nextCounter(), random: RandomBox(random), version: remote.version)
         defer { local.ephemeralSecret?.wipe() }
+        let answer: [UInt8]
+        if let seal { answer = try SealedHello.sealResponder(local, context: seal) } else { answer = try local.toBytes() }
         let channel = try SecureChannel(local: state.identity, remote: pinned, groupID: state.groupID, sessionID: remote.sessionID,
                                         role: .responder, localHello: local, remoteHello: remote)
-        return .accepted(LanResponderConnection(peer: peer, helloFrame: try LanTransport.encodeFrame(try local.toBytes()), channel: channel))
+        return .accepted(LanResponderConnection(peer: peer, helloFrame: try LanTransport.encodeFrame(answer), channel: channel,
+                                                sealed: seal != nil))
     }
 
-    /// The sealed request of `connection` -> the sealed answer frame.
+    /// The sealed request of `connection` -> the sealed answer frame. A connection that came with a sealed hello
+    /// pins its peer once the request opened (in memory, and `"hello":3` in its stored entry).
     public func respond(_ connection: inout LanResponderConnection, requestFrame: [UInt8]) throws -> [UInt8] {
         let request = try connection.channel.open(requestFrame)
+        if connection.sealed { pinSealed(connection.peer) }
         return try connection.channel.seal(serve(peer: connection.peer, request: request))
+    }
+
+    /// Whether `deviceID` is pinned to the sealed hello in this responder's memory (its stored entry is the other source).
+    public func isSealed(_ deviceID: String) -> Bool { sealedPeers.contains(deviceID) }
+
+    /// Remembers that `peer` speaks the sealed hello and saves the pin in its entry (desktop `_pin_sealed` /
+    /// `save_sealed`); a failed save keeps the pin in memory and costs nothing of the exchange.
+    private func pinSealed(_ peer: LanPeer) {
+        sealedPeers.insert(peer.deviceID)
+        if !peer.sealed { _ = LanPeers.pinSealed(peer.deviceID, store: store) }
     }
 
     // MARK: serving
@@ -147,6 +200,20 @@ public final class LanResponder: @unchecked Sendable {
         case let .witness(g, e, v): return serveWitness(state: state, peerID: peer.deviceID, groupID: g, epoch: e, view: v, now: now)
         case .blobGet where licenceOnly(): return (.error(reason: "no-blob"), nil)
         case let .blobGet(blob, seq): return (serveBlob(snapshot: snapshot, peerID: peer.deviceID, blobID: blob, seq: seq), nil)
+        case .features where licenceOnly() || !collections: return fail("bad-message")   // what an older app answers
+        case let .features(list):
+            // Desktop `_serve`: the initiator's answer is recorded, then this device's own list goes back. A list
+            // that could not be saved is `local-data`: the initiator records nothing and asks again next time (an
+            // answered `features` would leave it listed here never, there for good: one-sided, silently).
+            guard LanFeatures.setPeer(peer.deviceID, capable: LanFeatures.readsCollections(list), store: store) != nil else {
+                return fail("local-data", SyncIssue("local-data", "collection peers could not be saved"))
+            }
+            return (.features(LanFeatures.ours), nil)
+        case .heirHello where licenceOnly(): return fail("bad-message")
+        case .heirHello:
+            // Desktop `_serve`: the initiator reads the emergency access plan, so it gets it in views from now on.
+            Heir.setPeer(peer.deviceID, store: store)
+            return (.heirHello, nil)
         case let .view(g, e, t, s, tot, sz, v): view = (g, e, t, s, tot, sz, v)
         default: return fail("bad-message")
         }
@@ -175,12 +242,16 @@ public final class LanResponder: @unchecked Sendable {
         let restricted = licenceOnly()
         let states = restricted ? decoded.states.filter { $0.itemID.hasPrefix(License.idPrefix) } : decoded.states
         // The same merge as the initiator (SyncCoordinator.runLAN): fold, then one commit when anything changed.
+        // Collection states only with a peer that answered `features` (both its view and this device's reply).
+        let withCollections = collections && !restricted && state.collectionPeers.contains(peer.deviceID)
         var run = SyncRunner.run(store: snapshot, views: [PeerView(deviceID: peer.deviceID, states: states)],
-                                 device: state.deviceID, now: now, licenseKeys: licenseKeys, blobs: blobs)
+                                 device: state.deviceID, now: now, licenseKeys: licenseKeys, blobs: blobs,
+                                 collections: withCollections, shares: collectionSharesOf?(snapshot) ?? collectionShares())
         guard let allOwn = run.ownStates else { return (.error(reason: "local-data"), run) }
         // Documents only to a peer that asked for a blob this session (older builds refuse them).
-        let own = restricted ? [] : AttachmentDocuments.publishable(allOwn, documents: blobs != nil
-            && (state.attachmentPeers.contains(peer.deviceID) || attachmentPeers.contains(peer.deviceID)))
+        let own = restricted ? [] : Heir.publishable(AttachmentDocuments.publishable(allOwn, documents: blobs != nil
+            && (state.attachmentPeers.contains(peer.deviceID) || attachmentPeers.contains(peer.deviceID))),
+            heir: state.heirPeers.contains(peer.deviceID))
         let records = run.records ?? snapshot.records, meta = run.meta ?? snapshot.meta
         if records != snapshot.records || meta != snapshot.meta {
             do {
@@ -190,6 +261,7 @@ public final class LanResponder: @unchecked Sendable {
                 return (.error(reason: "local-data"), run)
             }
         }
+        PeerSeenAt.note(groupID: state.groupID, peer: peer.deviceID, now: now)   // synced now, even with no changes
         // Rollback witnesses: a format-2 request is checked, and answered in format 2 (never to a format-1 request).
         let inline = header.format == ViewFile.formatWitness && !restricted  // a free host keeps no witnesses
         if !restricted, let obs = Witness.observation(header) {

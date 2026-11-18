@@ -65,6 +65,8 @@ fun AppPasswordUnlockPanel(
     onPassword: (String) -> Unit,
     onBiometric: () -> Unit,
     onRecover: (phrase: String, newPassword: String) -> Unit,
+    /** Task 9: the key file row and the YubiKey prompt, under the password field. */
+    factorRows: (@Composable () -> Unit)? = null,
 ) {
     val c = LgkTheme.colors
     val appPw = AppPasswordText(rememberTxt())
@@ -86,6 +88,7 @@ fun AppPasswordUnlockPanel(
                 }
             }
             AppPasswordField(password, { password = it }, stringResource(R.string.app_password_field), "unlock-app-password", ImeAction.Go, submit)
+            factorRows?.invoke()
             Button(
                 onClick = submit,
                 enabled = !unlocking && password.isNotEmpty(),

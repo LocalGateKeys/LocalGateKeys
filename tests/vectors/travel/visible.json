@@ -1,0 +1,221 @@
+{
+  "cases": [
+    {
+      "expected_hidden": [],
+      "items": [
+        {
+          "collections": [],
+          "id": "10000000-0000-4000-8000-000000000401",
+          "kind": "web",
+          "tags": [
+            "Bank"
+          ]
+        },
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000001"
+          ],
+          "id": "10000000-0000-4000-8000-000000000402",
+          "kind": "card",
+          "tags": []
+        }
+      ],
+      "name": "off hides nothing",
+      "setting": {
+        "collections": [
+          "c0000000-0000-4000-8000-000000000001"
+        ],
+        "on": false,
+        "since": 1790000000,
+        "tags": [
+          "Bank"
+        ]
+      }
+    },
+    {
+      "expected_hidden": [
+        "10000000-0000-4000-8000-000000000403"
+      ],
+      "items": [
+        {
+          "collections": [],
+          "id": "10000000-0000-4000-8000-000000000403",
+          "kind": "web",
+          "tags": [
+            "  bANK "
+          ]
+        },
+        {
+          "collections": [],
+          "id": "10000000-0000-4000-8000-000000000404",
+          "kind": "web",
+          "tags": [
+            "Banking"
+          ]
+        }
+      ],
+      "name": "login hidden by tag with different case and spaces",
+      "setting": {
+        "collections": [],
+        "on": true,
+        "since": 1790000000,
+        "tags": [
+          "Bank"
+        ]
+      }
+    },
+    {
+      "expected_hidden": [
+        "10000000-0000-4000-8000-000000000405"
+      ],
+      "items": [
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000001"
+          ],
+          "id": "10000000-0000-4000-8000-000000000405",
+          "kind": "note",
+          "tags": []
+        },
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000002"
+          ],
+          "id": "10000000-0000-4000-8000-000000000406",
+          "kind": "note",
+          "tags": []
+        }
+      ],
+      "name": "typed item hidden by collection",
+      "setting": {
+        "collections": [
+          "c0000000-0000-4000-8000-000000000001"
+        ],
+        "on": true,
+        "since": 1790000000,
+        "tags": []
+      }
+    },
+    {
+      "expected_hidden": [],
+      "items": [
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000001"
+          ],
+          "id": "10000000-0000-4000-8000-000000000407",
+          "kind": "web",
+          "tags": []
+        },
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000001"
+          ],
+          "id": "10000000-0000-4000-8000-000000000408",
+          "kind": "desktop",
+          "tags": []
+        }
+      ],
+      "name": "a login row listing a collection is not hidden by it",
+      "setting": {
+        "collections": [
+          "c0000000-0000-4000-8000-000000000001"
+        ],
+        "on": true,
+        "since": 1790000000,
+        "tags": []
+      }
+    },
+    {
+      "expected_hidden": [
+        "10000000-0000-4000-8000-000000000410"
+      ],
+      "items": [
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000001"
+          ],
+          "id": "10000000-0000-4000-8000-000000000409",
+          "kind": "card",
+          "tags": []
+        },
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000002"
+          ],
+          "id": "10000000-0000-4000-8000-000000000410",
+          "kind": "card",
+          "tags": []
+        }
+      ],
+      "name": "unknown collection id is ignored",
+      "setting": {
+        "collections": [
+          "c0000000-0000-4000-8000-000000000009",
+          "c0000000-0000-4000-8000-000000000002"
+        ],
+        "on": true,
+        "since": 1790000000,
+        "tags": []
+      }
+    },
+    {
+      "expected_hidden": [
+        "10000000-0000-4000-8000-000000000411"
+      ],
+      "items": [
+        {
+          "collections": [],
+          "id": "10000000-0000-4000-8000-000000000411",
+          "kind": "web",
+          "tags": [
+            "WORK"
+          ]
+        },
+        {
+          "collections": [],
+          "id": "10000000-0000-4000-8000-000000000412",
+          "kind": "api_key",
+          "tags": [
+            "Home"
+          ]
+        }
+      ],
+      "name": "setting tags that are duplicates after fold",
+      "setting": {
+        "collections": [],
+        "on": true,
+        "since": 1790000000,
+        "tags": [
+          "Work",
+          " work"
+        ]
+      }
+    },
+    {
+      "expected_hidden": [
+        "10000000-0000-4000-8000-000000000413"
+      ],
+      "items": [
+        {
+          "collections": [
+            "c0000000-0000-4000-8000-000000000001",
+            "c0000000-0000-4000-8000-000000000002"
+          ],
+          "id": "10000000-0000-4000-8000-000000000413",
+          "kind": "passkey",
+          "tags": []
+        }
+      ],
+      "name": "item in two collections, one hidden",
+      "setting": {
+        "collections": [
+          "c0000000-0000-4000-8000-000000000002"
+        ],
+        "on": true,
+        "since": 1790000000,
+        "tags": []
+      }
+    }
+  ]
+}

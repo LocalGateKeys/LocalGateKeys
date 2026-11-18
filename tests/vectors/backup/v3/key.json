@@ -1,0 +1,267 @@
+{
+  "cases": [
+    {
+      "kdf": {
+        "memory_cost_kib": 262144,
+        "name": "argon2id",
+        "parallelism": 4,
+        "salt": "g2E3VlaFD50pUJw7WiD4fg==",
+        "time_cost": 3
+      },
+      "key_id": "c36410da5a2587ff586cfd8ee5e0934f",
+      "name": "ascii",
+      "password": "fixture backup password 2026",
+      "password_characters": 28,
+      "password_utf8_hex": "66697874757265206261636b75702070617373776f72642032303236",
+      "pk": "cb235b67b8b35bd6679ca58a746937ae11ca264ecf1ac189fcf7736ef2b91c10",
+      "pk_b64": "yyNbZ7izW9ZnnKWKdGk3rhHKJk7PGsGJ/PdzbvK5HBA=",
+      "seed": "fff29b68f2200e847455be14ff3be0fd7c168512d551d7d5d14e2d4432cbb0fc",
+      "sk": "7842c71f245c4f950dd0858f81f8c8bf52b1998e21a9f80f27c9d1a6d20fba42",
+      "sk_raw": "7f42c71f245c4f950dd0858f81f8c8bf52b1998e21a9f80f27c9d1a6d20fba42"
+    },
+    {
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "key_id": "7678d5726806d21391294214bb01eb01",
+      "name": "composed",
+      "password": "fixture café password 2026",
+      "password_characters": 26,
+      "password_utf8_hex": "6669787475726520636166c3a92070617373776f72642032303236",
+      "pk": "22d271775f2ff453424a43fd168a333f7685883c030fe16ff3718dfa008e2c6d",
+      "pk_b64": "ItJxd18v9FNCSkP9FoozP3aFiDwDD+Fv83GN+gCOLG0=",
+      "seed": "819d74818f9acea7a7a0937db30a262975c53cb1ddc734c359e5a3669378f9dc",
+      "sk": "b8194b01c4c5fb11ebede59242a121662e2e774e4bc91a62f2ec3b55550d7458",
+      "sk_raw": "be194b01c4c5fb11ebede59242a121662e2e774e4bc91a62f2ec3b55550d7498"
+    },
+    {
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "88ftnYw3GLrRFVcv4cCR7g==",
+        "time_cost": 1
+      },
+      "key_id": "60bd584ffafee2d6f307a5f930a67dce",
+      "name": "decomposed",
+      "password": "fixture café password 2026",
+      "password_characters": 27,
+      "password_utf8_hex": "666978747572652063616665cc812070617373776f72642032303236",
+      "pk": "8ccae006bd4a028a23ef05b4cad6031b0bd12a58f2912fe2524d3d852d2c7242",
+      "pk_b64": "jMrgBr1KAooj7wW0ytYDGwvRKljykS/iUk09hS0sckI=",
+      "seed": "a43833469f3b1f87a345d3f24c1463e003b6cf99d0b029f6f3a3ad2a82b4c235",
+      "sk": "08c018ca710ef1c9cb90bdac5a937851a4eb6222cad02952921e23cdcceb4e72",
+      "sk_raw": "08c018ca710ef1c9cb90bdac5a937851a4eb6222cad02952921e23cdcceb4e32"
+    },
+    {
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "fFjTQkCcq9ZZbacsRhpt3w==",
+        "time_cost": 1
+      },
+      "key_id": "01a5a8827fd7886177d67db1959335c7",
+      "name": "max_length",
+      "password": "LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456789-LocalGateKeys-0123456",
+      "password_characters": 4096,
+      "password_utf8_hex": "4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d303132333435363738392d4c6f63616c476174654b6579732d30313233343536",
+      "pk": "b5b5268d1eb9b778e4b410ddfeaa490ad9b9bf3024ca446b9f58c20123bfd448",
+      "pk_b64": "tbUmjR65t3jktBDd/qpJCtm5vzAkykRrn1jCASO/1Eg=",
+      "seed": "331869a9e13c7a382ed79d2c647fbd831dbd396f7c69be14a467dec48c989b95",
+      "sk": "983ca3cbc4c5d1563db4eafe59d41d97b7e5d5e663394f9c7f74da92c4807f5f",
+      "sk_raw": "9c3ca3cbc4c5d1563db4eafe59d41d97b7e5d5e663394f9c7f74da92c4807f5f"
+    }
+  ],
+  "hkdf_salt": "absent = 32 zero bytes",
+  "info": "localgatekeys|backup-key|x25519|v1",
+  "key_id_prefix": "localgatekeys|backup-key-id|v1|",
+  "note": "TEST ONLY: every password, phrase and key here is published.",
+  "rejected_kdf": [
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "hash_len": 32,
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "extra hash_len key"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "time_cost": 1
+      },
+      "name": "missing salt"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "AAAAAAAAAAAAAAAAAAAA",
+        "time_cost": 1
+      },
+      "name": "salt 15 bytes"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "not base64!!",
+        "time_cost": 1
+      },
+      "name": "salt not base64"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "AAAAAAAAAAAAAAAAAAAAAA",
+        "time_cost": 1
+      },
+      "name": "salt unpadded"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2i",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "name argon2i"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 11
+      },
+      "name": "time_cost 11"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 0
+      },
+      "name": "time_cost 0"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": "1"
+      },
+      "name": "time_cost as string"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": true
+      },
+      "name": "time_cost true"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8191,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "memory below 8192 KiB"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 524289,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "memory above 512 MiB"
+    },
+    {
+      "error": "Unsupported backup encryption parameters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 17,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "parallelism 17"
+    }
+  ],
+  "rejected_passwords": [
+    {
+      "error": "Backup password must contain at least 12 characters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "11 characters",
+      "password": "elevenchars"
+    },
+    {
+      "error": "Backup password must contain at least 12 characters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "4097 characters",
+      "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "error": "Backup password must contain at least 12 characters",
+      "kdf": {
+        "memory_cost_kib": 8192,
+        "name": "argon2id",
+        "parallelism": 1,
+        "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+        "time_cost": 1
+      },
+      "name": "empty",
+      "password": ""
+    }
+  ]
+}

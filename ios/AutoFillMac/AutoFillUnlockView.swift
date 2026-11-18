@@ -12,6 +12,8 @@ struct AutoFillPasswordPrompt: View {
     let onTouchID: () -> Void
     let onSubmit: (String) -> Void
     let onCancel: () -> Void
+    /// False when the vault also needs a key file or YubiKey: the extension cannot take them, so no password field.
+    var passwordAllowed = true
     @State private var password = ""
     @FocusState private var focused: Bool
 
@@ -28,12 +30,17 @@ struct AutoFillPasswordPrompt: View {
                 .padding(.horizontal, 12).lgkGlass(in: Capsule())
                 .disabled(busy)
             }
-            SecureField("Master password", text: $password)
-                .textFieldStyle(.plain).padding(.horizontal, 12).padding(.vertical, 8)
-                .lgkGlass(in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .focused($focused)
-                .onSubmit { submit() }
-                .disabled(busy)
+            if passwordAllowed {
+                SecureField("Master password", text: $password)
+                    .textFieldStyle(.plain).padding(.horizontal, 12).padding(.vertical, 8)
+                    .lgkGlass(in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .focused($focused)
+                    .onSubmit { submit() }
+                    .disabled(busy)
+            } else {
+                Text(MacAutoFillModel.factorsNeedApp).font(.callout).foregroundStyle(Palette.secondaryText)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            }
             if let message {
                 Text(message).font(.callout).foregroundStyle(Palette.danger).multilineTextAlignment(.center)
             }
@@ -41,12 +48,14 @@ struct AutoFillPasswordPrompt: View {
                 Button("Cancel", role: .cancel, action: onCancel).keyboardShortcut(.cancelAction)
                 Spacer()
                 if busy { ProgressView().controlSize(.small) }
-                Button("Unlock") { submit() }.keyboardShortcut(.defaultAction).disabled(busy || password.isEmpty)
+                if passwordAllowed {
+                    Button("Unlock") { submit() }.keyboardShortcut(.defaultAction).disabled(busy || password.isEmpty)
+                }
             }
         }
         .padding(24)
         .frame(width: 360)
-        .onAppear { focused = !touchID }
+        .onAppear { focused = !touchID && passwordAllowed }
     }
 
     private func submit() {
@@ -68,6 +77,6 @@ struct AutoFillUnlockView: View {
             touchID: model.touchIDAvailable, message: model.message, busy: model.busy,
             onTouchID: { Task { await model.unlockWithTouchID() } },
             onSubmit: { p in Task { await model.unlock(password: p) } },
-            onCancel: { model.cancel() })
+            onCancel: { model.cancel() }, passwordAllowed: !model.needsFactors)
     }
 }

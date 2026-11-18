@@ -121,15 +121,42 @@ extension Keyring {
                    derive: productionKDF)
     }
 
+    /// `share`: a share group owned by `identity` (`bad-metadata` first when the description is malformed); the
+    /// collection name is sealed under G (one more nonce) and the owner signs the roster. `shareFormat` 3 (the
+    /// default, share v2) then draws the content key C (32) and the owner's content wrap (eph 32, nonce 12); 2 writes
+    /// a share v1 keyring (only the legacy vectors and the migration tests); anything else is `bad-format`.
     static func create(password: String, identity: DeviceIdentity, name: String, groupID: String?, random: RandomSource,
-                       now: UnixClock, derive: KeyDerivation) throws -> (JSONValue, GroupKey) {
+                       now: UnixClock, derive: KeyDerivation, share: ShareKeyring.Spec? = nil,
+                       shareFormat: Int64 = Keyring.shareFormat) throws -> (JSONValue, GroupKey) {
+        guard shareFormat == format || shareFormat == Keyring.shareFormat else {
+            throw KeyringError("bad-format", "unsupported share format")
+        }
+        try share?.check()
         try checkPassword(password)
         try checkIdentity(identity)
         _ = try checkName(name)
         let gid = try groupID ?? SyncGroup.uuid4(random: random)
         let gk = try groupKey(gid, 1, try draw(random, keyLen))
-        let body = try freshBody(gk, password: password, members: [try newMember(identity, name: name, now: now)],
+        var body = try freshBody(gk, password: password, members: [try newMember(identity, name: name, now: now)],
                                  random: random, derive: derive)
+        if let share {
+            body["metadata"] = .object([
+                "kind": .string(ShareKeyring.kind),
+                "collection_id": .string(share.collectionID),
+                "name_ct": .string(try ShareKeyring.sealName(gk, collectionID: share.collectionID, name: share.name,
+                                                             random: random)),
+                "shared_mode": .string(share.sharedMode),
+                "owner": .string(identity.deviceID),
+                "owner_key": .string(Base64.encode(identity.signingPublicKey)),
+            ])
+            var content: GroupKey? = nil
+            if shareFormat == Keyring.shareFormat {
+                body["format"] = .int(Keyring.shareFormat)
+                body["prev_mac"] = .null  // signed by the owner (share v2)
+                content = try groupKey(gk.groupID, gk.epoch, try draw(random, keyLen))
+            }
+            body = try ShareKeyring.signOwner(body, identity: identity, approve: nil, content: content, random: random)
+        }
         return (try finish(body, key: gk, prev: nil), gk)
     }
 
@@ -169,11 +196,22 @@ extension Keyring {
         try rotate(ring, trusted: trusted, identity: identity, newPassword: newPassword, remove: [], random: random)
     }
 
+    /// `share`: `ring` may be a share keyring; then only its owner rotates (`not-owner`, raised after the draws) and the
+    /// collection name is re-sealed for the new epoch (one more nonce). A share v1 rotation approves every remaining
+    /// member. A share v2 keyring (format 3), or a share v1 one with `upgrade` (`not-share` for a personal keyring),
+    /// is written as share v2: after the name nonce it draws the new content key C (32), then one content wrap per
+    /// approved member in id order; the approved members are the previous ones minus `remove` (the owner always).
+    /// `allowSamePassword` (the upgrade only) skips `password-reused`.
     static func rotate(_ ring: JSONValue, trusted: GroupKey, identity: DeviceIdentity, newPassword: String,
-                       remove: [String], random: RandomSource, derive: KeyDerivation) throws -> (JSONValue, GroupKey) {
+                       remove: [String], random: RandomSource, derive: KeyDerivation,
+                       share: Bool = false, upgrade: Bool = false,
+                       allowSamePassword: Bool = false) throws -> (JSONValue, GroupKey) {
         try checkPassword(newPassword)
-        let gk = try accept(ring, trusted: trusted, identity: identity)
+        let gk = try accept(ring, trusted: trusted, identity: identity, share: share)
         guard gk.epoch == trusted.epoch else { throw KeyringError("stale-trust", "adopt the current keyring before rotating") }
+        if upgrade && obj(ring)["metadata"] == nil {
+            throw KeyringError("not-share", "a personal keyring has no share version")
+        }
         _ = try member(ring, identity)
         let members = arr(obj(ring)["members"]).map { obj($0) }
         let drop = Set(remove)
@@ -181,7 +219,7 @@ extension Keyring {
         if drop.contains(identity.deviceID) { throw KeyringError("cannot-remove-self", "a device cannot remove itself") }
         guard drop.isSubset(of: have) else { throw KeyringError("not-member", "device to remove is not a member") }
         let salt = try b64(obj(obj(ring)["kdf"])["salt"], kdfSaltLen, "kdf salt")
-        if (try? unwrap(ring, passwordKey: try derive(newPassword, salt))) != nil {
+        if !allowSamePassword, (try? unwrap(ring, passwordKey: try derive(newPassword, salt))) != nil {
             throw KeyringError("password-reused", "choose a sync password different from the current one")
         }
         let newKey = try groupKey(gk.groupID, gk.epoch + 1, try draw(random, keyLen))
@@ -193,7 +231,25 @@ extension Keyring {
                              signing: .carried(m["signing_public"] ?? .null, m["signing_proof"] ?? .null),
                              addedAt: int(m["added_at"]) ?? 0)
         }
-        let body = try freshBody(newKey, password: newPassword, members: remaining, random: random, derive: derive)
+        var body = try freshBody(newKey, password: newPassword, members: remaining, random: random, derive: derive)
+        if case .object(let old)? = obj(ring)["metadata"] {
+            guard let cid = str(old["collection_id"]) else { throw KeyringError("bad-metadata", "collection_id") }
+            var meta = old
+            meta["name_ct"] = .string(try ShareKeyring.sealName(newKey, collectionID: cid,
+                                                                name: try ShareKeyring.shareName(ring, key: gk), random: random))
+            body["metadata"] = .object(meta)
+            if upgrade || int(obj(ring)["format"]) == Keyring.shareFormat {
+                body["format"] = .int(Keyring.shareFormat)
+                // Signed by the owner (share v2); `finish` writes the same chain MAC.
+                body["prev_mac"] = .string(Base64.encode(chainMac(old: gk, new: newKey)))
+                let content = try groupKey(newKey.groupID, newKey.epoch, try draw(random, keyLen))
+                let dropBytes = Set(drop.map { Array($0.utf8) })
+                let keep = (ShareKeyring.approvedMembers(ring) ?? []).filter { !dropBytes.contains(Array($0.utf8)) }
+                body = try ShareKeyring.signOwner(body, identity: identity, approve: keep, content: content, random: random)
+            } else {
+                body = try ShareKeyring.signOwner(body, identity: identity, approve: nil)
+            }
+        }
         return (try finish(body, key: newKey, prev: gk), newKey)
     }
 }

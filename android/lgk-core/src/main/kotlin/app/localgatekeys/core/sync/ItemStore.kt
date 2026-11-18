@@ -3,10 +3,11 @@ package app.localgatekeys.core.sync
 import app.localgatekeys.core.group.GroupKey
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.lan.DeviceIdentity
+import app.localgatekeys.core.lan.LanPeer
 import app.localgatekeys.core.records.SyncMeta
 
 /**
- * This device's membership of a sync group (desktop `vault_bridge.SyncGroupState`, without the LAN fields).
+ * This device's membership of a sync group (desktop `vault_bridge.SyncGroupState`).
  * [key] and [keyring] are copied in and handed out as copies, so no caller can change the state's bytes.
  * Not a `data class` (its properties would hand out the arrays), but [copy], [equals] and [hashCode] work by content.
  */
@@ -54,6 +55,28 @@ class SyncGroupState(
      * they receive `document` items over Wi-Fi.
      */
     val attachmentPeers: List<String> = emptyList(),
+    /**
+     * Sorted keyring member ids that appeared without this device adding or confirming them (desktop
+     * `unacked_members`, audit M10): anyone with the sync password can add a member. They get no new key at the next
+     * rotation and cannot sign a removal notice this device accepts, until the user confirms them.
+     */
+    val unackedMembers: List<String> = emptyList(),
+    /**
+     * Sorted Wi-Fi peer ids that answered a `features` message listing `collections` (desktop `collection_peers`,
+     * sub-plan 07): personal collection states go into views (and are merged) only with them. The app's store persists
+     * it when not empty.
+     */
+    val collectionPeers: List<String> = emptyList(),
+    /**
+     * Sorted Wi-Fi peer ids that answered `heir-hello` (sub-plan 08, desktop `heir_peers`): only they receive the
+     * emergency access plan over Wi-Fi.
+     */
+    val heirPeers: List<String> = emptyList(),
+    /**
+     * The Wi-Fi peers this device accepted as a host (desktop `lan_peers`, [app.localgatekeys.core.lan.LanPeers]):
+     * revoked ones stay listed. The app's store persists it when not empty.
+     */
+    val lanPeers: List<LanPeer> = emptyList(),
 ) {
     private val keyBytes: ByteArray = key.copyOf()
     private val keyringBytes: ByteArray? = keyring?.copyOf()
@@ -89,10 +112,14 @@ class SyncGroupState(
         generationOffset: Long = this.generationOffset,
         peerSyncedAt: Map<String, Long> = this.peerSyncedAt,
         attachmentPeers: List<String> = this.attachmentPeers,
+        unackedMembers: List<String> = this.unackedMembers,
+        collectionPeers: List<String> = this.collectionPeers,
+        heirPeers: List<String> = this.heirPeers,
+        lanPeers: List<LanPeer> = this.lanPeers,
     ): SyncGroupState = SyncGroupState(
         groupId, epoch, key, identity, installId, hasFolder, lastSeen, peerDigests, membersEpoch, members, keyring, ownCounter,
         viewSigners, peerGenerations, rollbackSuspected, witnessPeers, witnessCounters, generationOffset, peerSyncedAt,
-        attachmentPeers,
+        attachmentPeers, unackedMembers, collectionPeers, heirPeers, lanPeers,
     )
 
     /** [peerSyncedAt] with [peers] accepted at [now] (at most [limit] peers kept, the most recent ones). */
@@ -111,7 +138,9 @@ class SyncGroupState(
             viewSigners == other.viewSigners && peerGenerations == other.peerGenerations &&
             rollbackSuspected == other.rollbackSuspected && witnessPeers == other.witnessPeers &&
             witnessCounters == other.witnessCounters && generationOffset == other.generationOffset &&
-            peerSyncedAt == other.peerSyncedAt && attachmentPeers == other.attachmentPeers
+            peerSyncedAt == other.peerSyncedAt && attachmentPeers == other.attachmentPeers &&
+            unackedMembers == other.unackedMembers && collectionPeers == other.collectionPeers && heirPeers == other.heirPeers &&
+            lanPeers == other.lanPeers
 
     override fun hashCode(): Int {
         var h = groupId.hashCode()
@@ -135,10 +164,22 @@ data class StoreSnapshot(
     val sync: SyncGroupState? = null,
     /** Changes on every commit; a commit against an older revision is refused. */
     val revision: Long = 0,
+    /**
+     * The share groups of this vault (sub-plan 07, [ShareRecord.encode]), exactly as stored: null when there is none.
+     * Kept raw so a damaged entry never stops the store from loading ([ShareGroups.records] decodes it strictly and the
+     * share readers fail closed). Device-only secrets: never a record, so never in a view, a backup or an export.
+     */
+    val shares: JsonValue? = null,
+    /**
+     * Older local collections were moved into this store ([CollectionCatalog.migrate], sub-plan 07): the migration
+     * commit sets it, every other commit keeps it, so a later run never merges an old local copy into the store again.
+     */
+    val collectionsMigrated: Boolean = false,
 ) {
-    /** Counts only: records hold plaintext secrets. */
+    /** Counts only: records hold plaintext secrets, shares hold keys. */
     override fun toString(): String =
-        "StoreSnapshot(records=${records.size}, meta=${meta.size}, sync=${if (sync == null) "none" else "set"}, revision=$revision)"
+        "StoreSnapshot(records=${records.size}, meta=${meta.size}, sync=${if (sync == null) "none" else "set"}, revision=$revision" +
+            (if (shares == null) ")" else ", shares=set)")
 }
 
 /** One atomic store write: the full new records, meta and group state, based on [baseRevision]. */
@@ -147,10 +188,27 @@ data class StoreChange(
     val records: Map<String, JsonValue>,
     val meta: Map<String, SyncMeta>,
     val sync: SyncGroupState?,
+    /** What this commit does with the stored share groups: [Shares.Keep] for every write that is not about a share. */
+    val shares: Shares = Shares.Keep,
+    /** Sets [StoreSnapshot.collectionsMigrated]; null keeps it as stored (every write but the migration's). */
+    val collectionsMigrated: Boolean? = null,
 ) {
-    /** Counts only: records hold plaintext secrets. */
+    /** The stored share groups after a commit: kept as they are, or replaced ([Replace.value] null: none left). */
+    sealed interface Shares {
+        object Keep : Shares {
+            override fun toString(): String = "Keep"
+        }
+
+        data class Replace(val value: JsonValue?) : Shares {
+            /** Never shows the groups (they hold keys). */
+            override fun toString(): String = "Replace(${if (value == null) "none" else "set"})"
+        }
+    }
+
+    /** Counts only: records hold plaintext secrets, shares hold keys. */
     override fun toString(): String =
-        "StoreChange(baseRevision=$baseRevision, records=${records.size}, meta=${meta.size}, sync=${if (sync == null) "none" else "set"})"
+        "StoreChange(baseRevision=$baseRevision, records=${records.size}, meta=${meta.size}, sync=${if (sync == null) "none" else "set"}" +
+            (if (shares == Shares.Keep) ")" else ", shares=$shares)")
 }
 
 /**

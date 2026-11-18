@@ -5,8 +5,40 @@ tests/vectors/** -text
 
 ios/** text eol=lf
 ios/**/*.png binary
+ios/**/*.mp4 binary
 
 android/** text eol=lf
 android/**/*.png binary
 android/gradlew.bat text eol=crlf
 android/**/*.jar binary
+src/localvault/assets/site_features.json text eol=lf
+android/lgk-core/src/test/resources/composite_key/** -text
+
+# Passkey provider: LF for text by extension only; binaries are never converted.
+windows-passkey-provider/**/*.cs text eol=lf
+windows-passkey-provider/**/*.csproj text eol=lf
+windows-passkey-provider/**/*.props text eol=lf
+windows-passkey-provider/**/*.targets text eol=lf
+windows-passkey-provider/**/*.json text eol=lf
+windows-passkey-provider/**/*.md text eol=lf
+windows-passkey-provider/**/*.txt text eol=lf
+windows-passkey-provider/**/*.xml text eol=lf
+windows-passkey-provider/**/*.manifest text eol=lf
+windows-passkey-provider/**/*.appxmanifest text eol=lf
+windows-passkey-provider/**/*.ps1 text eol=lf
+windows-passkey-provider/**/*.yml text eol=lf
+windows-passkey-provider/**/*.config text eol=lf
+windows-passkey-provider/**/*.editorconfig text eol=lf
+windows-passkey-provider/**/*.svg text eol=lf
+windows-passkey-provider/**/*.sln text eol=crlf
+windows-passkey-provider/**/*.png binary
+windows-passkey-provider/**/*.ico binary
+windows-passkey-provider/**/*.msix binary
+windows-passkey-provider/**/*.appx binary
+windows-passkey-provider/**/*.pfx binary
+windows-passkey-provider/**/*.cer binary
+windows-passkey-provider/**/*.dll binary
+windows-passkey-provider/**/*.exe binary
+windows-passkey-provider/**/*.winmd binary
+windows-passkey-provider/**/*.snk binary
+windows-passkey-provider/**/*.bin binary

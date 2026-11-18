@@ -291,6 +291,16 @@ class _Bus:
         self.events.append((name, detail))
 
 
+def _cheap_record(password):
+    from localvault.backup_key import build_record, derive_backup_key, new_kdf
+
+    key = derive_backup_key(password, new_kdf(parameters={"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1}))
+    try:
+        return build_record(key, now=1793000000, set_by="set", reset_authority=None)
+    finally:
+        key.wipe()
+
+
 def _schedule_runner(tmp_path, spawn, monkeypatch):
     monkeypatch.setattr("localvault.backup_schedule.is_due", lambda *_a: True)
     monkeypatch.setattr("localvault.backup_schedule.read_last_success", lambda _d: None)
@@ -301,7 +311,8 @@ def _schedule_runner(tmp_path, spawn, monkeypatch):
                                profile_dir=lambda _pid: tmp_path)
     controller = SimpleNamespace(
         settings=AppSettings(scheduled_backup_frequency="daily"), is_unlocked=lambda: True,
-        session=SimpleNamespace(scheduled_backup_password=lambda: "backup-pw"), profiles=profiles,
+        session=SimpleNamespace(scheduled_backup_migration_pending=lambda: False,
+                                scheduled_backup_key=lambda: _cheap_record("backup-pw-synthetic")), profiles=profiles,
         on_unlock=[], _scheduler=SimpleNamespace(call_later=lambda *_a: None))
     bus = _Bus()
     ran = []
@@ -319,7 +330,7 @@ def test_schedule_spawn_failure_resets_and_reports(tmp_path, monkeypatch):
     assert runner._running is False and runner._failed_at == datetime(2026, 10, 18, 12, 0)
     assert ("toast", {"kind": "error", "message": t(FAILED)}) in bus.events
     assert logged == ["scheduled-backup-start"] and ran == []
-    assert "backup-pw" not in repr(bus.events)
+    assert "backup-pw-synthetic" not in repr(bus.events)
     # The retry window applies as after any failure; afterwards backups run again.
     runner._failed_at = None
     runner._spawn = lambda fn: fn()

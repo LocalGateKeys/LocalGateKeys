@@ -42,8 +42,8 @@
   }
 </script>
 
-<div class="toasts" role="status" aria-live="polite">
-  {#each toasts as toast (toast.id)}
+{#snippet stack(list)}
+  {#each list as toast (toast.id)}
     <div class="toast glass {toast.kind}" role="group" aria-label={toast.title}
          onmouseenter={() => pause(toast.id)} onmouseleave={() => resume(toast.id)}
          onfocusin={() => pause(toast.id)} onfocusout={() => resume(toast.id)}>
@@ -61,10 +61,18 @@
       {/if}
     </div>
   {/each}
+{/snippet}
+
+<!-- Errors go to an assertive region so a failure is not queued behind other speech. -->
+<div class="toasts">
+  <div class="region" role="status" aria-live="polite">{@render stack(toasts.filter((x) => x.kind !== 'error'))}</div>
+  <div class="region" role="alert" aria-live="assertive">{@render stack(toasts.filter((x) => x.kind === 'error'))}</div>
 </div>
 
 <style>
   .toasts { position: fixed; right: 18px; bottom: 18px; display: grid; gap: 8px; z-index: 60; }
+  .region { display: grid; gap: 8px; }
+  .region:empty { display: none; }
   .toast { border-radius: 14px; padding: 10px 14px; display: grid; gap: 2px; max-width: 360px; }
   .toast span { color: var(--text-muted); }
   .head { display: flex; gap: 10px; align-items: flex-start; }

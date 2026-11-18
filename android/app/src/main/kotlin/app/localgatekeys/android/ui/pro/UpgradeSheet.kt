@@ -69,9 +69,11 @@ import kotlinx.coroutines.launch
 /** The upgrade sheet's copy (ios/App/Pro/UpgradeView.swift, platform words adapted). */
 object UpgradeCopy {
     @StringRes val TITLE = R.string.pro_title
-    @StringRes val SYNC_FOOTER = R.string.pro_sync_footer
+    @StringRes val SYNC_FOOTER = R.string.settings_also_unlocks_windows
     @StringRes val ACTIVE = R.string.settings_pro_active
     @StringRes val ONE_TIME = R.string.pro_one_time
+    /** "Your 7 items keep working without Pro. Nothing is deleted." (the free item count as the argument). */
+    @StringRes val STAYS_FREE = R.string.pro_stays_free
     @StringRes val RESTORE = R.string.pro_restore
     @StringRes val CLOSE = R.string.common_close
 
@@ -236,6 +238,11 @@ private fun PurchaseBar(state: ProModel.State, onBuy: () -> Unit, onRestore: () 
                     }
                 }
                 Text(stringResource(UpgradeCopy.ONE_TIME), color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
+                // Review 2026-11-15 UX 9: what stays free, so nobody fears losing items by not buying.
+                Text(
+                    stringResource(UpgradeCopy.STAYS_FREE, ItemLimit.FREE_ITEMS), color = c.secondaryText,
+                    style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center, modifier = Modifier.testTag("upgrade-stays-free"),
+                )
                 TextButton(onRestore, enabled = !state.busy, modifier = Modifier.testTag("upgrade-restore")) {
                     Text(stringResource(UpgradeCopy.RESTORE), color = if (state.busy) c.secondaryText else c.accentText)
                 }

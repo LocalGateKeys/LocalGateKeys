@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Passer à LocalGateKeys</title>
+  <meta name="description" content="Guides pas à pas pour transférer vos mots de passe vers LocalGateKeys depuis 1Password, Bitwarden, LastPass et d&#x27;autres gestionnaires de mots de passe.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/fr/switch/">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/switch/">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/switch/">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/switch/">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/switch/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/switch/">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/switch/">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/switch/">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/switch/">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/switch/">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/switch/">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/switch/">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/switch/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Passer à LocalGateKeys">
+  <meta property="og:description" content="Guides pas à pas pour transférer vos mots de passe vers LocalGateKeys depuis 1Password, Bitwarden, LastPass et d&#x27;autres gestionnaires de mots de passe.">
+  <meta property="og:url" content="https://localgatekeys.app/fr/switch/">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Le logo de LocalGateKeys : un gestionnaire de mots de passe pour Windows, Mac et iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Passer à LocalGateKeys">
+  <meta name="twitter:description" content="Guides pas à pas pour transférer vos mots de passe vers LocalGateKeys depuis 1Password, Bitwarden, LastPass et d&#x27;autres gestionnaires de mots de passe.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="page">
+  <a class="skip" href="#main">Aller au contenu</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../fr/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../../fr/features">Fonctionnalités</a></li>
+          <li><a href="../../fr/get-started">Démarrer</a></li>
+          <li><a href="../../fr/help">Guide</a></li>
+          <li><a href="../../fr/security">Sécurité</a></li>
+          <li><a href="../../fr/pricing">Tarifs</a></li>
+          <li><a href="../../fr/support">Assistance</a></li>
+          <li><a class="nav-cta" href="../../fr/download">Télécharger</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../../fr/features">Fonctionnalités</a></li>
+          <li><a href="../../fr/get-started">Démarrer</a></li>
+          <li><a href="../../fr/help">Guide</a></li>
+          <li><a href="../../fr/security">Sécurité</a></li>
+          <li><a href="../../fr/pricing">Tarifs</a></li>
+          <li><a href="../../fr/support">Assistance</a></li>
+          <li><a class="nav-cta" href="../../fr/download">Télécharger</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Langue</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../switch/" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/" hreflang="fr" lang="fr" aria-current="true">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Passer à LocalGateKeys</h1>
+  <p class="lead">Choisissez le gestionnaire de mots de passe que vous utilisez. Chaque guide montre l'export, l'import dans LocalGateKeys et ce qui ne se transfère pas.</p>
+</div>
+
+<div class="wrap page-body prose">
+  <ul>
+    <li><a href="../../fr/switch/1password">1Password</a></li>
+    <li><a href="../../fr/switch/bitwarden">Bitwarden</a></li>
+    <li><a href="../../fr/switch/lastpass">LastPass</a></li>
+    <li><a href="../../fr/switch/dashlane">Dashlane</a></li>
+    <li><a href="../../fr/switch/enpass">Enpass</a></li>
+    <li><a href="../../fr/switch/keepass">KeePass</a></li>
+    <li><a href="../../fr/switch/proton-pass">Proton Pass</a></li>
+    <li><a href="../../fr/switch/nordpass">NordPass</a></li>
+    <li><a href="../../fr/switch/apple-passwords">Apple Passwords</a></li>
+    <li><a href="../../fr/switch/google">Google Password Manager</a></li>
+    <li><a href="../../fr/switch/microsoft-authenticator">Microsoft Authenticator</a></li>
+  </ul>
+  <p class="callout">Les clés d'accès ne sont pas transférées dans un export CSV ; LocalGateKeys les importe depuis des fichiers CXF (Mots de passe d'Apple et d'autres apps qui exportent en CXF) sur PC, Android, iPhone et Mac.</p>
+  <p>LocalGateKeys Pro coûte US$29.99 une seule fois. Un seul paiement. Toutes les mises à jour, pour toujours, gratuites. La version gratuite contient jusqu'à 7 éléments, sans limite de durée.</p>
+</div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestionnaire de mots de passe pour Windows, Mac et iPhone qui garde votre coffre-fort sur vos propres appareils.</p>
+        <p class="quiet">Ce site compte les visites avec Cloudflare Web Analytics, qui n’utilise pas de cookies. Il n’utilise aucun traceur publicitaire et ne dépose aucun cookie.</p>
+      </div>
+      <nav aria-label="Produit">
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="../../fr/features">Fonctionnalités</a></li>
+          <li><a href="../../fr/pricing">Tarifs</a></li>
+          <li><a href="../../fr/download">Télécharger</a></li>
+          <li><a href="../../fr/get-started">Démarrer</a></li>
+          <li><a href="../../fr/switch/">Changer</a></li>
+          <li><a href="../../buy">Acheter Pro</a></li>
+          <li><a href="../../fr/licence">Votre licence Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Récupérer votre licence</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Aide">
+        <h2>Aide</h2>
+        <ul>
+          <li><a href="../../fr/help">Guide d’utilisation</a></li>
+          <li><a href="../../fr/support">Assistance et FAQ</a></li>
+          <li><a href="../../fr/security">Sécurité</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Signaler une vulnérabilité</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Mentions légales">
+        <h2>Mentions légales</h2>
+        <p class="quiet">Ces documents sont en anglais, et la version anglaise fait foi.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contrat de licence</a></li>
+          <li><a href="../../legal/privacy">Politique de confidentialité</a></li>
+          <li><a href="../../legal/terms-of-sale">Conditions de vente</a></li>
+          <li><a href="../../legal/refunds">Politique de remboursement</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact : <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows est une marque du groupe de sociétés Microsoft. Chrome est une marque de Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID et Safari sont des marques d’Apple Inc., déposées aux États-Unis et dans d’autres pays.</p>
+      <nav class="lang-switch" aria-label="Langue"><ul><li><a href="../../switch/" hreflang="en" lang="en">English</a></li><li><a href="../../es/switch/" hreflang="es" lang="es">Español</a></li><li><a href="../../it/switch/" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/switch/" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/switch/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/switch/" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/switch/" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/switch/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/switch/" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/switch/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/switch/" hreflang="fr" lang="fr" aria-current="true">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

@@ -155,7 +155,7 @@ class PhoneBackupService:
         if plan.skipped:
             lines.append(_skipped_text(plan.skipped, "will be"))
         if plan.held_back:
-            lines.append(t("phoneBackupWeb.itemsHeldBackByThe", held_back=plan.held_back))
+            lines.append(t("phoneBackupWeb.itemsHeldBackByThe", held_back=plan.held_back, limit=licensing.FREE_ITEM_LIMIT))
         if plan.totp_as_field:
             lines.append(t("phoneBackupWeb.twoFactorKeysKeptAs", totp_as_field=plan.totp_as_field))
         return {"token": token, "lines": lines, "status": t("phoneBackupWeb.previewIsReadyReviewIt")}
@@ -190,7 +190,7 @@ class PhoneBackupService:
         if report.files_missing:
             lines.append(_missing_text(report.files_missing, "were"))
         if report.held_back:
-            lines.append(t("phoneBackupWeb.itemsHeldBackByThe", held_back=report.held_back))
+            lines.append(t("phoneBackupWeb.itemsHeldBackByThe", held_back=report.held_back, limit=licensing.FREE_ITEM_LIMIT))
         if report.totp_as_field:
             lines.append(t("phoneBackupWeb.twoFactorKeysKeptAs", totp_as_field=report.totp_as_field))
         if report.skipped and not changed and not adopted:

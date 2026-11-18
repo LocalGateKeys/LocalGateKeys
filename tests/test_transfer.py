@@ -179,7 +179,7 @@ def test_transfer_kdf_header_uses_vault_defaults_and_accepts_only_bounded_parame
     export_transfer(source, default, TRANSFER_PASSWORD, ids=[item_id])
     header = json.loads(default.read_text(encoding="utf-8"))["kdf"]
     assert {key: header[key] for key in ("name", "time_cost", "memory_cost_kib", "parallelism")} == {
-        "name": "argon2id", "time_cost": 3, "memory_cost_kib": 65536, "parallelism": 4}
+        "name": "argon2id", "time_cost": 3, "memory_cost_kib": 262144, "parallelism": 4}
 
     fast = vault_dir / "fast.lgt"
     export_transfer(source, fast, TRANSFER_PASSWORD, ids=[item_id], kdf_overrides=FAST_TRANSFER_KDF)
@@ -211,3 +211,11 @@ def test_transfer_kdf_header_uses_vault_defaults_and_accepts_only_bounded_parame
     with pytest.raises(TransferError):
         import_transfer(mutated({"memory_cost_kib": 16384}), destination, TRANSFER_PASSWORD)
     assert len(destination.items.list_items()) == 1
+
+
+def test_ai_agent_opt_in_never_leaves_the_vault() -> None:
+    # "AI agents may use this login" is the owner's choice for this vault: an export, import or share arrives off.
+    entry = {"id": "e1", "kind": "web", "label": "x", "username": "u", "password": "p",
+             "scope": {"origin": "https://example.com", "ai_agents": True}, "policy": {}}
+    assert "ai_agents" not in transfer._sanitize_credential(entry)["scope"]
+    assert entry["scope"]["ai_agents"] is True  # the source record is untouched

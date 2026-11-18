@@ -24,7 +24,8 @@ enum QRImageDecoder {
 /// One edit at a time in the detail panel: a new item or an existing one, saved through `EditorModel`
 /// (which applies the form over the stored record, so fields the form does not show are kept as they were).
 /// Why the free plan refused: a fifth item, or adding/changing a 2FA code.
-enum ProReason: Equatable, Sendable { case itemLimit, twoFactor, sync, attachments }
+/// Feature pack: `.travel` (travel mode), `.hygiene` (bulk clean-up), `.access` (setting or tightening access rules).
+enum ProReason: Equatable, Sendable { case itemLimit, twoFactor, sync, attachments, profiles, travel, hygiene, access }
 
 @MainActor @Observable
 final class MacEditorSession {
@@ -43,16 +44,16 @@ final class MacEditorSession {
     var tagsText = ""
     /// Under the Tags field when the tags can't be saved.
     private(set) var tagsError: String?
-    /// Under the collections picker (more than 20, or the membership save failed).
-    private(set) var collectionsError: String?
-    /// The record saved but its memberships did not; Save retries only those.
-    private(set) var membershipsPending = false
-    /// The known collections a typed item is in (the picker).
-    var chosenCollections: Set<String> = []
+    /// The collections a typed item is in (the picker): `EditorModel.memberships`, saved in the same commit as the
+    /// record (sub-plan 07), so an item is never saved without the collections that were picked with it.
+    var chosenCollections: Set<String> {
+        get { model?.memberships ?? [] }
+        set { model?.memberships = newValue }
+    }
     @ObservationIgnored private var tagsBaseline = ""
     @ObservationIgnored private var collectionsBaseline: Set<String> = []
-    /// Mac-local collections (nil hides the picker).
-    @ObservationIgnored var collections: CollectionsModel?
+    /// The vault's collections (nil hides the picker).
+    @ObservationIgnored var collections: MacCollectionsModel?
 
     @ObservationIgnored private let store: any ItemStore
     @ObservationIgnored let pro: ProModel
@@ -75,8 +76,11 @@ final class MacEditorSession {
             || chosenCollections != collectionsBaseline
     }
 
-    /// Typed items get the collections picker (Windows: logins have no `collection_ids`).
-    var showsCollections: Bool { collections != nil && model.map { $0.kind != .web } ?? false }
+    /// Typed items get the collections picker (Windows: logins and documents have no `collection_ids`).
+    var showsCollections: Bool { collections != nil && (model?.offersCollections ?? false) }
+
+    /// The item is in a collection shared with this vault as view only: the form opens read-only and Save is refused.
+    var isReadOnly: Bool { model?.isReadOnly ?? false }
 
     private static func nonEmpty(_ v: [String: String]) -> [String: String] { v.filter { !$0.value.isEmpty } }
 
@@ -106,40 +110,27 @@ final class MacEditorSession {
     }
 
     private func open(_ m: EditorModel, id: String?, tags: [String] = []) {
-        model = m; editingID = id; baseline = m.values; qrMessage = nil; tagsError = nil; collectionsError = nil
-        tagsText = CollectionsModel.tagText(tags); tagsBaseline = tagsText
-        chosenCollections = id.flatMap { collections?.shownMemberships(of: $0) } ?? []
-        collectionsBaseline = chosenCollections
+        // The catalog, the item's collections and whether it is view only, read once from the store.
+        m.loadCollections()
+        model = m; editingID = id; baseline = m.values; qrMessage = nil; tagsError = nil
+        tagsText = MacCollectionsModel.tagText(tags); tagsBaseline = tagsText
+        collectionsBaseline = m.memberships
     }
 
     /// Saves; the form closes on success (or when nothing changed). A full free plan, or a 2FA change on it,
     /// calls `onNeedsPro`.
     @discardableResult func save() -> SaveResult {
         guard let model else { return .failed }
-        // The item saved but its collections didn't: Save only retries the collections.
-        if membershipsPending {
-            guard retryMemberships(kind: model.kind) else { return .failed }
-            close(); return .saved
-        }
-        tagsError = nil; collectionsError = nil
-        do { model.tags = tagsText == tagsBaseline ? nil : try CollectionsModel.tags(fromText: tagsText) } catch NormaliseError.rejected(let detail) {
+        tagsError = nil
+        do { model.tags = tagsText == tagsBaseline ? nil : try MacCollectionsModel.tags(fromText: tagsText) } catch NormaliseError.rejected(let detail) {
             tagsError = detail; return .invalid
         } catch { tagsError = String(localized: "Check the tags."); return .invalid }
-        // Check the memberships first, so a refused one never leaves a half-saved item.
-        let membershipsChanged = showsCollections && chosenCollections != collectionsBaseline
-        if membershipsChanged, let collections {
-            do { _ = try collections.plannedMemberships(of: editingID ?? "", kind: model.kind.rawValue, to: chosenCollections) }
-            catch { collectionsError = CollectionsModel.tooManyText; return .invalid }
-        }
+        // The picked collections go into the same commit as the record (`EditorModel.save`): a refused membership
+        // (more than 20, a view-only collection) refuses the whole save and says why, so nothing is half saved.
         let result = model.save()
         switch result {
         case .saved, .unchanged:
             lastSavedID = result == .saved ? (model.savedID ?? editingID) : editingID
-            if membershipsChanged && !retryMemberships(kind: model.kind) {
-                // Keep the form open on the saved item so Save can retry (Cancel closes; the item stays saved).
-                editingID = lastSavedID; membershipsPending = true
-                return .failed
-            }
             close()
         case .needsPro:
             model.showUpgrade = false
@@ -150,25 +141,12 @@ final class MacEditorSession {
         return result
     }
 
-    nonisolated static let membershipsFailedText = String(localized: "Saved, but collections couldn't be updated.")
-
-    /// After the record is saved: false (with the line under the picker) when the memberships couldn't be saved.
-    private func retryMemberships(kind: EditorKind) -> Bool {
-        guard let collections, let id = lastSavedID else { return true }
-        do {
-            try collections.setMemberships(of: id, kind: kind.rawValue, to: chosenCollections)
-            membershipsPending = false
-            return true
-        } catch { collectionsError = Self.membershipsFailedText; return false }
-    }
-
     /// Drops the form and any unsaved changes.
     func cancel() { close() }
 
     private func close() {
         model = nil; editingID = nil; baseline = [:]; qrMessage = nil
-        tagsText = ""; tagsBaseline = ""; tagsError = nil; collectionsError = nil; chosenCollections = []; collectionsBaseline = []
-        membershipsPending = false
+        tagsText = ""; tagsBaseline = ""; tagsError = nil; collectionsBaseline = []
     }
 
     /// Fills the 2FA field from a QR image file.
@@ -222,11 +200,19 @@ struct MacEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 header.padding(.bottom, 2)
-                if let error = model.error {
+                if model.isReadOnly {
+                    // In a collection shared with this vault as view only: shown, never changed here.
+                    Label(EditorModel.readOnlyItemText, systemImage: "lock")
+                        .font(.system(size: 13)).foregroundStyle(theme.textMuted).padding(.top, 10)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let error = model.error {
                     Text(error).font(.system(size: 13)).foregroundStyle(theme.danger).padding(.top, 10)
                 }
-                sections
-                organise
+                Group {
+                    sections
+                    organise
+                }
+                .disabled(model.isReadOnly)
             }
             .padding(.horizontal, 18).padding(.vertical, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -252,6 +238,7 @@ struct MacEditorView: View {
                 .keyboardShortcut(.cancelAction)
             Button("Save", action: save)
                 .buttonStyle(PillButtonStyle(primary: true))
+                .disabled(model.isReadOnly)
                 .help("Save (⌘S)")   // ⌘S is Item › Save in the menu bar
         }
     }
@@ -298,16 +285,12 @@ struct MacEditorView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                if session.showsCollections, let collections = session.collections {
+                if session.showsCollections {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Text("Collections").font(.system(size: 13)).foregroundStyle(theme.textMuted)
                             .frame(width: 120, alignment: .leading)
-                        VStack(alignment: .leading, spacing: 4) {
-                            CollectionsPicker(collections: collections.collections, chosen: $session.chosenCollections)
-                            if let error = session.collectionsError {
-                                Text(error).font(.system(size: 12)).foregroundStyle(theme.danger)
-                            }
-                        }
+                        CollectionsPicker(collections: model.collections, readOnly: model.readOnlyCollections,
+                                          chosen: $session.chosenCollections)
                     }
                 }
             }

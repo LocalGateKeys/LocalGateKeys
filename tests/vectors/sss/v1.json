@@ -1,0 +1,277 @@
+{
+  "format": "lgk-sss-v1",
+  "field": "GF(2^8), reduction polynomial 0x11b (AES)",
+  "share_layout": "bytes([x]) + 32 bytes of y, x = 1..n",
+  "coefficient_layout": "coefficients[j*(k-1) + (d-1)] = degree-d coefficient for secret byte j",
+  "source": "derived by tests/vectors/sss/generate.py (independent bitwise reference) from the hashicorp/vault shamir algorithm; see hashicorp.json for that package's own known answers",
+  "cases": [
+    {
+      "name": "zero-secret-2of2",
+      "k": 2,
+      "n": 2,
+      "secret": "0000000000000000000000000000000000000000000000000000000000000000",
+      "coefficients": "1956cf1136bf45ca6e9b4430f586f7d422ebe6af8c63288231f28246d620990d",
+      "shares": [
+        "011956cf1136bf45ca6e9b4430f586f7d422ebe6af8c63288231f28246d620990d",
+        "0232ac85226c658a8fdc2d8860f117f5b344cdd74503c6501f62ff1f8cb740291a"
+      ],
+      "combine_subsets": [
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "name": "ff-secret-2of3",
+      "k": 2,
+      "n": 3,
+      "secret": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "coefficients": "3abaa81812b84b72fc45dfcf45dfc2a086f5379c7fe683f04a8544db33639ee5",
+      "shares": [
+        "01c54557e7ed47b48d03ba2030ba203d5f790ac86380197c0fb57abb24cc9c611a",
+        "028b90b4cfdb94691b1c755a7a755a60a4e80e91dc0128e2046bee77529939d82e",
+        "03b12a1cd7c92c2269e03085b53085a2046efba6407ece61f4216b3389aa5a46cb"
+      ],
+      "combine_subsets": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "name": "counting-3of5",
+      "k": 3,
+      "n": 5,
+      "secret": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "coefficients": "67e2f0895b5fb4851430b5d45da8dd5360aa2fb2feb32cca0ccadf0c87ac6a73ff1ed5ddc63ab3ba88d68e5bdf76c413e4492f591dbf1717fae8063d500a8e97",
+      "shares": [
+        "01857806322064f389c29447edcade2516f119ee1a4ac0bfc0b56fb81b0e264406",
+        "026be8d352ec092af156a9175611989d0c8df96db06a6570c8f438ea697ee59672",
+        "03ee91d763c868df7f9c345ab0d74bb6156cf191b934b0d91f594e48696cdecc6b",
+        "0425a4f26d79080719dd601aaf289c0acd3a17aabccddc660159426b2cdbf8e5a2",
+        "05a0ddf65c5d69f29717fd5749ee4f21d4db1f56b59309cfd6f434c92cc9c3bfbb"
+      ],
+      "combine_subsets": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          4
+        ],
+        [
+          1,
+          2,
+          5
+        ],
+        [
+          1,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          5
+        ],
+        [
+          1,
+          4,
+          5
+        ],
+        [
+          2,
+          3,
+          4
+        ],
+        [
+          2,
+          3,
+          5
+        ],
+        [
+          2,
+          4,
+          5
+        ],
+        [
+          3,
+          4,
+          5
+        ],
+        [
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          5
+        ],
+        [
+          1,
+          2,
+          4,
+          5
+        ],
+        [
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          2,
+          3,
+          4,
+          5
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "name": "hashed-4of5",
+      "k": 4,
+      "n": 5,
+      "secret": "121348de2b776dad91d482a1b10f212ef44e0a160e60387e1f0f6a6d9b949ed3",
+      "coefficients": "806f0c2916b65ea98838699a150ed5b24f0cc4a651b0d4541562077121bb5d84a5b459723abcafb8fc93434ec08c0d29947c53d916bfa0c0ea66372eb180e90905c230f5c15815dc388d31ba0d76a5b601fc78c4ef70a5f6b6a24a674714352e",
+      "shares": [
+        "01f19a3715e5865e9de13ffe3e98d8ec864f3e8069d6ae3cef9bce782da176f4dc",
+        "02cede4aadcb4fee3d101d41100c4dde4a82306d6d482cf320fec9dd0fdaea8344",
+        "0305ce2817cd9620ee7241ceb8eadda514c8efadf6d058474fdc27c9e113e960af",
+        "04a3ae2e634e3859686422bb3f14615c56146880bd6c7297e903851d8c85e1f78b",
+        "05b05c1f95063952247856db12a93f08fcbfd7adac2f0d1e4a7ea61b05a37386ea"
+      ],
+      "combine_subsets": [
+        [
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          5
+        ],
+        [
+          1,
+          2,
+          4,
+          5
+        ],
+        [
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          2,
+          3,
+          4,
+          5
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "name": "hashed-5of5",
+      "k": 5,
+      "n": 5,
+      "secret": "81ef3459d619ac019667fd37242b20e2d5bf2fa74c8cc83a2d31f2243a692336",
+      "coefficients": "c9895c029be110dc2ed555f8c45065e31a7f04996de224ed73769fd636e326c30e6c91b013b223d3b234e6701236a916580e3da450baac80c1e126c8ef433c06531755f3db8b3cea7977e455b08deb091c7c87354234c2e7a915fc5b54fd0a2d1ea9078996f7b51b5fa220479f7c66ab09c570485f6125fb3f3621432d5a0167",
+      "shares": [
+        "019f59624b2e5fe031d536edacebedee74373990789edfd3b414fe680ace894827",
+        "02ec849626760fd2633023628ff19a0fab18d15c57b660b3fdf383f5a95052ca3d",
+        "03215225719691f18738b810cfb09915b51fdf8dc45b89964fd8dfafc89f6c672a",
+        "041ce164ee5380d2b09cd5b72068b2b5ec0b198252ba2daa6c1c4a5890a761bd83",
+        "05de0c5a79fb20e74e7e0ef057aedcb5678182423eeacf356a49c27407c9737486"
+      ],
+      "combine_subsets": [
+        [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      ]
+    },
+    {
+      "name": "hashed-3of4",
+      "k": 3,
+      "n": 4,
+      "secret": "70bb2a21cfd848ced1c43848fa9d7086074e4de361d117dbc7824a00b5f8e63d",
+      "coefficients": "abf7f89dc2f9440ff6a7ad3b938acc584b4c756de70c744e6b217ea59124723e0e5f2bcdfd10e5d3e117d12f9d1ee2e67130186fce555f1654a60ff4a3809430",
+      "shares": [
+        "012cde116a9e4e515ad6dcd372b046c5ca56a8a0d5972f94df86f5d1494703c599",
+        "02cc127c9592756b366c81dd83a8c3d99a7c01ec53e4d44eb1e51582e6b31b8dce",
+        "03907747dec3e372a26b9936b9e2186cd62de70165122acdb5a46219af41e0ae6a",
+        "04036506daa4c74a244a81490f6bc07498b8868fc5a37eae9c3548781c701d8476"
+      ],
+      "combine_subsets": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          4
+        ],
+        [
+          1,
+          3,
+          4
+        ],
+        [
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4
+        ]
+      ]
+    }
+  ]
+}

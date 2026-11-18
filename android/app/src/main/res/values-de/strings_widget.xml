@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">Angeheftete Codes</string>
+    <string name="widget_codes_description">Ihre angehefteten Zwei-Faktor-Codes.</string>
+    <string name="widget_codes_locked">Entsperren, um Codes zu sehen</string>
+    <string name="widget_codes_empty">Heften Sie einen Code in LocalGateKeys an</string>
+    <string name="detail_pin_code">Im Widget anzeigen</string>
+    <string name="detail_pin_code_note">Das Widget auf dem Startbildschirm zeigt diesen Code, solange LocalGateKeys entsperrt ist, bis zur automatischen Sperre.</string>
+    <string name="detail_pin_full">Sie können bis zu %1$d Codes anheften.</string>
+    <string name="widget_codes_locked_immediately">Stellen Sie die automatische Sperre auf 1 Minute oder länger, um Codes hier zu sehen</string>
+    <string name="detail_pin_code_note_immediately">Die automatische Sperre steht auf „Sofort“: LocalGateKeys sperrt sich beim Verlassen, und das Widget kann diesen Code nicht zeigen. Stellen Sie sie in den Einstellungen auf 1 Minute oder länger, um ihn auf dem Startbildschirm zu sehen.</string>
+    <string name="tile_codes_name">Code kopieren</string>
+    <string name="tile_codes_empty">Keine angehefteten Codes</string>
+    <string name="tile_codes_locked">Zum Kopieren entsperren</string>
+    <string name="tile_codes_locked_subtitle">Gesperrt</string>
+    <string name="tile_codes_tap_to_copy">Zum Kopieren tippen</string>
+    <string name="tile_codes_copied">Kopiert</string>
+    <string name="tile_codes_no_code">Kein Code</string>
+</resources>

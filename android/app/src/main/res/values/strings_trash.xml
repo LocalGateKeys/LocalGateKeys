@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_join" translatable="false">%1$s · %2$s</string>
+    <string name="trash_title">Recently deleted</string>
+    <string name="trash_empty">Recently deleted is empty.</string>
+    <string name="trash_save_failed">Recently deleted could not be saved on this phone.</string>
+    <string name="trash_reset">Recently deleted on this phone couldn\'t be read and was reset.</string>
+    <string name="trash_moved">Moved to Recently deleted</string>
+    <string name="trash_item_restored">Item restored</string>
+    <string name="trash_restore_needs_pro">Upgrade to Pro to restore more items</string>
+    <string name="trash_gone">It is no longer in Recently deleted.</string>
+    <string name="trash_cannot_restore">This entry can\'t be restored.</string>
+    <string name="trash_vault_unreadable">The vault could not be read.</string>
+    <string name="trash_same_id">An item with the same ID already exists.</string>
+    <string name="trash_restore_save_failed">The item could not be saved on this device.</string>
+    <string name="trash_delete_forever">Delete forever</string>
+    <string name="trash_keep_for">Keep deleted items for</string>
+    <string name="trash_empty_all">Empty Recently deleted</string>
+    <string name="trash_footer">Deleted items stay encrypted on this phone and are removed for good after this time. They don\'t count toward the free plan\'s items. Older backups may still contain them.</string>
+    <string name="trash_empty_all_title">Empty Recently deleted?</string>
+    <string name="trash_empty_all_message">Every item here is deleted for good. This cannot be undone.</string>
+    <string name="trash_delete_forever_title">Delete forever?</string>
+    <string name="trash_delete_forever_message">‘%1$s’ is deleted for good. This cannot be undone.</string>
+    <string name="trash_removed_soon">removed soon</string>
+    <string name="trash_undo">Undo</string>
+    <string name="trash_undo_hint">Restores the deleted item</string>
+    <string name="trash_undo_announcement">%1$s. Undo is available.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+</resources>

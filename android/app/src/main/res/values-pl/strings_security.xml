@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Bezpieczeństwo</string>
+    <string name="security_cat_breached">Wyciekłe</string>
+    <string name="security_cat_reused">Powtórzone</string>
+    <string name="security_cat_weak">Słabe</string>
+    <string name="security_cat_old">Stare</string>
+    <string name="security_cat_no_2fa">2FA dostępne</string>
+    <string name="security_expl_breached">Te hasła występują w znanych wyciekach danych. Zmień je w pierwszej kolejności.</string>
+    <string name="security_expl_reused">Te hasła są używane w więcej niż jednym loginie. Jeśli jedna witryna wycieknie, pozostałe są narażone.</string>
+    <string name="security_expl_weak">Te hasła są krótkie lub łatwe do odgadnięcia.</string>
+    <string name="security_expl_old">Te hasła nie były zmieniane od ponad roku. Sam wiek nie jest powodem do zmiany.</string>
+    <string name="security_expl_no_2fa">Ta witryna oferuje kody dwuskładnikowe, ale ten login ich nie ma.</string>
+    <string name="security_blocked_offline">Ścisły tryb offline jest włączony, więc sprawdzanie wycieków jest zablokowane. Wyłącz go w Ustawienia › Sprawdzanie wycieków.</string>
+    <string name="security_blocked_disabled">Sprawdzanie wycieków jest wyłączone. Włącz je w Ustawienia › Sprawdzanie wycieków.</string>
+    <string name="security_status_cancelled">Sprawdzanie wycieków anulowano.</string>
+    <string name="security_status_checking">Sprawdzanie haseł…</string>
+    <string name="security_status_none_found">Nie znaleziono wyciekłych haseł.</string>
+    <string name="security_status_found">Znaleziono wyciekłe hasła: %1$d.</string>
+    <string name="security_status_some_failed">Nie udało się sprawdzić niektórych haseł. Spróbuj ponownie później.</string>
+    <string name="security_band_none">Jeszcze brak loginów</string>
+    <string name="security_band_good">Dobra</string>
+    <string name="security_band_fair">Przeciętna</string>
+    <string name="security_band_poor">Słaba</string>
+    <string name="security_empty_hint">Dodaj loginy, aby zobaczyć, jak zdrowe są Twoje hasła.</string>
+    <string name="security_score_description">Ocena bezpieczeństwa: %1$d na 100</string>
+    <string name="security_no_score">Brak jeszcze oceny bezpieczeństwa</string>
+    <string name="security_checks_header">Sprawdzenia</string>
+    <string name="security_breach_header">Sprawdzanie wycieków</string>
+    <string name="security_breach_start">Sprawdź, czy hasła nie wyciekły</string>
+    <string name="security_cancel">Anuluj</string>
+    <string name="security_checking">Sprawdzanie…</string>
+    <string name="security_show_dismissed">Pokaż ponownie odrzucone elementy</string>
+    <string name="security_confirm_title">Sprawdzić każde hasło w Have I Been Pwned?</string>
+    <string name="security_confirm_action">Sprawdź</string>
+    <string name="security_consent">Sprawdzanie wycieków wysyła do Have I Been Pwned tylko pierwsze 5 znaków skrótu SHA-1 każdego hasła, przez HTTPS z dopełnieniem, i tylko wtedy, gdy je uruchomisz. Nie jest wysyłane żadne hasło, pełny skrót, nazwa użytkownika ani strona internetowa. Usługa widzi Twój adres IP.</string>
+    <string name="security_nothing_to_fix">Nie ma tu nic do naprawy.</string>
+    <string name="security_dismiss">Odrzuć</string>
+    <string name="security_change_password">Zmień hasło</string>
+    <string name="security_dismiss_item">Odrzuć dla tego elementu</string>
+    <string name="security_row_description">%1$s, elementów: %2$d</string>
+    <string name="security_checks_footer">Kontrole lokalne to wskazówka, a nie gwarancja. Nic nie opuszcza tego telefonu, dopóki nie uruchomisz sprawdzania wycieków.</string>
+    <string name="security_issue_footer">%1$s Użyj menu przy loginie, aby zmienić jego hasło lub go tutaj odrzucić.</string>
+    <string name="security_row_menu">Więcej działań dla: %1$s</string>
+    <string name="security_untitled">Login bez nazwy</string>
+</resources>

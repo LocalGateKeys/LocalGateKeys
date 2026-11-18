@@ -42,6 +42,9 @@ def _fast_default_kdf(monkeypatch):
     vault_module._reset_unlock_throttle_state_for_tests()
 
 
+# The anchor's refusal, or the outside mark's when it catches the older copy first (tests/test_vault_rollback_mark.py).
+ROLLBACK_REFUSED = "rollback detected|older than the last version saved"
+
 def _write_v2_vault(path: Path, password: str, payload_extra: dict | None = None) -> bytearray:
     """Hand-build a format-2 vault whose Argon2 output is the catalog key."""
     kdf = {**DEFAULT_KDF, **TEST_KDF, "salt": _b64e(os.urandom(16))}
@@ -333,9 +336,14 @@ def test_unknown_future_version_is_rejected(tmp_path: Path) -> None:
     path = tmp_path / "vault.json"
     create_vault(path, MASTER, kdf_overrides=TEST_KDF).lock()
     document = read_json(path)
+    document["version"] = 5  # 4 is the format with key-file / YubiKey factors (tests/test_vault_factors.py)
+    atomic_write_json(path, document)
+    with pytest.raises(VaultError, match="This vault needs a newer LocalGateKeys"):
+        unlock_vault(path, MASTER)
+    # A v3 document merely relabelled as v4 has no v4 format identifier or factor list.
     document["version"] = 4
     atomic_write_json(path, document)
-    with pytest.raises(VaultError, match="Unsupported vault format version"):
+    with pytest.raises(VaultError, match="Unsupported vault format identifier"):
         unlock_vault(path, MASTER)
 
 
@@ -462,7 +470,7 @@ def test_rollback_of_the_vault_file_is_still_detected(tmp_path: Path) -> None:
     session.upsert_web(origin="https://example.org", username="b", password="pw")
     session.lock()
     path.write_bytes(older)
-    with pytest.raises(VaultError, match="rollback detected"):
+    with pytest.raises(VaultError, match=ROLLBACK_REFUSED):
         unlock_vault(path, MASTER)
 
 
@@ -545,7 +553,7 @@ def test_planted_migration_journal_cannot_lower_the_anchor(tmp_path: Path) -> No
     assert path.read_bytes() == current and _anchor_path(path).read_bytes() == anchor_before
     # Even a journal that lies about its source generation cannot remove the anchor.
     atomic_write_json(vault_migration_journal_path(path), {**journal, "source_generation": 10**6})
-    with pytest.raises(VaultError, match="rollback detected"):
+    with pytest.raises(VaultError, match=ROLLBACK_REFUSED):
         unlock_vault(path, MASTER)
     assert _anchor_path(path).read_bytes() == anchor_before
 
@@ -603,7 +611,7 @@ def test_legacy_restore_never_resets_the_anchor(tmp_path: Path) -> None:
         restore_encrypted_backup(backup, vault_file=path, settings_file=None,
                                  backup_password="independent backup password")
     assert _anchor_path(path).read_bytes() == anchor_before
-    with pytest.raises(VaultError, match="rollback detected"):
+    with pytest.raises(VaultError, match=ROLLBACK_REFUSED):
         unlock_vault(path, MASTER)
 
 

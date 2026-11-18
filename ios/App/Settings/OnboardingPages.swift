@@ -33,7 +33,7 @@ struct OnboardingPages: View {
                 }
                 Spacer(minLength: 24)
                 VStack(alignment: .leading, spacing: 8) {
-                    Image(systemName: step.icon).font(.system(size: 30, weight: .medium)).foregroundStyle(Palette.accentText)
+                    Image(systemName: step.icon).font(.largeTitle.weight(.medium)).foregroundStyle(Palette.accentText)
                         .accessibilityHidden(true)
                     Text(step.title).font(.title2.weight(.semibold)).foregroundStyle(Palette.text)
                         .accessibilityAddTraits(.isHeader)

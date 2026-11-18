@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">Raccolte</string>
+    <string name="collections_none">Ancora nessuna raccolta.</string>
+    <string name="collections_footer">Note, carte e altri elementi tipizzati possono essere aggiunti alle raccolte. Gli accessi no.</string>
+    <string name="collections_add_starters">Aggiungi raccolte iniziali</string>
+    <string name="collections_new">Nuova raccolta</string>
+    <string name="collections_name">Nome</string>
+    <string name="collections_create">Crea</string>
+    <string name="collections_delete_title">Eliminare la raccolta?</string>
+    <string name="collections_delete_message">Gli elementi al suo interno vengono conservati.</string>
+    <string name="collections_view_only">Sola visualizzazione</string>
+    <string name="collections_shared">Condivisa</string>
+    <string name="collections_picker_footer">Un elemento può stare in al massimo 20 raccolte.</string>
+    <string name="collections_all_items">Tutti gli elementi</string>
+    <string name="collections_manage">Gestisci le raccolte</string>
+    <string name="collections_filter">Raccolta: %1$s</string>
+    <string name="collections_filter_clear">Mostra tutti gli elementi</string>
+    <string name="collections_filter_empty">Nessun elemento in questa raccolta.</string>
+    <string name="collections_read_only_item">Questo elemento è in una raccolta condivisa con te in sola visualizzazione, quindi non può essere modificato su questo dispositivo.</string>
+    <string name="collections_read_only">Questa raccolta è condivisa con te in sola visualizzazione, quindi non può essere modificata su questo dispositivo.</string>
+    <string name="collections_shared_delete">Una raccolta condivisa non può essere eliminata. Prima smetti di condividerla o lasciala.</string>
+    <string name="collections_limit">Puoi avere al massimo 500 raccolte.</string>
+    <string name="collections_not_member">Gli accessi e i documenti non possono essere aggiunti a una raccolta.</string>
+    <string name="collections_bad_name">Questo nome non può essere usato.</string>
+    <string name="collections_gone">Quella raccolta non esiste più.</string>
+    <string name="collections_failed">Impossibile modificare la raccolta.</string>
+    <string name="collections_empty_name">Inserisci un nome per la raccolta.</string>
+    <string name="collections_long_name">I nomi delle raccolte possono avere al massimo 100 caratteri.</string>
+    <string name="collections_duplicate">Esiste già una raccolta con questo nome.</string>
+    <string name="collections_too_many">Un elemento non può appartenere a più di 20 raccolte.</string>
+    <string name="collections_read_failed">Impossibile leggere la cassaforte su questo dispositivo.</string>
+    <string name="collection_starter_personal">Personale</string>
+    <string name="collection_starter_work">Lavoro</string>
+    <string name="collection_starter_travel">Viaggi</string>
+    <string name="collection_starter_emergency">Emergenza</string>
+</resources>

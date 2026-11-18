@@ -53,6 +53,12 @@ final class HostPairingTests: XCTestCase {
                                                       endpoint: try LanEndpoint(validating: str(ep["host"]), port: Int(int(ep["port"]))),
                                                       now: FixedClock(now: int(c["now"])), random: random)
             XCTAssertTrue(random.isEmpty, str(c["name"]))
+            // Offer version 2: the last read is the reveal; only its commitment is in the bundle.
+            let reveal = try XCTUnwrap(reads.last)
+            XCTAssertEqual(o.version, PairingOffer.commitVersion)
+            XCTAssertEqual(o.reveal, reveal)
+            XCTAssertEqual(o.commit, Enrollment.commitment(reveal))
+            XCTAssertFalse(try o.qrPayload().contains(Base64.encode(reveal)))
             XCTAssertEqual(try o.qrPayload(), str(c["qr_payload"]), str(c["name"]))
             XCTAssertEqual(o.bundleJSON, c["offer_bundle"])
             XCTAssertEqual(o.expiresAt, int(c["now"]) + 120)

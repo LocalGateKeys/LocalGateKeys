@@ -82,6 +82,15 @@ class SyncWording(private val t: Txt) {
 
     fun shortID(id: String): String = t.s(R.string.sync_device_short_id, prefixScalars(sanitize(id, limit = 9), 8))
 
+    /** "<name> · Device xxxxxxxx" when a name is known, else "Device xxxxxxxx" (the " · " join is not translated). */
+    fun deviceLabel(id: String, names: Map<String, String?>): String {
+        val name = names[id]
+        return if (name.isNullOrEmpty()) shortID(id) else sanitize(name) + " · " + shortID(id)
+    }
+
+    /** "This device: <label>" for this device's own entry. */
+    fun thisDeviceLabel(id: String, names: Map<String, String?>): String = t.s(R.string.sync_this_device_label, deviceLabel(id, names))
+
     fun subject(kind: String, detail: String, names: Map<String, String>, ownID: String?): String {
         var k = kind
         var h = if (detail.isEmpty()) "" else head(detail)
@@ -104,6 +113,7 @@ class SyncWording(private val t: Txt) {
     fun text(issue: SyncIssue, names: Map<String, String> = emptyMap(), ownID: String? = null, folder: Boolean = false): String {
         val detail = issue.detail
         val kind = effectiveKind(kind = issue.kind, detail = detail)
+        if (kind == REMOVAL_NOTICE_KIND) return t.s(R.string.sync_removal_notice_verified)
         if (kind == "rejoin-required" && detail == "install-mismatch") return t.s(R.string.sync_issue_install_mismatch)
         if (kind == "member-dropped" && ownID != null && detail == ownID) return t.s(R.string.sync_issue_self_dropped)
         var template: Int = (if (kind == "epoch-behind" && folder) R.string.sync_issue_epoch_behind_folder else ISSUE_COPY[kind])
@@ -128,8 +138,73 @@ class SyncWording(private val t: Txt) {
             if (!texts.add(text)) continue
             out.add(IssueView(kind, severity(kind), text, kind in RESET_KINDS, if (kind == "peer-vault-rollback") issue.detail else ""))
         }
-        fun rank(v: IssueView): Int = PRIORITY.indexOf(v.kind).let { if (it < 0) PRIORITY.size else it }
+        fun rank(v: IssueView): Int =
+            if (v.kind == REMOVAL_NOTICE_KIND) -1 else PRIORITY.indexOf(v.kind).let { if (it < 0) PRIORITY.size else it }
         return out.sortedWith(compareBy<IssueView>({ it.severity.ordinal }, { rank(it) }))
+    }
+
+    // Shared collections (sub-plan 07 Task 5m; desktop `collection_share.ISSUE_COPY` and `_issue`, the iPhone's
+    // `SyncWording.shareStatus`)
+
+    /** A share group's run status as the share sheet shows it: the most important issue of its last run. */
+    data class ShareStatus(
+        val kind: String,
+        val severity: Severity,
+        val text: String,
+        /** `superseded`: the sheet offers Join again ([SyncCoordinator.rejoinShare]). */
+        val joinAgain: Boolean,
+    )
+
+    val joinAgainAction: String get() = t.s(R.string.collection_share_join_again)
+
+    /** The share copy of [issue], null for a kind with none (the sync screen's copy is used then). */
+    fun shareCopy(issue: SyncIssue): String? = when (issue.kind) {
+        "superseded" -> t.s(R.string.collection_share_superseded)
+        "share-removed" -> t.s(R.string.collection_share_removed_from_share)
+        "keyring-merged" -> t.s(R.string.collection_share_keyring_merged)
+        "awaiting-approval" -> t.s(R.string.collection_share_awaiting_approval)
+        // The owner replaced another share's keyring in this folder (final review A1): a warning, so two owners writing
+        // over each other in one folder show up.
+        "other-group-replaced" -> t.s(R.string.collection_share_other_group_replaced)
+        "pro-required" -> t.s(R.string.collection_share_pro_needed)
+        "rejoin-required" -> t.s(R.string.collection_share_rejoin_required)
+        "folder-missing" -> t.s(R.string.collection_share_folder_missing)
+        // A normal share run's own refusal (`ShareRuns.RUN_DETAIL`) is the sync trash message; a removal's is the
+        // removal's (desktop: every share `trash-full` / `item-error` is the removal copy).
+        "trash-full" -> if (issue.detail == ShareRuns.RUN_DETAIL) text(SyncIssue("trash-full")) else t.s(R.string.collection_share_removed_trash_full)
+        "item-error" -> if (issue.detail == ShareRuns.RUN_DETAIL) text(SyncIssue("apply-failed")) else t.s(R.string.collection_share_removed_item_error)
+        "history-quota", "history-error" -> t.s(R.string.collection_share_removed_item_error)
+        "tampered" -> t.s(R.string.collection_share_tampered)
+        // A newer app wrote this share's keyring (share v2 or later): this device stops until it is updated.
+        "update-required" -> t.s(R.string.collection_share_update_required)
+        else -> null
+    }
+
+    /** One share issue as shown (desktop `CollectionShareService._issue`): the share copy, else the sync screen's. */
+    fun shareStatus(issue: SyncIssue): ShareStatus {
+        val severity = when (issue.kind) {
+            in SHARE_NOTICE_KINDS -> Severity.NOTICE
+            in SHARE_ERROR_KINDS -> Severity.ERROR
+            else -> Severity.WARNING
+        }
+        return ShareStatus(issue.kind, severity, shareCopy(issue) ?: text(issue, folder = true), joinAgain = issue.kind == "superseded")
+    }
+
+    /**
+     * The status of a share's last run: its most important issue (errors, then warnings, then information; the first of
+     * equals), null when it synced (desktop `_status`).
+     */
+    fun shareStatus(issues: List<SyncIssue>): ShareStatus? =
+        issues.map { shareStatus(it) }.withIndex().minWithOrNull(compareBy({ it.value.severity.ordinal }, { it.index }))?.value
+
+    /**
+     * The confirmation before a folder is added to a group a Wi-Fi device was removed from (audit M9; desktop
+     * `lan_removed_folder_text`): the folder gets a new key, so the paired devices in [peers] pair again or join it.
+     */
+    fun newKeyFolderText(peers: List<String>): String {
+        var text = t.s(R.string.sync_wifi_device_removed_new_key)
+        if (peers.isNotEmpty()) text += t.s(R.string.sync_lan_peers_cannot_rekey_device, peers.joinToString(", "))
+        return text + "\n\n" + t.s(R.string.common_continue_question)
     }
 
     /** Desktop `error_text` for a refused action (reason code). */
@@ -245,6 +320,7 @@ class SyncWording(private val t: Txt) {
         "weak-password" to R.string.sync_the_sync_password_needs_at,
         "folder-in-use" to R.string.sync_this_folder_already_holds_a,
         "no-group" to R.string.sync_there_is_no_sync_group,
+        "no-group-paired" to R.string.sync_no_sync_group_paired,
         "different-group" to R.string.sync_this_vault_already_syncs_with,
         "keyring-changed" to R.string.sync_another_device_changed_the_sync,
         "folder-error" to R.string.sync_the_folder_could_not_be,
@@ -263,12 +339,15 @@ class SyncWording(private val t: Txt) {
         "update-needed" to R.string.sync_error_update_needed,
         "bad-offer" to R.string.sync_error_bad_offer,
         "refused" to R.string.sync_the_other_device_refused_the2,
+        // A pairing under the kept id that the other device refused (design 2026-11-17 keep-device-id-on-rejoin, rule 5).
+        "rejoin-refused" to R.string.sync_error_rejoin_refused,
         "not-our-offer" to R.string.sync_this_pairing_code_belongs_to,
         "already-has-folder" to R.string.sync_this_sync_group_already_uses,
         "folder-has-other-group" to R.string.sync_that_folder_holds_adifferent,
         "different-group-key" to R.string.sync_that_folder_ssync_group,
         "epoch-mismatch" to R.string.sync_error_epoch_mismatch,
         "already-member" to R.string.sync_error_already_member,
+        "share-group" to R.string.sync_that_folder_holds_ashared_collection,
         )
 
         /** Phone-only refusals (Find again); not in the desktop's table, so kept apart from [ERROR_COPY]. */
@@ -277,6 +356,17 @@ class SyncWording(private val t: Txt) {
         "find-again-not-paired" to R.string.sync_phone_error_find_again_not_paired,
         "find-again-failed" to R.string.sync_phone_error_find_again_failed,
         )
+
+    /** Share statuses shown as information (desktop `NOTICE_KINDS`). */
+    val SHARE_NOTICE_KINDS: Set<String> = setOf(
+        "counter-resynced", "keyring-restored", "busy", "ignored-file", "stale-self", "unreachable", "no-endpoint", "keyring-merged",
+        "awaiting-approval",
+    )
+
+    /** Share statuses shown as errors (desktop `_ERROR_ISSUES`); everything else is a warning. */
+    val SHARE_ERROR_KINDS: Set<String> = setOf(
+        "tampered", "bad-owner", "bad-owner-sig", "state-corrupt", "keyring-corrupt", "update-required",
+    )
 
     /** Shown with their own buttons (desktop `ROLLBACK_KINDS`). */
     val ROLLBACK_KINDS: Set<String> = setOf("vault-rollback", "peer-vault-rollback")
@@ -318,7 +408,16 @@ class SyncWording(private val t: Txt) {
         /** `host:port`, IPv6 in brackets. */
         fun hostPort(e: LanEndpoint): String = if (e.host.contains(':')) "[${e.host}]:${e.port}" else "${e.host}:${e.port}"
 
+        /**
+         * A verified signed removal notice for this phone (core `Removal`, desktop `removal-notice`). Kept out of the
+         * shared tables ([ISSUE_COPY], [ERROR_KINDS], [PRIORITY]), which the copy test compares with the iPhone's
+         * verbatim, as the iPhone does: an error, shown first, no Reset offered. Shown only while "Erase this device if
+         * it is removed from sync" is off (on, the app erases instead).
+         */
+        const val REMOVAL_NOTICE_KIND = "removal-notice"
+
         fun severity(kind: String): Severity = when (kind) {
+            REMOVAL_NOTICE_KIND -> Severity.ERROR
             in ERROR_KINDS -> Severity.ERROR
             in NOTICE_KINDS -> Severity.NOTICE
             else -> Severity.WARNING

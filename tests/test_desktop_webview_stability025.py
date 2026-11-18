@@ -113,3 +113,28 @@ def test_discord_stable_requires_verified_discord_signer(monkeypatch):
     changed.signer = {"status": "Valid", "subject": "CN=Untrusted Publisher"}
     with pytest.raises(UIAutomationError, match="not signed by Discord Inc"):
         validate_desktop_entry(saved, changed)
+
+
+DISCORD_EXE = r"C:\Users\test\AppData\Local\Discord\app-1.0.9220\Discord.exe"
+
+
+@pytest.mark.parametrize("name", ["Password", " password ", "Passwort", "パスワード"])
+def test_discord_login_password_counts_as_protected(monkeypatch, name):
+    # Discord's Chromium leaves IsPassword off its masked login field; the field button must still appear.
+    from localvault.uia import _discord_masked_password
+    monkeypatch.setenv("LOCALAPPDATA", r"C:\Users\test\AppData\Local")
+    assert _discord_masked_password(name, DISCORD_EXE, "Chrome")
+
+
+@pytest.mark.parametrize("name,exe,framework", [
+    ("Email or Phone Number", DISCORD_EXE, "Chrome"),
+    ("Current Password", DISCORD_EXE, "Chrome"),
+    ("New Password", DISCORD_EXE, "Chrome"),
+    ("Password", DISCORD_EXE, "Win32"),
+    ("Password", r"C:\Apps\DeCave\DeCave.exe", "Chrome"),
+    ("Password", r"C:\Users\test\Downloads\Discord\app-1.0.1\Discord.exe", "Chrome"),
+])
+def test_discord_password_label_is_narrow(monkeypatch, name, exe, framework):
+    from localvault.uia import _discord_masked_password
+    monkeypatch.setenv("LOCALAPPDATA", r"C:\Users\test\AppData\Local")
+    assert not _discord_masked_password(name, exe, framework)

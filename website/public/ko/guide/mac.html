@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys Mac용 사용자 가이드</title>
+  <meta name="description" content="Mac에서 LocalGateKeys 사용하기: 보관함, 자동 입력, 패스키, 2단계 인증 코드, 가져오기, 백업, 동기화.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ko/guide/mac">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/mac">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/mac">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/mac">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/mac">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/mac">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/mac">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/mac">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/mac">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/mac">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/mac">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/mac">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/mac">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys Mac용 사용자 가이드">
+  <meta property="og:description" content="Mac에서 LocalGateKeys 사용하기: 보관함, 자동 입력, 패스키, 2단계 인증 코드, 가져오기, 백업, 동기화.">
+  <meta property="og:url" content="https://localgatekeys.app/ko/guide/mac">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 로고: Windows, Mac, iPhone용 비밀번호 관리자.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys Mac용 사용자 가이드">
+  <meta name="twitter:description" content="Mac에서 LocalGateKeys 사용하기: 보관함, 자동 입력, 패스키, 2단계 인증 코드, 가져오기, 백업, 동기화.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../ko/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="메인">
+        <ul class="nav">
+          <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/help">가이드</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/support">지원</a></li>
+          <li><a class="nav-cta" href="../../ko/download">다운로드</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>메뉴</summary>
+        <nav aria-label="메인">
+          <ul class="nav nav-stack">
+            <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/help">가이드</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/support">지원</a></li>
+          <li><a class="nav-cta" href="../../ko/download">다운로드</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>언어</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko" aria-current="true">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Mac용 LocalGateKeys</h1>
+  <p class="lead">이 기기의 모든 화면과 기능을 단계별로 안내합니다. 모든 제목은 공유할 수 있는 링크입니다.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="플랫폼">
+    <ul><li><a class="help-tab" href="../../ko/guide/windows">Windows</a></li><li><a class="help-tab" href="../../ko/guide/mac" aria-current="page">Mac</a></li><li><a class="help-tab" href="../../ko/guide/iphone">iPhone 및 iPad</a></li><li><a class="help-tab" href="../../ko/guide/android">Android</a></li><li><a class="help-tab" href="../../ko/guide/extension">브라우저 확장 프로그램</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>모든 기기에서 알아 두면 좋은 점</h2>
+    <ul>
+      <li><strong>보관함은 사용자의 기기에만 있습니다.</strong> 계정이 없으며 비밀번호를 보관하는 LocalGateKeys 서버도 없습니다.</li>
+      <li><strong>마스터 비밀번호나 앱 비밀번호는 누구도 재설정할 수 없습니다.</strong> 복구 문구를 설정하고 종이에 적어 보관하십시오.</li>
+      <li><strong>Free</strong>는 항목을 최대 7개까지 보관합니다. <strong>Pro</strong>(US$29.99, 한 번 결제)는 무제한 항목, 2단계 인증 코드, 파일, 동기화를 제공합니다. 이미 있는 항목의 편집, 삭제, 입력은 절대 차단되지 않습니다.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="mac" aria-labelledby="mac-title">
+    <h2 class="panel-title" id="mac-title">Mac 주제</h2>
+
+    <p class="panel-lead">사이드바에는 항목(<strong>모든 항목</strong>, <strong>즐겨찾기</strong>, <strong>최근 사용</strong>, 각 종류, 컬렉션)과 도구 <strong>보안 센터</strong>, <strong>생성기</strong>, <strong>동기화 및 기기</strong>, <strong>가져오기 및 내보내기</strong>, <strong>휴지통</strong>이 있고, 맨 아래에 <strong>설정</strong>이 있습니다. <strong>복구 센터</strong>는 설정 › 백업에서, <strong>기기 및 연결</strong>은 동기화 및 기기에서 엽니다.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Mac 주제">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">이 탭의 내용</summary>
+          <ol>
+            <li><a href="#mac-setup">보관함 만들기</a></li>
+            <li><a href="#mac-unlock">잠금 해제와 잠금</a></li>
+            <li><a href="#mac-items">항목</a></li>
+            <li><a href="#mac-2fa">2단계 인증 코드</a></li>
+            <li><a href="#mac-security">보안 센터</a></li>
+            <li><a href="#mac-autofill">자동 완성과 Safari</a></li>
+            <li><a href="#mac-import">가져오기와 내보내기</a></li>
+            <li><a href="#mac-backups">백업</a></li>
+            <li><a href="#mac-sync">동기화</a></li>
+            <li><a href="#mac-share">공유</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">설정</a></li>
+            <li><a href="#mac-keys">키보드 단축키</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="mac-setup">
+          <h3><a href="#mac-setup">보관함 만들기</a></h3>
+          <ol>
+            <li>LocalGateKeys를 열고 마스터 비밀번호를 두 번 입력한 다음 <strong>보관함 만들기</strong>를 선택합니다.</li>
+            <li>설정이 이어집니다: <strong>Touch ID 설정</strong>, 비밀번호 <strong>가져오기…</strong>, <strong>복구 문구 열기</strong>, Safari와 자동 완성을 위한 <strong>기기 및 연결 열기</strong>.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="mac-unlock">
+          <h3><a href="#mac-unlock">잠금 해제와 잠금</a></h3>
+          <ul>
+            <li><strong>Touch ID</strong>: 설정 › 보안 › 잠금 해제 › <strong>Touch ID</strong>. 지문을 변경하면 마스터 비밀번호를 한 번 사용하십시오.</li>
+            <li><strong>마스터 비밀번호 변경</strong>: 설정 › 잠금 해제. 항목은 그대로 유지됩니다.</li>
+            <li><strong>복구 문구</strong>: <strong>복구 센터</strong>에서 설정하고 세 단어를 확인합니다. 마스터 비밀번호를 잊으면 잠금 화면에서 <strong>마스터 비밀번호를 잊으셨습니까?</strong> › <strong>복구 문구로 복구</strong>를 선택합니다.</li>
+            <li><strong>잠금</strong>: <kbd>⌘</kbd><kbd>L</kbd>. 설정 › 잠금에서 유휴 시 잠금, 화면과 함께 잠금, 잠자기 시 잠금, 최대 세션 시간을 설정합니다. 유휴 시 잠금에서 무엇을 활동으로 볼지도 선택할 수 있습니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-items">
+          <h3><a href="#mac-items">항목</a></h3>
+          <ul>
+            <li><strong>새 항목</strong>(<kbd>⌘</kbd><kbd>N</kbd>)은 iPhone과 같은 유형에 <strong>파일 첨부…</strong>(Pro)가 추가됩니다.</li>
+            <li><kbd>⌘</kbd><kbd>C</kbd>(비밀번호), <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>(사용자 이름), <kbd>⌘</kbd><kbd>T</kbd>(2FA 코드)로 복사합니다.</li>
+            <li>사용자 지정 필드용 <strong>필드 추가</strong>, <strong>태그</strong>, <strong>컬렉션</strong>(다른 기기와 동기화됨).</li>
+            <li><kbd>⌫</kbd>는 항목을 최근 삭제된 항목으로 옮깁니다. 사이드바에서 <strong>휴지통</strong>을 열고 <strong>선택 항목 복원</strong> 또는 <strong>휴지통 비우기</strong>를 사용합니다.</li>
+            <li>첨부 파일은 Touch ID나 마스터 비밀번호 확인 후 훑어보기로 열립니다.</li>
+            <li><strong>생성기</strong>: 무작위 비밀번호(문자 집합 선택, 비슷한 문자 피하기) 또는 암호 문구(대문자 사용, 숫자 추가, 구분자).</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-2fa">
+          <h3><a href="#mac-2fa">2단계 인증 코드</a> <span class="badge-pro">Pro</span></h3>
+          <p><strong>QR 코드 스캔…</strong>을 선택한 다음 <strong>이미지 선택…</strong>, <kbd>⌘</kbd><kbd>V</kbd>로 스크린샷 붙여넣기(<kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>로 복사) 또는 이미지를 끌어다 놓습니다. 코드는 자동 완성을 통해 Safari에 입력됩니다.</p>
+        </article>
+
+        <article class="topic" id="mac-security">
+          <h3><a href="#mac-security">보안 센터</a></h3>
+          <p>약하거나 재사용되거나 오래된 비밀번호를 표시합니다. 설정 › 개인 정보 › <strong>유출 확인</strong>을 켜면(엄격한 오프라인 모드가 꺼져 있을 때) <strong>모든 비밀번호 확인</strong>으로 유출 여부를 확인합니다.</p>
+        </article>
+
+        <article class="topic" id="mac-autofill">
+          <h3><a href="#mac-autofill">자동 완성, 패스키, Safari</a></h3>
+          <ol>
+            <li><strong>기기 및 연결</strong>을 엽니다.</li>
+            <li><strong>자동 완성 설정 열기</strong>를 선택하고 시스템 설정 › 자동 완성 및 암호에서 LocalGateKeys를 켭니다.</li>
+            <li><strong>Safari 설정 열기</strong>를 선택하고 Safari › 설정 › 확장 프로그램에서 LocalGateKeys 확장 프로그램을 켭니다.</li>
+          </ol>
+          <p>Safari에서 로그인 정보를 입력하려면 사용자 이름 또는 암호 칸을 클릭합니다. Safari가 그 아래에 LocalGateKeys 로그인을 표시합니다. 하나를 선택하고 Touch ID 또는 마스터 비밀번호로 확인하십시오. 패스키와 2FA 코드도 같은 방식으로 제안되며, 자동 완성은 다른 Mac 앱에서도 작동합니다.</p>
+          <p>Safari 확장 프로그램은 로그인한 후 새 로그인 저장을 제안합니다. 저장된 내용은 다음에 LocalGateKeys 잠금을 해제할 때 검토합니다. 다른 브라우저는 아직 Mac에서 지원되지 않습니다.</p>
+          <p>로그인이 표시되지 않나요? <strong>기기 및 연결</strong>을 열고 자동 완성이 켜져 있는지 확인하십시오. 같은 시스템 설정 페이지에서 암호를 끄면 LocalGateKeys만 로그인을 제안합니다.</p>
+          <p><strong>기기 및 연결</strong>을 열 때 LocalGateKeys가 종료되면 Mac App Store에서 업데이트하십시오.</p>
+        </article>
+
+        <article class="topic" id="mac-import">
+          <h3><a href="#mac-import">가져오기와 내보내기</a></h3>
+          <ul>
+            <li><strong>Apple 암호</strong>(macOS 26): 로그인, 2FA, 패스키를 가져오기 전에 검토합니다.</li>
+            <li>파일: Bitwarden <code>.json</code>(비밀번호로 보호된 파일 포함), 1Password <code>.1pux</code>, KeePass <code>.kdbx</code>, <strong>열 선택</strong>이 있는 CSV.</li>
+            <li>iPhone 및 Android <code>.lgkm</code> 백업: <strong>새 항목 모두 추가</strong>, <strong>중복은 둘 다 유지</strong>, <strong>모두 건너뛰기</strong> 중에서 선택합니다. 아무것도 지워지지 않습니다.</li>
+            <li>암호화된 백업 또는 CSV(암호화되지 않음, 먼저 확인)를 내보냅니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-backups">
+          <h3><a href="#mac-backups">백업</a></h3>
+          <p><strong>복구 센터</strong>에서:</p>
+          <ul>
+            <li><strong>전체 백업</strong>: <code>.lgk</code> 파일을 <strong>만들기…</strong> 또는 <strong>복원…</strong>(보관함을 대체). Mac과 Windows 간에 작동합니다. 안전 사본이 보관되므로 <strong>되돌리기…</strong>로 복원을 취소할 수 있습니다.</li>
+            <li><strong>예약 백업</strong>: 빈도, 요일, 시간, 보관할 개수, 폴더 및 미러 폴더, 백업 비밀번호(12자 이상).</li>
+            <li><strong>복구 키트…</strong>: 마지막 백업을 설명하는 파일로, 백업과 함께 보관합니다. <strong>비상 키트 인쇄…</strong>는 보관함과 백업의 위치 및 복원 방법을 적은 페이지를 인쇄합니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-sync">
+          <h3><a href="#mac-sync">동기화</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Wi-Fi(이 네트워크)</strong>: <strong>Wi-Fi 동기화 켜기</strong>를 선택한 다음 <strong>QR 코드 표시…</strong>를 선택합니다. 기기가 참여하면 코드를 확인하고 <strong>수락</strong> 또는 <strong>거절</strong>을 선택합니다. 나중에 알아볼 수 없는 기기라면 <strong>실행 취소</strong>를 선택합니다.</li>
+            <li><strong>코드로 참여</strong>: 다른 기기에서 <strong>QR 코드 표시</strong>, <strong>코드 텍스트 복사</strong>를 차례로 선택하고 그 텍스트를 여기에 붙여 넣습니다.</li>
+            <li><strong>클라우드 폴더</strong>: Dropbox나 iCloud Drive 같은 폴더에서 동기화 비밀번호로 그룹에 참여하거나 그룹을 만듭니다. OneDrive와 Google Drive는 Apple 관련 문제가 해결될 때까지 현재 사용할 수 없습니다.</li>
+            <li><strong>동기화 나가기…</strong> / <strong>이 Mac에서 동기화 재설정…</strong>.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-share">
+          <h3><a href="#mac-share">공유</a></h3>
+          <p>항목을 선택하고 <strong>공유…</strong>를 선택합니다. 받으려면 편집 › <strong>공유 항목 받기…</strong>를 선택하고(또는 <kbd>⌘</kbd><kbd>K</kbd>로 찾기), 파일을 열거나 끌어다 놓은 다음(또는 QR 텍스트를 붙여 넣은 다음) 여섯 단어를 입력합니다. 패스키와 파일이 첨부된 항목은 공유할 수 없습니다.</p>
+        </article>
+
+        <article class="topic" id="mac-pro">
+          <h3><a href="#mac-pro">Pro</a></h3>
+          <p>설정 › 요금제에서 Pro를 구매합니다. 한 번 구매로 iPhone 앱과 Mac 앱 모두에 적용되며, 다른 기기에서는 <strong>구매 항목 복원</strong>을 사용합니다. Pro iPhone과 동기화된 무료 Mac에는 <em>동기화된 기기의 Pro</em>가 표시됩니다.</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">설정</a></h3>
+          <p>설정은 기본 창과 <kbd>⌘</kbd><kbd>,</kbd>에서 똑같고, 도구는 사이드바 아래쪽에 항상 표시됩니다. 설정 › 백업에는 백업 일정, <strong>주간 복원 테스트</strong>, 보관할 자동 백업 수가 있으며, 복구 센터·라이선스·설정 다시 보기는 두 창 어디서나 열립니다. 그 밖의 설정: 자동 잠금에서 활동으로 칠 대상, 2단계 인증 코드 복사 전 확인, 보관함에 저장된 문서를 다른 앱에서 열기, 나만의 빠른 액세스 단축키, 도움말 링크.</p>
+          <p><strong>강요 대비 비밀번호</strong>(Pro, 설정 › 강요 대비 비밀번호): 누군가 잠금 해제를 강요할 때 쓰는 두 번째 마스터 비밀번호입니다. 고른 항목만 있는 별도의 보관함이 열리고, 내 보관함은 설정한 시간 동안 마스터 비밀번호를 거부합니다.</p>
+        </article>
+
+        <article class="topic" id="mac-keys">
+          <h3><a href="#mac-keys">키보드 단축키</a></h3>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>K</kbd></th><td>모든 것 검색</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>N</kbd></th><td>새 항목</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>L</kbd></th><td>잠금</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>C</kbd></th><td>비밀번호 복사</td></tr>
+              <tr><th scope="row"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd></th><td>사용자 이름 복사</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>T</kbd></th><td>2FA 코드 복사</td></tr>
+              <tr><th scope="row"><kbd>⌫</kbd></th><td>최근 삭제된 항목으로 이동</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>/</kbd></th><td>모든 키보드 단축키</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../ko/help">전체 사용자 가이드를 한 페이지에서 보기</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>보관함을 내 기기에 두는 Windows, Mac 및 iPhone용 비밀번호 관리자입니다.</p>
+        <p class="quiet">이 웹사이트는 쿠키를 사용하지 않는 Cloudflare Web Analytics로 페이지 방문 수를 집계합니다. 광고 추적기를 사용하지 않으며 쿠키를 설정하지 않습니다.</p>
+      </div>
+      <nav aria-label="제품">
+        <h2>제품</h2>
+        <ul>
+          <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/download">다운로드</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/switch/">갈아타기</a></li>
+          <li><a href="../../buy">Pro 구매</a></li>
+          <li><a href="../../ko/licence">내 Pro 라이선스</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">라이선스 복구</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="도움말">
+        <h2>도움말</h2>
+        <ul>
+          <li><a href="../../ko/help">사용자 가이드</a></li>
+          <li><a href="../../ko/support">지원 및 FAQ</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">취약점 신고</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="법률">
+        <h2>법률</h2>
+        <p class="quiet">이 문서는 영어로 작성되어 있으며, 적용되고 구속력을 갖는 것은 영어본입니다.</p>
+        <ul>
+          <li><a href="../../legal/eula">라이선스 계약</a></li>
+          <li><a href="../../legal/privacy">개인정보 처리방침</a></li>
+          <li><a href="../../legal/terms-of-sale">판매 약관</a></li>
+          <li><a href="../../legal/refunds">환불 정책</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. 문의: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows는 Microsoft 그룹 회사의 상표입니다. Chrome은 Google LLC의 상표입니다. Apple, iPhone, Apple Watch, Face ID, Touch ID, Safari는 미국 및 기타 국가에 등록된 Apple Inc.의 상표입니다.</p>
+      <nav class="lang-switch" aria-label="언어"><ul><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko" aria-current="true">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

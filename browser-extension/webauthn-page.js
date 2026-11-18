@@ -26,8 +26,10 @@
 //   app or native host, a bridge or service-worker error and a missing ack
 //   reveal nothing about the vault and go to the browser at once. The floor
 //   never starts once 1.5 s have passed, never holds past 2.5 s from the
-//   call, and is skipped in cross-origin frames, so the browser's own
-//   create() still runs well inside the transient user activation window.
+//   call, and is skipped for a create in a cross-origin frame (which never
+//   reaches the app), so the browser's own create() still runs well inside
+//   the transient user activation window. A get from such a frame can reach
+//   the app (known limitation 4), so it is held like any other.
 // Residual: a script can still compare with a pristine toString from a
 // fresh iframe, see this file in an error stack, or patch built-in
 // prototype methods (String/Array) to watch a call pass through. That shows
@@ -36,6 +38,14 @@
 // Every reply other than success, an explicit cancel, an invalid state or a
 // security error hands the original options to the browser's own
 // authenticator, so a missing app or an older bridge never breaks sign-in.
+// "system_provider" (the Windows passkey provider is on) does the same at
+// once, with no floor.
+//
+// Two-step save: the app keeps a passkey it created unconfirmed until this
+// script reports back through the bridge. "confirm" goes out before the
+// credential is returned to the site's code; "discard" when it never will
+// be (the call was aborted or timed out first, or the reply is unusable).
+// Only the request id travels; nothing comes back to the page.
 (() => {
   // Built-ins are captured before any page script can replace them.
   const apply = Reflect.apply;
@@ -91,8 +101,9 @@
   apply(addListener, view, [READY, onReady, true]);
   fire(HELLO, secret);
 
-  // A cross-origin frame (the top window is unreadable or another origin)
-  // gets no floor. `top` is unforgeable; any throw counts as cross-origin.
+  // A create in a cross-origin frame (the top window is unreadable or
+  // another origin) gets no floor. `top` is unforgeable; any throw counts as
+  // cross-origin.
   let crossOriginFrame = true;
   try {
     const top = view.top;
@@ -111,17 +122,37 @@
   const rawCreate = createDescriptor.value;
   const rawGet = getDescriptor.value;
   const pending = new MapCtor();
+  // Ids of creates whose outcome (confirm/discard) has not been reported yet.
+  const creates = new MapCtor();
   let sequence = 0;
+
+  // Reports a create's outcome once: "confirm" (the site gets the credential) or "discard".
+  function report(id, kind) {
+    if (!apply(mapDelete, creates, [id])) return;
+    try { fire(REQ, jsonStringify({ id, kind })); } catch { /* the app keeps it as an ordinary passkey after its window */ }
+  }
+  const succeeded = result => !!result && typeof result === "object" && result.ok === true;
 
   apply(addListener, view, [RES, event => {
     let data;
     try { data = jsonParse(event.detail); } catch { return; }
     if (!data || typeof data !== "object" || typeof data.id !== "string") return;
     const entry = apply(mapGet, pending, [data.id]);
-    if (!entry) return;
+    if (!entry) {
+      // A create this page stopped waiting for (aborted, timed out): its
+      // credential never reaches the site, so the app may remove it.
+      if (data.received !== true && apply(mapGet, creates, [data.id])) {
+        if (succeeded(data.result)) report(data.id, "discard");
+        else apply(mapDelete, creates, [data.id]);
+      }
+      return;
+    }
     // The bridge confirms it took the request before asking the worker.
     if (data.received === true) entry.received();
-    else entry.settle(data.result);
+    else {
+      if (!succeeded(data.result)) apply(mapDelete, creates, [data.id]);
+      entry.settle(data.result);
+    }
   }, true]);
 
   function bytesOf(value) {
@@ -180,19 +211,23 @@
   // Transient user activation (getter captured now; absent in older engines).
   const userActivation = navigator.userActivation;
   const activationGetter = typeof UserActivation === "function" ? getOwnPropertyDescriptor(UserActivation.prototype, "isActive")?.get : undefined;
-  // null: the engine has no navigator.userActivation (the bridge then reports
-  // no activation and the app answers fallback).
+  // null: the engine has no navigator.userActivation (Chromium 72+ and
+  // Firefox 120+ have it). The bridge would then report no activation and the
+  // app refuse the create, so handle() sends such a create to the browser at once.
   function activated() {
     if (!userActivation || typeof activationGetter !== "function") return null;
     try { return apply(activationGetter, userActivation, []) === true; } catch { return false; }
   }
   const ACK_MS = 1000, CAP_MS = 120000;
   const UNREACHABLE = "unreachable";
-  function relay(kind, options, signal) {
+  // `op.id` is set to the request id (handle() reports a create's outcome by it).
+  function relay(kind, options, signal, op) {
     return new PromiseCtor((resolve, reject) => {
       const nonce = randomValues(new Uint8ArrayCtor(6));
       let id = (sequence++).toString(36) + "-";
       for (let i = 0; i < nonce.length; i++) id += (nonce[i] < 16 ? "0" : "") + nonce[i].toString(16);
+      op.id = id;
+      if (kind === "create") apply(mapSet, creates, [id, true]);
       let ackTimer, capTimer;
       const finish = () => {
         if (!apply(mapDelete, pending, [id])) return false;
@@ -294,19 +329,41 @@
     // Registration without a click or key press goes to the browser: the
     // LocalGateKeys dialog is raised only for a user-initiated create. The
     // bridge reads the activation again in its own world and the app enforces it.
-    if (kind === "create" && activated() === false) return original(options);
+    // An engine without the activation API (null) goes to the browser as well.
+    if (kind === "create" && activated() !== true) return original(options);
     const signal = options.signal;
     if (signal && signal.aborted) throw abortError(signal);
     let serialized;
     try { serialized = kind === "create" ? serializeCreate(pk) : serializeGet(pk); } catch { return original(options); }
     const started = clock();
-    const result = await relay(kind, serialized, signal);
-    if (result && result.ok === true && result.credential && typeof result.credential === "object") {
-      try { return build(kind, result.credential, kind === "create" && serialized.extensions.credProps); } catch { /* falls back below */ }
+    const op = objectCreate(null);  // no prototype: a page setter on Object.prototype cannot catch the id
+    const result = await relay(kind, serialized, signal, op);
+    if (kind === "create" && succeeded(result)) {
+      // Confirm before the site's code can see the credential; anything that
+      // keeps it from the site (an abort that came in meanwhile, an unusable
+      // reply) discards it instead.
+      let credential;
+      if (!(signal && signal.aborted) && result.credential && typeof result.credential === "object") {
+        try { credential = build(kind, result.credential, serialized.extensions.credProps); } catch { /* discarded below */ }
+      }
+      if (credential !== undefined) {
+        report(op.id, "confirm");
+        return credential;
+      }
+      report(op.id, "discard");
+      if (signal && signal.aborted) throw abortError(signal);
+    } else if (result && result.ok === true && result.credential && typeof result.credential === "object") {
+      try { return build(kind, result.credential, false); } catch { /* falls back below */ }
     }
     const error = result && result.error;
+    // The Windows passkey provider is on and registered (decided by the app,
+    // over the extension's native host only): the browser's own create/get
+    // runs at once, so Windows offers LocalGateKeys there. Never held to the
+    // floor: it says nothing about the vault, and the user activation must
+    // still be live when the browser shows its dialog.
+    if (error === "system_provider") return original(options);
     if (error === "security_error") throw new DOMExceptionCtor("The relying party ID is not valid for this page.", "SecurityError");
-    if (typeof error === "string" && apply(mapGet, FLOORED, [error]) === true && !crossOriginFrame) await floor(started, signal);
+    if (typeof error === "string" && apply(mapGet, FLOORED, [error]) === true && !(crossOriginFrame && kind === "create")) await floor(started, signal);
     if (error === "user_cancelled") throw new DOMExceptionCtor("The operation either timed out or was not allowed.", "NotAllowedError");
     if (error === "invalid_state") throw new DOMExceptionCtor("This account already has a passkey on this site.", "InvalidStateError");
     return original(options);

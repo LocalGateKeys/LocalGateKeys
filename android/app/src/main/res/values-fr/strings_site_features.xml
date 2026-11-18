@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">Pas en HTTPS</string>
+    <string name="security_expl_http">Ces identifiants utilisent une adresse non chiffrée. Vérifiez-la et passez à https:// si le site le permet.</string>
+    <string name="security_cat_passkey">Clé d\'accès disponible</string>
+    <string name="security_expl_passkey">Ces sites prennent en charge les clés d\'accès, une connexion plus sûre. Enregistrez-en une pour chacun.</string>
+</resources>

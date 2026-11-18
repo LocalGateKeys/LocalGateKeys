@@ -23,6 +23,22 @@ def test_profiles_are_isolated_and_switchable(tmp_path: Path) -> None:
     assert manager.active_profile().id == bob.id
 
 
+def test_profile_photo_decoder_is_limited_to_png_and_jpeg(monkeypatch) -> None:
+    """I-2: only the PNG and JPEG plugins may parse a picked photo."""
+    from PIL import Image
+
+    seen = []
+
+    def spy(fp, mode="r", formats=None):
+        seen.append(formats)
+        raise ProfileError("stop")
+
+    monkeypatch.setattr(Image, "open", spy)
+    with pytest.raises(ProfileError):
+        profiles._normalize_profile_photo(b"GIF89a....")
+    assert seen == [("PNG", "JPEG")]
+
+
 def test_profile_names_unique_case_insensitive(tmp_path: Path) -> None:
     manager = ProfileManager(tmp_path)
     manager.create_profile("Alice")
@@ -166,3 +182,41 @@ def test_profile_photo_bounds_color_validation_and_malformed_fallback(tmp_path: 
     assert manager.list_profiles()[0].photo_data is None
 
 
+
+
+def test_free_vault_limit_refuses_a_second_vault_but_keeps_existing(tmp_path: Path) -> None:
+    manager = ProfileManager(tmp_path)
+    manager.create_profile("Personal", vault_limit=1)
+    with pytest.raises(profiles.VaultLimitReached):
+        manager.create_profile("Work", vault_limit=1)
+    manager.create_profile("Work")  # Pro (no limit)
+    with pytest.raises(profiles.VaultLimitReached):
+        manager.create_profile("Third", vault_limit=1)
+    assert len(manager.list_profiles()) == 2  # nothing removed or locked
+
+
+def test_item_counts_add_up_across_other_vaults(tmp_path: Path) -> None:
+    manager = ProfileManager(tmp_path)
+    a = manager.create_profile("A")
+    b = manager.create_profile("B")
+    c = manager.create_profile("C")
+    manager.record_item_count(a.id, 7)
+    manager.record_item_count(b.id, 5)
+    assert manager.items_in_other_vaults(c.id) == 12
+    assert manager.items_in_other_vaults(a.id) == 5
+    manager.set_active(c.id)
+    manager.delete_profile(b.id)
+    assert manager.items_in_other_vaults(c.id) == 7
+
+
+def test_item_limit_offset_counts_other_vaults(tmp_path: Path) -> None:
+    from localvault.vault import ItemLimitReached, create_vault
+
+    session = create_vault(tmp_path / "vault.json", "synthetic vault master 01",
+                           kdf_overrides={"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32})
+    session.item_limit = 7
+    session.item_limit_offset = 6
+    session.upsert_web(origin="https://a.test", username="u", password="synthetic-pw", label="A")
+    with pytest.raises(ItemLimitReached):
+        session.upsert_web(origin="https://b.test", username="u", password="synthetic-pw", label="B")
+    session.lock()

@@ -551,6 +551,29 @@ final class RecordingSink: CredentialRequestSink {
     var textLists: [[TextInsertionField]] = [], texts: [String] = []
     func showTextFields(_ fields: [TextInsertionField]) { textLists.append(fields) }
     func completeText(_ text: String) { texts.append(text) }
+    var messages: [String] = []
+    func showMessage(_ text: String) { messages.append(text) }
+    var codes: [String] = []
+    func completeOneTimeCode(_ code: String) { codes.append(code) }
+}
+
+/// Task 8: an app password with a key file or YubiKey and no Face ID shortcut: AutoFill says to open the app and
+/// keeps the request open (no password field, no picker, no NFC in the extension).
+@MainActor
+final class FactorDeferTests: XCTestCase {
+    func test_factors_show_open_the_app_and_never_finish_the_request() async {
+        let auth = ScriptedAuth([AppPasswordError.openAppForFactors])
+        let flow = CredentialFlow(auth: auth, opener: FakeOpener(RecordingStore(Fixture.snapshot())),
+                                  matcher: .bundled(Bundle(for: FactorDeferTests.self)), clipboard: FakeClipboard(), clock: FixedClock(59))
+        let d = CredentialRequestDriver(flow: flow), sink = RecordingSink()
+        d.sink = sink
+        d.beginList(urls: ["https://example.com/"])
+        await d.task?.value
+        XCTAssertEqual(sink.messages, ["Open LocalGateKeys to unlock this vault (it needs a key file or YubiKey)."])
+        XCTAssertEqual(sink.cancels, [])
+        XCTAssertEqual(sink.lists.count, 0)
+        XCTAssertNil(AutoFillErrorMapping.message(for: AppPasswordError.openAppFirst), "unchanged: finishes as before")
+    }
 }
 
 @MainActor
@@ -641,4 +664,82 @@ final class RequestLifecycleTests: XCTestCase {
         XCTAssertTrue(sink.cancels.isEmpty, "no cancel after complete")
     }
 
+}
+
+// MARK: travel mode and access rules (feature pack §2 and §4)
+
+extension AutoFillTests {
+    /// A page both w1 (exact origin) and w2 (starts_with) match when nothing is omitted.
+    var page: [String] {
+        AutoFillMatcher.candidateURLs([ASCredentialServiceIdentifier(identifier: "https://example.com/app/login", type: .URL)])
+    }
+
+    /// The fixture snapshot with w1 tagged "Trip" and w2 set to never fill.
+    func gatedSnapshot(w2Access: JSONValue? = nil, w2Policy: JSONValue? = nil) -> StoreSnapshot {
+        var s = Fixture.snapshot()
+        if case .object(var w)? = s.records["w1"], case .object(var r)? = w["record"] {
+            r["tags"] = .array([.string("Trip")]); w["record"] = .object(r); s.records["w1"] = .object(w)
+        }
+        if case .object(var w)? = s.records["w2"], case .object(var r)? = w["record"] {
+            if let w2Policy { r["policy"] = w2Policy }
+            if let w2Access, case .object(var scope)? = r["scope"] { scope["access"] = w2Access; r["scope"] = .object(scope) }
+            w["record"] = .object(r); s.records["w2"] = .object(w)
+        }
+        return s
+    }
+
+    func test_travel_mode_hides_logins_from_candidates_and_lookup() async throws {
+        let store = RecordingStore(gatedSnapshot())
+        let (f, _) = flow(store, auth: FakeAuth(vault: InMemoryKeychainVault()))
+        f.travel = { _ in TravelMode(on: true, tags: ["trip"]) }
+        let ids = try await f.candidates(urls: page).map(\.id)
+        XCTAssertFalse(ids.contains("w1"), "travel-hidden login is not offered")
+        XCTAssertTrue(ids.contains("w2"))
+        do { _ = try await f.login(recordID: "w1"); XCTFail("travel-hidden login filled") } catch {
+            XCTAssertEqual(error as? CredentialFlow.Failure, .notFound)
+        }
+        XCTAssertEqual(store.commits, 0)
+    }
+
+    func test_travel_mode_off_offers_everything() async throws {
+        let store = RecordingStore(gatedSnapshot())
+        let (f, _) = flow(store, auth: FakeAuth(vault: InMemoryKeychainVault()))
+        f.travel = { _ in TravelMode(on: false, tags: ["trip"]) }
+        let ids = try await f.candidates(urls: page).map(\.id)
+        XCTAssertTrue(ids.contains("w1")); XCTAssertTrue(ids.contains("w2"))
+        let w1 = try await f.login(recordID: "w1")
+        XCTAssertEqual(w1.username, "alice")
+    }
+
+    func test_fill_never_policy_is_not_offered_or_filled() async throws {
+        let store = RecordingStore(gatedSnapshot(w2Policy: .object(["fill": .string("never")])))
+        let (f, _) = flow(store, auth: FakeAuth(vault: InMemoryKeychainVault()))
+        f.travel = { _ in .off }
+        let ids = try await f.candidates(urls: page).map(\.id)
+        XCTAssertEqual(ids, ["w1"])
+        do { _ = try await f.login(recordID: "w2"); XCTFail("fill never filled") } catch {
+            XCTAssertEqual(error as? CredentialFlow.Failure, .notFound)
+        }
+    }
+
+    func test_phones_view_only_access_is_not_filled() async throws {
+        let store = RecordingStore(gatedSnapshot(w2Access: .object(["phones": .string("view")])))
+        let (f, _) = flow(store, auth: FakeAuth(vault: InMemoryKeychainVault()))
+        f.travel = { _ in .off }
+        let ids = try await f.candidates(urls: page).map(\.id)
+        XCTAssertEqual(ids, ["w1"])
+        do { _ = try await f.login(recordID: "w2"); XCTFail("view-only login filled") } catch {
+            XCTAssertEqual(error as? CredentialFlow.Failure, .notFound)
+        }
+    }
+
+    func test_reset_forgets_what_was_omitted() async throws {
+        let store = RecordingStore(gatedSnapshot())
+        let (f, _) = flow(store, auth: FakeAuth(vault: InMemoryKeychainVault()))
+        f.travel = { _ in TravelMode(on: true, tags: ["trip"]) }
+        _ = try await f.candidates(urls: page)
+        XCTAssertEqual(f.omitted, ["w1"])
+        f.reset()
+        XCTAssertTrue(f.omitted.isEmpty)
+    }
 }

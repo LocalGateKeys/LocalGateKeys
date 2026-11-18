@@ -22,6 +22,13 @@ param(
 $ErrorActionPreference = "Stop"
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# The pinned wrangler (devDependency of the licence Worker; `npm ci` there installs it).
+$Wrangler = Join-Path $Root "cloudflare\license-issuer\node_modules\.bin\wrangler.cmd"
+function Assert-Wrangler {
+    if (-not (Test-Path -LiteralPath $Wrangler -PathType Leaf)) {
+        throw "The pinned wrangler is not installed. Run: cd cloudflare\license-issuer; npm ci"
+    }
+}
 $VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
 $Python = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) {
     $VenvPython
@@ -111,7 +118,8 @@ if ($null -eq $Live) {
 # --- Upload: artifacts first, feed last -------------------------------------
 function Send-Object([string]$Key, [string]$File, [string]$ContentType) {
     if ($PSCmdlet.ShouldProcess("$Bucket/$Key", "wrangler r2 object put")) {
-        & wrangler r2 object put "$Bucket/$Key" --file $File --content-type $ContentType --remote
+        Assert-Wrangler
+        & $Wrangler r2 object put "$Bucket/$Key" --file $File --content-type $ContentType --remote
         if ($LASTEXITCODE -ne 0) { throw "Upload failed: $Key" }
     }
 }

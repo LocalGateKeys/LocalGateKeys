@@ -76,3 +76,12 @@ it never opens the vault (only its committed revision number, for the free limit
 connection. At its next unlock the app asks before importing the saved logins waiting in the inbox (unread
 captures expire after 7 days). Users turn it on in
 Settings › Apps › Safari › Extensions and allow it on all websites.
+
+The extension has a toolbar button (manifest `action`, popup `popup-safari.html`/`.js`, generated like the rest).
+Its badge is the number of logins waiting in the inbox: `pending_count` returns only that number (`"0"` during an
+erase, a duress session or hold, or without the inbox key), never a site or a login. The popup shows the tab's
+host, how to fill with Safari AutoFill (it never lists or fills logins), a switch "Offer to save logins on this
+site" that edits the same `automatic_save_blocked_origins` list as the save prompt's "Never on this site", and the
+waiting count. "Open LocalGateKeys" shows on the Mac only: `SafariMac`'s handler answers `open_app` by opening the
+app bundle it is embedded in with `NSWorkspace.openApplication(at:)`. The iPhone extension has no supported way to
+open its app (it answers `unsupported`), so the button is hidden there.

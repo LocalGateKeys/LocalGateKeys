@@ -48,14 +48,15 @@ def test_manifest_is_localized():
         assert value[6:-2] in msgs
 
 
-def test_popup_html_data_i18n_keys_exist():
-    html = (EXT / "popup.html").read_text(encoding="utf-8")
+@pytest.mark.parametrize("name", ["popup.html", "popup-safari.html"])
+def test_popup_html_data_i18n_keys_exist(name):
+    html = (EXT / name).read_text(encoding="utf-8")
     keys = set(re.findall(r'data-i18n(?:-[a-z-]+)?="([^"]+)"', html))
     assert keys
     assert keys <= set(_messages()), sorted(keys - set(_messages()))
 
 
-@pytest.mark.parametrize("name", ["popup.js", "content.js", "login-safety.js", "background.js", "background-safari.js"])
+@pytest.mark.parametrize("name", ["popup.js", "content.js", "panel.js", "login-safety.js", "background.js", "background-safari.js", "popup-safari.js"])
 def test_tr_keys_in_scripts_exist(name):
     keys = _tr_keys((EXT / name).read_text(encoding="utf-8"))
     assert keys, name
@@ -64,10 +65,12 @@ def test_tr_keys_in_scripts_exist(name):
 
 def test_every_message_is_used():
     used: set[str] = set()
-    for name in ("popup.js", "content.js", "login-safety.js", "background.js", "background-safari.js"):
+    for name in ("popup.js", "popup-generator.js", "popup-logins.js", "content.js", "panel.js", "login-safety.js", "background.js", "background-safari.js", "popup-safari.js"):
         used |= _tr_keys((EXT / name).read_text(encoding="utf-8"))
-    used |= set(re.findall(r'data-i18n(?:-[a-z-]+)?="([^"]+)"', (EXT / "popup.html").read_text(encoding="utf-8")))
+    for name in ("popup.html", "popup-safari.html"):
+        used |= set(re.findall(r'data-i18n(?:-[a-z-]+)?="([^"]+)"', (EXT / name).read_text(encoding="utf-8")))
     used |= {"ext_name", "ext_description", "ext_description_ios", "ext_description_macos"}
+    used |= set(re.findall(r"__MSG_([A-Za-z0-9_]+)__", (EXT / "manifest.json").read_text(encoding="utf-8")))
     assert set(_messages()) - used == set()
 
 

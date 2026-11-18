@@ -9,8 +9,9 @@ struct ImportExportPage: View {
     @State private var askingBackupPassword = false
     /// What to ask next once the sheet on screen has closed (the master password prompt is a window sheet).
     @State private var afterDismiss: AfterDismiss?
+    @State private var confirmingUndo = false
 
-    enum AfterDismiss { case csv, encrypted(password: String, confirmation: String) }
+    enum AfterDismiss { case csv, encrypted(password: String, confirmation: String), cxf([String]) }
     @Environment(\.macTheme) private var theme
 
     var body: some View {
@@ -51,6 +52,10 @@ struct ImportExportPage: View {
             CSVWarningSheet(onExport: { afterDismiss = .csv; model.confirmingCSV = false },
                             onCancel: { model.confirmingCSV = false }).macThemed()
         }
+        .sheet(isPresented: $model.choosingCXF, onDismiss: runAfterDismiss) {
+            CXFSelectionSheet(model: model, onExport: { ids in afterDismiss = .cxf(ids); model.choosingCXF = false },
+                              onCancel: { model.choosingCXF = false }).macThemed()
+        }
     }
 
     /// Runs when the warning or password sheet has fully closed, so the next prompt is never dropped.
@@ -65,6 +70,8 @@ struct ImportExportPage: View {
             _ = model.requestEncryptedExport(password: p, confirmation: c, choose: {
                 MacFilePanels.chooseExport(name: ImportExportModel.exportFileName(csv: false), csv: false)
             })
+        case .cxf(let ids):
+            model.acceptCXFSelection(ids, choose: { MacFilePanels.chooseCXFExport(name: ImportExportModel.cxfFileName()) })
         }
     }
 
@@ -81,6 +88,50 @@ struct ImportExportPage: View {
                 }
                 .buttonStyle(PillButtonStyle(primary: true)).disabled(model.busy)
                 Spacer()
+                if model.report == nil, model.undoableImport != nil {
+                    Button(ImportReport.undoLabel) { confirmingUndo = true }
+                        .buttonStyle(PillButtonStyle(primary: false)).disabled(model.busy)
+                        .help(ImportReport.undoHelp)
+                }
+            }
+            if let report = model.report { reportView(report) }
+        }
+        .confirmationDialog(ImportReport.undoLabel, isPresented: $confirmingUndo) {
+            Button(ImportReport.undoLabel, role: .destructive) { model.undoLastImport() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(ImportReport.undoHelp)
+        }
+    }
+
+    /// The switch report after an import: what was written by kind, what was not and why, and Undo (§6.1).
+    private func reportView(_ report: ImportReport) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Rectangle().fill(theme.line).frame(height: 1)
+            Text(ImportReport.title).font(.system(size: 13, weight: .semibold))
+            ForEach(report.counts, id: \.kind) { c in
+                Text(ImportReport.countLine(c)).font(.system(size: 12.5))
+            }
+            if !report.skipped.isEmpty {
+                Text(ImportReport.skippedHeader(report.skipped.reduce(0) { $0 + $1.count }))
+                    .font(.system(size: 12.5, weight: .semibold)).padding(.top, 4)
+                ForEach(report.skipped, id: \.reason) { s in
+                    Text(ImportReport.skipLine(s)).font(.system(size: 12.5)).foregroundStyle(theme.textMuted)
+                }
+                if report.skipped.contains(where: { $0.reason == .notInSourceFormat }) {
+                    Text(ImportReport.notInSource).font(.system(size: 11.5)).foregroundStyle(theme.textFaint)
+                }
+            }
+            Text(ImportReport.checkHint).font(.system(size: 11.5)).foregroundStyle(theme.textFaint)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                if report.canUndo, model.undoableImport != nil {
+                    Button(ImportReport.undoLabel) { confirmingUndo = true }
+                        .buttonStyle(PillButtonStyle(primary: false)).disabled(model.busy)
+                        .help(ImportReport.undoHelp)
+                }
+                Spacer()
+                Button("Done") { model.closeReport() }.buttonStyle(PillButtonStyle(primary: true))
             }
         }
     }
@@ -120,8 +171,12 @@ struct ImportExportPage: View {
             row(String(localized: "Apple Passwords CSV"), ImportExportModel.passkeysNotInCSV + " " + String(localized: "The file is not encrypted."), button: String(localized: "Export…")) {
                 model.requestCSVExport()
             }
+            Rectangle().fill(theme.line).frame(height: 1)
+            row(String(localized: "Export to CXF"), ImportExportModel.cxfHelp, button: String(localized: "Export…")) {
+                model.requestCXFExport()
+            }
             if let message = model.exportMessage { note(message, theme.textMuted) }
-            Text("Both ask for your master password first.").font(.system(size: 11.5)).foregroundStyle(theme.textFaint)
+            Text("Each export asks for your master password first.").font(.system(size: 11.5)).foregroundStyle(theme.textFaint)
         }
     }
 
@@ -243,6 +298,91 @@ struct BackupPasswordSheet: View {
     }
 
     private func clear() { password = ""; again = "" }
+}
+
+/// Export to a CXF file: the plain-text warnings and the logins, notes and passkeys to choose (titles only).
+/// Export closes it; the master password and the save panel follow its dismissal.
+struct CXFSelectionSheet: View {
+    let model: ImportExportModel
+    let onExport: ([String]) -> Void
+    let onCancel: () -> Void
+    @State private var selected: Set<String> = []
+    @Environment(\.macTheme) private var theme
+
+    private var allSelected: Bool { !model.cxfChoices.isEmpty && selected.count == model.cxfChoices.count }
+    private var passkeySelected: Bool { model.cxfChoices.contains { $0.kind == .passkey && selected.contains($0.id) } }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Export to CXF").font(.title3.weight(.semibold))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(ImportExportModel.cxfWarning)
+                if passkeySelected { Text(ImportExportModel.cxfPasskeyWarning).foregroundStyle(theme.warning) }
+                Text(ImportExportModel.cxfDeleteAfter)
+            }
+            .font(.system(size: 12.5)).fixedSize(horizontal: false, vertical: true)
+            if model.cxfChoices.isEmpty {
+                Text("There are no logins, notes or passkeys to export.").font(.system(size: 12.5)).foregroundStyle(theme.textMuted)
+            } else {
+                HStack {
+                    Text("Choose the items to export to the CXF file.").font(.system(size: 12.5)).foregroundStyle(theme.textMuted)
+                    Spacer()
+                    Button(allSelected ? String(localized: "Select none") : String(localized: "Select all")) {
+                        selected = allSelected ? [] : Set(model.cxfChoices.map(\.id))
+                        model.cxfMessage = nil
+                    }
+                    .buttonStyle(GlassButtonStyle())
+                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(model.cxfChoices) { choice in row(choice) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(height: 260)
+            }
+            if let message = model.cxfMessage { Text(message).font(.system(size: 12.5)).foregroundStyle(theme.warning) }
+            HStack {
+                Spacer()
+                Button("Cancel", action: onCancel).buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
+                Button("Export…") {
+                    let ids = model.cxfChoices.map(\.id).filter { selected.contains($0) }
+                    guard model.checkCXFSelection(ids) else { return }
+                    onExport(ids)   // the master password is asked once this sheet has closed
+                }
+                .buttonStyle(PillButtonStyle(primary: true)).keyboardShortcut(.defaultAction)
+                .disabled(selected.isEmpty)
+            }
+        }
+        .padding(24).frame(width: 520).background(WashBackground()).foregroundStyle(theme.text)
+        .onAppear { selected = [] }
+    }
+
+    private func row(_ choice: VaultExporter.CXFChoice) -> some View {
+        Toggle(isOn: Binding(get: { selected.contains(choice.id) }, set: { on in
+            if on { selected.insert(choice.id) } else { selected.remove(choice.id) }
+            model.cxfMessage = nil
+        })) {
+            HStack(spacing: 8) {
+                Image(systemName: Self.symbol(choice.kind)).foregroundStyle(theme.textMuted).frame(width: 18)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: choice.title).font(.system(size: 13))
+                    if !choice.detail.isEmpty {
+                        Text(verbatim: choice.detail).font(.system(size: 11.5)).foregroundStyle(theme.textMuted)
+                    }
+                }
+            }
+        }
+        .toggleStyle(.checkbox)
+    }
+
+    static func symbol(_ kind: VaultExporter.CXFChoice.Kind) -> String {
+        switch kind {
+        case .login: "key"
+        case .note: "note.text"
+        case .passkey: "person.badge.key"
+        }
+    }
 }
 
 /// The CSV plain-text warning (Windows `ExportWarning`), a sheet so the master password can follow its dismissal.

@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LocalGateKeys</title>
-  <meta name="description" content="A password manager for Windows that keeps your encrypted vault on your own devices. No account, no LocalGateKeys server, no telemetry.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys: offline password manager for PC, Mac, iPhone</title>
+  <meta name="description" content="Password manager for Windows, Mac and iPhone that keeps your encrypted vault on your devices. No account, no cloud server. Free for 7 items, Pro US$29.99 once.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/">
@@ -20,7 +19,24 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys: offline password manager for PC, Mac, iPhone">
+  <meta property="og:description" content="Password manager for Windows, Mac and iPhone that keeps your encrypted vault on your devices. No account, no cloud server. Free for 7 items, Pro US$29.99 once.">
+  <meta property="og:url" content="https://localgatekeys.app/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The LocalGateKeys logo: a password manager for Windows, Mac and iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys: offline password manager for PC, Mac, iPhone">
+  <meta name="twitter:description" content="Password manager for Windows, Mac and iPhone that keeps your encrypted vault on your devices. No account, no cloud server. Free for 7 items, Pro US$29.99 once.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LocalGateKeys","applicationCategory":"SecurityApplication","operatingSystem":"Windows 10, Windows 11, macOS, iOS","url":"https://localgatekeys.app/","inLanguage":"en","description":"Password manager for Windows, Mac and iPhone that keeps your encrypted vault on your devices. No account, no cloud server. Free for 7 items, Pro US$29.99 once.","image":"https://localgatekeys.app/brand/og-image.png","offers":[{"@type":"Offer","name":"LocalGateKeys Free","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"LocalGateKeys Pro","price":"29.99","priceCurrency":"USD","url":"https://localgatekeys.app/pricing"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"LocalGateKeys","url":"https://localgatekeys.app/","logo":"https://localgatekeys.app/brand/icon-256.png","email":"support@localgatekeys.app"}</script>
   <link rel="icon" href="brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="brand/icon-256.png">
@@ -30,236 +46,323 @@
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="index.html">
-        <img src="brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="./">
+        <img src="brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Main">
+      <nav class="nav-wide" aria-label="Main">
         <ul class="nav">
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="get-started.html">Get started</a></li>
-          <li><a href="help.html">Guide</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="support.html">Support</a></li>
-          <li><a href="buy.html">Buy Pro</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help">Guide</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Main">
+          <ul class="nav nav-stack">
+            <li><a href="features">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help">Guide</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Language</span></summary>
+        <ul class="lang-menu-list"><li><a href="./" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/" hreflang="es" lang="es">Español</a></li><li><a href="it/" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
   <main id="main">
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <h1>A password manager that stays on your PC.</h1>
-      <p class="promise">Your vault lives on your devices. We never see it. You choose whether encrypted copies travel through your home Wi-Fi, your own cloud folder, or nowhere.</p>
-      <ul class="no-list" aria-label="What LocalGateKeys does not have">
-        <li>No account</li>
-        <li>No LocalGateKeys server</li>
-        <li>No telemetry</li>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="wrap">
+    <h1 id="hero-title">Your passwords. Your devices. No account.</h1>
+    <p class="lead">A password manager that keeps your vault on your PC, Mac and phone and syncs over your own Wi-Fi or cloud folder. Free up to 7 items. Pro is US$29.99 once, with every update free, forever.</p>
+    <ul class="hero-get" aria-label="Get the app">
+      <li><a class="get-tile" href="https://apps.microsoft.com/detail/9PNWCNLQ6597"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg><span class="get-text"><span class="get-os">Windows</span><span class="get-store">Microsoft Store</span></span></a></li>
+      <li><a class="get-tile" href="https://apps.apple.com/app/id6825488435"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">Mac</span><span class="get-store">Mac App Store</span></span></a></li>
+      <li><a class="get-tile" href="https://apps.apple.com/app/id6825488435"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">iPhone</span><span class="get-store">App Store</span></span></a></li>
+      <li><span class="get-tile is-soon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M4.5 18a7.5 7.5 0 0 1 15 0zM8.1 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0zM13.8 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0z"/><path d="M8 11.6 6.3 8.7M16 11.6l1.7-2.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="get-text"><span class="get-os">Android</span><span class="get-store">Coming soon</span></span></span></li>
+    </ul>
+    <p class="hero-price">Free for up to 7 items. Pro is US$29.99 once, no subscription.</p>
+    <p class="hero-ext">
+      <span class="hero-ext-label">Browser extension</span>
+      <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Add to Edge</a>
+      <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Add to Chrome</a>
+      <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Add to Firefox</a>
+      <a href="download">See all downloads</a>
+    </p>
+    <ul class="facts" aria-label="What LocalGateKeys does not have">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>No account</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>No LocalGateKeys server</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>No vault telemetry</li>
+    </ul>
+  </div>
+</section>
+
+<section class="gallery" aria-labelledby="gallery-title">
+  <h2 id="gallery-title" class="visually-hidden">The app</h2>
+  <nav aria-label="Show the app on">
+    <ul class="dock glass">
+      <li><a href="#shots-win"><span class="dot" aria-hidden="true"></span>Windows</a></li>
+      <li><a href="#shots-mac"><span class="dot" aria-hidden="true"></span>Mac</a></li>
+      <li><a href="#shots-ios"><span class="dot" aria-hidden="true"></span>iPhone</a></li>
+      <li><a href="#shots-ipad"><span class="dot" aria-hidden="true"></span>iPad</a></li>
+      <li><a href="#shots-android"><span class="dot ring" aria-hidden="true"></span>Android</a></li>
+    </ul>
+  </nav>
+
+  <div class="film">
+    <div class="strip" role="region" aria-label="The app" data-viewer-label="App screenshots. Use the arrow buttons or the left and right keys." data-count="Screenshot {n} of {total}" tabindex="0">
+      <div class="track">
+
+        <div class="group" id="shots-win" role="group" aria-label="Windows screenshots">
+          <div class="divider glass">
+            <h3>Windows</h3>
+            <p><span class="state">Microsoft Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="screenshots/home-vault-dark.webp" srcset="screenshots/home-vault-dark-w720.webp 720w, screenshots/home-vault-dark-w1440.webp 1440w, screenshots/home-vault-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" fetchpriority="high" decoding="async" alt="The LocalGateKeys Home page: password health, upcoming reminders, a one-time codes card with live two-factor codes, and a list of logins with site logos."><figcaption>Home: password health, reminders, live two-factor codes and your items.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/item-2fa-code-light.webp" srcset="screenshots/item-2fa-code-light-w720.webp 720w, screenshots/item-2fa-code-light-w1440.webp 1440w, screenshots/item-2fa-code-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" loading="lazy" decoding="async" alt="A GitHub login open in LocalGateKeys, with its current two-factor code at the top, then username, hidden password, website, notes and recovery codes."><figcaption>The current two-factor code sits at the top of the login.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/security-center-dark.webp" srcset="screenshots/security-center-dark-w720.webp 720w, screenshots/security-center-dark-w1440.webp 1440w, screenshots/security-center-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" loading="lazy" decoding="async" alt="The Security center showing a score of 77 out of 100, with weak, reused, no two-factor and old passwords to review, and unlock and backup checks."><figcaption>The Security center lists what to fix first.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/generator-light.webp" srcset="screenshots/generator-light-w720.webp 720w, screenshots/generator-light-w1440.webp 1440w, screenshots/generator-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" loading="lazy" decoding="async" alt="The password generator on Windows."><figcaption>The generator makes strong passwords or passphrases.</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-mac" role="group" aria-label="Mac screenshots">
+          <div class="divider glass">
+            <h3>Mac</h3>
+            <p><span class="state">Mac App Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="screenshots/platforms/mac-01-vault.webp" srcset="screenshots/platforms/mac-01-vault-w720.webp 720w, screenshots/platforms/mac-01-vault.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="The Mac vault in light mode with one-time codes and a GitHub login open."><figcaption>Everything in one list, with your codes on top.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/mac-03-sync.webp" srcset="screenshots/platforms/mac-03-sync-w720.webp 720w, screenshots/platforms/mac-03-sync.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="The Mac Sync page in light mode with Wi-Fi sync, paired devices and the cloud folder."><figcaption>Sync over your own Wi-Fi or a cloud folder you choose. No LocalGateKeys server.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/mac-04-security.webp" srcset="screenshots/platforms/mac-04-security-w720.webp 720w, screenshots/platforms/mac-04-security.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="The Mac Security centre in dark mode with a score of 75 and the issues to fix."><figcaption>One score, and exactly what to fix next.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/mac-05-settings.webp" srcset="screenshots/platforms/mac-05-settings-w720.webp 720w, screenshots/platforms/mac-05-settings.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="Mac settings in light mode for the menu bar, the quick access shortcut and open at login."><figcaption>No tracking, no ads, no account. You decide how it locks.</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-ios" role="group" aria-label="iPhone screenshots">
+          <div class="divider glass">
+            <h3>iPhone</h3>
+            <p><span class="state">App Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame tall"><img src="screenshots/platforms/ios-01-vault.webp" width="640" height="1391" loading="lazy" decoding="async" alt="The iPhone vault in light mode with the codes row and logins."><figcaption>Everything in one list, with your codes on top.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/ios-02-edit.webp" width="640" height="1391" loading="lazy" decoding="async" alt="Editing a GitHub login on iPhone in dark mode, with its two-factor secret."><figcaption>Edit any login right next to your list. Codes included.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/ios-03-sync.webp" width="640" height="1391" loading="lazy" decoding="async" alt="The iPhone Sync screen in light mode with Wi-Fi and cloud folder options."><figcaption>Sync over your own Wi-Fi or a cloud folder you choose. No LocalGateKeys server.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/ios-04-security.webp" width="640" height="1391" loading="lazy" decoding="async" alt="The iPhone security screen in dark mode with a score of 75."><figcaption>One score, and exactly what to fix next.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/ios-05-settings.webp" width="640" height="1391" loading="lazy" decoding="async" alt="iPhone settings in light mode with Pro active and the settings sections."><figcaption>No tracking, no ads, no account. You decide how it locks.</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-ipad" role="group" aria-label="iPad screenshots">
+          <div class="divider glass">
+            <h3>iPad</h3>
+            <p><span class="state">App Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="screenshots/platforms/ipad-01-items.webp" srcset="screenshots/platforms/ipad-01-items-w720.webp 720w, screenshots/platforms/ipad-01-items.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="The iPad vault in light mode, in three columns, with a GitHub login and its one-time code."><figcaption>Everything in one list, with your codes on top.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/ipad-02-edit.webp" srcset="screenshots/platforms/ipad-02-edit-w720.webp 720w, screenshots/platforms/ipad-02-edit.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="Editing a GitHub login on iPad in dark mode, beside the vault list."><figcaption>Edit any login right next to your list. Codes included.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/ipad-03-sync.webp" srcset="screenshots/platforms/ipad-03-sync-w720.webp 720w, screenshots/platforms/ipad-03-sync.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="The iPad Sync screen in light mode with Wi-Fi and cloud folder options."><figcaption>Sync over your own Wi-Fi or a cloud folder you choose. No LocalGateKeys server.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/ipad-04-security.webp" srcset="screenshots/platforms/ipad-04-security-w720.webp 720w, screenshots/platforms/ipad-04-security.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="The iPad security screen in dark mode with a score of 75."><figcaption>One score, and exactly what to fix next.</figcaption></figure>
+          <figure class="frame wide"><img src="screenshots/platforms/ipad-05-settings.webp" srcset="screenshots/platforms/ipad-05-settings-w720.webp 720w, screenshots/platforms/ipad-05-settings.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="iPad settings in light mode beside the vault sidebar."><figcaption>No tracking, no ads, no account. You decide how it locks.</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-android" role="group" aria-label="Android screenshots">
+          <div class="divider glass">
+            <h3>Android</h3>
+            <p><span class="state">Coming soon</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame tall"><img src="screenshots/platforms/android-vault.webp" width="640" height="1422" loading="lazy" decoding="async" alt="The Android vault listing logins and notes."><figcaption>Logins, cards and notes.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/android-detail.webp" width="640" height="1422" loading="lazy" decoding="async" alt="A login opened on Android with copy buttons."><figcaption>Copy with one tap.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/android-generator.webp" width="640" height="1422" loading="lazy" decoding="async" alt="The Android password generator."><figcaption>Strong passwords or passphrases.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/android-sync.webp" width="640" height="1422" loading="lazy" decoding="async" alt="The Android sync screen."><figcaption>Sync through your own cloud folder.</figcaption></figure>
+          <figure class="frame tall"><img src="screenshots/platforms/android-settings.webp" width="640" height="1422" loading="lazy" decoding="async" alt="The Android Settings tab."><figcaption>Settings in one place.</figcaption></figure>
+        </div>
+
+      </div>
+    </div>
+    <div class="controls">
+      <button class="arrow prev" type="button" aria-label="Previous screenshot"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="arrow next" type="button" aria-label="Next screenshot"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+  <p class="demo-note">Demo vaults with made-up accounts. Use the arrows to see more.</p>
+  <p class="showcase-more"><a class="text-link" href="get-started">How to get started</a></p>
+</section>
+
+<section class="section" id="sync" aria-labelledby="routes-title">
+  <div class="wrap split">
+    <div class="split-head">
+      <h2 id="routes-title">You decide where encrypted copies go</h2>
+      <p>Every device keeps its own encrypted vault. Nothing leaves a device unless you set it up to. Sync between your PC and iPhone is part of Pro.</p>
+    </div>
+    <div class="split-body">
+      <ul class="routes">
+        <li>
+          <div><h3>Nowhere</h3><span class="when">The default, in every edition</span></div>
+          <p>The vault stays on your device. Scheduled backups are encrypted files you keep where you like, including a USB drive or a sync folder.</p>
+        </li>
+        <li>
+          <div><h3>Your home Wi-Fi</h3><span class="when">Pro</span></div>
+          <p>Pair your PC and iPhone once with a one-use QR code. When they are on the same network and unlocked, they sync directly over an encrypted connection. No internet connection is involved.</p>
+        </li>
+        <li>
+          <div><h3>Your own cloud folder</h3><span class="when">Pro, if you turn it on</span></div>
+          <p>Point sync at a cloud folder you already use, such as Dropbox or iCloud Drive, protected by a sync password. Your cloud provider stores encrypted files it cannot read. We are not involved at all.</p>
+        </li>
       </ul>
-      <div class="actions">
-        <a class="button primary store-button" href="https://apps.microsoft.com/detail/9PNWCNLQ6597"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>Get it from the Microsoft Store</span></a>
-        <a class="button" href="download.html">Other downloads</a>
-        <a class="button store-button" href="https://apps.apple.com/app/id6825488435"><svg class="apple-logo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span>Get it for iPhone</span></a>
-        <a class="button" href="pricing.html">Compare Free and Pro</a>
-      </div>
     </div>
-
-    <svg class="rings" viewBox="0 0 520 520" role="img" aria-labelledby="rings-title rings-desc">
-      <title id="rings-title">Where your vault can travel</title>
-      <desc id="rings-desc">Your vault sits at the centre, on your PC. The inner ring is your home Wi-Fi, where a second PC can sync directly; an iPhone app is on the App Store. The outer ring is your own cloud folder, which only ever holds encrypted files. LocalGateKeys servers are outside both rings and never see your vault.</desc>
-      <defs>
-        <linearGradient id="hero-arc" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#67E8F9"/>
-          <stop offset=".55" stop-color="#3B82F6"/>
-          <stop offset="1" stop-color="#1D3FBF"/>
-        </linearGradient>
-      </defs>
-
-      <circle class="ring ring-dash" cx="260" cy="260" r="215"/>
-      <circle class="ring" cx="260" cy="260" r="140"/>
-      <circle class="arc" cx="260" cy="260" r="140" transform="rotate(-200 260 260)"/>
-
-      <circle class="core" cx="260" cy="260" r="62"/>
-      <g class="core-ink" transform="translate(260 256) scale(.5)"><circle cx="0" cy="-36" r="40"/><path d="M-24 -8 H24 L40 94 H-40 Z"/></g>
-      <text class="label halo" x="260" y="348" text-anchor="middle">Your vault</text>
-      <text class="sub keep halo" x="260" y="368" text-anchor="middle">on this PC</text>
-
-      <text class="sub keep halo" x="260" y="408" text-anchor="middle">Home Wi-Fi</text>
-
-      <circle class="node" cx="392" cy="212" r="20"/>
-      <path class="glyph" d="M381 204 h22 v14 h-22 z M388 223 h8 M392 218 v5"/>
-      <text class="label halo" x="420" y="208">Second PC</text>
-      <text class="sub halo" x="420" y="225">direct sync</text>
-
-      <circle class="node" cx="180" cy="375" r="20"/>
-      <path class="glyph" d="M174 364 h12 a2 2 0 0 1 2 2 v18 a2 2 0 0 1 -2 2 h-12 a2 2 0 0 1 -2 -2 v-18 a2 2 0 0 1 2 -2 z M178 382 h4"/>
-      <text class="label halo" x="152" y="380" text-anchor="end">iPhone</text>
-      <text class="sub halo" x="152" y="397" text-anchor="end">on the App Store</text>
-
-      <circle class="node node-cloud" cx="84" cy="137" r="20"/>
-      <path class="glyph glyph-cloud" d="M73 131 h8 l3 3 h11 v12 h-22 z"/>
-      <text class="label halo" x="30" y="92">Your cloud folder</text>
-      <text class="sub halo" x="30" y="109">holds encrypted files only</text>
-
-      <circle class="ring ring-dash" cx="486" cy="490" r="14"/>
-      <line class="strike" x1="476" y1="500" x2="496" y2="480"/>
-      <text class="outside halo" x="462" y="487" text-anchor="end">LocalGateKeys servers</text>
-      <text class="sub keep halo" x="462" y="508" text-anchor="end">never see your vault</text>
-    </svg>
   </div>
 </section>
-<section class="shot-band">
+
+<section class="section" id="features" aria-labelledby="features-title">
   <div class="wrap">
-    <figure class="shot"><picture><source srcset="screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/home-vault-dark.webp" width="2880" height="1800" alt="The LocalGateKeys Home page: password health, upcoming reminders, a one-time codes card with live two-factor codes, and a list of logins with site logos." loading="lazy" decoding="async"></picture><figcaption>Home: password health, reminders, live two-factor codes and your items. Demo vault with made-up accounts.</figcaption></figure>
+    <h2 id="features-title">What it does for you every day</h2>
+    <ul class="features">
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8.5h18M6 6.3h.01M8.5 6.3h.01M7 14h4M14.5 12.5v3"/></svg>
+        <div>
+          <h3>Fills sign-ins in Chrome and Edge</h3>
+          <p>The browser extension talks to the LocalGateKeys app on your PC through a small local helper. It only offers logins saved for the exact site you are on. It also fills two-factor codes, addresses and payment cards, and offers to save new logins after you sign in.</p>
+          <p>Passkeys work too: a website can save a passkey in your vault and sign you in with it, and you approve each one in the desktop app.</p>
+          <p class="feature-note">The extension never receives your whole vault, and no request leaves your computer.</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 10.5h6M16 10.5h1.5"/></svg>
+        <div>
+          <h3>And in Windows apps</h3>
+          <p>Desktop app fill works with sign-in windows of Windows programs such as game launchers. You bind a window once; after that a fill button beside the password field, or a hotkey, fills the saved fields.</p>
+          <p class="feature-note">It reads only the accessibility information Windows exposes about a window. It never records your keystrokes, never injects code into another program, and refuses to fill if the app or window has changed.</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2.5h4"/></svg>
+        <div>
+          <h3>Two-factor codes built in <span class="pro-mark">Pro</span></h3>
+          <p>Save a site's two-factor setup key with its login, and the current code appears at the top of the login and on the One-time codes card on Home. Scan the site's QR code from a screenshot or your webcam, or bring codes over from Google Authenticator. On iPhone, you can show the codes you choose on your Apple Watch.</p>
+          <p class="feature-note">Codes are worked out on your own devices. Two-factor codes are part of Pro.</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6L12 3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+        <div>
+          <h3>Checks your passwords</h3>
+          <p>The generator makes strong passwords or passphrases. Password health shows which saved passwords are weak, reused, old or missing a two-factor code, and the iPhone app gives the same check a score. If you turn it on, a breach check you start compares them with known breaches, sending only five characters of a hash.</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+        <div>
+          <h3>On your iPhone too</h3>
+          <p>The iPhone app fills logins in Safari and other apps, and cards and identities in any text field on iOS 18 and later. It has a security check, password history, expiry reminders and Recently deleted with Undo, and it opens with Face ID, Touch ID or an optional app password.</p>
+          <p class="feature-note">It syncs with your PC, and buying Pro on the iPhone unlocks Windows too.</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M14 14h2.5v2.5H14zM18.5 18.5H20.5M14 20.5h2.5M20.5 14v2"/></svg>
+        <div>
+          <h3>Share one item, safely</h3>
+          <p>Send a login or note as a file or a QR code, locked with a six-word code that you tell the other person another way, such as by phone.</p>
+          <p class="feature-note">It opens once, and three wrong codes destroy it.</p>
+        </div>
+      </li>
+    </ul>
   </div>
 </section>
 
-<section class="band">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>See it in light and dark</h2>
-      <p>LocalGateKeys follows your Windows theme, or you can pick one. All screens show a demo vault with made-up accounts.</p>
-    </div>
-    <div class="gallery">
-      <figure><a href="screenshots/campaign-generator-light.webp"><img src="screenshots/campaign-generator-light.webp" width="1920" height="1080" alt="Password generator in the light theme: strong passwords in one click." loading="lazy" decoding="async"></a></figure>
-      <figure><a href="screenshots/campaign-security-dark.webp"><img src="screenshots/campaign-security-dark.webp" width="1920" height="1080" alt="Security center in the dark theme: see what to fix first." loading="lazy" decoding="async"></a></figure>
-      <figure><a href="screenshots/campaign-two-factor-light.webp"><img src="screenshots/campaign-two-factor-light.webp" width="1920" height="1080" alt="A login with its live two-factor code, light theme." loading="lazy" decoding="async"></a></figure>
-      <figure><a href="screenshots/campaign-autofill-dark.webp"><img src="screenshots/campaign-autofill-dark.webp" width="1920" height="1080" alt="Choosing an account to fill in a Windows app, dark theme." loading="lazy" decoding="async"></a></figure>
-      <figure><a href="screenshots/campaign-one-vault-light.webp"><img src="screenshots/campaign-one-vault-light.webp" width="1920" height="1080" alt="A payment card item: logins, passkeys, cards, identities, notes and Wi-Fi in one vault." loading="lazy" decoding="async"></a></figure>
-      <figure><a href="screenshots/campaign-light-or-dark.webp"><img src="screenshots/campaign-light-or-dark.webp" width="1920" height="1080" alt="The unlock screen in dark and light themes, with Windows Hello unlock." loading="lazy" decoding="async"></a></figure>
-    </div>
-    <p class="actions"><a class="button" href="get-started.html">How to get started</a></p>
-  </div>
-</section>
-
-<section class="band band-tint">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>You decide where encrypted copies go</h2>
-      <p class="lead">Every device keeps its own encrypted vault. Nothing leaves a device unless you set it up to. Sync between your PCs is part of Pro.</p>
-    </div>
-    <div class="routes">
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="r" cx="32" cy="32" r="29"/><circle class="r" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>Nowhere</h3>
-        <p class="who">The default, in every edition</p>
-        <p>The vault stays on this PC. Scheduled backups are encrypted files you keep where you like, including a USB drive or a sync folder.</p>
-      </div>
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="r" cx="32" cy="32" r="29"/><circle class="on" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>Your home Wi-Fi</h3>
-        <p class="who">Pro</p>
-        <p>Pair your PCs once with a one-use pairing code. When they are on the same network and unlocked, they sync directly with each other over an encrypted connection. No internet connection is involved.</p>
-      </div>
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="on" cx="32" cy="32" r="29"/><circle class="r" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>Your own cloud folder</h3>
-        <p class="who">Pro, if you turn it on</p>
-        <p>Point sync at a OneDrive, Dropbox, Google Drive or iCloud Drive folder you already use, protected by a sync password. Your cloud provider stores encrypted files it cannot read. We are not involved at all.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="band">
+<section class="section band" id="price" aria-labelledby="price-title">
   <div class="wrap split">
-    <div>
-      <h2>Fills sign-ins in Chrome and Edge</h2>
-      <p>The browser extension talks to the LocalGateKeys app on your PC through a small local helper. It only offers logins saved for the exact site you are on. It also fills two-factor codes, addresses and payment cards, and offers to save new logins after you sign in.</p>
-      <p>Passkeys work too: a website can save a passkey in your vault and sign you in with it, and you approve each one in the desktop app.</p>
-      <p>The extension never receives your whole vault, and no request leaves your computer.</p>
-      <figure class="shot shot-small"><img src="screenshots/browser-fill.webp" width="480" height="540" alt="A sign-in page with the LocalGateKeys browser extension offering two saved accounts for that site." loading="lazy" decoding="async"><figcaption>The extension offers only the logins saved for the site you are on.</figcaption></figure>
+    <div class="split-head">
+      <h2 id="price-title">Free for your first 7 items</h2>
+      <p>Free has browser and Windows app fill, passkeys, Windows Hello, a recovery phrase, secure sharing, imports and scheduled encrypted backups, for up to 7 items with no time limit. Pro adds unlimited items, sync, two-factor codes (also on Apple Watch) and documents.</p>
     </div>
-    <div>
-      <h2>And in Windows apps</h2>
-      <p>Desktop app fill works with sign-in windows of Windows programs such as game launchers. You bind a window once; after that a fill button beside the password field, or a hotkey, fills the saved fields.</p>
-      <p>It reads only the accessibility information Windows exposes about a window. It never records your keystrokes, never injects code into another program, and refuses to fill if the app or window has changed.</p>
-    </div>
-  </div>
-</section>
-
-<section class="band band-tint">
-  <div class="wrap split">
-    <div>
-      <h2>Two-factor codes built in</h2>
-      <p>Save a site's two-factor setup key with its login and LocalGateKeys shows the current code at the top of the login. A One-time codes card on the Home page lists them all. Add a key by pasting a snip of the site's QR code, holding it up to your webcam, or from a Google Authenticator export.</p>
-      <p>Codes are worked out on your PC. Two-factor codes are part of Pro.</p>
-      <figure class="shot"><picture><source srcset="screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="A GitHub login open in LocalGateKeys, with its current two-factor code at the top, then username, hidden password, website, notes and recovery codes." loading="lazy" decoding="async"></picture><figcaption>The current two-factor code sits at the top of the login.</figcaption></figure>
-    </div>
-    <div>
-      <h2>Checks your passwords</h2>
-      <p>The generator makes strong passwords or passphrases. Password health shows which saved passwords are weak, reused, old or missing a two-factor code. If you turn it on, a breach check you start compares them with known breaches, sending only five characters of a hash.</p>
-      <figure class="shot"><picture><source srcset="screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="screenshots/security-center-dark.webp" width="2880" height="1800" alt="The Security center showing a score of 77 out of 100, with weak, reused, no two-factor and old passwords to review, and unlock and backup checks." loading="lazy" decoding="async"></picture><figcaption>The Security center lists what to fix first.</figcaption></figure>
-    </div>
-  </div>
-</section>
-
-<section class="band">
-  <div class="wrap split">
-    <div>
-      <h2>Free for your first 4 items</h2>
-      <p>The free edition has browser and Windows app fill, passkeys, Windows Hello, a recovery phrase, imports and scheduled encrypted backups, for up to 4 items with no time limit. Pro adds unlimited items, sync, two-factor codes and documents.</p>
-      <p>Pro removes the limit for a single payment of US$4.99, with every future update included. No subscription, nothing to renew.</p>
-      <div class="actions">
-        <a class="button primary" href="https://localgatekeys.app/buy">Buy Pro</a>
-        <a class="button" href="pricing.html">See pricing</a>
-        <a class="button" href="features.html">All features</a>
+    <div class="split-body">
+      <div class="price-card glass">
+        <p class="plate-label">LocalGateKeys Pro</p>
+        <p class="price">US$29.99, once.</p>
+        <p class="price-terms">One payment. Every update, forever, free. No subscription.</p>
+        <div class="actions">
+          <a class="button primary" href="https://localgatekeys.app/buy">Buy Pro</a>
+          <a class="text-link" href="pricing">See pricing</a>
+          <a class="text-link" href="features">All features</a>
+        </div>
       </div>
     </div>
-    <div>
-      <h2>Honest about security</h2>
+  </div>
+</section>
+
+<section class="section" id="security" aria-labelledby="security-title">
+  <div class="wrap split">
+    <div class="split-head">
+      <h2 id="security-title">Honest about security</h2>
       <p>The vault uses Argon2id and AES-256-GCM, and the design is written down in plain terms, including what it does not protect against.</p>
       <div class="actions">
-        <a class="button" href="security.html">Read the security model</a>
+        <a class="button" href="security">Read the security model</a>
       </div>
+    </div>
+    <div class="split-body">
+      <dl class="spec-rows glass">
+        <div><dt>Master password to key</dt><dd>Argon2id</dd></div>
+        <div><dt>Vault encryption</dt><dd>AES-256-GCM</dd></div>
+        <div><dt>Account needed</dt><dd>None</dd></div>
+        <div><dt>Where the vault lives</dt><dd>Your devices</dd></div>
+      </dl>
     </div>
   </div>
 </section>
+
+<script src="hero.js"></script>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>A password manager for Windows that keeps your vault on your own devices.</p>
-        <p class="quiet">This site sets no cookies, runs no analytics and loads nothing from other companies.</p>
+        <p class="footer-brand"><img src="brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>A password manager for Windows, Mac and iPhone that keeps your vault on your own devices.</p>
+        <p class="quiet">This website uses Cloudflare Web Analytics, which is cookieless, to count page visits. It uses no advertising trackers and sets no cookies.</p>
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
         <ul>
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="licence.html">Your Pro licence</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="download">Download</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="switch/">Switch</a></li>
+          <li><a href="buy">Buy Pro</a></li>
+          <li><a href="licence">Your Pro licence</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recover your licence</a></li>
         </ul>
       </nav>
       <nav aria-label="Help">
         <h2>Help</h2>
         <ul>
-          <li><a href="help.html">User guide</a></li>
-          <li><a href="support.html">Support and FAQ</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
+          <li><a href="help">User guide</a></li>
+          <li><a href="support">Support and FAQ</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="legal/vulnerability-disclosure">Report a vulnerability</a></li>
         </ul>
       </nav>
       <nav aria-label="Legal">
         <h2>Legal</h2>
         <ul>
-          <li><a href="legal/eula.html">Licence agreement</a></li>
-          <li><a href="legal/privacy.html">Privacy policy</a></li>
-          <li><a href="legal/terms-of-sale.html">Terms of sale</a></li>
-          <li><a href="legal/refunds.html">Refund policy</a></li>
+          <li><a href="legal/eula">Licence agreement</a></li>
+          <li><a href="legal/privacy">Privacy policy</a></li>
+          <li><a href="legal/terms-of-sale">Terms of sale</a></li>
+          <li><a href="legal/refunds">Refund policy</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Language"><a href="index.html" hreflang="en" lang="en" aria-current="true">English</a> · <a href="es/index.html" hreflang="es" lang="es">Español</a> · <a href="it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="pl/index.html" hreflang="pl" lang="pl">Polski</a> · <a href="zh-hans/index.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a> · <a href="nl/index.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID and Safari are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <nav class="lang-switch" aria-label="Language"><ul><li><a href="./" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/" hreflang="es" lang="es">Español</a></li><li><a href="it/" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys Android 版用户指南</title>
+  <meta name="description" content="LocalGateKeys Android 应用如何工作：设置、自动填充、两步验证码、导入、备份和同步。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/android">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/android">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/android">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/android">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/android">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/android">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys Android 版用户指南">
+  <meta property="og:description" content="LocalGateKeys Android 应用如何工作：设置、自动填充、两步验证码、导入、备份和同步。">
+  <meta property="og:url" content="https://localgatekeys.app/zh-hans/guide/android">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 标志：适用于 Windows、Mac 和 iPhone 的密码管理器。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys Android 版用户指南">
+  <meta name="twitter:description" content="LocalGateKeys Android 应用如何工作：设置、自动填充、两步验证码、导入、备份和同步。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../zh-hans/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="主导航">
+        <ul class="nav">
+          <li><a href="../../zh-hans/features">功能</a></li>
+          <li><a href="../../zh-hans/get-started">入门</a></li>
+          <li><a href="../../zh-hans/help">指南</a></li>
+          <li><a href="../../zh-hans/security">安全</a></li>
+          <li><a href="../../zh-hans/pricing">价格</a></li>
+          <li><a href="../../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../../zh-hans/download">下载</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>菜单</summary>
+        <nav aria-label="主导航">
+          <ul class="nav nav-stack">
+            <li><a href="../../zh-hans/features">功能</a></li>
+          <li><a href="../../zh-hans/get-started">入门</a></li>
+          <li><a href="../../zh-hans/help">指南</a></li>
+          <li><a href="../../zh-hans/security">安全</a></li>
+          <li><a href="../../zh-hans/pricing">价格</a></li>
+          <li><a href="../../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../../zh-hans/download">下载</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>语言</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Android 版 LocalGateKeys</h1>
+  <p class="lead">此设备上每个界面和功能的分步帮助。每个标题都是可以分享的链接。</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="平台">
+    <ul><li><a class="help-tab" href="../../zh-hans/guide/windows">Windows</a></li><li><a class="help-tab" href="../../zh-hans/guide/mac">Mac</a></li><li><a class="help-tab" href="../../zh-hans/guide/iphone">iPhone 和 iPad</a></li><li><a class="help-tab" href="../../zh-hans/guide/android" aria-current="page">Android</a></li><li><a class="help-tab" href="../../zh-hans/guide/extension">浏览器扩展</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>在所有设备上都值得了解</h2>
+    <ul>
+      <li><strong>保险库只保存在你的设备上。</strong>没有账户,也没有存放密码的 LocalGateKeys 服务器。</li>
+      <li><strong>没有人能重置你的主密码或 App 密码。</strong>请设置恢复短语,并写在纸上保存。</li>
+      <li><strong>Free</strong> 最多保存 7 个项目。<strong>Pro</strong>(US$29.99,一次性付费)提供无限项目、双重验证码、文件和同步。编辑、删除和填充已有项目永远不会受限。</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Android 主题</h2>
+    <p class="callout-soon"><strong>即将推出。</strong>Android 应用尚未上架 Google Play。本指南介绍它将如何工作。</p>
+    <p class="panel-lead">应用有四个标签页：<strong>保险库</strong>、<strong>同步</strong>、<strong>安全</strong>和<strong>设置</strong>。搜索是保险库标签页顶部的放大镜。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Android 主题">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#and-setup">首次启动和解锁</a></li>
+            <li><a href="#and-apppw">App 密码和恢复</a></li>
+            <li><a href="#and-items">项目</a></li>
+            <li><a href="#and-search">搜索和操作</a></li>
+            <li><a href="#and-generator">密码生成器</a></li>
+            <li><a href="#and-2fa">双重验证码</a></li>
+            <li><a href="#and-autofill">自动填充</a></li>
+            <li><a href="#and-passkeys">通行密钥</a></li>
+            <li><a href="#and-import">导入</a></li>
+            <li><a href="#and-backups">备份</a></li>
+            <li><a href="#and-sync">同步</a></li>
+            <li><a href="#and-share">共享</a></li>
+            <li><a href="#and-settings">设置和 Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">首次启动和解锁</a></h3>
+          <p>保险库通过手机的指纹、面部或屏幕锁定打开。（手机需要设置屏幕锁定。）接下来是简短设置：用指纹解锁、<strong>导入…</strong>、可选的应用密码以及<strong>打开自动填充设置</strong>。任何步骤都可以跳过；<em>完成设置</em>卡片可以带你返回。</p>
+          <p>设置 › 锁定与安全 可设置<strong>离开应用后自动锁定</strong>（立即到 1 小时）和<strong>空闲时锁定</strong>（1 到 30 分钟，或从不），并提供<strong>立即锁定</strong>。应用在最近任务视图中处于隐藏状态。</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">App 密码和恢复短语</a></h3>
+          <ol>
+            <li>设置 › 锁定与安全 › 打开<strong>使用应用密码</strong>，设置一个密码并轻点<strong>继续</strong>。此后由它而不是屏幕锁定来打开 LocalGateKeys。</li>
+            <li>写下 24 个单词的恢复短语，轻点<strong>我已写下</strong>，输入要求的单词，然后轻点<strong>开启应用密码</strong>。</li>
+          </ol>
+          <p>忘记了？轻点<strong>忘记应用密码？</strong>，输入 24 个单词，然后设置新密码。<strong>更改应用密码</strong>，以及用于关闭它的<strong>使用应用密码</strong>开关，位于 设置 › 锁定与安全。</p>
+          <p class="note">从 Google 备份恢复手机后,保险库无法打开(其密钥不会被备份)。请选择<strong>重新开始</strong>,然后与电脑同步以恢复所有内容。</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">项目</a></h3>
+          <ul>
+            <li>轻点 <strong>+</strong> 并选择类型:网站登录、笔记、支付卡、身份、银行账户、购买记录、订阅、保修、Wi-Fi 网络、许可证、API 密钥、SSH 密钥、书签。</li>
+            <li>打开项目可复制字段、<strong>打开网站</strong>、<strong>编辑</strong>、<strong>删除</strong>或<strong>添加到收藏</strong>。</li>
+            <li><strong>密码历史</strong>:复制或恢复以前的密码。</li>
+            <li><strong>添加文件</strong>(Pro):拍照、选择照片或文件,每个最大 25 MB。</li>
+            <li>按标题或日期<strong>排序</strong>,收藏优先。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">搜索和操作</a></h3>
+          <p>轻点保险库标签页上的放大镜并输入名称，或以 <code>&gt;</code> 开头使用操作，例如导出备份、生成密码、导入密码、锁定、接收共享项目、扫描二维码配对和立即同步。</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">密码生成器</a></h3>
+          <p><strong>密码</strong>(长度、大小写字母、数字、符号、避免易混淆字符)或<strong>密码短语</strong>(单词、首字母大写、添加数字、分隔符)。<strong>重新生成</strong>,然后<strong>复制</strong>。</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">双重验证码</a> <span class="badge-pro">Pro</span></h3>
+          <p>编辑登录信息并轻点双重验证字段旁的<strong>扫描二维码</strong>,或输入设置密钥。验证码显示在项目中以及<strong>验证码</strong>行中:轻点即可复制。</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">自动填充</a></h3>
+          <ol>
+            <li>设置 › 自动填充 › <strong>打开自动填充设置</strong>并选择 LocalGateKeys。(如果打不开,请在手机设置中搜索<em>自动填充服务</em>。)</li>
+            <li>在任何应用或网站中轻点登录框,并从建议中选择你的登录信息。出现提示时解锁。</li>
+            <li>在新的地方登录后,在<em>保存登录信息?</em>中选择<strong>保存</strong>,如果密码已更改则选择<strong>更新密码</strong>。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">通行密钥</a></h3>
+          <p>打开 设置 › 自动填充 › <strong>为通行密钥提供 LocalGateKeys</strong>。当网站或应用提供通行密钥时，选择 LocalGateKeys；之后使用<strong>使用您的通行密钥</strong>登录。</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">导入</a></h3>
+          <p>设置 › 同步与数据 › <strong>从文件导入</strong> › <strong>选择导出文件</strong>：Chrome、Edge、Brave、Firefox、Apple 密码、Bitwarden <code>.json</code>（也支持受密码保护的文件）、1Password <code>.1pux</code> 或任何 CSV。全部检查后再导入。之后请删除导出文件。</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">备份</a></h3>
+          <p><strong>导出备份…</strong>会用你设定的密码(无法找回)保存一个加密的 <code>.lgkm</code> 文件。<strong>从备份恢复…</strong>会打开备份、显示预览,并且绝不会覆盖较新的项目。也适用于电脑和 iPhone。</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">与电脑同步</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>在电脑的 Wi-Fi 卡片上选择<strong>显示二维码</strong>。</li>
+            <li>在手机上,同步标签页 › <strong>扫描二维码</strong>(或<strong>粘贴代码文本</strong>)。</li>
+            <li>确认两边显示相同的代码,然后在电脑上接受。</li>
+          </ol>
+          <p>或者使用同步密码在 Dropbox 或 Nextcloud 中<strong>加入文件夹…</strong>。电脑也需要 Pro。</p>
+          <p class="note">在与 Apple 相关的问题解决之前,OneDrive 和 Google Drive 暂时无法用于同步。请改用 Dropbox、Nextcloud 或 Wi-Fi 同步。</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">共享</a></h3>
+          <p>打开项目，轻点共享，然后选择<strong>以文件发送…</strong>或<strong>显示为二维码</strong>，并单独告知六个单词。接收：设置 › 同步与数据 › <strong>接收共享项目</strong>，输入六个单词，轻点<strong>打开</strong>，然后<strong>添加到保管库</strong>。共享内容在 24 小时内只能打开一次；输错三次代码会将其删除。通行密钥和文件无法共享。</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">设置和 Pro</a></h3>
+          <ul>
+            <li><strong>外观</strong>:跟随系统、浅色或深色,以及你的姓名首字母。</li>
+            <li><strong>锁定与安全</strong>中有<strong>多久后清除剪贴板</strong>，<strong>隐私</strong>中有<strong>点按前隐藏密码</strong>，<strong>同步与数据</strong>中有<strong>清除此手机的保管库</strong>（仅限此手机）。Android 仅在应用打开时允许检查剪贴板，因此从快速设置图块复制的内容，或在切换到其他应用前复制的内容，会在下次打开 LocalGateKeys 时清除。</li>
+            <li><strong>Pro</strong>（位于设置顶部）：通过<strong>升级</strong>在 Google Play 一次性购买，在使用同一 Google 账号的另一部手机上<strong>恢复购买</strong>，并用<strong>复制密钥</strong>同时解锁 Windows。</li>
+            <li><strong>胁迫密码</strong>(Pro):在有人强迫你解锁时使用的第二个应用密码。它会打开一个只含你所选项目的独立保险库，之后你的保险库会在你设定的小时数内拒绝应用密码。请先开启应用密码，再在“设置”的<strong>胁迫密码</strong>中设置。</li>
+            <li><strong>导出到 CXF 文件…</strong>会把你选择的登录、笔记和通行密钥写入其他密码管理器可导入的 Credential Exchange 文件。该文件未加密。</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../zh-hans/help">在一页中查看完整用户指南</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>适用于 Windows、Mac 和 iPhone 的密码管理器，让保管库留在您自己的设备上。</p>
+        <p class="quiet">本网站使用不依赖 Cookie 的 Cloudflare Web Analytics 统计页面访问量。网站不使用广告追踪器，也不设置 Cookie。</p>
+      </div>
+      <nav aria-label="产品">
+        <h2>产品</h2>
+        <ul>
+          <li><a href="../../zh-hans/features">功能</a></li>
+          <li><a href="../../zh-hans/pricing">价格</a></li>
+          <li><a href="../../zh-hans/download">下载</a></li>
+          <li><a href="../../zh-hans/get-started">入门</a></li>
+          <li><a href="../../zh-hans/switch/">迁移</a></li>
+          <li><a href="../../buy">购买 Pro</a></li>
+          <li><a href="../../zh-hans/licence">您的 Pro 许可证</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">找回许可证</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="帮助">
+        <h2>帮助</h2>
+        <ul>
+          <li><a href="../../zh-hans/help">用户指南</a></li>
+          <li><a href="../../zh-hans/support">支持与常见问题</a></li>
+          <li><a href="../../zh-hans/security">安全</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">报告漏洞</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法律">
+        <h2>法律</h2>
+        <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
+        <ul>
+          <li><a href="../../legal/eula">许可协议</a></li>
+          <li><a href="../../legal/privacy">隐私政策</a></li>
+          <li><a href="../../legal/terms-of-sale">销售条款</a></li>
+          <li><a href="../../legal/refunds">退款政策</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。Apple、iPhone、Apple Watch、Face ID、Touch ID 和 Safari 是 Apple Inc. 在美国及其他国家/地区注册的商标。</p>
+      <nav class="lang-switch" aria-label="语言"><ul><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

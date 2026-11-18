@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import AppSharedMac
 
 extension Appearance {
@@ -48,6 +49,13 @@ final class MacSettingsModel {
     init(settings: AppSettings, pro: ProModel, passwords: (any MasterPasswordService)?, local: (any LocalDataHosting)? = nil,
          clock: @escaping () -> Date = Date.init) {
         self.settings = settings; self.pro = pro; self.passwords = passwords; self.local = local; self.clock = clock
+        self.factors = (passwords as? any FactorService).map { FactorSettingsModel(service: $0) }
+        self.restoreTestWeekly = (settings.defaults.object(forKey: RestoreTestModel.weeklyKey) as? Bool) ?? true
+        // Windows settings added 2026-11-14 (MacExtraSettings).
+        self.idleSource = MacExtraSettings.idleSource(settings.defaults)
+        self.totpConfirm = MacExtraSettings.totpConfirm(settings.defaults)
+        self.documentOpenEnabled = MacExtraSettings.documentOpenEnabled(settings.defaults)
+        self.automaticBackupCount = MacExtraSettings.automaticBackupCount(settings.defaults)
     }
 
     /// Windows `trash_retention_days` choices (1–365; 30 by default).
@@ -114,6 +122,12 @@ final class MacSettingsModel {
         set { settings.breachCheckEnabled = newValue }
     }
 
+    /// Windows `erase_on_sync_removal` (on by default): a verified removal notice erases this Mac's vault.
+    var eraseOnSyncRemoval: Bool {
+        get { settings.eraseOnSyncRemoval }
+        set { settings.eraseOnSyncRemoval = newValue }
+    }
+
     /// Windows `strict_offline_mode` (on by default): refuses every breach check.
     var strictOfflineMode: Bool {
         get { settings.strictOfflineMode }
@@ -144,6 +158,33 @@ final class MacSettingsModel {
         set { settings.offerPasskeys = newValue; onAutoFillChanged() }
     }
 
+    /// Windows `restore_test_weekly` (on by default): the same value the Security centre's restore test switch uses.
+    var restoreTestWeekly: Bool {
+        didSet { settings.defaults.set(restoreTestWeekly, forKey: RestoreTestModel.weeklyKey) }
+    }
+
+    // MARK: Windows settings added 2026-11-14 (MacExtraSettings)
+
+    /// Windows `idle_source` (Computer by default): what resets the auto-lock timer.
+    var idleSource: MacExtraSettings.IdleSource {
+        didSet { settings.defaults.set(idleSource.rawValue, forKey: MacExtraSettings.idleSourceKey) }
+    }
+
+    /// Windows `totp_confirm` (off by default): ask before each copy of a 2FA code.
+    var totpConfirm: Bool {
+        didSet { settings.defaults.set(totpConfirm, forKey: MacExtraSettings.totpConfirmKey) }
+    }
+
+    /// Windows `document_open_enabled` (on by default): documents may open in their default app.
+    var documentOpenEnabled: Bool {
+        didSet { settings.defaults.set(documentOpenEnabled, forKey: MacExtraSettings.documentOpenKey) }
+    }
+
+    /// Windows `automatic_backup_count` (5 by default, 0 is Off): copies kept as you save.
+    var automaticBackupCount: Int {
+        didSet { settings.defaults.set(MacExtraSettings.validatedBackupCount(automaticBackupCount), forKey: MacExtraSettings.automaticBackupCountKey) }
+    }
+
     var appearance: Appearance {
         get { settings.appearance }
         set { settings.appearance = newValue }
@@ -155,7 +196,16 @@ final class MacSettingsModel {
     var isUnlocked: Bool { passwords?.isUnlocked ?? false }
     var canChangeLocking: Bool { isUnlocked }
     var canChangeUnlocking: Bool { isUnlocked && (passwords?.hasVault ?? false) }
+    /// Settings › Duress password (sub-plan 08): the lock model, when it offers it.
+    var duress: (any DuressService)? { passwords as? any DuressService }
     var touchIDAvailable: Bool { passwords?.touchIDAvailable ?? false }
+    /// Key file and YubiKey (Settings › Unlocking), when the vault offers them.
+    @ObservationIgnored let factors: FactorSettingsModel?
+    /// "Always ask for the key file / YubiKey" is on with a factor set: Touch ID stays off.
+    var touchIDBlockedByFactors: Bool {
+        _ = factors?.revision   // re-read after every factor change on the page
+        return settings.factorsAlwaysAsk && !((passwords as? any FactorService)?.factorSpecs.isEmpty ?? true)
+    }
     /// Read from the key file when Settings opens and after the recovery phrase sheet closes.
     private(set) var recoveryPhraseSet = false
     func refreshRecoveryPhrase() { recoveryPhraseSet = passwords?.hasRecoveryPhrase ?? false }
@@ -193,188 +243,108 @@ final class MacSettingsModel {
     func clearMessages() { passwordMessage = nil; touchIDMessage = nil }
 }
 
-/// The settings page: grouped glass cards on the wash (the Settings window), or inside the main window's shell
-/// panel (the sidebar's Settings).
+/// The Settings tabs (UX refresh 2026-11-12). Every former section has a home:
+/// General (menu bar & startup, setup, reminder notifications), Security (locking, unlocking, privacy),
+/// AutoFill, Backups (Recovery centre, Recently deleted), Appearance, Plan (Pro, Licence), Advanced (Developer).
+enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
+    case general, security, autoFill, backups, appearance, plan, advanced
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .general: String(localized: "settings.tab.general", defaultValue: "General")
+        case .security: String(localized: "settings.tab.security", defaultValue: "Security")
+        case .autoFill: String(localized: "AutoFill")
+        case .backups: String(localized: "Backups")
+        case .appearance: String(localized: "Appearance")
+        case .plan: String(localized: "Plan")
+        case .advanced: String(localized: "settings.tab.advanced", defaultValue: "Advanced")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .general: "gearshape"
+        case .security: "lock.shield"
+        case .autoFill: "key"
+        case .backups: "externaldrive"
+        case .appearance: "paintbrush"
+        case .plan: "checkmark.seal"
+        case .advanced: "wrench.and.screwdriver"
+        }
+    }
+
+    /// The tab that holds a section the palette asks for.
+    static func tab(for section: SettingsSection) -> SettingsTab {
+        switch section {
+        case .locking, .unlocking, .privacy: .security
+        case .appearance: .appearance
+        case .plan: .plan
+        }
+    }
+}
+
+/// A row's title and the help text shown under it (also what the search field matches).
+struct SettingsRowText {
+    let title: String
+    let detail: String?
+}
+
+/// The settings page: tabs (General … Advanced), a search field that filters rows across all tabs, and help text
+/// under each row. A native tabbed window for ⌘, (`standalone`), or a tab bar inside the main window's shell panel
+/// (the sidebar's Settings).
 struct MacSettingsView: View {
     @Bindable var model: MacSettingsModel
     /// True in the Settings window: draws its own wash behind the cards.
     var standalone = false
-    /// The main window's Settings: the Backups section opens the Recovery centre there.
-    var onRecoveryCentre: (() -> Void)?
-    /// The main window's Settings: Show setup again (workstream 4); nil hides the row.
+    /// Both windows show every row. The main window passes its own paths; the ⌘, window leaves these nil and they
+    /// open the page in the main window (opened first when none is on screen), through `QuickAccessBridge`.
+    /// Backups › Recovery centre.
+    var onRecoveryCentre: (() -> Void)? = nil
+    /// General › Show setup again (workstream 4).
     var onShowSetup: (() -> Void)? = nil
+    /// The backup schedule (Backups › Scheduled backups and the emergency kit's folders); nil uses the app's.
+    var scheduleModel: BackupScheduleModel? = nil
+    /// Plan › Licence.
+    var onLicence: (() -> Void)? = nil
     @Environment(\.macTheme) private var theme
+    @Environment(\.openWindow) private var openWindow
+    @State private var tab: SettingsTab = .general
+    @State private var query = ""
     @State private var changingPassword = false
     @State private var recoveryPhrase: RecoveryPhraseSheet.Mode?
     @State private var touchIDPrompt: Bool?   // the state being turned to, while asking for the password
     @AppStorage(QuickAccessSettings.showMenuBarKey) private var showMenuBarIcon = true
     @AppStorage(QuickAccessSettings.hotKeyKey) private var quickAccessHotKey = true
+    @AppStorage(CaptureProtection.key) private var hideFromCapture = true
     @State private var hotKeyMessage: String?
+    /// Bumped when the shortcut's keys change, so its help text shows the new keys.
+    @State private var hotKeyRevision = 0
+    @State private var captureRestartNote = false
     @State private var openAtLogin = false
     @State private var loginItemMessage: String?
+    /// Settings › Advanced › Developer (SSH agent, keys, setup lines) and its plain-secrets scan sheet while open.
+    @State private var developer = DeveloperSettingsModel()
+    @State private var secretScan: SecretScanModel?
 
     var body: some View {
-        ScrollViewReader { proxy in
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Settings").font(.system(size: 19, weight: .semibold)).foregroundStyle(theme.text)
-                if !model.isUnlocked {
-                    Label(MacSettingsModel.lockedMessage, systemImage: "lock.fill")
-                        .font(.system(size: 13)).foregroundStyle(theme.textMuted)
-                }
-                section(String(localized: "Locking")) {
-                    pickerRow(String(localized: "Auto-lock after inactivity"), selection: $model.autoLock) {
-                        ForEach(IdleLock.allCases) { Text($0.label).tag($0) }
-                    }
-                    divider
-                    toggleRow(String(localized: "Lock when the screen locks"), isOn: $model.lockOnScreenLock)
-                    divider
-                    toggleRow(String(localized: "Lock when the Mac sleeps"), isOn: $model.lockOnSleep)
-                    divider
-                    pickerRow(String(localized: "Maximum session"), selection: $model.maxSession) {
-                        ForEach(MacSettingsModel.maxSessionChoices, id: \.self) { Text(MacSettingsModel.maxSessionLabel($0)).tag($0) }
-                    }
-                }
-                .disabled(!model.canChangeLocking)
-                section(String(localized: "Menu bar & startup")) {
-                    toggleRow(String(localized: "Show in the menu bar"), isOn: $showMenuBarIcon)
-                    divider
-                    row(String(localized: "Quick access shortcut"), detail: String(localized: "\(QuickAccessSettings.hotKeyLabel) opens Search Everything from any app.")) {
-                        Toggle("", isOn: Binding(get: { quickAccessHotKey }, set: { on in
-                            quickAccessHotKey = on
-                            GlobalHotKey.shared.apply()
-                            hotKeyMessage = on && !GlobalHotKey.shared.isRegistered
-                                ? String(localized: "Another app already uses \(QuickAccessSettings.hotKeyLabel).") : nil
-                        })).toggleStyle(.switch).labelsHidden()
-                    }
-                    if let hotKeyMessage {
-                        Text(hotKeyMessage).font(.system(size: 11)).foregroundStyle(theme.danger)
-                            .padding(.horizontal, 14).padding(.bottom, 8)
-                    }
-                    divider
-                    row(String(localized: "Open at login"), detail: LoginItem.needsApproval ? String(localized: "Waiting for approval in System Settings › General › Login Items.") : nil) {
-                        Toggle("", isOn: Binding(get: { openAtLogin }, set: { on in
-                            loginItemMessage = LoginItem.set(on); openAtLogin = LoginItem.isOn || LoginItem.needsApproval
-                        })).toggleStyle(.switch).labelsHidden()
-                    }
-                    if let loginItemMessage {
-                        Text(loginItemMessage).font(.system(size: 11)).foregroundStyle(theme.danger)
-                            .padding(.horizontal, 14).padding(.bottom, 8)
-                    }
-                }
-                .onAppear { openAtLogin = LoginItem.isOn || LoginItem.needsApproval }
-                section(String(localized: "Unlocking")) {
-                    row(String(localized: "Master password"), detail: String(localized: "Used to open your vault on this Mac.")) {
-                        Button("Change…") { model.clearMessages(); changingPassword = true }
-                            .buttonStyle(PillButtonStyle(primary: false))
-                            .disabled(!model.canChangeUnlocking)
-                    }
-                    divider
-                    row(String(localized: "Touch ID"), detail: model.touchIDAvailable ? String(localized: "Unlock with your fingerprint. If your fingerprints change, your master password is needed again.")
-                                                                   : String(localized: "Touch ID isn't available on this Mac.")) {
-                        Toggle("", isOn: Binding(get: { model.touchIDOn }, set: { on in model.clearMessages(); touchIDPrompt = on }))
-                            .toggleStyle(.switch).labelsHidden()
-                            .disabled(!model.canChangeUnlocking || (!model.touchIDAvailable && !model.touchIDOn))
-                    }
-                    divider
-                    row(String(localized: "Recovery phrase"), detail: model.recoveryPhraseSet
-                        ? String(localized: "Set. 24 words that replace a forgotten master password. Creating a new one replaces it.")
-                        : String(localized: "24 words that replace a forgotten master password. Shown once; write them down.")) {
-                        HStack(spacing: 8) {
-                            if model.recoveryPhraseSet {
-                                Button("Remove…") { recoveryPhrase = .remove }.buttonStyle(PillButtonStyle(primary: false))
-                            }
-                            Button(model.recoveryPhraseSet ? String(localized: "Replace…") : String(localized: "Create…")) { recoveryPhrase = .create }
-                                .buttonStyle(PillButtonStyle(primary: false))
-                        }
-                        .disabled(!model.canChangeUnlocking)
-                    }
-                }
-                .disabled(!model.canChangeUnlocking)
-                if let onRecoveryCentre {
-                    section(String(localized: "Backups")) {
-                        row(String(localized: "Recovery centre"), detail: String(localized: "Full backups, restore, the recovery kit and old backups.")) {
-                            Button("Open", action: onRecoveryCentre).buttonStyle(PillButtonStyle(primary: false))
-                        }
-                    }
-                }
-                section(String(localized: "Privacy")) {
-                    pickerRow(String(localized: "Clear clipboard after"), selection: $model.clipboardExpiry) {
-                        ForEach(ClipboardExpiry.allCases) { Text($0.label).tag($0) }
-                    }
-                    divider
-                    row(String(localized: "Breach checks"), detail: String(localized: "You start each check. It sends 5 characters of a hash, never the password.")) {
-                        Toggle("", isOn: $model.breachCheckEnabled).toggleStyle(.switch).labelsHidden()
-                    }
-                    divider
-                    row(String(localized: "Strict offline mode"), detail: String(localized: "Blocks background internet requests, website icons and breach checks")) {
-                        Toggle("", isOn: $model.strictOfflineMode).toggleStyle(.switch).labelsHidden()
-                    }
-                    divider
-                    row(String(localized: "Show item names in reminders"), detail: String(localized: "Notifications can appear on the lock screen. When off, they say \u{201C}A reminder is due\u{201D}.")) {
-                        Toggle("", isOn: $model.showItemNamesInReminders).toggleStyle(.switch).labelsHidden()
-                    }
-                    divider
-                    Group {
-                        row(String(localized: "Empty trash automatically"), detail: String(localized: "When off, deleted items stay in the trash until you delete them")) {
-                            Toggle("", isOn: $model.trashAutoPurge).toggleStyle(.switch).labelsHidden()
-                        }
-                        divider
-                        row(String(localized: "Empty Recently deleted after"), detail: String(localized: "Used while automatic emptying is on")) {
-                            Picker("", selection: $model.trashRetentionDays) {
-                                ForEach(model.trashRetentionOptions, id: \.self) { Text(MacSettingsModel.retentionLabel($0)).tag($0) }
-                            }
-                            .labelsHidden().fixedSize()
-                        }
-                    }
-                    .disabled(!model.canChangeTrash)
-                }
-                section(String(localized: "AutoFill")) {
-                    row(String(localized: "Show logins in AutoFill suggestions"), detail: String(localized: "Usernames and website names only, never passwords.")) {
-                        Toggle("", isOn: $model.showInQuickType).toggleStyle(.switch).labelsHidden()
-                    }
-                    divider
-                    row(String(localized: "Include exact-site logins"), detail: String(localized: "Suggestions are offered by domain, so a login saved for one site can also be offered on other pages of the same domain.")) {
-                        Toggle("", isOn: $model.quickTypeExactSites).toggleStyle(.switch).labelsHidden()
-                            .disabled(!model.showInQuickType)
-                    }
-                    divider
-                    toggleRow(String(localized: "Offer passkeys"), isOn: $model.offerPasskeys)
-                }
-                section(String(localized: "Appearance")) {
-                    row(String(localized: "Theme"), detail: nil) {
-                        Picker("", selection: $model.appearance) {
-                            ForEach(Appearance.allCases) { Text($0.label).tag($0) }
-                        }
-                        .pickerStyle(.segmented).labelsHidden().fixedSize()
-                    }
-                }
-                if let onShowSetup {
-                    section(String(localized: "Setup")) {
-                        row(String(localized: "Set up LocalGateKeys"), detail: String(localized: "Touch ID, import, recovery phrase and the Safari extension.")) {
-                            Button(Onboarding.showAgainTitle, action: onShowSetup).buttonStyle(PillButtonStyle(primary: false))
-                        }
-                    }
-                }
-                section(String(localized: "Plan")) { PlanRows(pro: model.pro) }
-            }
-            .padding(standalone ? 24 : 18)
-            .padding(.bottom, 24)   // Plan's Buy and Restore scroll clear of the panel's edge
-            .frame(maxWidth: 640, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: standalone ? .center : .leading)
-        }
-        .onAppear { followRequests(proxy) }
-        .onChange(of: model.requestedSection) { _, _ in followRequests(proxy) }
-        .onChange(of: model.requestsPasswordChange) { _, _ in followRequests(proxy) }
-        }
+        content
         .background { if standalone { WashBackground() } }
+        .onAppear { openAtLogin = LoginItem.isOn || LoginItem.needsApproval }
         .sheet(isPresented: Binding(get: { recoveryPhrase != nil }, set: { if !$0 { recoveryPhrase = nil } }),
                onDismiss: { model.refreshRecoveryPhrase() }) {
             if let passwords = model.passwords, let mode = recoveryPhrase {
-                RecoveryPhraseSheet(passwords: passwords, mode: mode, onClose: { recoveryPhrase = nil }).macThemed()
+                RecoveryPhraseSheet(passwords: passwords, mode: mode, onClose: { recoveryPhrase = nil },
+                                    kitFacts: { EmergencyKitDocument.macFacts(schedule: schedule) }).macThemed()
             }
         }
         .onAppear { model.refreshRecoveryPhrase() }
+        .sheet(isPresented: Binding(get: { secretScan != nil && model.isUnlocked }, set: { if !$0 { secretScan?.reset(); secretScan = nil } })) {
+            if let secretScan {
+                SecretScanSheet(model: secretScan, onClose: { secretScan.reset(); self.secretScan = nil }).macThemed()
+            }
+        }
         .sheet(isPresented: $changingPassword) {
             ChangePasswordSheet(model: model, onClose: { changingPassword = false }).macThemed()
         }
@@ -383,11 +353,488 @@ struct MacSettingsView: View {
         }
     }
 
+    /// ⌘, gets the native tabbed Settings window; the main window gets a tab bar above the page.
+    @ViewBuilder private var content: some View {
+        if standalone {
+            TabView(selection: $tab) {
+                ForEach(SettingsTab.allCases) { t in
+                    page(t)
+                        .tabItem { Label(t.title, systemImage: t.symbol) }
+                        .tag(t)
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                tabBar.padding(.horizontal, 18).padding(.top, 14)
+                page(tab)
+            }
+        }
+    }
+
+    /// The main window's tab bar (the Settings window uses the system's).
+    private var tabBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) { tabButtons }
+    }
+
+    private var tabButtons: some View {
+        HStack(spacing: 4) {
+            ForEach(SettingsTab.allCases) { t in
+                Button { tab = t; query = "" } label: {
+                    Label(t.title, systemImage: t.symbol).labelStyle(.titleAndIcon)
+                        .font(.system(size: 12.5, weight: tab == t && query.isEmpty ? .semibold : .regular))
+                        .foregroundStyle(theme.text)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background {
+                            if tab == t && query.isEmpty {
+                                Capsule().fill(theme.selection)
+                            }
+                        }
+                        .fixedSize()
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(tab == t ? .isSelected : [])
+            }
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").foregroundStyle(theme.textFaint)
+            TextField(String(localized: "settings.search", defaultValue: "Search settings"), text: $query)
+                .textFieldStyle(.plain)
+            if !query.isEmpty {
+                Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(theme.textFaint) }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(String(localized: "settings.search.clear", defaultValue: "Clear search"))
+            }
+        }
+        .font(.system(size: 13))
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(theme.card, in: Capsule())
+        .overlay(Capsule().strokeBorder(theme.panelBorder))
+    }
+
+    /// One tab's page, or every tab's matching rows while searching.
+    private func page(_ shownTab: SettingsTab) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack(alignment: .center, spacing: 12) {
+                        Text(searching ? String(localized: "settings.search.results", defaultValue: "Search results") : shownTab.title)
+                            .font(.system(size: 19, weight: .semibold)).foregroundStyle(theme.text)
+                        Spacer(minLength: 12)
+                        searchField.frame(maxWidth: 240)
+                    }
+                    if !model.isUnlocked {
+                        Label(MacSettingsModel.lockedMessage, systemImage: "lock.fill")
+                            .font(.system(size: 13)).foregroundStyle(theme.textMuted)
+                    }
+                    if searching {
+                        ForEach(SettingsTab.allCases) { t in tabContent(t) }
+                        if !anyMatch {
+                            Text(String(localized: "settings.search.none", defaultValue: "No settings match your search."))
+                                .font(.system(size: 13)).foregroundStyle(theme.textMuted)
+                        }
+                    } else {
+                        tabContent(shownTab)
+                    }
+                }
+                .padding(standalone ? 24 : 18)
+                .padding(.bottom, 24)   // Plan's Buy and Restore scroll clear of the panel's edge
+                .frame(maxWidth: 640, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: standalone ? .center : .leading)
+            }
+            .onAppear { followRequests(proxy) }
+            .onChange(of: model.requestedSection) { _, _ in followRequests(proxy) }
+            .onChange(of: model.requestsPasswordChange) { _, _ in followRequests(proxy) }
+        }
+    }
+
+    @ViewBuilder private func tabContent(_ t: SettingsTab) -> some View {
+        switch t {
+        case .general: generalTab
+        case .security: securityTab
+        case .autoFill: autoFillTab
+        case .backups: backupsTab
+        case .appearance: appearanceTab
+        case .plan: planTab
+        case .advanced: advancedTab
+        }
+    }
+
+    // MARK: row texts (titles and help, also what the search matches)
+
+    private var tAutoLock: SettingsRowText { .init(title: String(localized: "Auto-lock after inactivity"),
+        detail: String(localized: "settings.help.autoLock", defaultValue: "Locks LocalGateKeys when you haven't used it for this long.")) }
+    private var tScreenLock: SettingsRowText { .init(title: String(localized: "Lock when the screen locks"),
+        detail: String(localized: "settings.help.screenLock", defaultValue: "Locks as soon as the Mac's screen locks or the screen saver starts.")) }
+    private var tSleep: SettingsRowText { .init(title: String(localized: "Lock when the Mac sleeps"),
+        detail: String(localized: "settings.help.sleep", defaultValue: "Locks before the Mac goes to sleep.")) }
+    private var tMaxSession: SettingsRowText { .init(title: String(localized: "Maximum session"),
+        detail: String(localized: "settings.help.maxSession", defaultValue: "Locks after this long even while you are using it.")) }
+    private var tMenuBar: SettingsRowText { .init(title: String(localized: "Show in the menu bar"),
+        detail: String(localized: "settings.help.menuBar", defaultValue: "A key icon in the menu bar to search and copy without opening the window.")) }
+    private var tHotKey: SettingsRowText {
+        _ = hotKeyRevision
+        return .init(title: String(localized: "Quick access shortcut"),
+                     detail: String(localized: "\(QuickAccessSettings.hotKeyLabel) opens Search Everything from any app."))
+    }
+    private var tLogin: SettingsRowText { .init(title: String(localized: "Open at login"),
+        detail: LoginItem.needsApproval ? String(localized: "Waiting for approval in System Settings › General › Login Items.")
+                                        : String(localized: "settings.help.openAtLogin", defaultValue: "Starts LocalGateKeys, locked, when you log in to this Mac.")) }
+    private var tSetup: SettingsRowText { .init(title: String(localized: "Set up LocalGateKeys"),
+        detail: String(localized: "Touch ID, import, recovery phrase and the Safari extension.")) }
+    private var tReminderNames: SettingsRowText { .init(title: String(localized: "Show item names in reminders"),
+        detail: String(localized: "Notifications can appear on the lock screen. When off, they say \u{201C}A reminder is due\u{201D}.")) }
+    private var tMasterPassword: SettingsRowText { .init(title: String(localized: "Master password"),
+        detail: String(localized: "Used to open your vault on this Mac.")) }
+    private var tTouchID: SettingsRowText { .init(title: String(localized: "Touch ID"),
+        detail: model.touchIDBlockedByFactors ? MacFactors.touchIDOff
+            : model.touchIDAvailable ? String(localized: "Unlock with your fingerprint. If your fingerprints change, your master password is needed again.")
+                                     : String(localized: "Touch ID isn't available on this Mac.")) }
+    private var tPhrase: SettingsRowText { .init(title: String(localized: "Recovery phrase"),
+        detail: model.recoveryPhraseSet
+            ? String(localized: "Set. 24 words that replace a forgotten master password. Creating a new one replaces it.")
+            : String(localized: "24 words that replace a forgotten master password. Shown once; write them down.")) }
+    private var tClipboard: SettingsRowText { .init(title: String(localized: "Clear clipboard after"),
+        detail: String(localized: "settings.help.clipboard", defaultValue: "Copied passwords and codes are removed from the clipboard after this time.")) }
+    private var tBreach: SettingsRowText { .init(title: String(localized: "Breach checks"),
+        detail: String(localized: "You start each check. It sends 5 characters of a hash, never the password.")) }
+    private var tOffline: SettingsRowText { .init(title: String(localized: "Strict offline mode"),
+        detail: String(localized: "Blocks background internet requests, website icons and breach checks")) }
+    private var tCapture: SettingsRowText { .init(title: String(localized: "settings.hideFromCapture.title", defaultValue: "Hide from screenshots and screen sharing"),
+        detail: String(localized: "settings.hideFromCapture.desc", defaultValue: "Other programs, screen recorders and video calls cannot capture this window")) }
+    private var tErase: SettingsRowText { .init(title: DeviceRemoval.eraseSettingTitle, detail: DeviceRemoval.eraseSettingText) }
+    private var tQuickType: SettingsRowText { .init(title: String(localized: "Show logins in AutoFill suggestions"),
+        detail: String(localized: "Usernames and website names only, never passwords.")) }
+    private var tExactSites: SettingsRowText { .init(title: String(localized: "Include exact-site logins"),
+        detail: String(localized: "Suggestions are offered by domain, so a login saved for one site can also be offered on other pages of the same domain.")) }
+    private var tPasskeys: SettingsRowText { .init(title: String(localized: "Offer passkeys"),
+        detail: String(localized: "settings.help.passkeys", defaultValue: "Lets websites and apps sign in with passkeys saved in LocalGateKeys.")) }
+    private var tPasskeyCheck: SettingsRowText { .init(title: String(localized: "Passkey check"), detail: MacPasskeyDoctor.howTo) }
+    private var tRecoveryCentre: SettingsRowText { .init(title: String(localized: "Recovery centre"),
+        detail: String(localized: "Full backups, restore, the recovery kit and old backups.")) }
+    private var tRestoreTest: SettingsRowText { .init(title: RestoreTestModel.weeklyLabel,
+        detail: String(localized: "Each week, prove that a scheduled backup restores. Nothing is stored; if no backup ran, the test runs at the next unlock.")) }
+    private var tSchedule: SettingsRowText { .init(title: RecoveryCentreModel.scheduleTitle, detail: RecoveryCentreModel.scheduleText) }
+    private var tAutoPurge: SettingsRowText { .init(title: String(localized: "Empty trash automatically"),
+        detail: String(localized: "When off, deleted items stay in the trash until you delete them")) }
+    private var tRetention: SettingsRowText { .init(title: String(localized: "Empty Recently deleted after"),
+        detail: String(localized: "Used while automatic emptying is on")) }
+    private var tTheme: SettingsRowText { .init(title: String(localized: "Theme"),
+        detail: String(localized: "settings.help.theme", defaultValue: "Light, dark, or the same as macOS.")) }
+    private var tLicence: SettingsRowText { .init(title: String(localized: "Licence"),
+        detail: String(localized: "settings.help.licence", defaultValue: "Your licence key, and how to move Pro to another device.")) }
+    private var tPlan: SettingsRowText { .init(title: String(localized: "Plan"),
+        detail: String(localized: "Pro and purchases")) }
+    private var tDeveloper: SettingsRowText { .init(title: String(localized: "developer.title", defaultValue: "Developer"),
+        detail: String(localized: "settings.help.developer", defaultValue: "SSH agent, SSH keys and the scan for passwords saved in plain text.")) }
+
+    // Windows settings added 2026-11-14 (MacExtraSettings).
+    private var tIdleSource: SettingsRowText { .init(title: String(localized: "Count activity from"),
+        detail: String(localized: "Computer: keyboard or mouse anywhere. Vault: using or saving items.")) }
+    private var tTotpConfirm: SettingsRowText { .init(title: String(localized: "Ask before releasing 2FA codes"),
+        detail: String(localized: "Confirm on this Mac each time a 2FA code is copied")) }
+    private var tDocOpen: SettingsRowText { .init(title: String(localized: "Open documents in other apps"),
+        detail: String(localized: "Puts a decrypted copy on this Mac while you use it; deleted when the vault locks")) }
+    private var tAutoBackups: SettingsRowText { .init(title: String(localized: "Automatic backups to keep"),
+        detail: String(localized: "Copies made as you save. Older ones may still hold deleted items.")) }
+    private var tShortcuts: SettingsRowText { .init(title: String(localized: "Keyboard shortcuts"), detail: nil) }
+    private var tConnections: SettingsRowText { .init(title: String(localized: "Devices & connections"),
+        detail: String(localized: "Browser extension status and diagnostics")) }
+    private var tPrivacyPolicy: SettingsRowText { .init(title: String(localized: "Privacy policy"),
+        detail: String(localized: "How LocalGateKeys handles your data")) }
+    private var tEula: SettingsRowText { .init(title: String(localized: "Licence agreement"),
+        detail: String(localized: "The terms for using LocalGateKeys")) }
+    private var extraTerms: [SettingsRowText] { [tIdleSource, tTotpConfirm, tDocOpen, tAutoBackups] + helpTerms }
+    private var helpTerms: [SettingsRowText] { [tShortcuts, tConnections, tPrivacyPolicy, tEula] }
+
+    // MARK: main window pages
+
+    private var schedule: BackupScheduleModel? { scheduleModel ?? MacAppEnvironment.backupSchedule }
+
+    /// From the ⌘, window: the main window shows `page` (opened when none is on screen) and comes forward.
+    private func showInMainWindow(_ page: QuickAccessBridge.Page) {
+        QuickAccessBridge.shared.open(page)
+        if QuickAccessBridge.shared.openWindows == 0 { openWindow(id: MacAppInfo.mainWindowID) }
+        QuickAccessBridge.activate()
+    }
+
+    private func openRecoveryCentre() { if let onRecoveryCentre { onRecoveryCentre() } else { showInMainWindow(.recoveryCentre) } }
+    private func showSetup() { if let onShowSetup { onShowSetup() } else { showInMainWindow(.showSetup) } }
+    private func openLicence() { if let onLicence { onLicence() } else { showInMainWindow(.licence) } }
+
+    // MARK: tabs
+
+    @ViewBuilder private var generalTab: some View {
+        section(String(localized: "Menu bar & startup"), terms: [tMenuBar, tHotKey, tLogin]) {
+            toggleRow(tMenuBar, isOn: $showMenuBarIcon)
+            row(tHotKey) {
+                // The keys can be changed (Windows `quick_access_hotkey`); the switch turns the shortcut on or off.
+                ShortcutRecorder(message: $hotKeyMessage, onChange: { hotKeyRevision += 1 })
+                Toggle("", isOn: Binding(get: { quickAccessHotKey }, set: { on in
+                    quickAccessHotKey = on
+                    GlobalHotKey.shared.apply()
+                    hotKeyMessage = on && !GlobalHotKey.shared.isRegistered
+                        ? String(localized: "Another app already uses \(QuickAccessSettings.hotKeyLabel).") : nil
+                })).toggleStyle(.switch).labelsHidden()
+            }
+            if let hotKeyMessage, matches(tHotKey) {
+                Text(hotKeyMessage).font(.system(size: 11)).foregroundStyle(theme.danger)
+                    .padding(.horizontal, 14).padding(.bottom, 8)
+            }
+            row(tLogin) {
+                Toggle("", isOn: Binding(get: { openAtLogin }, set: { on in
+                    loginItemMessage = LoginItem.set(on); openAtLogin = LoginItem.isOn || LoginItem.needsApproval
+                })).toggleStyle(.switch).labelsHidden()
+            }
+            if let loginItemMessage, matches(tLogin) {
+                Text(loginItemMessage).font(.system(size: 11)).foregroundStyle(theme.danger)
+                    .padding(.horizontal, 14).padding(.bottom, 8)
+            }
+        }
+        section(String(localized: "settings.section.notifications", defaultValue: "Notifications"), terms: [tReminderNames]) {
+            toggleRow(tReminderNames, isOn: $model.showItemNamesInReminders)
+        }
+        section(String(localized: "Setup"), terms: [tSetup]) {
+            row(tSetup) {
+                Button(Onboarding.showAgainTitle, action: showSetup).buttonStyle(PillButtonStyle(primary: false))
+            }
+        }
+        helpSection
+    }
+
+    /// Help & diagnostics (Windows `build_help`): the shortcuts, Devices & connections, and the website's legal pages.
+    /// Windows' error log has no Mac counterpart (the Mac logs to the system log, not a file).
+    @ViewBuilder private var helpSection: some View {
+        section(String(localized: "Help & diagnostics"), terms: helpTerms) {
+            row(tShortcuts) {
+                Button(String(localized: "View")) { showInMainWindow(.shortcuts) }.buttonStyle(PillButtonStyle(primary: false))
+            }
+            row(tConnections) {
+                Button(String(localized: "Open")) { showInMainWindow(.connections) }.buttonStyle(PillButtonStyle(primary: false))
+            }
+            row(tPrivacyPolicy) {
+                Button(String(localized: "Open")) { NSWorkspace.shared.open(MacExtraSettings.privacyPolicyURL) }
+                    .buttonStyle(PillButtonStyle(primary: false))
+            }
+            row(tEula) {
+                Button(String(localized: "Open")) { NSWorkspace.shared.open(MacExtraSettings.licenceAgreementURL) }
+                    .buttonStyle(PillButtonStyle(primary: false))
+            }
+        }
+    }
+
+    @ViewBuilder private var securityTab: some View {
+        section(String(localized: "Locking"), id: SettingsSection.locking.rawValue,
+                terms: [tAutoLock, tIdleSource, tScreenLock, tSleep, tMaxSession, tTotpConfirm]) {
+            pickerRow(tAutoLock, selection: $model.autoLock) {
+                ForEach(IdleLock.allCases) { Text($0.label).tag($0) }
+            }
+            pickerRow(tIdleSource, selection: $model.idleSource) {
+                ForEach(MacExtraSettings.IdleSource.allCases) { Text($0.label).tag($0) }
+            }
+            toggleRow(tScreenLock, isOn: $model.lockOnScreenLock)
+            toggleRow(tSleep, isOn: $model.lockOnSleep)
+            pickerRow(tMaxSession, selection: $model.maxSession) {
+                ForEach(MacSettingsModel.maxSessionChoices, id: \.self) { Text(MacSettingsModel.maxSessionLabel($0)).tag($0) }
+            }
+            toggleRow(tTotpConfirm, isOn: $model.totpConfirm)
+        }
+        .disabled(!model.canChangeLocking)
+        section(String(localized: "Unlocking"), id: SettingsSection.unlocking.rawValue,
+                terms: [tMasterPassword, tTouchID, tPhrase, SettingsRowText(title: FactorTexts.section, detail: nil)]) {
+            row(tMasterPassword) {
+                Button("Change…") { model.clearMessages(); changingPassword = true }
+                    .buttonStyle(PillButtonStyle(primary: false))
+                    .disabled(!model.canChangeUnlocking)
+            }
+            row(tTouchID) {
+                Toggle("", isOn: Binding(get: { model.touchIDOn }, set: { on in model.clearMessages(); touchIDPrompt = on }))
+                    .toggleStyle(.switch).labelsHidden()
+                    .disabled(!model.canChangeUnlocking || (!model.touchIDAvailable && !model.touchIDOn)
+                              || (model.touchIDBlockedByFactors && !model.touchIDOn))
+            }
+            if let factors = model.factors, matches(SettingsRowText(title: FactorTexts.section, detail: nil)) {
+                divider
+                Text(FactorTexts.section.uppercased()).font(.system(size: 10, weight: .semibold)).foregroundStyle(theme.textFaint)
+                    .padding(.horizontal, 14).padding(.top, 10)
+                FactorSettingsRows(model: factors, touchIDOn: model.touchIDOn)
+            }
+            row(tPhrase) {
+                HStack(spacing: 8) {
+                    if model.recoveryPhraseSet {
+                        Button("Remove…") { recoveryPhrase = .remove }.buttonStyle(PillButtonStyle(primary: false))
+                    }
+                    Button(model.recoveryPhraseSet ? String(localized: "Replace…") : String(localized: "Create…")) { recoveryPhrase = .create }
+                        .buttonStyle(PillButtonStyle(primary: false))
+                }
+                .disabled(!model.canChangeUnlocking)
+            }
+        }
+        .disabled(!model.canChangeUnlocking)
+        // Duress password (sub-plan 08): its own card, apart from Unlocking (MacDuressSettings.swift).
+        if let duress = model.duress {
+            section(MacDuressText.title, id: "duress", terms: [MacDuressSection.terms]) {
+                MacDuressSection(service: duress, pro: model.pro)
+            }
+            .disabled(!model.canChangeUnlocking)
+        }
+        // Travel mode (feature pack §2, Pro): this Mac only; never shown in a duress session.
+        if model.isUnlocked, !DuressSession.shared.isOpen, MacAppEnvironment.lockState?.isSecondSession != true,
+           let local = model.local, local.localData != nil, let store = MacAppEnvironment.lockState?.store {
+            section(String(localized: "Travel mode"), id: "travel", terms: [MacTravelMode.terms]) {
+                MacTravelModeSection(local: local, store: store, pro: model.pro, onNeedsPro: { query = ""; tab = .plan })
+            }
+        }
+        section(String(localized: "Privacy"), id: SettingsSection.privacy.rawValue,
+                terms: [tClipboard, tBreach, tOffline, tCapture, tErase, tDocOpen]) {
+            pickerRow(tClipboard, selection: $model.clipboardExpiry) {
+                ForEach(ClipboardExpiry.allCases) { Text($0.label).tag($0) }
+            }
+            row(tBreach) { Toggle("", isOn: $model.breachCheckEnabled).toggleStyle(.switch).labelsHidden() }
+            row(tOffline) { Toggle("", isOn: $model.strictOfflineMode).toggleStyle(.switch).labelsHidden() }
+            row(tCapture) {
+                Toggle("", isOn: Binding(get: { hideFromCapture }, set: { on in
+                    hideFromCapture = on
+                    CaptureProtection.shared.apply()
+                    captureRestartNote = !on
+                })).toggleStyle(.switch).labelsHidden()
+            }
+            if captureRestartNote, matches(tCapture) {
+                // macOS keeps a window shown with sharingType .none hidden (CaptureProtection).
+                Text(String(localized: "settings.hideFromCapture.restart",
+                            defaultValue: "Windows that are already open stay hidden until you quit and reopen LocalGateKeys."))
+                    .font(.system(size: 11)).foregroundStyle(theme.textMuted)
+                    .padding(.horizontal, 14).padding(.bottom, 8)
+            }
+            row(tErase) { Toggle("", isOn: $model.eraseOnSyncRemoval).toggleStyle(.switch).labelsHidden() }
+            toggleRow(tDocOpen, isOn: $model.documentOpenEnabled)
+        }
+        // Privacy proof (feature pack §5): this Mac's facts as a file, signed with the sync key when sync is on.
+        if model.isUnlocked, !DuressSession.shared.isOpen, MacAppEnvironment.lockState?.isSecondSession != true,
+           let store = MacAppEnvironment.lockState?.store {
+            section(String(localized: "Privacy proof"), id: "privacyProof", terms: [MacPrivacyProof.terms]) {
+                if matches(MacPrivacyProof.terms) { MacPrivacyProofSection(store: store) }
+            }
+        }
+    }
+
+    @ViewBuilder private var autoFillTab: some View {
+        section(String(localized: "AutoFill"), terms: [tQuickType, tExactSites, tPasskeys]) {
+            row(tQuickType) { Toggle("", isOn: $model.showInQuickType).toggleStyle(.switch).labelsHidden() }
+            row(tExactSites) {
+                Toggle("", isOn: $model.quickTypeExactSites).toggleStyle(.switch).labelsHidden()
+                    .disabled(!model.showInQuickType)
+            }
+            toggleRow(tPasskeys, isOn: $model.offerPasskeys)
+        }
+        // Passkey check (feature pack §6.2): read only; the passkey count needs the open vault.
+        section(String(localized: "Passkey check"), id: "passkeyCheck", terms: [tPasskeyCheck]) {
+            if matches(tPasskeyCheck) {
+                MacPasskeyCheckSection(store: model.isUnlocked ? MacAppEnvironment.lockState?.store : nil,
+                                       offerPasskeys: model.offerPasskeys)
+            }
+        }
+    }
+
+    @ViewBuilder private var backupsTab: some View {
+        section(String(localized: "Backups"), terms: [tRecoveryCentre, tRestoreTest, tAutoBackups]) {
+            row(tRecoveryCentre) {
+                Button("Open", action: openRecoveryCentre).buttonStyle(PillButtonStyle(primary: false))
+            }
+            toggleRow(tRestoreTest, isOn: $model.restoreTestWeekly)
+            pickerRow(tAutoBackups, selection: $model.automaticBackupCount) {
+                ForEach(MacExtraSettings.backupCountOptions(current: model.automaticBackupCount), id: \.self) {
+                    Text(MacExtraSettings.backupCountLabel($0)).tag($0)
+                }
+            }
+        }
+        if let schedule {
+            // The Recovery centre's own controls (frequency, time, day, keep, folders, backup password).
+            section(tSchedule.title, terms: [tSchedule]) {
+                if matches(tSchedule) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(tSchedule.detail ?? "").font(.system(size: 11)).foregroundStyle(theme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ScheduleControls(schedule: schedule, onChange: {})
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                }
+            }
+        }
+        section(String(localized: "Recently deleted"), terms: [tAutoPurge, tRetention]) {
+            Group {
+                row(tAutoPurge) { Toggle("", isOn: $model.trashAutoPurge).toggleStyle(.switch).labelsHidden() }
+                row(tRetention) {
+                    Picker("", selection: $model.trashRetentionDays) {
+                        ForEach(model.trashRetentionOptions, id: \.self) { Text(MacSettingsModel.retentionLabel($0)).tag($0) }
+                    }
+                    .labelsHidden().fixedSize()
+                }
+            }
+            .disabled(!model.canChangeTrash)
+        }
+    }
+
+    @ViewBuilder private var appearanceTab: some View {
+        section(String(localized: "Appearance"), id: SettingsSection.appearance.rawValue, terms: [tTheme]) {
+            row(tTheme) {
+                Picker("", selection: $model.appearance) {
+                    ForEach(Appearance.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden().fixedSize()
+            }
+        }
+    }
+
+    @ViewBuilder private var planTab: some View {
+        section(String(localized: "Plan"), id: SettingsSection.plan.rawValue, terms: [tPlan, tLicence]) {
+            if matches(tPlan) { PlanRows(pro: model.pro) }
+            row(tLicence) {
+                Button(String(localized: "Open"), action: openLicence).buttonStyle(PillButtonStyle(primary: false))
+            }
+        }
+    }
+
+    @ViewBuilder private var advancedTab: some View {
+        section(tDeveloper.title, terms: [tDeveloper, SettingsRowText(title: "SSH", detail: nil)]) {
+            Text(tDeveloper.detail ?? "").font(.system(size: 11)).foregroundStyle(theme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 14).padding(.top, 10)
+            DeveloperSettingsView(model: developer, isUnlocked: model.isUnlocked, onScan: {
+                secretScan = SecretScanModel(store: { developer.agent.unlockedStore() }, isPro: { model.pro.isPro })
+            })
+        }
+    }
+
+    // MARK: search
+
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var searching: Bool { !trimmedQuery.isEmpty }
+
+    private func matches(_ text: SettingsRowText) -> Bool {
+        let q = trimmedQuery
+        guard !q.isEmpty else { return true }
+        return text.title.localizedCaseInsensitiveContains(q) || (text.detail?.localizedCaseInsensitiveContains(q) ?? false)
+    }
+
+    /// Whether any row of any tab matches (else "No settings match").
+    private var anyMatch: Bool {
+        let all: [SettingsRowText] = [tAutoLock, tScreenLock, tSleep, tMaxSession, tMenuBar, tHotKey, tLogin, tReminderNames,
+                                      tMasterPassword, tTouchID, tPhrase, tClipboard, tBreach, tOffline, tCapture, tErase,
+                                      tQuickType, tExactSites, tPasskeys, tAutoPurge, tRetention, tTheme, tPlan, tDeveloper,
+                                      SettingsRowText(title: FactorTexts.section, detail: nil), SettingsRowText(title: "SSH", detail: nil)]
+            + [tSetup, tRecoveryCentre, tRestoreTest, tLicence, tPasskeyCheck, MacPrivacyProof.terms] + (schedule != nil ? [tSchedule] : []) + extraTerms
+        return all.contains(where: matches)
+    }
+
     // MARK: rows
 
     private var divider: some View { Rectangle().fill(theme.panelBorder).frame(height: 1).padding(.leading, 14) }
 
-    /// The palette's section or Change master password request (the main window's Settings only).
+    /// The palette's section or Change master password request (the main window's Settings only): its tab opens.
     private func followRequests(_ proxy: ScrollViewProxy) {
         guard !standalone else { return }
         if model.requestsPasswordChange {
@@ -397,39 +844,53 @@ struct MacSettingsView: View {
         }
         if let section = model.requestedSection {
             model.requestedSection = nil
+            query = ""
+            tab = SettingsTab.tab(for: section)
             DispatchQueue.main.async { withAnimation { proxy.scrollTo(section.rawValue, anchor: .top) } }
         }
     }
 
-    private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased()).font(.system(size: 11, weight: .semibold)).foregroundStyle(theme.textFaint)
-                .padding(.leading, 4)
-            VStack(alignment: .leading, spacing: 0) { content() }
-                .background(theme.card, in: RoundedRectangle(cornerRadius: MacTheme.radiusGroup, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: MacTheme.radiusGroup, style: .continuous).strokeBorder(theme.panelBorder))
-        }
-        .id(title)
-    }
-
-    private func row<C: View>(_ title: String, detail: String?, @ViewBuilder _ control: () -> C) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13)).foregroundStyle(theme.text)
-                if let detail { Text(detail).font(.system(size: 11)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true) }
+    /// A group card; hidden while searching when none of its rows match.
+    @ViewBuilder private func section<C: View>(_ title: String, id: String? = nil, terms: [SettingsRowText],
+                                               @ViewBuilder _ content: () -> C) -> some View {
+        if terms.contains(where: matches) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title.uppercased()).font(.system(size: 11, weight: .semibold)).foregroundStyle(theme.textFaint)
+                    .padding(.leading, 4)
+                VStack(alignment: .leading, spacing: 0) { content() }
+                    .background(theme.card, in: RoundedRectangle(cornerRadius: MacTheme.radiusGroup, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: MacTheme.radiusGroup, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: MacTheme.radiusGroup, style: .continuous).strokeBorder(theme.panelBorder))
             }
-            Spacer(minLength: 12)
-            control()
+            .id(id ?? title)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
-    private func toggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
-        row(title, detail: nil) { Toggle("", isOn: isOn).toggleStyle(.switch).labelsHidden() }
+    /// A row: title, the help text under it, the control on the right; a hairline above it (hidden under the card's
+    /// border on the first row). Left out while searching when neither text matches.
+    @ViewBuilder private func row<C: View>(_ text: SettingsRowText, @ViewBuilder _ control: () -> C) -> some View {
+        if matches(text) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(text.title).font(.system(size: 13)).foregroundStyle(theme.text)
+                    if let detail = text.detail {
+                        Text(detail).font(.system(size: 11)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 12)
+                control()
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .overlay(alignment: .top) { divider.offset(y: -0.5) }
+        }
     }
 
-    private func pickerRow<V: Hashable, C: View>(_ title: String, selection: Binding<V>, @ViewBuilder _ options: () -> C) -> some View {
-        row(title, detail: nil) {
+    private func toggleRow(_ text: SettingsRowText, isOn: Binding<Bool>) -> some View {
+        row(text) { Toggle("", isOn: isOn).toggleStyle(.switch).labelsHidden() }
+    }
+
+    private func pickerRow<V: Hashable, C: View>(_ text: SettingsRowText, selection: Binding<V>, @ViewBuilder _ options: () -> C) -> some View {
+        row(text) {
             Picker("", selection: selection) { options() }.labelsHidden().fixedSize()
         }
     }
@@ -484,6 +945,7 @@ struct ChangePasswordSheet: View {
             SecureField("Current master password", text: $current).glassField()
             SecureField("New master password", text: $new).glassField()
             SecureField("Repeat new master password", text: $confirm).glassField().onSubmit(submit)
+            YubiKeyTouchBanner(prompt: YubiKeyPrompt.shared)
             MessageLine(text: model.passwordMessage)
             HStack {
                 Button("Cancel", action: onClose).buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
@@ -520,6 +982,7 @@ struct TouchIDPasswordSheet: View {
             Text(turningOn ? String(localized: "Turn on Touch ID") : String(localized: "Turn off Touch ID")).font(.title3.weight(.semibold)).foregroundStyle(theme.text)
             Text("Enter your master password to confirm.").font(.callout).foregroundStyle(theme.textMuted)
             SecureField("Master password", text: $password).glassField().onSubmit(submit)
+            YubiKeyTouchBanner(prompt: YubiKeyPrompt.shared)
             MessageLine(text: model.touchIDMessage)
             HStack {
                 Button("Cancel", action: onClose).buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
@@ -549,6 +1012,7 @@ struct MacSettingsWindow: View {
             if let model { MacSettingsView(model: model, standalone: true) }
         }
         .frame(width: 620, height: 640)
+        .overlay(alignment: .bottom) { YubiKeyTouchBanner(prompt: YubiKeyPrompt.shared).frame(maxWidth: 460).padding(12) }
         .preferredColorScheme(AppSettings.shared.appearance.colorScheme)
         .macThemed()
         .onAppear {

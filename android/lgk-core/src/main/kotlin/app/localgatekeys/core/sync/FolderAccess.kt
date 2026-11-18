@@ -87,13 +87,32 @@ object FolderLayout {
     fun blobFile(blobId: String): String? =
         if (AttachmentSync.isBlobId(blobId)) "$ATTACHMENTS_DIR/$blobId${AttachmentSync.BLOB_SUFFIX}" else null
 
-    /** Path of [deviceId]'s attachment capability file; null unless the id is a safe file name. */
-    fun capabilityFile(deviceId: String): String? =
-        if (Identifier.isSafeDeviceFile(deviceId)) "$ATTACHMENTS_DIR/$deviceId${AttachmentSync.CAP_SUFFIX}" else null
+    /**
+     * Path of [deviceId]'s capability file for [feature] (documents `.lgkcap`, personal collections `.lgkcol`); null
+     * unless the id is a safe file name.
+     */
+    fun capabilityFile(deviceId: String, feature: FeatureCapability.Feature = FeatureCapability.Feature.DOCUMENTS): String? =
+        if (Identifier.isSafeDeviceFile(deviceId)) "$ATTACHMENTS_DIR/$deviceId${feature.suffix}" else null
 
-    /** Path of the signature of [deviceId]'s capability file; null unless the id is a safe file name. */
-    fun capabilitySignatureFile(deviceId: String): String? =
-        if (Identifier.isSafeDeviceFile(deviceId)) "$ATTACHMENTS_DIR/$deviceId${AttachmentSync.CAP_SIG_SUFFIX}" else null
+    /** Path of the signature of [deviceId]'s capability file for [feature]; null unless the id is a safe file name. */
+    fun capabilitySignatureFile(deviceId: String, feature: FeatureCapability.Feature = FeatureCapability.Feature.DOCUMENTS): String? =
+        if (Identifier.isSafeDeviceFile(deviceId)) "$ATTACHMENTS_DIR/$deviceId${feature.signatureSuffix}" else null
+
+    /** [deviceId]'s `heir` capability file and its signature (`<device_id>.lgkheircap[.lgksig]`, sub-plan 08). */
+    fun heirCapabilityFile(deviceId: String): String? =
+        if (Identifier.isSafeDeviceFile(deviceId)) "$ATTACHMENTS_DIR/$deviceId${AttachmentSync.HEIR_CAP_SUFFIX}" else null
+
+    fun heirCapabilitySignatureFile(deviceId: String): String? =
+        if (Identifier.isSafeDeviceFile(deviceId)) "$ATTACHMENTS_DIR/$deviceId${AttachmentSync.HEIR_CAP_SIG_SUFFIX}" else null
+
+    /** Heartbeats (desktop `sync/seen.py`): `seen/<device_id>.lgksync` and `.lgksig`, an empty signed view. */
+    const val SEEN_DIR = "$SYNC_DIR/seen"
+
+    fun heartbeatFile(deviceId: String): String? =
+        if (Identifier.isSafeDeviceFile(deviceId)) "$SEEN_DIR/$deviceId$DEVICE_SUFFIX" else null
+
+    fun heartbeatSignatureFile(deviceId: String): String? =
+        if (Identifier.isSafeDeviceFile(deviceId)) "$SEEN_DIR/$deviceId$SIGNATURE_SUFFIX" else null
 
     /** Path of the signature of [deviceId]'s witness file; null unless the id is a safe file name. */
     fun witnessSignatureFile(deviceId: String): String? =

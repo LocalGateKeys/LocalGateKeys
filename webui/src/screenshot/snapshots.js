@@ -454,7 +454,7 @@ export const settingsPage = {
         {
           "type": "button",
           "title": "Updates",
-          "description": "Version 0.4.10",
+          "description": "Version 0.4.12",
           "label": "Check now",
           "route": "updates",
           "params": {},
@@ -595,22 +595,22 @@ export const settingsPage = {
         {
           "type": "button",
           "title": "Backup password",
-          "description": "Set · kept only inside your encrypted vault",
+          "description": "Set on 2026-10-31",
           "label": "Change…",
           "route": "backup_password",
           "params": {
-            "clear": false
+            "mode": "change"
           },
           "primary": false
         },
         {
           "type": "button",
-          "title": "Clear backup password",
-          "description": "Scheduled backups stop until you set one again",
-          "label": "Clear",
+          "title": "Remove backup password",
+          "description": "Scheduled backups stop; needs the backup password or the recovery phrase",
+          "label": "Remove",
           "route": "backup_password",
           "params": {
-            "clear": true
+            "mode": "remove"
           },
           "primary": false
         },

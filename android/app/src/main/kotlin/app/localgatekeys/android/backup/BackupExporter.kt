@@ -25,6 +25,8 @@ object BackupDevice {
 /**
  * Settings › Backup › Export backup: the `LGKMBAK1` file of this phone's own local view (every item wrapper with its
  * version vector, tombstones and licence states; never the device identity, group key or folder), platform `android`.
+ * Shared collections' groups (`StoreSnapshot.shares`: their keys, keyrings and identities) are never records, so never
+ * read here; the vector commit below keeps them as they are (`StoreChange.Shares.Keep`).
  *
  * The vectors the file carries are committed first when the local view bumped any (as a sync run publishes them), so
  * an edit made after the backup always gets a newer vector than the backup's copy. Through the sync coordinator's

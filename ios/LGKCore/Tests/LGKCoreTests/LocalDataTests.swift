@@ -89,6 +89,20 @@ final class LocalDataTests: XCTestCase {
         XCTAssertEqual(off.trash.count, 1, "auto-purge off keeps everything")
     }
 
+    func testHistoryOfItemsDeletedForGoodIsForgotten() {
+        // Scan 2026-11-15 W-M5, A-M3: live and Recently deleted items keep their history; purged and tombstoned go.
+        func h(_ id: String) -> ItemHistory.Row {
+            .init(snapshotID: "s-\(id)", itemID: id, ns: "entry", createdAt: 1, changeType: "update", recordJSON: "{}")
+        }
+        var d = LocalData(trash: [.init(recordJSON: #"{"id":"binned"}"#, deletedAt: 1)],
+                          itemHistory: [h("live"), h("binned"), h("purged"), h("tomb")])
+        let snap = StoreSnapshot(records: ["live": .object([:]), "tomb": .object([:])],
+                                 meta: ["tomb": SyncMeta.tomb(vv: ["d": 1], deletedAt: 1)])
+        XCTAssertTrue(d.forgetHistoryOfPurgedItems(snap))
+        XCTAssertEqual(d.itemHistory.map(\.itemID), ["live", "binned"])
+        XCTAssertFalse(d.forgetHistoryOfPurgedItems(snap), "nothing more to drop")
+    }
+
     func testTrimEvents90Days() {
         let now: Int64 = 200 * 86_400
         var d = LocalData(events: [event(at: now - 91 * 86_400), event(at: now - 90 * 86_400), event(at: now)])

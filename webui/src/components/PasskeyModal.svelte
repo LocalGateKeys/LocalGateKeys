@@ -1,5 +1,7 @@
 <script>
-  /** Passkey save / sign-in approval, for a request from the browser extension. Copy comes from Python. */
+  /** Passkey save / sign-in approval, for a request from the browser extension or the Windows passkey
+   * provider (no browser button then: text.browser_label is empty). Copy comes from Python. */
+  import { dialog } from '../lib/dialog.js';
   import { t } from '../lib/i18n.svelte.js';
   import Button from './Button.svelte';
 
@@ -29,7 +31,7 @@
 <svelte:window onkeydown={keys} />
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={text.title}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog aria-label={text.title}>
     <h2>{text.title}</h2>
     <p class="body">{text.body}</p>
     {#if many}
@@ -41,7 +43,9 @@
     {/if}
     <footer>
       <Button label={text.cancel_label} onclick={() => onanswer({ choice: 'cancel' })} />
-      <Button label={text.browser_label} onclick={() => onanswer({ choice: 'browser' })} />
+      {#if text.browser_label}
+        <Button label={text.browser_label} onclick={() => onanswer({ choice: 'browser' })} />
+      {/if}
       <Button label={text.approve_label} variant="primary" disabled={!ready || (many && !picked)} onclick={approve} />
     </footer>
   </div>

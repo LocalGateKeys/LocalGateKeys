@@ -1,0 +1,14 @@
+[
+  {"name": "wpa2_basic", "ssid": "HomeNet", "password": "hunter2pass", "security": "wpa2", "hidden": false, "text": "WIFI:T:WPA;S:HomeNet;P:hunter2pass;;"},
+  {"name": "wpa_plain", "ssid": "HomeNet", "password": "hunter2pass", "security": "wpa", "hidden": false, "text": "WIFI:T:WPA;S:HomeNet;P:hunter2pass;;"},
+  {"name": "wpa3_maps_to_wpa", "ssid": "HomeNet", "password": "hunter2pass", "security": "wpa3", "hidden": false, "text": "WIFI:T:WPA;S:HomeNet;P:hunter2pass;;"},
+  {"name": "wep", "ssid": "OldRouter", "password": "abcde12345", "security": "wep", "hidden": false, "text": "WIFI:T:WEP;S:OldRouter;P:abcde12345;;"},
+  {"name": "open_network_no_password_field", "ssid": "CafeGuest", "password": "ignored", "security": "none", "hidden": false, "text": "WIFI:T:nopass;S:CafeGuest;;"},
+  {"name": "hidden_flag", "ssid": "Secret", "password": "pw123456", "security": "wpa2", "hidden": true, "text": "WIFI:T:WPA;S:Secret;P:pw123456;H:true;;"},
+  {"name": "hidden_open_network", "ssid": "Secret", "password": "", "security": "none", "hidden": true, "text": "WIFI:T:nopass;S:Secret;H:true;;"},
+  {"name": "escape_all_specials", "ssid": "a;b:c\\d,e\"f", "password": "a;b:c\\d,e\"f", "security": "wpa2", "hidden": false, "text": "WIFI:T:WPA;S:a\\;b\\:c\\\\d\\,e\\\"f;P:a\\;b\\:c\\\\d\\,e\\\"f;;"},
+  {"name": "trailing_backslash", "ssid": "net\\", "password": "pw\\", "security": "wpa2", "hidden": false, "text": "WIFI:T:WPA;S:net\\\\;P:pw\\\\;;"},
+  {"name": "unicode_ssid", "ssid": "Café 家庭", "password": "pässwörd", "security": "wpa2", "hidden": false, "text": "WIFI:T:WPA;S:Café 家庭;P:pässwörd;;"},
+  {"name": "enterprise_returns_null", "ssid": "Corp", "password": "x", "security": "wpa2-enterprise", "hidden": false, "text": null},
+  {"name": "enterprise_wpa3_returns_null", "ssid": "Corp", "password": "x", "security": "wpa3-enterprise", "hidden": true, "text": null}
+]

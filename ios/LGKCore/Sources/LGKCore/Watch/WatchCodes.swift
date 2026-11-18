@@ -36,12 +36,14 @@ public enum WatchMessage: Equatable, Sendable {
     /// "Pin up to 10" (plan).
     public static let maxPins = 10
 
-    private struct Wire: Codable { let v: Int; let op: String; let codes: [WatchCode]? }
+    /// `seq` (sub-plan 06): the iPhone's send order, optional so stored items and older builds still decode.
+    private struct Wire: Codable { let v: Int; let op: String; let codes: [WatchCode]?; var seq: Int64? = nil }
 
     public enum Failure: Error, Equatable { case tooManyPins, malformed }
 
-    public func encoded() throws -> Data {
-        let wire: Wire
+    /// `sequence`: the iPhone's send order (`nextSequence`); nil for the stored copy, which needs none.
+    public func encoded(sequence: Int64? = nil) throws -> Data {
+        var wire: Wire
         switch self {
         case .replace(let codes):
             guard codes.count <= Self.maxPins else { throw Failure.tooManyPins }
@@ -49,30 +51,79 @@ public enum WatchMessage: Equatable, Sendable {
         case .forget:
             wire = Wire(v: 1, op: "forget", codes: nil)
         }
+        wire.seq = sequence
         let e = JSONEncoder(); e.outputFormatting = .sortedKeys
         return try e.encode(wire)
     }
 
-    public static func decode(_ data: Data) throws -> WatchMessage {
+    public static func decode(_ data: Data) throws -> WatchMessage { try decodeSequenced(data).message }
+
+    /// The message and its send order (nil from a build before sub-plan 06).
+    public static func decodeSequenced(_ data: Data) throws -> (message: WatchMessage, sequence: Int64?) {
         guard data.count <= 64 * 1024, let w = try? JSONDecoder().decode(Wire.self, from: data), w.v == 1 else {
             throw Failure.malformed
         }
         switch w.op {
-        case "forget": return .forget
+        case "forget": return (message: .forget, sequence: w.seq)
         case "replace":
             guard let codes = w.codes, codes.count <= maxPins,
                   Set(codes.map(\.id)).count == codes.count else { throw Failure.malformed }
-            return .replace(codes)
+            return (message: .replace(codes), sequence: w.seq)
         default: throw Failure.malformed
         }
     }
 
     /// The WatchConnectivity user-info dictionary.
-    public func userInfo() throws -> [String: Data] { [Self.key: try encoded()] }
+    public func userInfo(sequence: Int64? = nil) throws -> [String: Data] {
+        [Self.key: try encoded(sequence: sequence)]
+    }
 
-    public static func from(userInfo: [String: Any]) throws -> WatchMessage {
+    public static func from(userInfo: [String: Any]) throws -> WatchMessage { try sequenced(from: userInfo).message }
+
+    public static func sequenced(from userInfo: [String: Any]) throws -> (message: WatchMessage, sequence: Int64?) {
         guard let data = userInfo[key] as? Data else { throw Failure.malformed }
-        return try decode(data)
+        return try decodeSequenced(data)
+    }
+
+    /// The iPhone's next send order: above `last` and at least the current time in milliseconds, so it keeps
+    /// rising across a clock change and after a reinstall (which starts again from the clock).
+    public static func nextSequence(after last: Int64, now: Date) -> Int64 {
+        let t = now.timeIntervalSince1970 * 1000
+        let clock: Int64 = t.isFinite && t > 0 && t < 9e15 ? Int64(t) : 0
+        return max(last < Int64.max ? last + 1 : last, clock)
+    }
+
+    /// True when a message with `sequence` must be ignored because the watch already applied `lastApplied`, a
+    /// newer or equal one. Every message is the whole state, so an older one arriving late (a code update still in
+    /// transit when Forget on lock was sent) would only bring back what a newer one removed. A message without a
+    /// sequence (an iPhone build before sub-plan 06) is applied as before.
+    public static func isStale(sequence: Int64?, lastApplied: Int64?) -> Bool {
+        guard let sequence, let lastApplied else { return false }
+        return sequence <= lastApplied
+    }
+
+    /// Whether the watch applies `message`, and the send order it then keeps as the last applied.
+    /// - A forget is always applied, whatever its order (it can only remove codes), and its own order becomes the
+    ///   last applied, even if lower: after an iPhone reinstall, a new iPhone or a lost counter (order starting
+    ///   lower again), the next forget resets the watch and the updates after it are accepted. Without this, every
+    ///   later message, forget included, would be dropped.
+    /// - A code update is applied only when newer than the last applied (`isStale`).
+    /// - A stored last order that is negative or more than a day ahead of `now` is implausible (corrupt, or from a
+    ///   wrong clock) and is dropped, so it cannot block every update.
+    public static func ordering(of message: WatchMessage, sequence: Int64?, lastApplied: Int64?,
+                                now: Date) -> (apply: Bool, lastApplied: Int64?) {
+        let last = plausible(lastApplied, now: now)
+        if message == .forget { return (apply: true, lastApplied: sequence ?? last) }
+        if isStale(sequence: sequence, lastApplied: last) { return (apply: false, lastApplied: last) }
+        return (apply: true, lastApplied: sequence ?? last)
+    }
+
+    /// `lastApplied` when it could be a real send order at `now` (0 ... clock ms + 1 day), else nil.
+    static func plausible(_ lastApplied: Int64?, now: Date) -> Int64? {
+        guard let lastApplied, lastApplied >= 0 else { return nil }
+        let t = now.timeIntervalSince1970 * 1000 + 86_400_000
+        guard t.isFinite, t > 0, t < 9e15 else { return lastApplied }
+        return lastApplied <= Int64(t) ? lastApplied : nil
     }
 }
 
@@ -90,7 +141,9 @@ public enum WatchPins {
     public static func codes(pins: [String], snapshot: StoreSnapshot) -> [WatchCode] {
         pins.prefix(WatchMessage.maxPins).compactMap { id in
             if snapshot.meta[id]?.deleted == true { return nil }
-            guard case .object(let w)? = snapshot.records[id], case .object(let r)? = w["record"],
+            // A collection state is never an item (`StoreSnapshot.itemRecords`).
+            guard !CollectionStates.isReserved(id, snapshot.records[id]),
+                  case .object(let w)? = snapshot.records[id], case .object(let r)? = w["record"],
                   case .object(let t)? = r["totp"], case .string(let secret)? = t["secret"], !secret.isEmpty else { return nil }
             func str(_ k: String) -> String { if case .string(let s)? = r[k] { return s }; return "" }
             func int(_ k: String, _ d: Int) -> Int { if case .int(let n)? = t[k] { return Int(n) }; return d }

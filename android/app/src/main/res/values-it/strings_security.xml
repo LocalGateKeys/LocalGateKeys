@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Sicurezza</string>
+    <string name="security_cat_breached">Compromesse</string>
+    <string name="security_cat_reused">Riutilizzate</string>
+    <string name="security_cat_weak">Deboli</string>
+    <string name="security_cat_old">Vecchia</string>
+    <string name="security_cat_no_2fa">2FA disponibile</string>
+    <string name="security_expl_breached">Queste password compaiono in violazioni di dati note. Cambiale per prime.</string>
+    <string name="security_expl_reused">Queste password sono usate per più di un accesso. Se un sito subisce una fuga di dati, gli altri sono esposti.</string>
+    <string name="security_expl_weak">Queste password sono corte o facili da indovinare.</string>
+    <string name="security_expl_old">Queste password non cambiano da oltre un anno. L\'età da sola non è un motivo per cambiarle.</string>
+    <string name="security_expl_no_2fa">Questo sito offre codici a due fattori, ma questo accesso non ne ha.</string>
+    <string name="security_blocked_offline">La modalità offline rigorosa è attiva, quindi i controlli delle violazioni sono bloccati. Disattivala in Impostazioni › Controlli delle violazioni.</string>
+    <string name="security_blocked_disabled">I controlli delle violazioni sono disattivati. Attivali in Impostazioni › Controlli delle violazioni.</string>
+    <string name="security_status_cancelled">Controllo delle violazioni annullato.</string>
+    <string name="security_status_checking">Controllo delle password in corso…</string>
+    <string name="security_status_none_found">Nessuna password compromessa trovata.</string>
+    <string name="security_status_found">%1$d password compromesse trovate.</string>
+    <string name="security_status_some_failed">Non è stato possibile controllare alcune password. Riprova più tardi.</string>
+    <string name="security_band_none">Ancora nessun accesso</string>
+    <string name="security_band_good">Buono</string>
+    <string name="security_band_fair">Discreto</string>
+    <string name="security_band_poor">Scarso</string>
+    <string name="security_empty_hint">Aggiungi degli accessi per vedere quanto sono sane le tue password.</string>
+    <string name="security_score_description">Punteggio di sicurezza %1$d su 100</string>
+    <string name="security_no_score">Ancora nessun punteggio di sicurezza</string>
+    <string name="security_checks_header">Controlli</string>
+    <string name="security_breach_header">Controllo delle violazioni</string>
+    <string name="security_breach_start">Controlla le password compromesse</string>
+    <string name="security_cancel">Annulla</string>
+    <string name="security_checking">Controllo…</string>
+    <string name="security_show_dismissed">Mostra di nuovo gli elementi ignorati</string>
+    <string name="security_confirm_title">Controllare ogni password con Have I Been Pwned?</string>
+    <string name="security_confirm_action">Controlla</string>
+    <string name="security_consent">I controlli delle violazioni inviano a Have I Been Pwned solo i primi 5 caratteri dell\'hash SHA-1 di ogni password, via HTTPS con padding, e solo quando ne avvii uno. Non vengono inviati password, hash completi, nomi utente o siti web. Il servizio vede il tuo indirizzo IP.</string>
+    <string name="security_nothing_to_fix">Niente da risolvere qui.</string>
+    <string name="security_dismiss">Ignora</string>
+    <string name="security_change_password">Cambia password</string>
+    <string name="security_dismiss_item">Ignora per questo elemento</string>
+    <string name="security_row_description">%1$s, %2$d elementi</string>
+    <string name="security_checks_footer">I controlli locali sono solo un’indicazione, non una garanzia. Nulla lascia questo telefono se non avvii un controllo delle violazioni.</string>
+    <string name="security_issue_footer">%1$s Usa il menu di un accesso per cambiarne la password o ignorarlo qui.</string>
+    <string name="security_row_menu">Altre azioni per %1$s</string>
+    <string name="security_untitled">Accesso senza titolo</string>
+</resources>

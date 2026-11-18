@@ -73,6 +73,7 @@ _SETTINGS_SECTIONS = (
     ("appearance", "command.settings-appearance.title", "command.settings-appearance.subtitle", ("theme", "dark", "light", "density")),
     ("backups", "command.settings-backups.title", "command.settings-backups.subtitle", ("backup", "schedule", "folder")),
     ("plan", "command.settings-plan.title", "command.settings-plan.subtitle", ("licence", "license", "pro", "upgrade", "sync")),
+    ("developer", "command.settings-developer.title", "command.settings-developer.subtitle", ("ssh", "git", "agent", "signing")),
     ("help", "command.settings-help.title", "command.settings-help.subtitle", ("diagnostics", "log", "support")),
 )
 

@@ -24,6 +24,7 @@ applied or cancelled.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 from collections.abc import Callable, Iterable, Mapping
@@ -56,6 +57,7 @@ from .item_schema import (
     MAX_NOTE_BODY,
     ItemSchemaError,
     validate_card_fields,
+    validate_passkey_fields,
 )
 from .origin import OriginError, canonicalize_origin, normalize_url, origin_of
 from .totp import TotpError, parse_otpauth_uri
@@ -288,10 +290,9 @@ def _web_rows(record: ImportedRecord) -> tuple[str, list[dict[str, str]], list[s
 def _add_field(record: ImportedRecord, name: str, value: str, *, hidden: bool = False) -> bool:
     if not value:
         return True
-    if len(record.custom_fields) >= _MAX_FIELDS:
-        return False
-    record.custom_fields.append({"name": name[:100], "value": value[:_MAX_FIELD_VALUE], "hidden": hidden})
-    return len(value) <= _MAX_FIELD_VALUE
+    # Kept whole: _fit_fields later splits a long value and moves fields past the limit into the notes.
+    record.custom_fields.append({"name": name[:100], "value": value, "hidden": hidden})
+    return True
 
 
 def _fit_notes(record: ImportedRecord, number: int, issues: list[str], limit: int = MAX_NOTE_BODY) -> None:
@@ -310,17 +311,48 @@ def _fit_notes(record: ImportedRecord, number: int, issues: list[str], limit: in
         issues.append(t("importWorkflow.rowNotesAreLongerThan", number=number, v2=len(overflow)))
 
 
+def _say(key: str, default: str, **params: Any) -> str:
+    """A translated message, or the English default while the key is not in the catalog yet."""
+    text = t(key, **params)
+    return default.format(**params) if text == key else text
+
+
 def _fit_fields(record: ImportedRecord, number: int, issues: list[str]) -> None:
-    """Hold custom fields to the vault's item_schema limits (50 fields, 100-character names, 4,096-character values)."""
-    clean = []
-    for field_value in record.custom_fields[:_MAX_FIELDS]:
+    """Hold custom fields to the vault's item_schema limits (50 fields, 100-character names, 4,096-character values)
+    without losing a value: a long value is split over numbered fields, and fields that do not fit move into
+    the notes. Each case is reported."""
+    if record.dropped_fields:
+        issues.append(_say("importWorkflow.rowCustomFieldsDropped",
+                           "Row {number}: {count} custom field(s) were too large or too many to import.",
+                           number=number, count=record.dropped_fields))
+        record.field_events["dropped"] = record.field_events.get("dropped", 0) + record.dropped_fields
+        record.dropped_fields = 0
+    clean: list[dict[str, Any]] = []
+    spill: list[str] = []
+    for field_value in record.custom_fields:
         name = str(field_value.get("name", ""))[:_MAX_FIELD_NAME]
         value = str(field_value.get("value", ""))
-        if len(value) > _MAX_FIELD_VALUE:
-            issues.append(t("importWorkflow.rowCustomFieldWasShortened", number=number, name=name, _MAX_FIELD_VALUE=_MAX_FIELD_VALUE))
-            value = value[:_MAX_FIELD_VALUE]
-        clean.append({**field_value, "name": name, "value": value})
+        parts = [value[i:i + _MAX_FIELD_VALUE] for i in range(0, len(value), _MAX_FIELD_VALUE)] or [""]
+        if len(clean) + len(parts) <= _MAX_FIELDS:
+            if len(parts) > 1:
+                issues.append(_say("importWorkflow.rowCustomFieldSplit",
+                                   "Row {number}: custom field \"{name}\" is longer than {limit} characters and "
+                                   "was split over {count} fields.",
+                                   number=number, name=name, limit=_MAX_FIELD_VALUE, count=len(parts)))
+                record.field_events["split"] = record.field_events.get("split", 0) + 1
+            for index, part in enumerate(parts):
+                label = name if index == 0 else f"{name} (part {index + 1})"[:_MAX_FIELD_NAME]
+                clean.append({**field_value, "name": label, "value": part})
+        else:
+            spill.append(f"{name}:\n{value}")
     record.custom_fields = clean
+    if spill:
+        issues.append(_say("importWorkflow.rowCustomFieldsMovedToNotes",
+                           "Row {number}: {count} custom field(s) did not fit and were added to the notes.",
+                           number=number, count=len(spill)))
+        record.field_events["moved"] = record.field_events.get("moved", 0) + len(spill)
+        record.notes = "\n\n".join(part for part in (record.notes, *spill) if part)
+        _fit_notes(record, number, issues)
 
 
 def _has_null(record: ImportedRecord) -> bool:
@@ -366,18 +398,18 @@ def _login_as_note(record: ImportedRecord, number: int, *, title: str = "") -> I
     """A secure note that keeps every value of a login (or a login copy)."""
     fields = []
     for index, url in enumerate(record.urls):
-        fields.append({"name": "Website" if index == 0 else f"Website {index + 1}", "value": str(url)[:_MAX_FIELD_VALUE],
+        fields.append({"name": "Website" if index == 0 else f"Website {index + 1}", "value": str(url),
                        "hidden": False})
     if record.username:
-        fields.append({"name": "Username", "value": record.username[:_MAX_FIELD_VALUE], "hidden": False})
+        fields.append({"name": "Username", "value": record.username, "hidden": False})
     if record.password:
-        fields.append({"name": "Password", "value": record.password[:_MAX_FIELD_VALUE], "hidden": True})
+        fields.append({"name": "Password", "value": record.password, "hidden": True})
     if record.totp_uri:
-        fields.append({"name": "One-time password (otpauth)", "value": record.totp_uri[:_MAX_FIELD_VALUE],
+        fields.append({"name": "One-time password (otpauth)", "value": record.totp_uri,
                        "hidden": True})
     fields.extend(record.custom_fields)
     return ImportedRecord(kind="note", title=title or _title(record, number), notes=record.notes,
-                          custom_fields=fields[:_MAX_FIELDS], folder=record.folder, favorite=record.favorite,
+                          custom_fields=list(fields), folder=record.folder, favorite=record.favorite,
                           tags=record.tags, created=record.created, modified=record.modified,
                           source_row=record.source_row)
 
@@ -389,7 +421,7 @@ def _card_as_note(record: ImportedRecord, number: int) -> ImportedRecord:
               for key, label, hidden in labels if record.card.get(key)]
     fields.extend(record.custom_fields)
     return ImportedRecord(kind="note", title=_title(record, number), notes=record.notes,
-                          custom_fields=fields[:_MAX_FIELDS], folder=record.folder, favorite=record.favorite,
+                          custom_fields=list(fields), folder=record.folder, favorite=record.favorite,
                           tags=record.tags, created=record.created, modified=record.modified,
                           source_row=record.source_row)
 
@@ -407,12 +439,24 @@ def card_payload(record: ImportedRecord) -> dict[str, Any]:
     })
 
 
+_PASSKEY_KEYS = ("relying_party_id", "user_handle", "credential_id", "private_key", "algorithm", "user_name",
+                 "user_display_name", "created")
+
+
+def passkey_payload(record: ImportedRecord) -> dict[str, Any]:
+    """The validated vault ``passkey`` payload for a passkey record (raises ItemSchemaError)."""
+    values = {f["name"]: f["value"] for f in record.custom_fields if f.get("name") in _PASSKEY_KEYS}
+    payload = validate_passkey_fields({**values, "notes": record.notes})
+    payload.pop("template_id", None)
+    return payload
+
+
 def _companion(record: ImportedRecord, title: str, fields: list[dict[str, Any]], notes: str = "") -> ImportedRecord | None:
     """A secure note holding values a typed item cannot store (identity extras, card extras)."""
     if not fields and not notes:
         return None
     return ImportedRecord(kind="note", title=f"{title} (extra details)"[:_MAX_TITLE], notes=notes,
-                          custom_fields=fields[:_MAX_FIELDS], folder=record.folder, tags=record.tags,
+                          custom_fields=list(fields), folder=record.folder, tags=record.tags,
                           source_row=record.source_row)
 
 
@@ -446,8 +490,8 @@ def _profile_generation(session: Any) -> str:
 class ImportRowPlan:
     """One normalised record in a reviewed plan; secrets are never repr'd.
 
-    ``kind`` is ``login`` (a website credential), ``note``, ``identity`` or
-    ``card``.  ``status`` is ``new``, ``duplicate`` (same data already
+    ``kind`` is ``login`` (a website credential), ``note``, ``identity``,
+    ``card`` or ``passkey``.  ``status`` is ``new``, ``duplicate`` (same data already
     present, or a repeat inside the import when ``target_id`` is ``None``) or
     ``conflict``.  ``web_urls`` are the login's URL rows; ``extra`` is a
     companion secure note for values the typed item cannot hold.
@@ -554,6 +598,8 @@ class ImportRowPlan:
             parts.append(f"{len(self.record.identity)} identity fields")
         if self.record.card:
             parts.append("card details")
+        if self.kind == "passkey":
+            parts = ["passkey"]
         sites = sum(1 for row in self.web_urls if row.get("match") == "exact_origin")
         if sites > 1:
             parts.append(f"{sites} websites")
@@ -602,10 +648,14 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
             elif not record.password:
                 reason = "importWorkflow.rowLoginHasNoPassword"
             elif len(record.password) > 4096 or len(record.username) > 512:
-                issues.append(t("importWorkflow.rowPasswordOrUsernameIs", number=number))
-                continue
-            if reason:
+                reason = "importWorkflow.rowPasswordOrUsernameIs"
+            if reason == "importWorkflow.rowPasswordOrUsernameIs":
+                issues.append(_say("importWorkflow.rowLoginTooLongKeptAsNote",
+                                   "Row {number}: password or username is longer than the vault allows; "
+                                   "kept as a secure note.", number=number))
+            elif reason:
                 issues.append(t(reason, number=number))
+            if reason:
                 note = _login_as_note(record, number)
                 _fit_notes(note, number, issues)
                 rows.append(ImportRowPlan(number, "note", note, decision="add"))
@@ -658,6 +708,15 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
                 rows.append(row)
                 continue
             record = _card_as_note(record, number)
+        if record.kind == "passkey":
+            try:
+                passkey_payload(record)
+            except ItemSchemaError as exc:
+                issues.append(t("importWorkflow.rowPasskeyCouldNotBe", number=number, exc=exc))
+                continue
+            record.title = _title(record, number)
+            rows.append(ImportRowPlan(number, "passkey", record, decision="add"))
+            continue
         if record.kind == "identity":
             extra_fields: list[dict[str, Any]] = []
             kept: dict[str, str] = {}
@@ -666,7 +725,7 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
                 limit = IDENTITY_FIELD_LIMITS.get(field_name)
                 if limit is None or len(value) > limit or total + len(value) > IDENTITY_MAX_TOTAL:
                     extra_fields.append({"name": field_name.replace("_", " ").capitalize(),
-                                         "value": value[:_MAX_FIELD_VALUE], "hidden": False})
+                                         "value": value, "hidden": False})
                     continue
                 kept[field_name] = value
                 total += len(value)
@@ -701,13 +760,30 @@ def normalise_records(records: Iterable[ImportedRecord]) -> tuple[list[ImportRow
     return rows, issues
 
 
+def _passkey_key(payload: Any) -> tuple[str, str] | None:
+    """(relying party, credential ID) of a passkey payload, or None when either is missing."""
+    if not isinstance(payload, Mapping):
+        return None
+    rp_id = str(payload.get("relying_party_id", "") or "").strip().casefold()
+    credential_id = str(payload.get("credential_id", "") or "")
+    return (rp_id, credential_id) if rp_id and credential_id else None
+
+
 def classify_rows(rows: Iterable[ImportRowPlan], entries: Iterable[Mapping[str, Any]],
                   items: Iterable[Mapping[str, Any]] = ()) -> dict[str, str]:
     """Set status/target against existing web credentials and catalog items; return target revisions."""
     existing = {(entry.get("scope", {}).get("origin"), entry.get("username")): entry
                 for entry in entries if entry.get("kind") == "web" and isinstance(entry.get("scope"), dict)}
     catalog: dict[tuple[str, str], Mapping[str, Any]] = {}
+    # Passkeys are matched by credential, never by title: two accounts on one
+    # site share a title, and replacing the other account's key would lose it.
+    passkeys: dict[tuple[str, str], Mapping[str, Any]] = {}
     for item in items:
+        if str(item.get("kind")) == "passkey":
+            key = _passkey_key(item.get("payload"))
+            if key is not None:
+                passkeys.setdefault(key, item)
+            continue
         catalog.setdefault((str(item.get("kind")), str(item.get("title", "")).casefold()), item)
     revisions: dict[str, str] = {}
     for row in rows:
@@ -723,7 +799,14 @@ def classify_rows(rows: Iterable[ImportRowPlan], entries: Iterable[Mapping[str, 
             row.target_password_present = bool(entry.get("password"))
             row.status = "duplicate" if entry.get("password") == row.password else "conflict"
         else:
-            item = catalog.get((row.kind, row.record.title.casefold()))
+            if row.kind == "passkey":
+                try:
+                    key = _passkey_key(passkey_payload(row.record))
+                except ItemSchemaError:
+                    key = None
+                item = passkeys.get(key) if key is not None else None
+            else:
+                item = catalog.get((row.kind, row.record.title.casefold()))
             if item is None:
                 continue
             raw_payload = item.get("payload")
@@ -736,6 +819,13 @@ def classify_rows(rows: Iterable[ImportRowPlan], entries: Iterable[Mapping[str, 
                 except ItemSchemaError:
                     wanted = {}
                 same = all(payload.get(key, "") == wanted.get(key, "") for key in ("number", "expiry", "cardholder"))
+            elif row.kind == "passkey":
+                try:
+                    wanted = passkey_payload(row.record)
+                except ItemSchemaError:
+                    wanted = {}
+                same = all(payload.get(key, "") == wanted.get(key, "")
+                           for key in ("relying_party_id", "credential_id", "user_handle"))
             else:
                 same = {k: v for k, v in payload.items() if k != "template_id"} == row.record.identity
             row.target_id = str(item["id"])
@@ -762,6 +852,10 @@ class ImportPlan:
     applied: bool = False
     free_slots: int | None = None
     item_limit: int | None = None
+    # Filled by apply (W-L4): ids per item kind this import itself created, and the digest
+    # (``import_report.record_digest``) of every record it created or changed, as committed.
+    created_ids: dict[str, set[str]] = field(default_factory=dict)
+    written: dict[str, str] = field(default_factory=dict, repr=False)
 
     def recompute_limits(self) -> int:
         """Mark rows beyond the free slots left as limited, in preview order; returns how many.
@@ -825,6 +919,17 @@ class ImportPlan:
     def records(self) -> list[ImportedRecord]:
         return [row.record for row in self.rows]
 
+    def _repeat_prefixes(self, *, kept_only: bool = False) -> tuple[str, ...]:
+        """Start of each "Row N: same account as row M; skipped." notice for repeats still in the plan."""
+        return tuple(t("importWorkflow.rowSameAccountAsRow", number=row.row, first="\0").split("\0", 1)[0]
+                     for row in self.rows
+                     if row.in_import_duplicate and (not kept_only or row.decision != "skip"))
+
+    def report_notes(self) -> tuple[str, ...]:
+        """Diagnostics for the switch report, without "skipped" notices for repeats the user chose to keep."""
+        kept = self._repeat_prefixes(kept_only=True)
+        return tuple(issue for issue in self.issues if not (kept and issue.startswith(kept)))
+
     def summary(self) -> dict[str, int]:
         counts = {decision: 0 for decision in DECISIONS}
         limited = 0
@@ -833,7 +938,11 @@ class ImportPlan:
                 limited += 1
             else:
                 counts[row.decision] += 1
-        skipped = sum(1 for issue in self.issues if issue.rstrip().endswith("skipped."))
+        # A repeat of an account inside the import stays in the plan (Skip / Keep both), so its
+        # "same account as row N; skipped." notice is not a source row that went missing.
+        in_plan = self._repeat_prefixes()
+        skipped = sum(1 for issue in self.issues
+                      if issue.rstrip().endswith("skipped.") and not issue.startswith(in_plan or ("\0",)))
         return {"total": len(self.rows), **counts, "limited": limited, "skipped_rows": skipped}
 
     def review(self) -> ImportPlan:
@@ -1033,7 +1142,13 @@ class _Collections:
             return None
 
 
-def _create_item(session: Any, record: ImportedRecord, collections: _Collections) -> None:
+def _note_created(created: dict[str, set[str]] | None, kind: str, item_id: Any) -> None:
+    if created is not None and item_id:
+        created.setdefault(kind, set()).add(str(item_id["id"] if isinstance(item_id, Mapping) else item_id))
+
+
+def _create_item(session: Any, record: ImportedRecord, collections: _Collections,
+                 created: dict[str, set[str]] | None = None) -> None:
     items = getattr(session, "items", None)
     if items is None:
         raise ImportWorkflowError(t("importWorkflow.thisVaultCannotStoreNotes"))
@@ -1043,21 +1158,25 @@ def _create_item(session: Any, record: ImportedRecord, collections: _Collections
         tags = _clean_tags([*tags, _folder_tag(record.folder)])
     metadata = {"tags": tags, "favorite": record.favorite, "collection_ids": collection_ids}
     if record.kind == "identity":
-        items.create_identity(record.title, record.identity, **metadata)
+        _note_created(created, "identity", items.create_identity(record.title, record.identity, **metadata))
     elif record.kind == "card":
         payload = card_payload(record)
-        items.create_card(record.title, cardholder=payload["cardholder"], number=payload["number"],
-                          expiry=payload["expiry"], cvv=payload["cvv"], pin=payload["pin"], notes=payload["notes"],
-                          **metadata)
+        _note_created(created, "card", items.create_card(
+            record.title, cardholder=payload["cardholder"], number=payload["number"], expiry=payload["expiry"],
+            cvv=payload["cvv"], pin=payload["pin"], notes=payload["notes"], **metadata))
+    elif record.kind == "passkey":
+        _note_created(created, "passkey", items.create_passkey(record.title, **passkey_payload(record), **metadata))
     else:
-        items.create_note(record.title, record.notes, fields=record.custom_fields, **metadata)
+        _note_created(created, "note", items.create_note(record.title, record.notes, fields=record.custom_fields,
+                                                         **metadata))
 
 
-def _apply_login(session: Any, item: ImportRowPlan, collections: _Collections) -> bool:
+def _apply_login(session: Any, item: ImportRowPlan, collections: _Collections,
+                 created: dict[str, set[str]] | None = None) -> bool:
     record = item.record
     if item.decision == "keep_both":
         _create_item(session, _login_as_note(record, item.row, title=f"{record.title} (imported copy)"[:_MAX_TITLE]),
-                     collections)
+                     collections, created)
         return True
     matches = [entry for entry in session.find_web(item.origin) if entry.get("username") == record.username]
     target = matches[0] if len(matches) == 1 else None
@@ -1067,12 +1186,14 @@ def _apply_login(session: Any, item: ImportRowPlan, collections: _Collections) -
         totp = totp_dict(record.totp_uri)
         create = getattr(session, "create_web_login", None)
         if create is not None and getattr(session, "items", None) is not None:
-            create(urls=item.web_urls or [{"url": item.origin, "match": "exact_origin"}], username=record.username,
-                   password=record.password, label=record.title, favorite=record.favorite, tags=record.tags,
-                   notes=record.notes, totp=totp, custom_fields=record.custom_fields)
+            _note_created(created, "web", create(
+                urls=item.web_urls or [{"url": item.origin, "match": "exact_origin"}], username=record.username,
+                password=record.password, label=record.title, favorite=record.favorite, tags=record.tags,
+                notes=record.notes, totp=totp, custom_fields=record.custom_fields))
             return True
         entry_id = session.upsert_web(origin=item.origin, username=record.username, password=record.password,
                                       label=record.title)
+        _note_created(created, "web", entry_id)
         if record.notes or record.totp_uri or record.custom_fields or record.favorite or record.tags:
             session.set_details(entry_id, favorite=record.favorite, tags=record.tags, notes=record.notes,
                                 totp=totp, custom_fields=record.custom_fields)
@@ -1106,15 +1227,16 @@ def _apply_login(session: Any, item: ImportRowPlan, collections: _Collections) -
     return True
 
 
-def _apply_item(session: Any, item: ImportRowPlan, collections: _Collections) -> bool:
+def _apply_item(session: Any, item: ImportRowPlan, collections: _Collections,
+                created: dict[str, set[str]] | None = None) -> bool:
     record = item.record
     items = getattr(session, "items", None)
     if items is None:
         raise ImportWorkflowError(t("importWorkflow.thisVaultCannotStoreNotes"))
     if item.decision in {"add", "keep_both"}:
-        _create_item(session, record, collections)
+        _create_item(session, record, collections, created)
         if item.extra is not None:
-            _create_item(session, item.extra, collections)
+            _create_item(session, item.extra, collections, created)
         return True
     target = items.get_item(item.target_id or "", include_protected=True)
     if target is None or target.get("kind") != record.kind:
@@ -1133,11 +1255,14 @@ def _apply_item(session: Any, item: ImportRowPlan, collections: _Collections) ->
     elif record.kind == "card":
         items.update_typed_item(item.target_id, payload=card_payload(record) if details else None, title=title,
                                 tags=tags, favorite=favorite)
+    elif record.kind == "passkey":
+        items.update_typed_item(item.target_id, payload=passkey_payload(record) if details else None, title=title,
+                                tags=tags, favorite=favorite)
     else:
         items.update_item(item.target_id, title=title, body=record.notes if details else None,
                           fields=record.custom_fields if details else None, tags=tags, favorite=favorite)
     if details and item.extra is not None:
-        _create_item(session, item.extra, collections)
+        _create_item(session, item.extra, collections, created)
     return True
 
 
@@ -1194,31 +1319,71 @@ def apply_import_plan(session: Any, plan: ImportPlan, *, cancel: Callable[[], bo
             raise ImportWorkflowError(str(exc)) from exc
     count = 0
     collections = _Collections(session)
+    created: dict[str, set[str]] = {}
+    changed: dict[str, str] = {}
+    # The session lock (re-entrant) stays held from the first write until the digests below are taken,
+    # so a sync or browser save cannot land in between and be taken for the import's own work (W-L4).
+    state_lock = getattr(session, "_state_lock", None)
+    with state_lock if state_lock is not None else contextlib.nullcontext():
+        try:
+            with session.transaction():
+                for item in plan.rows:
+                    if _cancelled(plan, cancel):
+                        raise ImportCancelled(t("importWorkflow.importWasCancelled"))
+                    if item.decision == "skip" or item.limited:
+                        continue
+                    if item.decision not in DECISIONS:
+                        raise ImportWorkflowError("Unknown import decision")
+                    try:
+                        if item.kind == "login":
+                            written = _apply_login(session, item, collections, created)
+                        else:
+                            written = _apply_item(session, item, collections, created)
+                    except ImportWorkflowError:
+                        raise
+                    except (VaultError, ItemSchemaError, ValueError) as exc:
+                        raise ImportWorkflowError(t("importWorkflow.row", row=item.row, exc=exc)) from exc
+                    if written and item.decision not in {"add", "keep_both"} and item.target_id:
+                        changed[str(item.target_id)] = "web" if item.kind == "login" else str(item.record.kind)
+                    count += int(written)
+        except ImportCancelled:
+            plan.cancel()
+            raise
+        # Committed: from here on nothing may turn into an "import failed" reply (the records are on disk).
+        plan.applied = True
+        plan.created_ids = created
+        try:
+            plan.written = _written_digests(session, created, changed)
+        except Exception as exc:  # noqa: BLE001 - undo then treats these records as edited and leaves them
+            _log_after_commit(exc)
     try:
-        with session.transaction():
-            for item in plan.rows:
-                if _cancelled(plan, cancel):
-                    raise ImportCancelled(t("importWorkflow.importWasCancelled"))
-                if item.decision == "skip" or item.limited:
-                    continue
-                if item.decision not in DECISIONS:
-                    raise ImportWorkflowError("Unknown import decision")
-                try:
-                    if item.kind == "login":
-                        written = _apply_login(session, item, collections)
-                    else:
-                        written = _apply_item(session, item, collections)
-                except ImportWorkflowError:
-                    raise
-                except (VaultError, ItemSchemaError, ValueError) as exc:
-                    raise ImportWorkflowError(t("importWorkflow.row", row=item.row, exc=exc)) from exc
-                count += int(written)
-    except ImportCancelled:
-        plan.cancel()
-        raise
-    plan.applied = True
-    plan.wipe()
+        plan.wipe()
+    except Exception as exc:  # noqa: BLE001
+        _log_after_commit(exc)
     return count
+
+
+def _log_after_commit(exc: BaseException) -> None:
+    try:
+        from .error_log import log_exception
+
+        log_exception("import-after-commit", exc)
+    except Exception:  # noqa: BLE001, S110 - logging must not fail a committed import
+        pass
+
+
+def _written_digests(session: Any, created: Mapping[str, set[str]], changed: Mapping[str, str]) -> dict[str, str]:
+    """Digest of each record the import created or changed, read back after the commit (W-L4)."""
+    from .import_report import record_digest
+
+    result: dict[str, str] = {}
+    targets = [(kind, item_id) for kind, ids in created.items() for item_id in ids]
+    targets += [(kind, item_id) for item_id, kind in changed.items()]
+    for kind, item_id in targets:
+        value = record_digest(session, kind, item_id)
+        if value is not None:
+            result[item_id] = value
+    return result
 
 
 commit_import = apply_import_plan
@@ -1249,6 +1414,6 @@ class ImportWorkflow:
 __all__ = [
     "DECISIONS", "ImportCancelled", "ImportFormatError", "ImportPlan", "ImportRowPlan", "ImportWorkflow",
     "ImportWorkflowError", "MASK", "MAX_IMPORT_ROWS", "MERGE_FIELDS", "SourceInspection", "apply_import_plan",
-    "apply_plan", "build_import_plan", "canonical_origin_for", "card_payload", "classify_rows", "commit_import", "create_import_plan",
+    "apply_plan", "build_import_plan", "canonical_origin_for", "card_payload", "classify_rows", "passkey_payload", "commit_import", "create_import_plan",
     "inspect_source", "normalise_records", "plan_records", "preview_import", "stage_import", "totp_dict",
 ]

@@ -1,7 +1,10 @@
 import Foundation
 
-/// Data that stays on this Mac and never syncs: Recently deleted, activity history, reminders and collections.
-/// Schemas and limits follow the desktop app (`item_schema.py`, `activity.py`, `vault.py`, `settings.py`).
+/// Data that stays on this device and never syncs: Recently deleted, activity history, reminders and which collections
+/// are starters. Schemas and limits follow the desktop app (`item_schema.py`, `activity.py`, `vault.py`, `settings.py`).
+///
+/// Collections and memberships live in the item store since sub-plan 07 (`CollectionCatalog`). `collections` and
+/// `memberships` are the Mac's older local copies: read only by `CollectionCatalog.migrate`, which empties them.
 public struct LocalData: Codable, Sendable, Equatable {
     public static let maxTrash = 20_000
     public static let maxEvents = 5_000
@@ -16,26 +19,53 @@ public struct LocalData: Codable, Sendable, Equatable {
     public var trash: [TrashRow]
     public var events: [ActivityEvent]
     public var reminders: [Reminder]
+    /// The Mac's collections from before sub-plan 07 (now `col:` records in the store): read for migration only.
     public var collections: [Collection]
     public var preferences: LocalPreferences
-    /// Collection memberships, item id → collection ids. The desktop keeps `collection_ids` on the typed record
-    /// but never syncs it (`vault_bridge.py`), and the synced store's normal form drops the field, so on the Mac
-    /// memberships live here, keyed by item id. Ids of collections this Mac doesn't know are kept, never shown.
+    /// The Mac's memberships from before sub-plan 07, item id → collection ids (now `cm:` records in the store):
+    /// read for migration only (`CollectionCatalog.migrate`).
     public var memberships: [String: [String]]
+    /// The store collections (`col:` ids) this device made as starters (`CollectionCatalog.starters`, Windows
+    /// `starter`): the flag never syncs, so it stays here.
+    public var starterCollectionIDs: [String]
+    /// The access log chain (`activity.py` `events_chain`): the checkpoint left by pruning and the newest hash.
+    /// nil in files written before the chain existed.
+    public var eventsChain: EventsChain?
+    /// Item history (feature pack §1): snapshots of replaced versions, pruned with `ItemHistory.prune`. Key
+    /// `item_history`; never synced, not in phone backups.
+    public var itemHistory: [ItemHistory.Row]
+    /// Travel mode (feature pack §2), key `travel_mode`; nil when it was never set.
+    public var travelMode: TravelMode?
+    /// The last import's undo journal (feature pack §6.1), key `last_import`.
+    public var lastImport: ImportJournal?
+    /// Passkey upgrade prompt dismissals (feature pack §6.3): registrable domain → Unix seconds.
+    public var passkeyUpgradeDismissed: [String: Int64]
 
     /// Most items that can carry memberships at once (the trash bound).
     public static let maxMembershipItems = 20_000
 
     public init(trash: [TrashRow] = [], events: [ActivityEvent] = [], reminders: [Reminder] = [],
                 collections: [Collection] = [], preferences: LocalPreferences = LocalPreferences(),
-                memberships: [String: [String]] = [:]) {
+                memberships: [String: [String]] = [:], starterCollectionIDs: [String] = [],
+                eventsChain: EventsChain? = nil, itemHistory: [ItemHistory.Row] = [], travelMode: TravelMode? = nil,
+                lastImport: ImportJournal? = nil, passkeyUpgradeDismissed: [String: Int64] = [:]) {
         self.trash = trash; self.events = events; self.reminders = reminders
         self.collections = collections; self.preferences = preferences; self.memberships = memberships
+        self.starterCollectionIDs = starterCollectionIDs
+        self.eventsChain = eventsChain
+        self.itemHistory = itemHistory; self.travelMode = travelMode; self.lastImport = lastImport
+        self.passkeyUpgradeDismissed = passkeyUpgradeDismissed
     }
 
-    enum CodingKeys: String, CodingKey { case trash, events, reminders, collections, preferences, memberships }
+    enum CodingKeys: String, CodingKey {
+        case trash, events, reminders, collections, preferences, memberships
+        case starterCollectionIDs = "starter_collection_ids"
+        case eventsChain = "events_chain"
+        case itemHistory = "item_history", travelMode = "travel_mode", lastImport = "last_import"
+        case passkeyUpgradeDismissed = "passkey_upgrade_dismissed"
+    }
 
-    /// Files written before memberships existed have no `memberships` key.
+    /// Files written before memberships (or starter ids) existed have no such key.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         trash = try c.decode([TrashRow].self, forKey: .trash)
@@ -44,6 +74,32 @@ public struct LocalData: Codable, Sendable, Equatable {
         collections = try c.decode([Collection].self, forKey: .collections)
         preferences = try c.decode(LocalPreferences.self, forKey: .preferences)
         memberships = try c.decodeIfPresent([String: [String]].self, forKey: .memberships) ?? [:]
+        starterCollectionIDs = try c.decodeIfPresent([String].self, forKey: .starterCollectionIDs) ?? []
+        eventsChain = try c.decodeIfPresent(EventsChain.self, forKey: .eventsChain)
+        // Feature pack 2026-11-15: files from older builds have none of these. A damaged travel setting or import
+        // journal never blocks the rest of the local data.
+        itemHistory = try c.decodeIfPresent([ItemHistory.Row].self, forKey: .itemHistory) ?? []
+        // A travel setting that is there but can't be read hides every item (scan 2026-11-15 S-L4: fail closed).
+        do {
+            travelMode = try c.decodeIfPresent(TravelMode.self, forKey: .travelMode)
+        } catch {
+            travelMode = .unreadableSetting
+        }
+        lastImport = try? c.decodeIfPresent(ImportJournal.self, forKey: .lastImport)
+        passkeyUpgradeDismissed = (try? c.decodeIfPresent([String: Int64].self, forKey: .passkeyUpgradeDismissed)) ?? [:]
+    }
+
+    /// The travel setting in force (off when never set).
+    public var travel: TravelMode { travelMode ?? .off }
+
+    /// Most history rows kept at once whatever the plan (a bound on a damaged file).
+    public static let maxHistoryRows = 20_000
+
+    /// `{checkpoint, head}`: each a 64-hex SHA-256 or nil.
+    public struct EventsChain: Codable, Sendable, Equatable {
+        public var checkpoint: String?
+        public var head: String?
+        public init(checkpoint: String? = nil, head: String? = nil) { self.checkpoint = checkpoint; self.head = head }
     }
 
     public static let empty = LocalData()
@@ -73,22 +129,29 @@ public struct LocalData: Codable, Sendable, Equatable {
         public var itemID: String?
         public var result: String
         public var count: Int64
+        /// SHA-256 of the previous event's canonical JSON (`ActivityChain`); nil for events from older builds.
+        public var prevHash: String?
         public init(id: String, eventType: String, timestamp: Int64, itemID: String? = nil, result: String = "ok",
-                    count: Int64 = 0) {
+                    count: Int64 = 0, prevHash: String? = nil) {
             self.id = id; self.eventType = eventType; self.timestamp = timestamp
-            self.itemID = itemID; self.result = result; self.count = count
+            self.itemID = itemID; self.result = result; self.count = count; self.prevHash = prevHash
         }
         enum CodingKeys: String, CodingKey {
-            case id, eventType = "event_type", timestamp, itemID = "item_id", result, count
+            case id, eventType = "event_type", timestamp, itemID = "item_id", result, count, prevHash = "prev_hash"
+        }
+        /// The event as the chain hashes it.
+        public var chainEvent: ActivityChain.Event {
+            ActivityChain.Event(id: id, eventType: eventType, timestamp: timestamp, itemID: itemID, result: result,
+                                count: count, prevHash: prevHash)
         }
 
         public static let domains: Set<String> = [
-            "activity", "attachment", "auth", "backup", "collection", "credential",
+            "activity", "agent", "attachment", "auth", "backup", "collection", "credential",
             "document", "import", "item", "reminder", "session", "settings", "template", "vault",
         ]
         public static let actions: Set<String> = [
             "add", "backup", "change", "check", "clear", "close", "complete", "copy",
-            "create", "delete", "deny", "export", "fill", "import", "lock", "open",
+            "create", "delete", "deny", "export", "fill", "import", "lock", "open", "request",
             "prune", "read", "restore", "reveal", "search", "signin", "sign_in",
             "snooze", "start", "stop", "test", "unlock", "update", "view",
         ]
@@ -182,6 +245,7 @@ public struct LocalData: Codable, Sendable, Equatable {
             e.result = try Self.safeResult(e.result)
             guard (0...Int64(Int32.max)).contains(e.count) else { throw LocalDataError.invalid("activity event count is malformed") }
             guard e.timestamp >= 0 else { throw LocalDataError.invalid("event timestamp is malformed") }
+            if let prev = e.prevHash, !Self.isHash(prev) { throw LocalDataError.invalid("event prev_hash is malformed") }
             return e
         }
         // Reminders
@@ -224,6 +288,24 @@ public struct LocalData: Codable, Sendable, Equatable {
             kept[key] = try Self.validatedMemberships(ids)
         }
         out.memberships = kept
+        // Starter ids
+        guard starterCollectionIDs.count <= Self.maxCollections else { throw LocalDataError.invalid("starter collections exceed the limit") }
+        var starters = Set<String>()
+        out.starterCollectionIDs = try starterCollectionIDs.compactMap { (id: String) -> String? in
+            let u = try Normalise.uuid(.string(id), "starter collection id")
+            return starters.insert(u).inserted ? u : nil
+        }
+        // Feature pack 2026-11-15
+        guard itemHistory.count <= Self.maxHistoryRows else { throw LocalDataError.invalid("item history exceeds its bound") }
+        for row in itemHistory {
+            guard row.createdAt >= 0, row.ns == Namespace.entry.rawValue || row.ns == Namespace.item.rawValue else {
+                throw LocalDataError.invalid("item history row is malformed")
+            }
+        }
+        if let travel = travelMode { out.travelMode = try travel.validated() }
+        guard passkeyUpgradeDismissed.count <= PasskeyUpgrade.maxEntries else {
+            throw LocalDataError.invalid("passkey prompt dismissals exceed the limit")
+        }
         // Preferences
         guard (1...365).contains(preferences.trashRetentionDays) else { throw LocalDataError.invalid("trash retention is malformed") }
         guard (0...3650).contains(preferences.reminderDefaultLeadDays) else {
@@ -290,11 +372,56 @@ public struct LocalData: Codable, Sendable, Equatable {
         trash.removeAll { $0.deletedAt < cutoff }
     }
 
-    /// Keeps the last 90 days of events, at most 5,000 (the newest).
+    /// Drops the item history of items deleted for good (scan 2026-11-15 W-M5, A-M3): rows whose item is neither live
+    /// in `snapshot` nor in Recently deleted (purged, emptied, auto-purged, deleted with no trash, or a tombstone).
+    /// Returns true when any row went. Run after every purge and at unlock, with the store's current snapshot.
+    @discardableResult
+    public mutating func forgetHistoryOfPurgedItems(_ snapshot: StoreSnapshot) -> Bool {
+        guard !itemHistory.isEmpty else { return false }
+        var keep = Set<String>()
+        for row in trash {
+            if case .object(let r)? = try? row.record(), case .string(let id)? = r["id"] { keep.insert(id) }
+        }
+        for id in snapshot.records.keys where snapshot.meta[id]?.deleted != true { keep.insert(id) }
+        let before = itemHistory.count
+        itemHistory.removeAll { !keep.contains($0.itemID) }
+        return itemHistory.count != before
+    }
+
+    /// Keeps the last 90 days of events, at most 5,000 (the newest). Events go from the front only, and the
+    /// chain checkpoint becomes the hash of the last one dropped (`activity.py` `_store`).
     public mutating func trimEvents(now: Int64) {
         let cutoff = now - Self.eventRetentionDays * 86_400
-        events.removeAll { $0.timestamp < cutoff }
-        if events.count > Self.maxEvents { events.removeFirst(events.count - Self.maxEvents) }
+        var drop = events.prefix { $0.timestamp < cutoff }.count
+        drop = max(drop, events.count - Self.maxEvents)
+        guard drop > 0 else { return }
+        let last = events[drop - 1]
+        events.removeFirst(drop)
+        if eventsChain != nil || last.prevHash != nil {
+            var chain = eventsChain ?? EventsChain()
+            chain.checkpoint = ActivityChain.hash(last.chainEvent)
+            if events.isEmpty { chain.head = chain.checkpoint }
+            eventsChain = chain
+        }
+    }
+
+    /// Appends `event` linked to the newest one (or the checkpoint) and moves the head to it.
+    public mutating func appendChained(_ event: ActivityEvent) {
+        var e = event
+        e.prevHash = ActivityChain.link(after: events.suffix(1).map(\.chainEvent), checkpoint: eventsChain?.checkpoint)
+        events.append(e)
+        var chain = eventsChain ?? EventsChain()
+        chain.head = ActivityChain.hash(e.chainEvent)
+        eventsChain = chain
+    }
+
+    /// The Security centre's "Access log verified" check.
+    public func verifyEventsChain() -> ActivityChain.Report {
+        ActivityChain.verify(events.map(\.chainEvent), checkpoint: eventsChain?.checkpoint, head: eventsChain?.head)
+    }
+
+    static func isHash(_ s: String) -> Bool {
+        s.utf8.count == 64 && s.utf8.allSatisfy { ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x61 && $0 <= 0x66) }
     }
 
     /// Adds the starter collections (Personal, Work, Travel, Emergency) that are missing by name.

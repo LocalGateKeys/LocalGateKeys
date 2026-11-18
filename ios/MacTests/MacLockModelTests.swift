@@ -62,6 +62,26 @@ final class MacLockModelTests: XCTestCase {
         return m
     }
 
+    /// A key rotation (password change; recovery phrase create, replace or remove) relocks with the old key's
+    /// Mac-local store still open: the lock's activity event must not be saved under the old key over the file the
+    /// rotation resealed, or the reopen finds it unreadable and resets Recently deleted, reminders and activity
+    /// (found by MacDuressUITests 2026-11-14: "couldn't be read and were reset" after creating a recovery phrase).
+    func testKeyRotationKeepsMacLocalData() async throws {
+        let m = await unlockedModel()
+        m.activity.record(.credentialCopy, count: 1)
+        try await m.changePassword(old: "correct horse", new: "a new master password")
+        XCTAssertEqual(m.state, .unlocked)
+        XCTAssertNil(m.localDataNotice, "no reset notice after a password change")
+        XCTAssertTrue(m.localData?.events.contains { $0.eventType == "credential.copy" } == true, "activity kept")
+        let prepared = try await m.prepareRecoveryPhrase(password: "a new master password")
+        try await m.confirmRecoveryPhrase(prepared)
+        XCTAssertEqual(m.state, .unlocked)
+        XCTAssertNil(m.localDataNotice, "no reset notice after creating a recovery phrase")
+        XCTAssertTrue(m.localData?.events.contains { $0.eventType == "credential.copy" } == true, "activity kept")
+        let bad = try FileManager.default.contentsOfDirectory(atPath: dir.path).filter { $0.hasPrefix(MacLocalStore.badFilePrefix) }
+        XCTAssertEqual(bad, [], "nothing set aside as unreadable")
+    }
+
     /// A lock while a strict-login password check runs: the check refuses and the gated copy never runs.
     func testLockDuringGatedCheckReleasesNothing() async {
         let m = await unlockedModel()
@@ -178,6 +198,15 @@ final class MacLockModelTests: XCTestCase {
         events.idle = 10
         now += 1000; m.tick()
         XCTAssertEqual(m.state, .unlocked)
+    }
+
+    /// Settings › Locking › Count activity from: Vault ignores input in other apps (Windows `idle_source` "vault").
+    func testVaultIdleSourceIgnoresSystemActivity() async {
+        settings.defaults.set(MacExtraSettings.IdleSource.vault.rawValue, forKey: MacExtraSettings.idleSourceKey)
+        let m = await unlockedModel()
+        events.idle = 10
+        now += 1000; m.tick()
+        XCTAssertEqual(m.state, .locked)
     }
 
     func testNeverIdleLockAndMaxSession() async {

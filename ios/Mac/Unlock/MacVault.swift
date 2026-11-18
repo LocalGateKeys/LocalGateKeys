@@ -23,6 +23,44 @@ final class MacVault {
     private var beforeKDF: (@MainActor () async -> Void)?
     private var afterKDF: (@MainActor () async -> Void)?
 
+    // MARK: Duress password (sub-plan 08), the iPhone's `PhoneDuress` over files beside `master-key.json`
+
+    /// The copies of the hold and session marker in the Safari group (`SafariSaveFiles.duressMirror`), set by the app;
+    /// nil in tests, so a test never touches the real group.
+    var duressMirror: DuressFiles?
+    /// The second-vault session flag (the process-wide one; a test gives each vault its own).
+    var duressSession: DuressSession = .shared
+    #if DEBUG
+    /// Test seams: the hold's wall clock and monotonic clock.
+    var duressNow: (@Sendable () -> Int64)?
+    var duressBootTime: (@Sendable () -> PhoneDuress.BootTime)?
+    #endif
+
+    /// `<vault>/.lgk-d` (the second vault), `<vault>/vault.hold.json` and `<vault>/duress.bin`.
+    var duressFiles: DuressFiles { .under(directory) }
+
+    /// The duress files of this vault; `params` seals the second vault's record (the real file's, so both cost the same).
+    func makeDuress(params: MasterKeyFile.KDFParams = .default) -> PhoneDuress {
+        #if DEBUG
+        return PhoneDuress(files: duressFiles, mirror: duressMirror, random: random, params: params, session: duressSession,
+                           now: duressNow ?? { Int64(Date().timeIntervalSince1970) },
+                           bootTime: duressBootTime ?? { PhoneDuress.systemBootTime() })
+        #else
+        return PhoneDuress(files: duressFiles, mirror: duressMirror, random: random, params: params, session: duressSession)
+        #endif
+    }
+
+    var duressConfigured: Bool { makeDuress().configured }
+
+    /// True while a duress unlock holds this vault: its master password, Touch ID and recovery phrase are refused.
+    var duressHeld: Bool {
+        let duress = makeDuress()
+        return duress.configured && duress.held()
+    }
+
+    /// True while the open store is the second vault (from the last unlock until the next lock).
+    private(set) var openedSecond = false
+
     init(directory: URL, keychain: any KeychainVault, biometric: any BiometricKeyStore,
          clock: @escaping () -> Date = Date.init, random: any RandomSource = SystemRandomSource()) {
         self.directory = directory; self.keychain = keychain; self.biometric = biometric
@@ -55,6 +93,8 @@ final class MacVault {
     func create(password: String, enableTouchID: Bool) async throws -> LocalStore {
         guard !exists else { throw MacVaultError.alreadyExists }
         try Self.checkNew(password)
+        _ = makeDuress().eraseAll()   // a new vault never inherits an earlier one's duress files or hold
+        openedSecond = false
         let fm = FileManager.default
         try fm.createDirectory(at: directory, withIntermediateDirectories: true)
         let before = Set((try? fm.contentsOfDirectory(atPath: directory.path)) ?? [])
@@ -69,6 +109,8 @@ final class MacVault {
             touchIDStored = storedBiometric
             try writeKeyFile(file)
             hasRecoveryPhrase = false
+            factors = []
+            heldKeyFile = nil
             setOpenedLocalKey(key)
             MasterPasswordUnlock.resetThrottle(directory: directory, now: clock())
             return store
@@ -82,26 +124,105 @@ final class MacVault {
         }
     }
 
-    func unlock(password: String) async throws -> LocalStore {
+    /// `factors`: the key file and YubiKey the unlock screen supplies (nothing is asked through `provideFactors` here).
+    /// A missing or wrong factor throws `FactorError` before Argon2, and a YubiKey problem `YubiKeyError`: neither is
+    /// counted by the throttle.
+    ///
+    /// Duress password (sub-plan 08, as the iPhone's `DuressUnlock.open`): without a second vault only the real
+    /// derivation runs. With one, the real vault is tried first and then the second one on every try (a held or wrong
+    /// real password still costs its derivation), so the time does not tell which opened. While held, a right real
+    /// password is refused and counted as a wrong one (`openKeyWithFactors`). A duress password opens the second vault
+    /// (its own folder, a Keychain in memory only), trips the hold and undoes the wrong try the real side counted.
+    func unlock(password: String, factors given: FactorSecrets = FactorSecrets()) async throws -> LocalStore {
         try await exclusive {
-            var key = try await openKey(password)
-            defer { wipe(&key) }
-            do { return try openStore(key) } catch { discardOpenedLocalKey(); throw error }
+            let holdAt = holdGeneration
+            openedSecond = false   // a new unlock: whatever session was open has ended
+            let duress = makeDuress()
+            guard duress.configured else {
+                var opened = try await openKeyWithFactors(password, factors: given)
+                defer { opened.clear() }
+                let store = try openReal(opened, given: given, holdAt: holdAt)
+                endSecondSession(duress)
+                return store
+            }
+            try MasterPasswordUnlock.checkThrottle(directory: directory, now: clock())
+            var opened: OpenedKey?
+            var realError: (any Error)?
+            do { opened = try await openKeyWithFactors(password, factors: given) } catch { realError = error }
+            defer { opened?.clear() }
+            var second = await Task.detached(priority: .userInitiated, operation: { duress.tryOpen(password: password) }).value
+            defer { if second != nil { wipe(&second!) } }
+            if opened != nil {
+                let store = try openReal(opened!, given: given, holdAt: holdAt)
+                endSecondSession(duress)
+                return store
+            }
+            guard let key = second else {
+                // Neither: a missing key file or YubiKey of the real vault says so (never counted), else a wrong password.
+                throw realError ?? MacVaultError.wrongPassword(retryAfter: retryAfter)
+            }
+            do { try duress.trip(decoyKey: key) } catch { throw realError ?? MacVaultError.wrongPassword(retryAfter: retryAfter) }
+            recordSuccess()   // the real side counted a wrong try; this unlock is a right one
+            let store: LocalStore
+            do {
+                try FileManager.default.createDirectory(at: duress.files.vault, withIntermediateDirectories: true)
+                store = try LocalStore.open(directory: duress.files.vault,
+                                            vault: MemoryKeyVault(localKey: key, base: InMemoryKeychainVault()),
+                                            random: random, limitHints: nil)
+            } catch {
+                throw realError ?? MacVaultError.wrongPassword(retryAfter: retryAfter)
+            }
+            setOpenedLocalKey(key)
+            heldKeyFile = nil
+            openedSecond = true
+            duress.openSession()
+            return store
         }
+    }
+
+    /// Opens the real store with a checked key and keeps the key file the unlock used.
+    private func openReal(_ opened: OpenedKey, given: FactorSecrets, holdAt: Int) throws -> LocalStore {
+        do {
+            let store = try openStore(opened.key)
+            // Not held again if a lock came meanwhile (it forgot the held key file).
+            if holdAt == holdGeneration {
+                heldKeyFile = opened.factors.specs.contains(where: { $0.kind == .keyFile }) ? given.keyFile : nil
+            }
+            openedSecond = false
+            return store
+        } catch { discardOpenedLocalKey(); throw error }
+    }
+
+    /// A real unlock: no second-vault session any more, and a finished hold is removed.
+    private func endSecondSession(_ duress: PhoneDuress) {
+        duress.release()
+        duress.closeSession()
+        openedSecond = false
+    }
+
+    /// The lock: the second vault's session (if one was open) ends; the hold stays.
+    func closeSecondSession() {
+        if openedSecond || duressSession.isOpen { makeDuress().closeSession() }
+        openedSecond = false
     }
 
     func unlockWithTouchID(reason: String) async throws -> LocalStore {
         guard exists else { throw MacVaultError.noVault }
-        guard biometric.isAvailable else { throw MacVaultError.biometricUnavailable }
+        // While a duress unlock holds the vault, Touch ID is unavailable (as on the iPhone).
+        guard biometric.isAvailable, !duressHeld else { throw MacVaultError.biometricUnavailable }
         return try await exclusive {
+            openedSecond = false
             var key: [UInt8]
             do { key = try await biometric.load(reason: reason) }
             catch BiometricKeyError.cancelled { throw BiometricKeyError.cancelled }
             catch { throw MacVaultError.biometricUnavailable }   // item gone (enrolment changed) or unreadable
             defer { wipe(&key) }
+            // Held meanwhile (a duress unlock elsewhere cannot run in parallel, but be strict).
+            guard !duressHeld else { throw MacVaultError.biometricUnavailable }
             do {
                 let store = try openStore(key)   // store errors are real errors, not a Touch ID problem
                 recordSuccess()
+                endSecondSession(makeDuress())
                 return store
             } catch { discardOpenedLocalKey(); throw error }
         }
@@ -113,14 +234,27 @@ final class MacVault {
     /// Seals the local key under `new` after rotating it (Windows `change_master_password` rotates the data key): an
     /// old `master-key.json` with the old password then opens nothing current. The recovery phrase keeps working;
     /// the Touch ID item is removed (it holds the old key) until the user turns it on again.
+    /// The key file and YubiKey stay (the YubiKey answers a new challenge).
     @discardableResult
     func changePassword(old: String, new: String) async throws -> LocalStore {
         try Self.checkNew(new)
         return try await exclusive {
-            var key = try await openKey(old)
-            defer { wipe(&key) }
-            return try await rotate(oldKey: key, password: new, recovery: .keep, passwordChanged: true)
+            var opened = try await openKeyWithFactors(old)
+            defer { opened.clear() }
+            try await checkNotDuress(realKey: opened.key, newPassword: new)
+            var kept = try await renewedFactors(opened)
+            defer { kept.clear() }
+            return try await rotate(oldKey: opened.key, password: new, recovery: .keep, passwordChanged: true, factors: kept)
         }
+    }
+
+    /// A new master password may not be the duress password or one edit from it (`DuressError("near_duress")`).
+    private func checkNotDuress(realKey: [UInt8], newPassword: String) async throws {
+        let duress = makeDuress()
+        guard duress.configured else { return }
+        try await Task.detached(priority: .userInitiated) {
+            try duress.checkNewPassword(realKey: realKey, newPassword: newPassword, decoySession: false)
+        }.value
     }
 
     // MARK: - Recovery phrase (Ruling 9)
@@ -153,13 +287,15 @@ final class MacVault {
     func prepareRecovery(password: String) async throws -> PreparedRecovery {
         try await exclusive {
             let basis = try MasterPasswordUnlock.readKeyFile(directory: directory)
-            var key = try await openKey(password)
-            defer { wipe(&key) }
+            var opened = try await openKeyWithFactors(password)
+            defer { opened.clear() }
             var newKey = random.bytes(count: 32)
             defer { wipe(&newKey) }
-            let sealed = try await Self.seal(newKey, password: password, params: kdfParams, random: random)
+            var kept = try await renewedFactors(opened)
+            defer { kept.clear() }
+            let sealed = try await Self.seal(newKey, password: password, params: kdfParams, random: random, factors: kept)
             let (file, phrase) = try MasterPasswordUnlock.enrolRecovery(sealed, localKey: newKey, random: random)
-            return PreparedRecovery(phrase: phrase, file: file, basis: basis, oldKey: key, newKey: newKey)
+            return PreparedRecovery(phrase: phrase, file: file, basis: basis, oldKey: opened.key, newKey: newKey)
         }
     }
 
@@ -180,15 +316,18 @@ final class MacVault {
     @discardableResult
     func removeRecovery(password: String) async throws -> LocalStore {
         try await exclusive {
-            var key = try await openKey(password)
-            defer { wipe(&key) }
-            return try await rotate(oldKey: key, password: password, recovery: .remove, passwordChanged: false)
+            var opened = try await openKeyWithFactors(password)
+            defer { opened.clear() }
+            var kept = try await renewedFactors(opened)
+            defer { kept.clear() }
+            return try await rotate(oldKey: opened.key, password: password, recovery: .remove, passwordChanged: false, factors: kept)
         }
     }
 
     /// Opens the local key with the recovery phrase and sets `newPassword` (12 to 4096 characters, as Windows),
     /// rotating the key (Windows `set_master_password_after_recovery`); the phrase stays valid; the Touch ID item is
-    /// removed. Wrong phrases share the password throttle.
+    /// removed. Wrong phrases share the password throttle. The key file and YubiKey are dropped (the phrase stands in
+    /// for them too): `lastRecoveryDroppedFactors` tells the caller to say "add them again".
     @discardableResult
     func recover(phrase: String, newPassword: String) async throws -> LocalStore {
         guard newPassword.unicodeScalars.count >= Self.recoveredPasswordMinimum else {
@@ -196,10 +335,20 @@ final class MacVault {
         }
         guard newPassword.unicodeScalars.count <= 4096 else { throw MasterKeyError.tooLong }
         return try await exclusive {
-            var opened = try MasterPasswordUnlock.openWithRecovery(directory: directory, phrase: phrase, now: clock)
+            // While a duress unlock holds the vault a right phrase is refused as a wrong one (and counted like one).
+            openedSecond = false
+            var opened = try MasterPasswordUnlock.openWithRecovery(directory: directory, phrase: phrase, now: clock,
+                                                                   held: duressHeld)
             defer { wipe(&opened.key) }
+            try await checkNotDuress(realKey: opened.key, newPassword: newPassword)
             await beforeKDF?()
-            return try await rotate(oldKey: opened.key, password: newPassword, recovery: .keep, passwordChanged: true)
+            let hadFactors = !opened.file.factorKinds.isEmpty
+            let store = try await rotate(oldKey: opened.key, password: newPassword, recovery: .keep, passwordChanged: true,
+                                         factors: FactorSet())
+            lastRecoveryDroppedFactors = hadFactors
+            heldKeyFile = nil
+            endSecondSession(makeDuress())
+            return store
         }
     }
 
@@ -223,25 +372,41 @@ final class MacVault {
     var rotationCrash: KeyRotation.Step?
     #endif
 
-    /// A new local key sealed under `password`, the phrase kept (re-wrapped) or removed, then `commitRotation`.
-    private func rotate(oldKey: [UInt8], password: String, recovery: RecoveryChange, passwordChanged: Bool) async throws -> LocalStore {
+    /// A new local key sealed under `password` and `factors` (none: the format without factors), the phrase kept
+    /// (re-wrapped) or removed, then `commitRotation`.
+    private func rotate(oldKey: [UInt8], password: String, recovery: RecoveryChange, passwordChanged: Bool,
+                        factors next: FactorSet) async throws -> LocalStore {
         let old = try MasterPasswordUnlock.readKeyFile(directory: directory)
         var newKey = random.bytes(count: 32)
         defer { wipe(&newKey) }
-        var file = try await Self.seal(newKey, password: password, params: kdfParams, random: random)
+        var file = try await Self.seal(newKey, password: password, params: kdfParams, random: random, factors: next)
         if case .keep = recovery, let wrapper = old.recovery {
             do { file.recovery = try RecoveryWrapper.reseal(wrapper, oldLocalKey: oldKey, newLocalKey: newKey, random: random) }
             catch { throw Self.damagedRecovery }
         }
+        #if DEBUG
+        damageSeal?(&file)
+        #endif
+        try await checkSealed(file, password: password, secrets: next.secrets, key: newKey)
         // Scheduled backups' vault.json key follows the new master password (Argon2 here, before the vault lock).
         var schedule = ScheduleUpdate(newPassword: passwordChanged ? password : nil)
-        if passwordChanged, let old = try? ScheduleSecretStore(directory: directory, localKey: oldKey).load(),
-           !old.backupPassword.utf8.elementsEqual(password.utf8) {
-            let kdf = old.passwordKey.kdf
-            let rnd = random
-            schedule.passwordKey = try await Task.detached(priority: .userInitiated) {
-                try DesktopVaultFile.derivePasswordKey(password: password, kdf: kdf, random: rnd)
-            }.value
+        if passwordChanged, let old = (try? ScheduleSecretStore(directory: directory, localKey: oldKey).load()) ?? nil {
+            // The backup password may not be the master password. A public key record (format v2) holds no password:
+            // the new master password is checked against it by deriving its public key (Argon2, before the vault lock).
+            var sameAsMaster = false
+            if let record = old.backupKey {
+                sameAsMaster = await Task.detached(priority: .userInitiated) { record.passwordMatches(password) }.value
+                if sameAsMaster { schedule.sameAsMasterKeyID = record.keyID }
+            } else if let legacy = old.legacyPassword {
+                sameAsMaster = legacy.utf8.elementsEqual(password.utf8)
+            }
+            if !sameAsMaster {
+                let kdf = old.passwordKey.kdf
+                let rnd = random
+                schedule.passwordKey = try await Task.detached(priority: .userInitiated) {
+                    try DesktopVaultFile.derivePasswordKey(password: password, kdf: kdf, random: rnd)
+                }.value
+            }
         }
         defer { schedule.passwordKey?.wipe() }
         return try commitRotation(oldKey: oldKey, newKey: newKey, file: file, schedule: schedule)
@@ -255,6 +420,8 @@ final class MacVault {
     struct ScheduleUpdate {
         var newPassword: String?
         var passwordKey: DesktopVaultFile.PasswordKey?
+        /// The record whose backup password is the new master password (checked beforehand): the secret is dropped.
+        var sameAsMasterKeyID: String?
     }
 
     private func commitRotation(oldKey: [UInt8], newKey: [UInt8], file: MasterKeyFile, schedule update: ScheduleUpdate) throws -> LocalStore {
@@ -303,7 +470,15 @@ final class MacVault {
                 var schedule: ScheduledBackupSecret?
                 if fm.fileExists(atPath: scheduleFile.path),
                    var s = (try? ScheduleSecretStore(directory: directory, localKey: oldKey).load()) ?? nil {
-                    if let pw = update.newPassword, s.backupPassword.utf8.elementsEqual(pw.utf8) {
+                    let sameAsMaster: Bool
+                    if let record = s.backupKey {
+                        sameAsMaster = update.sameAsMasterKeyID == record.keyID
+                    } else if let pw = update.newPassword, let legacy = s.legacyPassword {
+                        sameAsMaster = legacy.utf8.elementsEqual(pw.utf8)
+                    } else {
+                        sameAsMaster = false
+                    }
+                    if sameAsMaster {
                         s.wipe()   // the backup password may not be the master password: cleared
                     } else {
                         if let k = update.passwordKey { s.passwordKey = k }
@@ -347,6 +522,10 @@ final class MacVault {
                     try KeyRotation.writeSynced(try ScheduleSecretStore(directory: staging, localKey: newKey, random: random).seal(schedule),
                                                 to: staging.appendingPathComponent(ScheduleSecretStore.fileName))
                 }
+                // The real vault's duress record (`duress.bin`: hours and the one-edit fingerprint) follows the new key.
+                if let sealed = makeDuress().resealedReal(oldKey: oldKey, newKey: newKey) {
+                    try KeyRotation.writeSynced(sealed, to: staging.appendingPathComponent(duressFiles.real.lastPathComponent))
+                }
                 let enc = JSONEncoder()
                 enc.outputFormatting = .sortedKeys
                 try KeyRotation.writeSynced(try enc.encode(file), to: staging.appendingPathComponent(Self.keyFileName))
@@ -368,6 +547,7 @@ final class MacVault {
             throw error
         }
         hasRecoveryPhrase = file.recovery != nil
+        factors = file.factors ?? []
         return try openStore(newKey)
     }
 
@@ -389,6 +569,9 @@ final class MacVault {
         }
     }
 
+    /// Where the remembered key file's bookmark lives (the app-only Keychain group, `VaultSlot.unlockKeyFile`).
+    var factorKeychain: any KeychainVault { keychain }
+
     /// True when this Mac can hold the Touch ID item (Touch ID present and enrolled).
     var touchIDAvailable: Bool { biometric.isAvailable }
 
@@ -407,20 +590,296 @@ final class MacVault {
         }
     }
 
+    // MARK: - Key file and YubiKey factors
+
+    /// The key-file / YubiKey factors of `master-key.json` (none in a version-1 file); cached, refreshed whenever this
+    /// vault reads or changes the file.
+    private(set) lazy var factors: [FactorSpec] = (try? MasterPasswordUnlock.readKeyFile(directory: directory))?.factors ?? []
+
+    /// Supplies the factors for a password check that was given none (Settings, a strict login, a backup, the recovery
+    /// phrase sheet): the key file remembered or picked now and the YubiKey responder; only the specs still needed are
+    /// passed. Set by the lock model; nil in tests (the check then throws `FactorError.required`).
+    var provideFactors: (@MainActor (_ specs: [FactorSpec]) async throws -> FactorSecrets)?
+
+    /// The key file's bytes from this session's password unlock, so later password checks need no file dialog (Windows
+    /// keeps the factors in its session); dropped at every lock.
+    private var heldKeyFile: Data?
+    var holdsKeyFile: Bool { heldKeyFile != nil }
+    /// Bumped by every `forgetHeldFactors` (a lock): an unlock or add that finishes later holds nothing.
+    private var holdGeneration = 0
+    func forgetHeldFactors() { heldKeyFile = nil; holdGeneration += 1 }
+    /// A rotation relocks the window: the held key file survives it (`MacLockModel.reopenAfterRotation`).
+    func takeHeldKeyFile() -> Data? { defer { heldKeyFile = nil }; return heldKeyFile }
+    func holdKeyFile(_ data: Data?) { heldKeyFile = data }
+
+    /// True after `recover` dropped a key file or YubiKey (the caller says "add them again").
+    private(set) var lastRecoveryDroppedFactors = false
+
+    /// Specs and their 32-byte secrets in list order (key file first); `clear()` zeroes the secrets.
+    struct FactorSet {
+        var specs: [FactorSpec] = []
+        var secrets: [[UInt8]] = []
+        mutating func clear() { for i in secrets.indices { wipe(&secrets[i]) } }
+    }
+
+    /// A password check that kept its factors: the local key, the file it opened, the factors and what supplied them
+    /// (its YubiKey responder answers a renewed challenge). `clear()` zeroes the key and the secrets.
+    struct OpenedKey {
+        var key: [UInt8]
+        let file: MasterKeyFile
+        var factors: FactorSet
+        let input: FactorSecrets
+        mutating func clear() { wipe(&key); factors.clear() }
+    }
+
+    private func factorInput(for specs: [FactorSpec], given: FactorSecrets?) async throws -> FactorSecrets {
+        if let given { return given }
+        var input = FactorSecrets(keyFile: heldKeyFile)
+        let needsKeyFile = specs.contains { $0.kind == .keyFile } && input.keyFile == nil
+        let needsYubiKey = specs.contains { $0.kind == .yubiKeyHMAC }
+        guard needsKeyFile || needsYubiKey, let provideFactors else { return input }
+        let provided = try await provideFactors(specs.filter { $0.kind != .keyFile || needsKeyFile })
+        if needsKeyFile { input.keyFile = provided.keyFile }
+        input.yubiKey = provided.yubiKey
+        return input
+    }
+
+    /// The factors for a rewritten password wrapper (Android `renewed`): a kept key file as it is, a kept YubiKey with
+    /// a new challenge (one more touch, COMPOSITE_KEY_V1 §1.2), minus `dropping`, plus `added` (just enrolled), key
+    /// file first. The caller clears the result.
+    private func renewedFactors(_ opened: OpenedKey, dropping: FactorKind? = nil, added: FactorSet = FactorSet()) async throws -> FactorSet {
+        var out = FactorSet()
+        do {
+            for (spec, secret) in zip(opened.factors.specs, opened.factors.secrets)
+            where spec.kind != dropping && !added.specs.contains(where: { $0.kind == spec.kind }) {
+                if spec.kind == .yubiKeyHMAC {
+                    guard let respond = opened.input.yubiKey, let slot = spec.slot else { throw FactorError.required([.yubiKeyHMAC]) }
+                    let rnd = random
+                    let fresh = try await Task.detached(priority: .userInitiated) {
+                        try await CompositeKey.enrolYubiKey(slot: slot, random: rnd, respond: respond)
+                    }.value
+                    out.specs.append(fresh.spec); out.secrets.append(fresh.secret)
+                } else {
+                    out.specs.append(spec); out.secrets.append(secret)
+                }
+            }
+            out.specs += added.specs; out.secrets += added.secrets
+            let rank: (FactorSpec) -> Int = { $0.kind == .keyFile ? 0 : 1 }
+            let order = out.specs.indices.sorted { rank(out.specs[$0]) < rank(out.specs[$1]) }
+            out = FactorSet(specs: order.map { out.specs[$0] }, secrets: order.map { out.secrets[$0] })
+        } catch {
+            out.clear()
+            throw error
+        }
+        return out
+    }
+
+    /// Adds a key file (the bytes of the chosen file) to the password wrapper (Android `changeFactors`). The master
+    /// password and today's factors must open the file first. The local key is not rotated: the recovery phrase, the
+    /// Touch ID item and copies of the vault made before keep opening it (the add confirmation says so). A YubiKey that
+    /// stays answers a new challenge. A file that is not a usable key file throws `KeyFileError`.
+    func addKeyFile(password: String, keyFile data: Data) async throws {
+        guard !factors.contains(where: { $0.kind == .keyFile }) else { throw MacFactors.alreadySet }
+        let holdAt = holdGeneration
+        try await changeFactors(password: password, dropping: nil) { current in
+            guard !current.contains(where: { $0.kind == .keyFile }) else { throw MacFactors.alreadySet }
+            let enrolled = try await Task.detached(priority: .userInitiated) { try CompositeKey.enrolKeyFile(data) }.value
+            return FactorSet(specs: [enrolled.spec], secrets: [enrolled.secret])
+        }
+        if holdAt == holdGeneration { heldKeyFile = data }
+    }
+
+    /// Adds the YubiKey answering `respond` from `slot` (a new challenge; the caller's responder asks twice and
+    /// compares, Windows `_TwoTouches`). Otherwise as `addKeyFile`.
+    func addYubiKey(password: String, slot: Int, respond: @escaping @Sendable (Data) async throws -> Data) async throws {
+        guard !factors.contains(where: { $0.kind == .yubiKeyHMAC }) else { throw MacFactors.alreadySet }
+        let rnd = random
+        try await changeFactors(password: password, dropping: nil) { current in
+            guard !current.contains(where: { $0.kind == .yubiKeyHMAC }) else { throw MacFactors.alreadySet }
+            let enrolled = try await Task.detached(priority: .userInitiated) {
+                try await CompositeKey.enrolYubiKey(slot: slot, random: rnd, respond: respond)
+            }.value
+            return FactorSet(specs: [enrolled.spec], secrets: [enrolled.secret])
+        }
+    }
+
+    /// Removes the key file or the YubiKey; with none left the file is version 1 again.
+    func removeFactor(_ kind: FactorKind, password: String) async throws {
+        guard factors.contains(where: { $0.kind == kind }) else { throw MacFactors.notSet }
+        try await changeFactors(password: password, dropping: kind) { current in
+            guard current.contains(where: { $0.kind == kind }) else { throw MacFactors.notSet }
+            return FactorSet()
+        }
+        if kind == .keyFile { heldKeyFile = nil }
+    }
+
+    /// Checks the password with today's factors, then rewrites only the password wrapper (same local key, same password,
+    /// the recovery wrapper carried over) with today's factors minus `dropping` plus what `adding` enrols.
+    private func changeFactors(password: String, dropping: FactorKind?,
+                               adding: ([FactorSpec]) async throws -> FactorSet) async throws {
+        try await exclusive {
+            var opened = try await openKeyWithFactors(password)
+            defer { opened.clear() }
+            var added = try await adding(opened.factors.specs)
+            defer { added.clear() }
+            var next = try await renewedFactors(opened, dropping: dropping, added: added)
+            defer { next.clear() }
+            var file = try await Self.seal(opened.key, password: password, params: kdfParams, random: random, factors: next)
+            file.recovery = opened.file.recovery
+            #if DEBUG
+            damageSeal?(&file)
+            #endif
+            try await checkSealed(file, password: password, secrets: next.secrets, key: opened.key)
+            try writeKeyFile(file)
+            factors = next.specs
+        }
+    }
+
+    #if DEBUG
+    /// Test seam: changes a freshly sealed key file before it is checked (a broken seal must never be written).
+    var damageSeal: ((inout MasterKeyFile) -> Void)?
+    #endif
+
+    static let sealCheckFailed = LocalStoreError.corrupt("sealed key file")
+
+    /// Opens a freshly sealed `master-key.json` again (Argon2, with the password and secrets still in memory) and
+    /// checks that it gives `key`, before anything is written: a seal that went wrong would lock the vault for good.
+    private func checkSealed(_ file: MasterKeyFile, password: String, secrets: [[UInt8]], key: [UInt8]) async throws {
+        var reopened: [UInt8]
+        do { reopened = try await Self.open(file, password: password, secrets: secrets) } catch { throw Self.sealCheckFailed }
+        defer { wipe(&reopened) }
+        var diff: UInt8 = reopened.count == key.count ? 0 : 1
+        for (a, b) in zip(reopened, key) { diff |= a ^ b }
+        guard diff == 0 else { throw Self.sealCheckFailed }
+    }
+
+    /// Deletes the Touch ID item without a password ("Always ask for the key file / YubiKey": less access, never more).
+    func removeTouchIDItem() {
+        try? biometric.remove()
+        touchIDStored = false
+    }
+
+    // MARK: - Duress password (sub-plan 08)
+
+    /// Sets up the duress password for the real vault: the master password is checked (throttled), then a second vault
+    /// with sample items (`DuressSamples`, the plan carried over from `real`) is created beside this one, its record
+    /// sealed with this vault's Argon2 parameters. A duress password equal to the master password or one edit from it
+    /// throws `DuressError("same"/"close")`; one already set up `DuressError("exists")`.
+    func setUpDuress(masterPassword: String, duressPassword: String, hours: Int, real: StoreSnapshot) async throws {
+        try Self.checkNew(duressPassword)
+        try await exclusive {
+            var key = try await openKey(masterPassword)
+            defer { wipe(&key) }
+            let params = try MasterPasswordUnlock.readKeyFile(directory: directory).kdf
+            let duress = makeDuress(params: params)
+            let realKey = key, rnd = random, now = Int64(clock().timeIntervalSince1970)
+            try await Task.detached(priority: .userInitiated) {
+                try duress.setup(realKey: realKey, appPassword: masterPassword, duressPassword: duressPassword,
+                                 hours: hours, decoySession: false) { store in
+                    try DuressSamples.seed(store, real: real, random: rnd, now: now)
+                }
+            }.value
+        }
+    }
+
+    /// "Set up" inside the second vault's session: every check runs against the open (second) vault's password, then it
+    /// fails with `DuressError("generic")` and nothing is written (desktop review R2: no oracle against the real vault).
+    func setUpDuressInSecondSession(masterPassword: String, duressPassword: String, hours: Int) async throws {
+        try Self.checkNew(duressPassword)
+        try await exclusive {
+            var key = try await openSecondKey(masterPassword)
+            wipe(&key)
+            try makeDuress().setup(realKey: [], appPassword: masterPassword, duressPassword: duressPassword,
+                                   hours: hours, decoySession: true) { _ in }
+        }
+    }
+
+    /// Removes the second vault, its hold and `duress.bin`; inside the second session `DuressError("generic")`.
+    @discardableResult
+    func removeDuress() throws -> Bool {
+        try makeDuress().remove(decoySession: openedSecond)
+    }
+
+    /// The real vault's duress hours (Settings), read with the real local key; nil when not set up.
+    func duressHours(realKey: [UInt8]) -> Int? { makeDuress().realHours(realKey: realKey) }
+
+    /// The second vault's password checked against its record (the session's "master password"), under the shared
+    /// throttle: one Argon2 run, as a real check.
+    func verifySecondPassword(_ password: String) async throws {
+        try await exclusive {
+            var key = try await openSecondKey(password)
+            wipe(&key)
+        }
+    }
+
+    /// "Change master password" inside the second session: only the second vault's record is sealed again (same key,
+    /// this vault's Argon2 parameters). Nothing is tried against the real vault.
+    func changeSecondPassword(current: String, new: String) async throws {
+        try Self.checkNew(new)
+        try await exclusive {
+            var key = try await openSecondKey(current)
+            defer { wipe(&key) }
+            let params = (try? MasterPasswordUnlock.readKeyFile(directory: directory))?.kdf ?? kdfParams
+            let duress = makeDuress(params: params)
+            let k = key
+            try await Task.detached(priority: .userInitiated) { try duress.resealSecond(key: k, password: new) }.value
+        }
+    }
+
+    /// The second vault's key for `password` (the caller wipes it), under the shared throttle; a wrong one is counted.
+    private func openSecondKey(_ password: String) async throws -> [UInt8] {
+        try MasterPasswordUnlock.checkThrottle(directory: directory, now: clock())
+        let duress = makeDuress()
+        await beforeKDF?()
+        let key = await Task.detached(priority: .userInitiated, operation: { duress.tryOpen(password: password) }).value
+        guard let key else { throw MasterPasswordUnlock.recordWrongPassword(directory: directory, now: clock()) }
+        recordSuccess()
+        return key
+    }
+
     // MARK: - Private
 
     /// Checks the throttle before running Argon2, then opens the key file and records the outcome.
     private func openKey(_ password: String) async throws -> [UInt8] {
+        var opened = try await openKeyWithFactors(password)
+        let key = opened.key
+        opened.clear()
+        return key
+    }
+
+    /// `openKey` keeping the factors: the throttle first, then everything in the file that can be checked without a
+    /// factor, then the factors (`given`, else the held key file and `provideFactors`; a missing or wrong one throws
+    /// `FactorError` and a YubiKey problem `YubiKeyError`, never counted), then Argon2.
+    private func openKeyWithFactors(_ password: String, factors given: FactorSecrets? = nil) async throws -> OpenedKey {
         try MasterPasswordUnlock.checkThrottle(directory: directory, now: clock())
         let file = try MasterPasswordUnlock.readKeyFile(directory: directory)
+        let specs = try file.factorsForUnlock(password: password)   // a malformed file never asks for a factor
+        factors = specs
+        var input = FactorSecrets()
+        var secrets: [[UInt8]] = []
+        if !specs.isEmpty {
+            input = try await factorInput(for: specs, given: given)
+            secrets = try await Self.secrets(for: specs, from: input)
+        }
+        // Duress password (sub-plan 08): while held, or while the second vault is open, a right master password is
+        // refused after the same Argon2 and counted as a wrong one, on every path that opens the real key.
+        let held = openedSecond || duressHeld
         await beforeKDF?()
         do {
-            let key = try await MasterPasswordUnlock.deriveKey(file, password: password)
+            var key = try await Self.open(file, password: password, secrets: secrets)
+            if held {
+                wipe(&key)
+                throw MasterKeyError.wrongPassword
+            }
             MasterPasswordUnlock.recordSuccess(directory: directory, now: clock())
             await afterKDF?()   // test seam: runs once Argon2 has returned
-            return key
+            return OpenedKey(key: key, file: file, factors: FactorSet(specs: specs, secrets: secrets), input: input)
         } catch MasterKeyError.wrongPassword {
+            for i in secrets.indices { wipe(&secrets[i]) }
             throw MasterPasswordUnlock.recordWrongPassword(directory: directory, now: clock())
+        } catch {
+            for i in secrets.indices { wipe(&secrets[i]) }
+            throw error
         }
     }
 
@@ -463,12 +922,23 @@ final class MacVault {
         return try await body()
     }
 
-    /// Argon2 off the main actor.
+    /// Argon2 off the main actor; with `factors`, a version-2 file (none: version 1, as before).
     private nonisolated static func seal(_ key: [UInt8], password: String, params: MasterKeyFile.KDFParams,
-                                         random: any RandomSource) async throws -> MasterKeyFile {
-        try await Task.detached(priority: .userInitiated) {
-            try MasterKeyFile.seal(localKey: key, password: password, params: params, random: random)
+                                         random: any RandomSource, factors: FactorSet = FactorSet()) async throws -> MasterKeyFile {
+        let specs = factors.specs, secrets = factors.secrets
+        return try await Task.detached(priority: .userInitiated) {
+            try MasterKeyFile.seal(localKey: key, password: password, params: params, random: random, factors: specs, secrets: secrets)
         }.value
+    }
+
+    /// The factor secrets (key-file parsing and the YubiKey exchange) off the main actor.
+    private nonisolated static func secrets(for specs: [FactorSpec], from input: FactorSecrets) async throws -> [[UInt8]] {
+        try await Task.detached(priority: .userInitiated) { try await CompositeKey.secrets(for: specs, from: input) }.value
+    }
+
+    /// Argon2 and the unwrap off the main actor; the secrets were checked already.
+    private nonisolated static func open(_ file: MasterKeyFile, password: String, secrets: [[UInt8]]) async throws -> [UInt8] {
+        try await Task.detached(priority: .userInitiated) { try file.open(password: password, secrets: secrets) }.value
     }
 
     private func recordSuccess() {

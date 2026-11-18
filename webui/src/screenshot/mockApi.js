@@ -3,11 +3,16 @@
 // returns; calls this file does not model resolve to {ok: true} and are logged once to the console.
 // Dev-only: used by screenshot.html, never by index.html or popup.html.
 import {
-  COLLECTIONS, EXPIRING, KIND_LABELS, LOGINS, OTHER_PROFILES, PROFILE, TYPED, TYPE_NAV, WORDS, ageSeconds,
+  COLLECTIONS, EXPIRING, KIND_LABELS, LOGINS, OTHER_PROFILES, PROFILE, SSH_KEYS, TYPED, TYPE_NAV, WIFI_QR, WORDS, ageSeconds,
 } from './demoData.js';
 import { flags, healthReport, overviewHealth, reminders, securityCenter, settingsPage, syncView } from './snapshots.js';
 
 const NOW = () => Date.now() / 1000;
+// The list sort choices, as Python's HomeService.sort_state() sends them.
+const SORT_OPTIONS = [
+  { value: 'title_asc', label: 'Title A–Z' }, { value: 'title_desc', label: 'Title Z–A' },
+  { value: 'modified_desc', label: 'Date modified' }, { value: 'created_desc', label: 'Date created' },
+];
 const ok = (fields = {}) => ({ ok: true, ...fields });
 const fail = (code, message, extra = {}) => ({ ok: false, error: { code, message, ...extra } });
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -50,15 +55,29 @@ async function totp(secret, period = 30) {
 }
 
 // ------------------------------------------------------------------ the vault
-export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
+export function createMockApi({ unlocked = true, appearance = 'dark', factors = false } = {}) {
   const state = {
+    sort: { option: 'title_asc', favorites_first: true },
+    codesCollapsed: false,
     unlocked,
     appearance,
     favorites: new Set([...LOGINS, ...TYPED].filter((i) => i.favorite).map((i) => i.id)),
     trashed: new Map(), // id -> deleted_at
     settings: clone(settingsPage),
     lockAt: NOW() + 300,
+    formatting: true,
+    factors,
+    developer: { agent: true, cli: true, env: false, git: false, offered: new Set(['ssh-laptop']),
+      cliItems: new Set(['github', 'api-deploy']) },
+    scan: { imported: new Set(['f4']) },
   };
+  // The plain-secrets scan result: names and folders only, never a value.
+  const scanRows = () => [
+    { id: 'f1', name: 'id_ed25519', folder: 'C:\\Users\\alex\\.ssh', path: 'C:\\Users\\alex\\.ssh\\id_ed25519', kind: 'ssh_private_key', var_count: 0, key_format: 'openssh' },
+    { id: 'f2', name: 'deploy_key', folder: 'C:\\Users\\alex\\Projects\\shop', path: 'C:\\Users\\alex\\Projects\\shop\\deploy_key', kind: 'ssh_private_key', var_count: 0, key_format: 'openssh' },
+    { id: 'f3', name: '.env', folder: 'C:\\Users\\alex\\Projects\\shop', path: 'C:\\Users\\alex\\Projects\\shop\\.env', kind: 'env_file', var_count: 6, key_format: '' },
+    { id: 'f4', name: '.env.production', folder: 'C:\\Users\\alex\\Projects\\blog', path: 'C:\\Users\\alex\\Projects\\blog\\.env.production', kind: 'env_file', var_count: 3, key_format: '' },
+  ].map((r) => ({ ...r, imported: state.scan.imported.has(r.id) }));
   const all = () => [...LOGINS.map((l) => ({ ...l, kind: 'web', source: 'credential' })),
     ...TYPED.map((t) => ({ ...t, source: 'typed' }))].filter((i) => !state.trashed.has(i.id));
   const find = (ref) => all().find((i) => i.id === ref?.id);
@@ -101,7 +120,9 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
     if (state.unlocked) return base;
     const chips = [PROFILE, ...OTHER_PROFILES].map((p) => ({ id: p.id, name: p.name, initial: p.name[0], active: p.id === PROFILE.id }));
     return { ...base, hello: true, camera: false, hello_auto: false, chips, subtitle: 'Locked 12 minutes ago',
-      recovery_phrase: true, backoff: 0, backoff_message: '', master_required: false };
+      recovery_phrase: true, backoff: 0, backoff_message: '', master_required: false,
+      ...(state.factors ? { factors: [{ kind: 'keyfile', slot: null }, { kind: 'yubikey-hmac', slot: 2 }],
+        keyfile_name: 'family-vault.key', keyfile_remember: true } : {}) };
   }
 
   function matches(item, token, chip, query) {
@@ -131,7 +152,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
 
   const handlers = {
     // ---- app, window, profiles
-    app_info: () => ok({ version: '0.4.10', glass: false }),
+    app_info: () => ok({ version: '0.4.12', glass: false }),
     window_theme_sync: () => ok(),
     phone_backup_choose: () => ok({ handle: 'demo', name: 'LocalGateKeys-Backup-2026-10-20.lgkm', platform: 'android', created: '2026-10-20' }),
     phone_backup_preview: () => ok({ token: 'demo-token', lines: ['3 new items', '1 items updated from the backup', '2 already up to date', '1 items moved to the trash (deleted on the phone)'], status: 'Preview is ready. Review it, then restore.' }),
@@ -174,17 +195,15 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
             { name: 'Types', entries: TYPE_NAV.filter(([kind]) => count(kind)).map(([kind, label, icon]) => (
               { label, icon, token: kind, count: count(kind), action: null })) },
             { name: 'Collections & views', entries: COLLECTIONS.map((c) => (
-              { label: c.name, icon: 'nav.collections', token: `collection:${c.id}`, count: null, action: null })) },
+              { label: c.name, icon: 'nav.collections', token: `collection:${c.id}`, count: null, action: null })).concat(
+              [{ label: 'Manage collections', icon: 'nav.collections', token: null, count: null, action: 'collections_clicked' }]) },
           ] : []),
           { name: 'Tools', entries: [
             { label: 'Security center', icon: 'nav.securityRecovery', token: null, count: null, action: 'security_health_clicked' },
-            { label: 'Reminders', icon: 'nav.reminders', token: null, count: null, action: 'reminders_clicked' },
-            { label: 'Sync', icon: 'nav.devicesConnections', token: null, count: null, action: 'sync_clicked' },
+            { label: 'Generator', icon: 'nav.tools', token: null, count: null, action: 'password_generator_clicked' },
+            { label: 'Sync & devices', icon: 'nav.devicesConnections', token: null, count: null, action: 'sync_clicked' },
             { label: 'Devices & connections', icon: 'nav.devicesConnections', token: null, count: null, action: 'connections_clicked' },
-            { label: 'Licence', icon: 'nav.settings', token: null, count: null, action: 'licence_clicked' },
             { label: 'Import & export', icon: 'nav.tools', token: null, count: null, action: 'import_export_clicked' },
-            { label: 'Scan QR code', icon: 'nav.tools', token: null, count: null, action: 'scan_qr_clicked' },
-            { label: 'Activity', icon: 'nav.allItems', token: null, count: null, action: 'activity_clicked' },
             { label: 'Trash', icon: 'nav.trash', token: null, count: null, action: 'trash_clicked' },
           ] },
         ],
@@ -213,7 +232,11 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
         ? { title: 'No matching items', text: 'Try another name, username or tag, or clear your filters.', action: 'Clear filters', action_id: 'clear_filters' }
         : { title: 'No items yet', text: 'Add a website login, desktop login, or typed item to get started.', action: 'New item', action_id: 'new_item' };
       return ok({ items: rows, count: rows.length, chips, context: { title, text }, empty,
-        sort: { option: 'title_asc', favorites_first: true, options: [] } });
+        sort: { ...state.sort, options: SORT_OPTIONS } });
+    },
+    items_sort_set: (option, favoritesFirst) => {
+      state.sort = { option, favorites_first: favoritesFirst === true };
+      return ok({ ...state.sort, options: SORT_OPTIONS });
     },
     quick_search: (query = '') => ok({ profile: PROFILE.name, rows: all()
       .filter((i) => matches(i, null, null, query))
@@ -226,7 +249,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       backup: { last_at: NOW() - 3 * 3600, count: 14, warning: '', stale: false },
     }) : ok({ health: null, reminders: [], backup: null })),
     codes_list: async () => {
-      if (!state.unlocked) return ok({ codes: [] });
+      if (!state.unlocked) return ok({ codes: [], collapsed: state.codesCollapsed });
       const logins = LOGINS.filter((l) => l.totp && !state.trashed.has(l.id))
         .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
       const codes = [];
@@ -234,8 +257,9 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
         const r = row({ ...login, kind: 'web', source: 'credential' });
         codes.push({ ref: r.ref, title: r.title, username: r.username, origin: r.origin, icon: null, ...(await totp(login.totp)) });
       }
-      return ok({ codes });
+      return ok({ codes, collapsed: state.codesCollapsed });
     },
+    codes_collapsed_set: (collapsed) => { state.codesCollapsed = collapsed === true; return ok({ collapsed: state.codesCollapsed }); },
     status_get: () => {
       if (!state.unlocked) return ok({ autolock: 'Locked', clipboard: '', encrypted: 'Local · Encrypted', hint: 'Ctrl K search · Ctrl N new · Ctrl L lock · F1 all shortcuts' });
       // A countdown that restarts, as the idle timer does when the vault is used.
@@ -284,7 +308,10 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
         subtitle: [KIND_LABELS[item.kind], `updated ${ageText(ageSeconds(item.age))}`].join(' · '),
         fields: clone(item.fields), tags: item.tags ?? [], favorite: state.favorites.has(item.id), revision: 3 });
     },
-    typed_reveal: (ref, field) => ok({ value: find(ref)?.secrets?.[field] ?? '', mask_after: 30 }),
+    typed_reveal: (ref, field) => {
+      const item = find(ref);
+      return ok({ value: item?.secrets?.[field] ?? '', mask_after: 30, ...(item?.token && field === 'key' ? { token: clone(item.token) } : {}) });
+    },
     typed_copy: (ref, field) => ok({ message: `${find(ref)?.fields.find((f) => f.name === field)?.label ?? 'Value'} copied. Clipboard clears in 30 seconds.` }),
     typed_open: (ref) => {
       const item = find(ref);
@@ -321,7 +348,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       return ok({ count, text: count ? `${count} saved code(s) hidden. Reveal to view or edit.` : 'No saved codes. Reveal to add some.' });
     },
     recovery_get: (ref) => ok({ codes: Array.from({ length: find(ref)?.recovery ?? 0 }, (_, i) => `demo-${String(i + 1).padStart(2, '0')}-code`) }),
-    policy_get: () => ok({ policy: { fill: 'click', sign_in: 'inherit', require_master_password: false, save_prompts: true } }),
+    policy_get: () => ok({ policy: { fill: 'click', sign_in: 'inherit', require_master_password: false, save_prompts: true, ai_agents: false } }),
     fields_get: (ref) => ok({ fields: ref?.id === 'github' ? [{ index: 0, name: 'Organisation', value: 'example-org', hidden: false }] : [] }),
     history_list: () => ok({ rows: [{ index: 0, changed_at: Math.round(NOW() - 120 * 86400) }], revision: 3 }),
 
@@ -341,6 +368,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       notes: '', totp_configured: false, totp_allowed: true, policy: { fill: 'click', sign_in: 'inherit', require_master_password: false, save_prompts: true },
       errors: [], strength: { segments: 4, label: 'Very strong', reuse_text: 'not used anywhere else' }, dirty: false }),
     login_close: () => ok(),
+    login_copy_password: () => ok({ message: 'New password copied. Clipboard clears in 30 seconds.' }),
 
     // ---- Scan QR code sheet: any picture "contains" a Google Authenticator export of three accounts
     qr_sheet_scan_image: () => ok(clone(QR_EXPORT)),
@@ -360,7 +388,11 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       const pick = (n) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
       let value;
       let health;
-      if (o.mode === 'passphrase') {
+      if (o.mode === 'answer') {
+        value = Array.from({ length: o.answer_words }, () => WORDS[pick(WORDS.length)]).join(' ');
+        const bits = Math.round(o.answer_words * Math.log2(5017));
+        health = `${o.answer_words} randomly selected words · about ${bits} bits from the word list · Fair, hours to guess offline`;
+      } else if (o.mode === 'passphrase') {
         value = Array.from({ length: o.words }, () => WORDS[pick(WORDS.length)]).join(o.separator || '-');
         const bits = Math.round(o.words * Math.log2(5017));
         health = `${o.words} randomly selected words · about ${bits} bits from the word list · Very strong, centuries to guess offline`;
@@ -407,10 +439,51 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
     },
 
     // ---- security, health
-    security_center: () => ok(clone(securityCenter)),
+    security_center: () => {
+      const center = clone(securityCenter);
+      const at = center.issues.findIndex((i) => i.key === 'old') + 1;
+      // New in the feature pack: plain http:// addresses, passkeys on offer, and plain secrets from the Developer scan.
+      center.issues.splice(at, 0,
+        { key: 'http', count: 1, title: 'Saved with a plain http:// address',
+          description: 'These logins use an unencrypted address. Check it and switch to https:// if the site supports it.', tone: 'accent',
+          action: { label: 'Review addresses', route: 'health', params: { filter: 'http' } } },
+        { key: 'passkey', count: 2, title: 'Passkey available',
+          description: 'These sites support passkeys, a safer way to sign in. Save one for each.', tone: 'accent',
+          action: { label: 'Review sites', route: 'health', params: { filter: 'passkey' } } },
+        { key: 'plain_secrets', count: 4, title: 'Plain secrets on this PC',
+          description: 'A scan found SSH keys or .env files stored as plain text. You can import them into your vault.', tone: 'neutral',
+          action: { label: 'Review', route: 'developer', params: {} } });
+      return ok(center);
+    },
     security_set: () => ok({ message: 'Settings saved.' }),
+    network_activity: () => ok({
+      entries: [
+        { at: '2026-11-12T09:41:00Z', purpose: 'website_icon', host: 'github.com', result: 'ok' },
+        { at: '2026-11-12T09:12:00Z', purpose: 'breach_range', host: 'api.pwnedpasswords.com', result: 'ok' },
+        { at: '2026-11-12T08:30:00Z', purpose: 'lan_sync', host: '', result: 'ok' },
+        { at: '2026-11-11T18:05:00Z', purpose: 'revocation_list', host: 'updates.localgatekeys.app', result: 'ok' },
+        { at: '2026-11-11T18:05:00Z', purpose: 'update_check', host: 'updates.localgatekeys.app', result: 'ok' },
+      ],
+      earlier: [{ purpose: 'website_icon', count: 24 }],
+    }),
+    // Recorded from app/connections.ConnectionsService.view (bridge installed, extension not seen yet).
+    connections_view: () => ok({
+      headline: 'Bridge is ready', summary: 'The native bridge is installed. Open the browser extension once to connect it.',
+      status: 'Waiting for extension', tone: 'warning',
+      browsers: [{ browser: 'Chrome', state: 'Ready', ok: true }, { browser: 'Edge', state: 'Ready', ok: true },
+        { browser: 'Firefox', state: 'Not registered', ok: false }],
+      empty: '', can_repair: true, details: '{\n  "windows": true\n}',
+      footer: 'No recent connection? Open the extension popup once, then refresh this page.' }),
     health_report: (filter = null) => {
       const report = clone(healthReport);
+      report.summary = report.summary.replace('13 logins', '14 logins');
+      for (const r of report.rows) {
+        if (r.id === 'google' || r.id === 'paypal') { r.categories = ['passkey']; r.findings = 'Passkey available'; }
+      }
+      report.rows.push({ id: 'forum', label: 'Old hobby forum', username: 'alexm', score: 4, categories: ['http'],
+        findings: 'Not HTTPS', breach: 'Not checked' });
+      const exposed = report.filters.findIndex((f) => f.key === 'exposed');
+      report.filters.splice(exposed, 0, { label: 'Not HTTPS', key: 'http' }, { label: 'Passkey available', key: 'passkey' });
       if (filter === 'exposed') report.rows = [];
       else if (filter) report.rows = report.rows.filter((r) => r.categories.includes(filter));
       return ok(report);
@@ -418,6 +491,103 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
     health_scan: () => fail('needs_setting', 'Strict offline mode is on. Turn it off in Privacy settings to run an explicit external check.',
       { fix: { section: 'privacy' } }),
     health_cancel: () => ok(),
+
+    // ---- feature pack: Markdown notes, Wi-Fi QR
+    notes_formatting_get: () => ok({ enabled: state.formatting }),
+    notes_formatting_set: (enabled = true) => {
+      state.formatting = enabled !== false;
+      return ok({ enabled: state.formatting });
+    },
+    typed_wifi_qr: (ref) => {
+      const item = find(ref);
+      if (item?.kind !== 'wifi') return fail('invalid', 'This field cannot be shown or copied.');
+      return ok({ png_data_url: WIFI_QR, ssid: item.target });
+    },
+
+    backup_status: () => ok({ can_create: true, phrase_enrolled: true, trial: false, kit_ready: true,
+      intro: 'Backups are encrypted files saved on this computer or a location you choose. To restore one, you need its backup password and the vault password in use when it was created.',
+      phrase_intro: 'A 24-word recovery phrase can replace a forgotten vault password. It is shown once, never stored by LocalGateKeys, and replaces any earlier phrase.' }),
+    // ---- feature pack: emergency kit (non-secret facts only; the phrase never passes through here)
+    recovery_kit_facts: () => ok({ profile: PROFILE.name,
+      vault_path: 'C:\\Users\\alex\\AppData\\Roaming\\LocalGateKeys\\profiles\\demo-personal\\vault.lgk',
+      backup_folders: ['C:\\Users\\alex\\AppData\\Roaming\\LocalGateKeys\\profiles\\demo-personal\\Backups\\Scheduled',
+        'D:\\Cloud\\LocalGateKeys mirror'],
+      created: '2026-11-04', app_version: '0.4.12' }),
+
+    // ---- feature pack: Developer page (SSH agent, command line, Git signing)
+    developer_status: () => ok({
+      agent: { enabled: state.developer.agent, status: state.developer.agent ? 'running' : 'off' },
+      keys: SSH_KEYS.map((k) => ({ ...k, offered: state.developer.offered.has(k.id) && k.state === 'ok' })),
+      env: { name: 'SSH_AUTH_SOCK', current: state.developer.env ? '\\\\.\\pipe\\openssh-ssh-agent' : '',
+        pipe: '\\\\.\\pipe\\openssh-ssh-agent', applied: state.developer.env },
+      git: { available: true, signing_ok: true, version: '2.47.1', applied: state.developer.git },
+      cli: { enabled: state.developer.cli, items: all().filter((i) => i.kind !== 'passkey').map((i) => ({
+        id: i.id, title: i.title, kind: i.kind, listed: state.developer.cliItems.has(i.id), strict: i.id === 'paypal' }))
+        .sort((a, b) => a.title.localeCompare(b.title)) } }),
+    developer_set: (_key, value) => { state.developer.agent = !!value; return ok({ enabled: !!value, message: 'Applying the SSH agent setting.' }); },
+    developer_key_toggle: (id, on) => {
+      if (on) state.developer.offered.add(id); else state.developer.offered.delete(id);
+      return ok({ offered: !!on });
+    },
+    developer_generate_key: (title = '') => ok({ message: `Created the key "${title || 'SSH key'}" and offered it to the agent.` }),
+    developer_copy_public_key: () => ok({ message: 'Public key copied.' }),
+    developer_cli_get: () => ok({ enabled: state.developer.cli }),
+    developer_cli_set: (enabled) => { state.developer.cli = !!enabled; return ok({ enabled: !!enabled }); },
+    developer_cli_item_toggle: (id, on) => {
+      if (on) state.developer.cliItems.add(id); else state.developer.cliItems.delete(id);
+      return ok({ listed: !!on });
+    },
+    // The per-item "AI agents may use this item" switch: the screenshots keep it off and hidden.
+    developer_agent_item_get: () => ok({ available: false, allowed: false }),
+    developer_agent_item_set: () => fail('not_found', 'This item no longer exists.'),
+    developer_copy_reference: () => ok({ message: 'Reference copied. Clipboard clears in 30 seconds.' }),
+    developer_env_apply: () => { state.developer.env = true; return ok({ message: 'SSH_AUTH_SOCK set for your user account.' }); },
+    developer_env_undo: () => { state.developer.env = false; return ok({ message: 'SSH_AUTH_SOCK put back.' }); },
+    developer_git_plan: () => ok({ rows: [
+      { key: 'gpg.format', current: null, new: 'ssh' },
+      { key: 'user.signingkey', current: null, new: 'key::ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDemoKeyNotReal0000000000000000000000' },
+      { key: 'commit.gpgsign', current: 'false', new: 'true' },
+    ] }),
+    developer_git_apply: () => { state.developer.git = true; return ok({ message: 'Git will now sign commits with this key.' }); },
+    developer_git_undo: () => { state.developer.git = false; return ok({ message: 'Git settings put back.' }); },
+
+    // ---- feature pack: plain-secrets scan (a job: progress and done events; values are never sent)
+    secret_scan_choose_folder: () => ok({ folder: 'C:\\Users\\alex\\Projects' }),
+    secret_scan_start: () => {
+      setTimeout(() => emit('job.progress', { job: 'secret_scan', text: 'Looked at 1,284 files…' }), 150);
+      setTimeout(() => emit('job.done', { job: 'secret_scan', ok: true, rows: scanRows(),
+        message: 'Scan finished: 4 files with plain secrets found.' }), 600);
+      return ok({ started: true });
+    },
+    secret_scan_cancel: () => ok(),
+    secret_scan_import: (ids = []) => {
+      ids.forEach((id) => state.scan.imported.add(id));
+      return ok({ imported: ids.length, failed: 0, failures: [], rows: scanRows(),
+        message: `Imported ${ids.length} file(s) into your vault. The files on disk are unchanged.` });
+    },
+    secret_scan_rewrite_preview: () => ok({ token: 'demo-rewrite-token', path: 'C:\\Users\\alex\\Projects\\shop\\.env',
+      rewrite_count: 2, skip_count: 1, rows: [
+        { line: 3, name: 'DATABASE_URL', action: 'rewrite', before: '••••••', after: 'lgk://item/env-shop/DATABASE_URL' },
+        { line: 4, name: 'STRIPE_SECRET_KEY', action: 'rewrite', before: '••••••', after: 'lgk://item/env-shop/STRIPE_SECRET_KEY' },
+        { line: 6, name: 'DEBUG', action: 'skip', reason: 'comment' },
+      ] }),
+    secret_scan_rewrite_apply: () => ok({ rewritten: 2, rows: scanRows(), item_id: 'env-shop', cli_enabled: state.developer.cli,
+      message: 'Rewrote 2 variable(s) to use references. Run commands with "lgk run" to fill them in.' }),
+
+    // ---- feature pack: key file and YubiKey (Settings > Unlocking, the unlock screen)
+    factors_status: () => ok({ factors: state.factors ? [{ kind: 'keyfile', slot: null }, { kind: 'yubikey-hmac', slot: 2 }] : [],
+      keyfile_name: state.factors ? 'family-vault.key' : null, remember: true, always_ask: false, shortcuts_off: false,
+      hint: 'Add a key file or a YubiKey so the master password alone no longer opens this vault.',
+      yubikey_setup: 'The YubiKey needs an HMAC-SHA1 challenge-response slot. Set it up once with YubiKey Manager.' }),
+    factors_pick_keyfile: () => ok({ name: 'family-vault.key' }),
+    factors_set_remember: (value) => ok({ remember: value !== false, message: 'Saved.' }),
+    factors_set_always_ask: (value) => ok({ always_ask: !!value, message: 'Saved.' }),
+    factors_cancel: () => { setTimeout(() => emit('factors.touch', { waiting: false }), 0); return ok(); },
+    hello_status: () => ok({ supported: true, enabled: true, incomplete: false, auto_start: true, tone: 'success',
+      status: 'Windows Hello is on.', guidance: 'Use your fingerprint, face or PIN instead of typing the master password.' }),
+    face_status: () => ok({ supported: true, enabled: false, incomplete: false, tone: 'neutral', status: 'Camera check is not set up.' }),
+    security_key_status: () => ok({ supported: true, enabled: false, incomplete: false, tone: 'neutral',
+      status: 'No security key is set up.', guidance: 'A FIDO2 security key can unlock this vault after you touch it.' }),
 
     // ---- settings, licence
     settings_page: () => ok(clone(state.settings)),
@@ -431,8 +601,8 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
       headline: 'LocalGateKeys Pro',
       details: ['Licensed to: Alex Morgan (alex.morgan@example.com)', 'Updates until: 2027-10-22'],
       can_remove: true, warning: false,
-      pitch: 'LocalGateKeys Pro: unlimited items, device sync, two-factor codes and attachments — US$4.99 once, lifetime updates.',
-      purchase_url: '', upgrade: { headline: 'The free plan holds up to 4 items.', body: '' }, pro: true,
+      pitch: 'LocalGateKeys Pro: unlimited items, device sync, two-factor codes and attachments. US$29.99 once. One payment. Every update, forever, free.',
+      purchase_url: '', upgrade: { headline: 'The free plan holds up to 7 items.', body: '' }, pro: true,
     }),
 
     // ---- sync
@@ -447,7 +617,7 @@ export function createMockApi({ unlocked = true, appearance = 'dark' } = {}) {
 
   state.generator = { mode: 'password', length: 20, lowercase: true, uppercase: true, digits: true, symbols: true,
     avoid_ambiguous: true, symbol_set: '!@#$%^&*()-_=+[]{}:,.?', exclude: '', min_digits: 1, min_symbols: 1, words: 6,
-    separator: '-', capitalize: false, append_number: false };
+    separator: '-', capitalize: false, append_number: false, answer_words: 3 };
 
   const logged = new Set();
   const fallback = (name) => async () => {

@@ -1,7 +1,7 @@
 <script>
   /** Right-click / Shift+F10 menu for one item; entries mirror shell/item_menu.py. */
   import { t } from '../lib/i18n.svelte.js';
-  let { item, at, onpick, onclose } = $props();
+  let { item, at, onpick, onclose, cli = false } = $props();
 
   const entries = $derived.by(() => {
     const login = item.ref.source === 'credential';
@@ -14,6 +14,7 @@
       rows.push([t('itemMenu.open'), 'open']);
     }
     if (!['passkey', 'document'].includes(item.ref.kind)) rows.push(null, [t('itemMenu.share'), 'share']);
+    if (cli) rows.push(null, [t('itemMenu.copyCliReference'), 'copy-cli-reference']);
     rows.push(null, [item.favorite ? t('itemMenu.removeFavorite') : t('itemMenu.addFavorite'), 'favorite'], null,
       [t('itemMenu.trash'), 'trash']);
     return rows;

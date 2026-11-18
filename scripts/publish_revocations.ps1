@@ -32,6 +32,13 @@ if ([string]::IsNullOrWhiteSpace($Key) -eq [string]::IsNullOrWhiteSpace($KeyEnv)
 }
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+# The pinned wrangler (devDependency of the licence Worker; `npm ci` there installs it).
+$Wrangler = Join-Path $Root "cloudflare\license-issuer\node_modules\.bin\wrangler.cmd"
+function Assert-Wrangler {
+    if (-not (Test-Path -LiteralPath $Wrangler -PathType Leaf)) {
+        throw "The pinned wrangler is not installed. Run: cd cloudflare\license-issuer; npm ci"
+    }
+}
 $VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
 $Python = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) {
     $VenvPython
@@ -80,7 +87,8 @@ if ($NoUpload) {
     return
 }
 if ($PSCmdlet.ShouldProcess("$Bucket/revocations.json", "wrangler r2 object put")) {
-    & wrangler r2 object put "$Bucket/revocations.json" --file $OutPath --content-type application/json --remote
+    Assert-Wrangler
+    & $Wrangler r2 object put "$Bucket/revocations.json" --file $OutPath --content-type application/json --remote
     if ($LASTEXITCODE -ne 0) { throw "Upload failed: revocations.json" }
     Write-Host "Uploaded revocations.json to $Bucket." -ForegroundColor Green
 }

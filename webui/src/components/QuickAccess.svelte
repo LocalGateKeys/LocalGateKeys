@@ -1,5 +1,6 @@
 <script>
   /** Quick access: search this profile from anywhere (hotkey, tray, palette) and open the item. */
+  import { dialog } from '../lib/dialog.js';
   import { call } from '../lib/api.js';
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast } from '../lib/toast.js';
@@ -29,7 +30,7 @@
 </script>
 
 <div class="scrim">
-  <div class="card glass" role="dialog" aria-modal="true" aria-label={t('quickAccess.title')} tabindex="-1" onkeydown={keys}>
+  <div class="card glass" role="dialog" aria-modal="true" use:dialog aria-label={t('quickAccess.title')} tabindex="-1" onkeydown={keys}>
     <h2>{t('quickAccess.title')}</h2>
     <p class="muted">{t('quickAccess.intro', { profile })}</p>
     <div class="bar">

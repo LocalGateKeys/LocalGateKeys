@@ -357,3 +357,74 @@ def test_other_native_errors_do_not_fall_back(vault):
         hello.prepare_enrollment(PROFILE, vault.unlock_context(), 123, threading.Event(),
                                  provider_factory=lambda: provider)
     assert provider.keys == {}
+
+
+class Pkcs1OnlyProvider(SimulatedProvider):
+    """A provider whose private-key operation refuses every OAEP variant (user report 2026-11-10)."""
+    def wrap(self, record_id, secret, oaep_hash="SHA256"):
+        self.calls.append(f"wrap:{oaep_hash}")
+        return self.keys[record_id].public_key().encrypt(
+            bytes(secret), padding.PKCS1v15() if oaep_hash == "PKCS1" else padding.OAEP(
+                mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+
+    def unwrap(self, record_id, wrapped, hwnd, oaep_hash="SHA256"):
+        self.calls.append(f"unwrap:{oaep_hash}")
+        if oaep_hash != "PKCS1":
+            raise NativeError("decrypting", 0x80090027)
+        result = bytearray(self.keys[record_id].decrypt(wrapped, padding.PKCS1v15()))
+        self.outputs.append(result)
+        return result
+
+
+def test_provider_without_any_oaep_falls_back_to_pkcs1(vault):
+    provider = Pkcs1OnlyProvider()
+    enroll(vault, provider)
+    record = json.loads(hello.envelope_path(vault.path).read_bytes())
+    assert record["oaep"] == "PKCS1"
+    vault.lock()
+    result = unlock(vault, provider)
+    assert result.find_web("https://example.test")[0]["password"] == "Test-Only-Site-Secret"
+    result.lock()
+    assert provider.calls == ["create", "wrap:SHA256", "unwrap:SHA256", "wrap:SHA1", "unwrap:SHA1",
+                              "wrap:PKCS1", "unwrap:PKCS1", "unwrap:PKCS1"]
+
+
+def test_public_key_blob_is_parsed_and_checked():
+    import ctypes as ct
+    import struct
+
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    from localvault import windows_hello as wh
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    numbers = key.public_key().public_numbers()
+    exponent = numbers.e.to_bytes(3, "big")
+    blob = struct.pack("<6I", wh.RSA_PUBLIC_MAGIC, 2048, 3, 256, 0, 0) + exponent + numbers.n.to_bytes(256, "big")
+
+    class Dll:
+        def NCryptExportKey(self, key, export, kind, params, out, out_len, size, flags):
+            assert kind == "RSAPUBLICBLOB"
+            size._obj.value = len(blob)
+            if out is not None:
+                ct.memmove(out, blob, len(blob))
+            return 0
+
+    hello_obj = object.__new__(wh.WindowsHello)
+    hello_obj.dll = Dll()
+    assert hello_obj._public_key(None).public_numbers() == numbers
+
+    bad = bytearray(blob); bad[0] ^= 1
+    blob = bytes(bad)
+    with pytest.raises(wh.HelloError):
+        hello_obj._public_key(None)
+
+
+def test_sidecar_cannot_be_switched_to_pkcs1(vault, provider):
+    enroll(vault, provider)
+    path = hello.envelope_path(vault.path)
+    record = json.loads(path.read_bytes())
+    record["oaep"] = "PKCS1"
+    path.write_text(json.dumps(record))
+    plain = dict(record); plain.pop("oaep")
+    assert hello._context(record) != hello._context(plain)

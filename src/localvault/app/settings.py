@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 from ..api.result import ApiError
 from ..i18n import t
-from ..secret_text import SecretText, as_secret, secrets_match
+from ..secret_text import SecretText
 from ..startup import set_start_with_windows
 from ..vault import VaultError
 
@@ -33,7 +33,9 @@ ROUTES = {
     "hello_settings_clicked": "hello", "face_settings_clicked": "face", "change_master_clicked": "master",
     "recovery_center_clicked": "recovery", "check_updates_clicked": "updates", "licence_clicked": "licence",
     "sync_clicked": "sync", "show_shortcuts_clicked": "shortcuts", "onboarding_clicked": "onboarding",
-    "connections_clicked": "connections", "open_error_log_clicked": "errorlog", "rate_clicked": "rate",
+    "connections_clicked": "connections", "passkey_doctor_clicked": "passkey-doctor", "open_error_log_clicked": "errorlog", "rate_clicked": "rate",
+    "store_move_clicked": "store-move",
+    "developer_clicked": "developer",
 }
 
 
@@ -57,8 +59,8 @@ class _Adapter:
             return lambda *args, **kwargs: {"route": ROUTES[name], "params": {}}
         raise AttributeError(name)
 
-    def _settings_backup_password_action(self, _window: Any = None, *, clear: bool = False) -> dict[str, Any]:
-        return {"route": "backup_password", "params": {"clear": bool(clear)}}
+    def _settings_backup_password_action(self, _window: Any = None, *, mode: str = "set") -> dict[str, Any]:
+        return {"route": "backup_password", "params": {"mode": str(mode)}}
 
     def _unlock_methods(self) -> Any:
         from .security import SecurityService
@@ -74,6 +76,29 @@ class _Adapter:
         except Exception:  # noqa: BLE001
             return {"label": t("settings.btn.setUp"), "status": t("settings.face.errorStatus")}
         return {"label": t("settings.btn.manage") if configured else t("settings.btn.setUp"), "status": t("settings.face.configured") if configured else t("settings.notSetUp")}
+
+    def _settings_factor_state(self) -> dict[str, Any]:
+        """The vault's key file / YubiKey for the Unlocking card (public header only)."""
+        from .factors import safe_specs
+
+        controller = self._service._controller
+        profile = controller.profiles.active_profile()
+        specs = safe_specs(controller.profiles.vault_path(profile.id)) if profile else []
+        yubikey = next((spec for spec in specs if spec.kind == "yubikey-hmac"), None)
+        return {"keyfile": any(spec.kind == "keyfile" for spec in specs),
+                "yubikey_slot": (yubikey.slot or 2) if yubikey is not None else None}
+
+    def _settings_duress_state(self) -> int | None:
+        """The duress lock hours when one is set up, else 0; a duress session always reads 0 ("not set up")."""
+        from .. import duress
+
+        controller = self._service._controller
+        if not controller.is_unlocked():
+            return None
+        session = controller.session
+        if duress.is_decoy(session) or not duress.configured(session.path):
+            return 0
+        return duress.lock_hours(session) or duress.DEFAULT_LOCK_HOURS
 
     def _settings_backup_state(self) -> dict[str, Any]:
         return self._service.backup_state()
@@ -129,6 +154,17 @@ class _Recorder:
     def note(self, text: str) -> None:
         self.rows.append({"type": "note", "text": text})
 
+    def notice(self, title: str, text: str, actions: list[tuple[str, Callable[[], Any]]], *,
+               kind: str = "info") -> None:
+        """A banner with buttons that open page routes (never anything else)."""
+        routes = []
+        for label, command in actions:
+            target = command()
+            if isinstance(target, dict) and "route" in target:
+                routes.append({"label": label, "route": target["route"], "params": target.get("params", {})})
+        self.rows.append({"type": "notice", "title": title, "text": text, "actions": routes,
+                          "kind": "warning" if kind == "warning" else "info"})
+
     def link(self, title: str, description: str, label: str, url: str) -> None:
         if not url.startswith("https://"):
             return  # only web pages, opened in the browser through system_open_url
@@ -146,6 +182,12 @@ class SettingsService:
         self._bus = bus
         self._dialogs = dialogs
         self._schedule = schedule
+        keys = getattr(schedule, "keys", None)
+        if keys is None:
+            from .backup_keys import BackupKeyService
+
+            keys = BackupKeyService(controller)
+        self.keys = keys
         # Python-side listeners (the agent host re-registers hotkeys, refreshes the tray).
         self.on_change: list[Any] = []
 
@@ -266,14 +308,16 @@ class SettingsService:
 
     # ------------------------------------------------- backup password
     def backup_state(self) -> dict[str, Any]:
-        controller = self._controller
+        """The Backups section's facts: the backup key (``BackupKeyService.status``) and the schedule line."""
         try:
-            has_password = bool(controller.session.has_scheduled_backup_password())
-        except Exception:  # noqa: BLE001
-            has_password = False
-        return {"has_password": has_password, "status": self._schedule_status(has_password)}
+            state = self.keys.status()
+        except Exception:  # noqa: BLE001 - a status row only
+            state = {"has_key": False}
+        state["has_password"] = bool(state.get("has_key")) and not state.get("damaged") and not state.get("paused")
+        state["status"] = self._schedule_status(state)
+        return state
 
-    def _schedule_status(self, has_password: bool) -> str:
+    def _schedule_status(self, state: dict[str, Any]) -> str:
         from ..backup_schedule import SCHEDULED_DIR_NAME, read_last_success
 
         controller = self._controller
@@ -281,7 +325,13 @@ class SettingsService:
             return t("settings.status.off")
         if not controller.is_unlocked():
             return t("settings.status.unlockedOnly")
-        if not has_password:
+        if state.get("migrating"):
+            return t("backupKey.status.migrating")
+        if state.get("paused"):
+            return t("backupKey.status.paused")
+        if state.get("damaged"):
+            return t("backupKey.status.damaged")
+        if not state.get("has_key"):
             return t("settings.status.noPassword")
         profile = controller.profiles.active_profile()
         try:
@@ -290,40 +340,49 @@ class SettingsService:
             last = None
         return t("settings.status.last", when=last.strftime("%Y-%m-%d %H:%M")) if last else t("settings.status.none")
 
-    def backup_password(self, first: str | SecretText, second: str | SecretText) -> dict[str, Any]:
-        """Store the scheduled-backup password. ``SecretText`` stays the caller's (the bridge wipes it);
-        the vault keeps a ``str``, made only for that one call."""
-        lease = self._lease()
-        try:
-            if not secrets_match(first, second):
-                raise ApiError("invalid", t("settings.backupPassword.mismatch"))
-            secret, owned = as_secret(first)
-            try:
-                if secret.char_count < 12:
-                    raise ApiError("invalid", t("settings.backupPassword.tooShort"))
-                value = secret.buffer.decode("utf-8")
-            finally:
-                if owned:
-                    secret.wipe()
-            self._controller.require_lease(lease)
-            try:
-                self._controller.session.set_scheduled_backup_password(value)
-            except VaultError as exc:
-                raise ApiError("invalid", str(exc)) from None
-        finally:
-            first = second = value = ""
+    def _key_changed(self) -> None:
         if self._schedule is not None:
             self._schedule.settings_changed()
             self._controller._scheduler.call_later(1, self._schedule._safe_check)
-        self._controller.touch()
-        return {"message": t("settings.backupPassword.saved")}
+        self._bus.emit("settings.changed", {"key": "backup_key"})
 
-    def clear_backup_password(self) -> dict[str, Any]:
+    def backup_password(self, first: str | SecretText, second: str | SecretText) -> dict[str, Any]:
+        """Set the scheduled-backup key the first time (no record yet). ``SecretText`` stays the caller's."""
+        result = self.keys.set_password(first, second)
+        self._key_changed()
+        return result
+
+    def change_backup_password(self, old: str | SecretText, first: str | SecretText, second: str | SecretText,
+                               relock: bool) -> dict[str, Any]:
+        result = self.keys.change_password(old, first, second, relock=bool(relock))
+        self._key_changed()
+        return result
+
+    def reset_backup_password(self, phrase: str, first: str | SecretText, second: str | SecretText) -> dict[str, Any]:
+        result = self.keys.reset_password(phrase, first, second)
+        self._key_changed()
+        return result
+
+    def rebind_backup_key(self, password: str | SecretText) -> dict[str, Any]:
+        result = self.keys.rebind(password)
+        self._key_changed()
+        return result
+
+    def confirm_backup_key(self, password: str | SecretText) -> dict[str, Any]:
+        result = self.keys.confirm(password)
+        self._key_changed()
+        return result
+
+    def remove_backup_key(self, password: str | SecretText | None = None, phrase: str | None = None) -> dict[str, Any]:
         lease = self._lease()
-        if not self._port.confirm(t("settings.backupPasswordClear.confirmTitle"),
-                                  t("settings.backupPasswordClear.confirmText")):
+        if not self._port.confirm(t("backupKey.removeConfirmTitle"), t("backupKey.removeConfirmText")):
             raise ApiError("cancelled", t("error.cancelled"))
         self._controller.require_lease(lease)
-        self._controller.session.set_scheduled_backup_password(None)
-        self._controller.touch()
-        return {"message": t("settings.backupPasswordClear.done")}
+        result = self.keys.remove(password=password, phrase=phrase)
+        self._key_changed()
+        return result
+
+    def dismiss_backup_notice(self) -> dict[str, Any]:
+        result = self.keys.dismiss_notice()
+        self._bus.emit("settings.changed", {"key": "backup_key"})
+        return result

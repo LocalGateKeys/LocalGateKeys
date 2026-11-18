@@ -90,6 +90,7 @@ let sync bring the items to the others, so nothing is imported twice.
 | **KeePassXC** | Open the `.kdbx` directly (password and/or key file), or *Database > Export > CSV* | `.kdbx` / `.csv` |
 | **Proton Pass** | *Settings > Export*, turn **off** "Encrypt with PGP", format **JSON** (zip) or **CSV** | `.zip` / `.csv` |
 | **Dashlane** | *Settings > Export data > Export to CSV* | `.zip` (or a single `.csv` from inside it) |
+| **Apple Passwords and other Credential Exchange (CXF) apps** | Export the account as a Credential Exchange (CXF) file | `.json` / `.cxf` |
 
 Any other CSV file also works: LocalGateKeys asks you which column holds the
 name, website, username, password, notes, one-time code and folder.
@@ -126,12 +127,61 @@ name, website, username, password, notes, one-time code and folder.
 
 - **Items in the trash** or recycle bin of the old manager.
 - **Password history** (older passwords) and **KeePass entry history**.
-- **Passkeys.** No password manager exports them in a form another app can
-  use. Sign in with the password, then register a new passkey. Affected items
-  are listed in the review or marked on the item.
+- **Passkeys from other formats.** Only Credential Exchange (CXF) files carry
+  passkeys in a form another app can use (see below). For other exports, sign
+  in with the password, then register a new passkey. Affected items are listed
+  in the review or marked on the item.
 - **File attachments** (1Password documents, KeePass attachments). The item
   itself is imported, and the review or the item says a file was left out.
   Save the file from the old app and add it as a document.
+
+### Credential Exchange (CXF) files
+
+A CXF account file (Apple Passwords and other apps that follow the FIDO
+Credential Exchange format) is read the same way on Windows, Mac, iPhone and
+Android:
+
+- **Logins** keep every website address, the username and the password. An
+  item holds one login; if a CXF item carries more than one, the extra ones
+  are skipped.
+- **One-time codes** join the login in the same item. A code with no login,
+  or a second code in the same item, is kept in a secure note that holds the
+  code.
+- **Notes** join the login in the same item, or become a secure note.
+- **Passkeys** become passkey items (website, user name, credential ID and
+  private key). An ES256 passkey can be used to sign in straight away. Android,
+  iPhone and Mac read ES256 passkeys only and skip the others. A passkey counts
+  as already saved only when its website and credential ID match one in the
+  vault, so a second account's passkey for the same site is imported as a new
+  item.
+- **Other credential types** (cards, SSH keys, Wi-Fi and so on) are skipped,
+  and the review says how many of each type were left out.
+
+The free plan limit of 7 items applies, as with every import.
+
+A CXF file can be up to 16 MiB on Windows and up to 8 MiB on Android (the
+phone's limit for every text export). Split a bigger export, or import it on
+the PC and sync.
+
+#### Exporting to CXF
+
+LocalGateKeys can also write a CXF file for another app: on Windows in the
+Export sheet beside CSV, on Android under **Settings > Export to a CXF
+file…**, and on iPhone and Mac as a file export (this is a file you save, not
+Apple's system Credential Exchange). The file holds the logins, notes and
+passkeys you choose:
+
+- A login becomes a login, its one-time code becomes a code on that login, a
+  note becomes a note and a passkey becomes a passkey.
+- **Left out:** the site name, favourite flag, tags, folders, custom fields and
+  the notes on passkeys. The export warns you when custom fields or passkey
+  notes were left out.
+- The file is **not encrypted**. Anyone who gets it can read every password and
+  passkey in it, so delete it once the other app has imported it.
+- Because passkey private keys are written out, the app asks you to
+  re-authenticate before it reads them: the master password on Windows and
+  Mac, fingerprint, face or screen lock on Android, and Face ID, Touch ID or
+  the passcode on iPhone. If you cancel, nothing is written.
 
 ## Two-factor codes from a QR code (Windows)
 
@@ -190,12 +240,18 @@ Open Settings, then Import & Export.
   KeePass (.kdbx, XML or CSV), Proton Pass or any CSV. KeePass and protected Bitwarden files ask for
   their password. You review every row before anything is saved.
 - Importing the same file again adds nothing; the result says how many were already saved.
-- The free plan holds 4 items. Extra items are not stored, and the result says how many are waiting:
+- The free plan holds 7 items. Extra items are not stored, and the result says how many are waiting:
   "upgrade to Pro, then import again".
 - **Export is free.** "Export encrypted backup" asks for a password of at least 12 characters, typed
-  twice. It is never stored and can't be recovered, so keep it safe. The `.lgkm` file can be restored in
-  the desktop app. "Export as CSV" writes an unencrypted file of logins only (passkeys can't go in a
+  twice. It is never stored and can't be recovered, so keep it safe. The `.lgkm` file can be restored on
+  another iPhone, an Android phone, a Mac or the Windows app. "Export as CSV" writes an unencrypted file of logins only (passkeys can't go in a
   CSV); the app warns you before it creates the file.
+- **Restore a phone backup.** "Restore from a backup" (also on the empty vault screen) opens a `.lgkm`
+  from the iPhone or Android app: enter its password, check the preview counts, then Restore. It merges
+  like sync and never wipes the vault: items the backup deleted move to Recently deleted, and documents
+  come back with their files. A backup this iPhone made restores only into an empty vault (after the app
+  was deleted and installed again); otherwise the app says there is nothing to restore. On the free plan,
+  items beyond the 7-item limit are held back.
 
 ## On the Mac
 
@@ -203,8 +259,9 @@ Open the **Import & export** page in the sidebar. Everything here is free; only 
 limit applies, and rows beyond it are marked "Needs Pro".
 
 - **From another password manager.** Choose the export file (the formats in the table above, including
-  Bitwarden, 1Password 1PUX and KeePass `.kdbx` 3.1 or 4 with a password; Twofish and key files are
-  refused with a message). A review sheet shows each row as new, a duplicate or an update before
+  Bitwarden, 1Password 1PUX and KeePass `.kdbx` 3.1 or 4 with a password; Twofish is refused with a
+  message, and so is a database that also needs a key file: the Mac importer takes a password only, while
+  the Windows app opens `.kdbx` with a password and/or a key file). A review sheet shows each row as new, a duplicate or an update before
   anything is saved. A CSV with unknown columns opens a column-mapping sheet.
 - **From Apple Passwords (macOS 26 or later).** Choose "Review the passwords from Apple Passwords":
   logins, 2FA codes and passkeys come across through the same review sheet.
@@ -248,8 +305,9 @@ Keychain.
 
 Both the Android and iPhone apps write encrypted backup files ending in `.lgkm`,
 protected by a backup password you choose on the phone (on the iPhone:
-Settings › Import & Export › Export encrypted backup). The desktop app restores
-them. On the desktop open **Import &
+Settings › Import & Export › Export encrypted backup). The Windows app, the Mac
+(Import & export › Restore a phone backup) and the iPhone (Settings › Import & Export
+› Restore from a backup, see [On the iPhone](#on-the-iphone)) restore them. On Windows open **Import &
 export** and choose **Restore phone backup…**, pick the file, enter the backup
 password and review the preview. Nothing changes until you press restore.
 
@@ -259,7 +317,7 @@ password and review the preview. Nothing changes until you press restore.
 - **Pro licence:** a licence in the backup is restored only when it verifies on
   this version of LocalGateKeys (a valid signature, not revoked, covering this
   version). It then makes this computer Pro straight away. On the free plan,
-  items beyond the 4-item limit are still held back in that same restore: the
+  items beyond the 7-item limit are still held back in that same restore: the
   result says so, and restoring the file again brings them back.
 - **Restore merges.** It uses the same rules as sync: new items are added, and
   an item you already have is never overwritten by an older or equal version.
@@ -267,7 +325,7 @@ password and review the preview. Nothing changes until you press restore.
   them (the phone's deletion is newer than your copy); the preview and the
   result say how many ("moved to the trash (deleted on the phone)"). Deletions
   of items this computer never had change nothing.
-- **Free plan:** the 4-item limit still applies. New items beyond the limit are
+- **Free plan:** the 7-item limit still applies. New items beyond the limit are
   held back, newest first kept, and the preview says how many. Copies made
   when the same item changed on both sides take slots too.
 - **Two-factor keys on the free plan:** two-factor codes need Pro, so the key
@@ -295,7 +353,8 @@ password and review the preview. Nothing changes until you press restore.
 ### Limits
 
 - A text export (CSV, JSON, XML) can be up to 8 MiB. A zip export (1PUX,
-  Proton Pass, Dashlane) can be up to 64 MiB.
+  Proton Pass, Dashlane) can be up to 64 MiB. A CXF file can be up to 16 MiB
+  on Windows, 8 MiB on Android.
 - Up to 5,000 items per import. Split bigger vaults by folder, or import in
   several passes. Rows that are already in the vault are recognised as
   duplicates.

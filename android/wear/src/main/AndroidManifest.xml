@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sub-plan 06: the LocalGateKeys watch app holds only the pinned-codes tile. No INTERNET permission: it talks to
+     the paired phone through Google Play services' Data Layer only. Nothing is backed up. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true">
+
+        <!-- The watch app needs the phone app (it shows what the phone sends). -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="false" />
+
+        <!-- Exported only for the system's tile host to bind (BIND_TILE_PROVIDER is a system permission). -->
+        <service
+            android:name=".CodesTileService"
+            android:description="@string/tile_description"
+            android:exported="true"
+            android:icon="@drawable/ic_tile"
+            android:label="@string/tile_label"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/tile_preview" />
+        </service>
+
+        <!-- The phone's messages. Exported because Google Play services binds it (the base class accepts only Play
+             services as the caller); the Data Layer delivers only this app's own phone app's messages. -->
+        <service
+            android:name=".PhoneCodesClient$Listener"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:path="/lgk/codes"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+
+        <!-- Play services base's error-resolution screen: never used (a failed call only means no phone in reach). -->
+        <activity
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            tools:node="remove" />
+
+        <!-- Exported library receiver (profile installer, DUMP-guarded): the tile and the listener are the only exported
+             components. -->
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            tools:node="remove" />
+    </application>
+</manifest>

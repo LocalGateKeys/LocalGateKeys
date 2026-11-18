@@ -12,6 +12,11 @@ import app.localgatekeys.android.vault.BiometricChangedException
 import app.localgatekeys.android.vault.LocalStoreException
 import app.localgatekeys.core.crypto.AppPasswordException
 import app.localgatekeys.core.crypto.AppPasswordRecord
+import app.localgatekeys.core.crypto.FactorKind
+import app.localgatekeys.core.crypto.FactorMismatchException
+import app.localgatekeys.core.crypto.FactorRequiredException
+import app.localgatekeys.core.crypto.FactorSpec
+import app.localgatekeys.core.crypto.KeyFileException
 import app.localgatekeys.core.crypto.RecoveryPhraseException
 import app.localgatekeys.android.vault.VaultKeyException
 import app.localgatekeys.core.primitives.UnixClock
@@ -53,8 +58,17 @@ class AppLockModel(
     /** Task 7: the biometric-only shortcut is set up. */
     private val biometricShortcut: () -> Boolean = { false },
     private val t: Txt,
+    /** Task 9: the key file and YubiKey for an app password that needs them (null: none on this build or test). */
+    private val factorSource: FactorSource? = null,
+    /** Task 9: the factors the app password needs (empty: none). */
+    private val factors: () -> List<FactorSpec> = { emptyList() },
+    /** Task 9: a recovery-phrase reset dropped the factors (the app turns "Always ask" off). */
+    private val onFactorsDropped: () -> Unit = {},
 ) {
     enum class State { LOCKED, UNLOCKING, UNLOCKED }
+
+    /** The unlock screen asks for a YubiKey in [slot]; [again] after it left the reader mid-answer. */
+    data class YubiKeyPrompt(val slot: Int, val again: Boolean)
 
     private val _state = MutableStateFlow(State.LOCKED)
     val state: StateFlow<State> = _state.asStateFlow()
@@ -71,6 +85,28 @@ class AppLockModel(
     /** Task 7: the unlock screen shows the app password field (and "Forgot app password?"). */
     val needsPassword: StateFlow<Boolean> = _needsPassword.asStateFlow()
 
+    private val _factorSpecs = MutableStateFlow<List<FactorSpec>>(emptyList())
+    /** Task 9: the key file / YubiKey the app password needs; the unlock screen shows their rows. */
+    val factorSpecs: StateFlow<List<FactorSpec>> = _factorSpecs.asStateFlow()
+
+    private val _keyFile = MutableStateFlow<KeyFileRef?>(null)
+    /** Task 9: the key file the next password try reads (picked, or remembered); null: none chosen. */
+    val keyFile: StateFlow<KeyFileRef?> = _keyFile.asStateFlow()
+
+    private val _yubiKeyPrompt = MutableStateFlow<YubiKeyPrompt?>(null)
+    /** Task 9: non-null while a YubiKey is awaited (the screen offers Cancel). */
+    val yubiKeyPrompt: StateFlow<YubiKeyPrompt?> = _yubiKeyPrompt.asStateFlow()
+
+    private val _notice = MutableStateFlow<String?>(null)
+    /** Said once after an unlock (a phrase reset removed the key file / YubiKey); [noticeShown] clears it. */
+    val notice: StateFlow<String?> = _notice.asStateFlow()
+
+    /** A key file picked on the unlock screen, remembered after an unlock that used it when [rememberPicked]. */
+    private var pickedKeyFile: KeyFileRef? = null
+    /** The key-file picker opened from the unlock screen ([willOpenLockedPicker]); consumed by the next background trip. */
+    private var lockedPickerTrip = false
+    private var rememberPicked = true
+
     private val _offersStartFresh = MutableStateFlow(false)
     /** The unlock screen shows "Start fresh anyway" (`eraseFailed || vaultUnreadable`). */
     val offersStartFresh: StateFlow<Boolean> = _offersStartFresh.asStateFlow()
@@ -84,8 +120,10 @@ class AppLockModel(
         private set(v) { field = v; _offersStartFresh.value = eraseFailed || v }
 
     private var idleTimer: LockTimer? = null
-    private var lastActivity = 0L
-    private var backgroundedAt: Long? = null
+    // Volatile: [lockDeadline] reads them from the widget's background thread. Both are [elapsedMillis] stamps (ms,
+    // monotonic in the app), so setting the date back cannot keep the vault open (audit A2).
+    @Volatile private var lastActivity = 0L
+    @Volatile private var backgroundedAt: Long? = null
     /** Bumped by every lock, so an unlock that was in flight when the lock happened is discarded. */
     private var generation = 0
     /** True while an erase runs: [unlock] returns early so no second erase starts and no vault opens. */
@@ -109,6 +147,7 @@ class AppLockModel(
         }
         if (passwordOn()) {
             _needsPassword.value = true
+            refreshFactors()
             // No shortcut: no prompt at all, the password field is the only way in (never the screen lock).
             if (!biometricShortcut()) return
         } else {
@@ -117,19 +156,99 @@ class AppLockModel(
         attempt(UnlockCredential.System)
     }
 
-    /** Task 7: unlock with the typed app password. */
+    /** Task 7: unlock with the typed app password (Task 9: plus the key file and YubiKey it needs). */
     suspend fun unlockWithPassword(password: String) {
         if (_state.value != State.LOCKED || isErasing || settings.erasePending || eraseFailed) return
-        attempt(UnlockCredential.Password(AppPasswordRecord.passwordBytes(password)))
+        refreshFactors()
+        val source = factorSource
+        val input = if (_factorSpecs.value.isEmpty() || source == null) null else FactorInput(
+            keyFile = { _keyFile.value?.let { source.readKeyFile(it) } },
+            yubiKey = { slot, challenge -> askYubiKey(source, slot, challenge) },
+        )
+        val used = _keyFile.value
+        attempt(UnlockCredential.Password(AppPasswordRecord.passwordBytes(password), input)) {
+            val picked = pickedKeyFile
+            if (source != null && picked != null && picked == used) {
+                // Only now, after it worked, is a picked file's grant persisted (and only when it is remembered).
+                if (rememberPicked && source.remembers()) source.rememberKeyFile(picked) else source.releaseKeyFile(picked)
+            }
+            pickedKeyFile = null
+        }
     }
+
+    /** Task 9: "Don't remember" is off, so the unlock screen offers "Remember this key file on this phone". */
+    fun remembersKeyFile(): Boolean = factorSource?.remembers() ?: false
 
     /** Task 7: "Forgot app password?": the 24 words and a new app password (already strength-checked by the screen). */
     suspend fun recover(phrase: String, newPassword: String) {
         if (_state.value != State.LOCKED || isErasing || settings.erasePending || eraseFailed) return
-        attempt(UnlockCredential.Recovery(phrase, AppPasswordRecord.passwordBytes(newPassword)))
+        // The phrase opens without the factors and the new password has none (as on Windows): say so once.
+        val hadFactors = factors().isNotEmpty()
+        attempt(UnlockCredential.Recovery(phrase, AppPasswordRecord.passwordBytes(newPassword))) {
+            _factorSpecs.value = emptyList()
+            pickedKeyFile?.let { factorSource?.releaseKeyFile(it) }
+            pickedKeyFile = null
+            _keyFile.value = null
+            if (hadFactors) {
+                onFactorsDropped()
+                _notice.value = t.s(R.string.factors_removed_by_phrase)
+            }
+        }
     }
 
-    private suspend fun attempt(credential: UnlockCredential) {
+    /** Task 9: the key file chosen on the unlock screen for the next try; [remember] keeps it for the next unlocks. */
+    fun chooseKeyFile(ref: KeyFileRef, remember: Boolean) {
+        pickedKeyFile?.takeIf { it != ref }?.let { factorSource?.releaseKeyFile(it) }
+        pickedKeyFile = ref
+        rememberPicked = remember
+        _keyFile.value = ref
+    }
+
+    /** Task 9: stop waiting for the YubiKey (the try ends without a message and is not counted). */
+    fun cancelYubiKey() {
+        factorSource?.cancelYubiKey()
+    }
+
+    /**
+     * Task 9: the unlock screen opens the system file picker for the key file. That trip to the background must not
+     * prompt again on return (a fingerprint prompt over the screen the person is typing on); the next real trip does.
+     */
+    fun willOpenLockedPicker() {
+        if (_state.value == State.LOCKED) lockedPickerTrip = true
+    }
+
+    /** The notice was shown. */
+    fun noticeShown() {
+        _notice.value = null
+    }
+
+    /**
+     * Task 9: an autofill or passkey sheet must not unlock by itself when the app password needs a key file or YubiKey
+     * (the picker and the NFC reader belong to the app): it says "Open LocalGateKeys to unlock" instead.
+     */
+    fun sheetDefersToApp(): Boolean = _state.value != State.UNLOCKED && passwordOn() && factors().isNotEmpty()
+
+    private fun refreshFactors() {
+        _factorSpecs.value = factors()
+        if (_factorSpecs.value.none { it.kind == FactorKind.KEYFILE }) {
+            _keyFile.value = null
+            pickedKeyFile?.let { factorSource?.releaseKeyFile(it) }
+            pickedKeyFile = null
+        } else if (_keyFile.value == null) {
+            _keyFile.value = factorSource?.rememberedKeyFile()
+        }
+    }
+
+    /** The YubiKey's answer; a key that left the reader mid-answer is asked again ("Touch your YubiKey again"). */
+    private suspend fun askYubiKey(source: FactorSource, slot: Int, challenge: ByteArray): ByteArray = try {
+        askYubiKeyWithRetries(YUBIKEY_TRIES, { again -> _yubiKeyPrompt.value = YubiKeyPrompt(slot, again) }) {
+            source.yubiKey(slot, challenge)
+        }
+    } finally {
+        _yubiKeyPrompt.value = null
+    }
+
+    private suspend fun attempt(credential: UnlockCredential, onSuccess: () -> Unit = {}) {
         _state.value = State.UNLOCKING; _errorMessage.value = null; vaultUnreadable = false
         val started = generation
         val opened = try {
@@ -156,6 +275,7 @@ class AppLockModel(
         _vault.value = opened
         _state.value = State.UNLOCKED
         _needsPassword.value = false
+        onSuccess()
         noteActivity()
     }
 
@@ -174,6 +294,7 @@ class AppLockModel(
      * left to paste it somewhere else. The copy still expires on its own timer.
      */
     fun lock(clearClipboard: Boolean = true) {
+        factorSource?.cancelYubiKey()
         idleTimer?.cancel(); idleTimer = null; backgroundedAt = null
         endSystemScreen()
         if (_state.value == State.LOCKED) return
@@ -187,14 +308,14 @@ class AppLockModel(
      * "Erase this phone's vault": locks first (whatever happens next), waits for work that could still write
      * ([afterLock]: sync), then erases. A failure shows on the unlock screen and is retried before the next unlock.
      */
-    suspend fun eraseAndLock(afterLock: suspend () -> Unit = {}) {
+    suspend fun eraseAndLock(afterLock: suspend () -> Unit = {}): Boolean {
         isErasing = true
         try {
             lock()
             // Before anything is deleted: a crash mid-erase leaves it set. Not known to be on disk: erase nothing.
-            if (!markErasePending()) return
+            if (!markErasePending()) return false
             afterLock()
-            runErase()
+            return runErase()
         } finally {
             isErasing = false
         }
@@ -209,16 +330,18 @@ class AppLockModel(
         false
     }
 
-    private suspend fun runErase() {
+    private suspend fun runErase(): Boolean {
         try {
             eraser.erase()
             settings.erasePending = false // cleared only on success (a failed write is a failed erase: retried)
             _errorMessage.value = null; eraseFailed = false
+            return true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             _errorMessage.value = (e as? VaultEraseFailure)?.text(t) ?: t.s(ERASE_FAILED_MESSAGE)
             eraseFailed = true
+            return false
         }
     }
 
@@ -268,10 +391,52 @@ class AppLockModel(
         }
     }
 
+    /**
+     * While unlocked: the Unix second at which the vault counts as locked for anything shown outside the app (the
+     * pinned-codes widget): the background auto-lock deadline or the idle limit, whichever comes first;
+     * [Long.MAX_VALUE] when neither applies. Null while locked. The lock itself is checked only when the app returns
+     * to the front, so what is shown outside it must stop at this time on its own.
+     */
+    fun lockDeadline(): Long? {
+        if (_state.value != State.UNLOCKED) return null
+        // Worked out afresh on every call from monotonic time left, then put on today's wall clock; 0 once expired
+        // (or when the elapsed time cannot be trusted), so callers comparing "now < deadline" show nothing.
+        val now = elapsedMillis()
+        var left = Long.MAX_VALUE
+        backgroundedAt?.let { left = minOf(left, remainingSeconds(it, settings.autoLockDelay.seconds, now)) }
+        settings.idleLock.limit?.let { left = minOf(left, remainingSeconds(lastActivity, it, now)) }
+        if (left == Long.MAX_VALUE) return Long.MAX_VALUE
+        return if (left <= 0) 0L else clock.now + left
+    }
+
+    /** Whole seconds of [limitSeconds] left since the [since] stamp; 0 when past it or when time ran backwards. */
+    private fun remainingSeconds(since: Long, limitSeconds: Long, now: Long): Long {
+        val gone = now - since
+        if (gone < 0) return 0
+        return maxOf(0L, limitSeconds - gone / 1000)
+    }
+
+    /** True when [limitSeconds] have passed since the [since] stamp, or the difference is negative (unknown: expired). */
+    private fun expiredSince(since: Long, limitSeconds: Long): Boolean {
+        val gone = elapsedMillis() - since
+        return gone < 0 || gone >= limitSeconds * 1000
+    }
+
+    /**
+     * The wall clock was changed (`ACTION_TIME_CHANGED`): the limits run on monotonic time and are unaffected, but a
+     * background limit already passed locks now rather than at the next return.
+     */
+    fun wallClockChanged() {
+        if (_state.value != State.UNLOCKED) return
+        val since = backgroundedAt
+        if (since != null && expiredSince(since, settings.autoLockDelay.seconds)) lock(clearClipboard = false)
+        else if (idleExpired) lock()
+    }
+
     /** Any touch or edit. Restarts the idle timer (none when the setting is Never). */
     fun noteActivity() {
         if (_state.value != State.UNLOCKED) return
-        lastActivity = clock.now
+        lastActivity = elapsedMillis()
         idleTimer?.cancel(); idleTimer = null
         val timeout = settings.idleLock.limit ?: return
         idleTimer = scheduler.schedule(timeout) { idleTimerFired() }
@@ -280,7 +445,7 @@ class AppLockModel(
     private val idleExpired: Boolean
         get() {
             val timeout = settings.idleLock.limit ?: return false
-            return clock.now - lastActivity >= timeout
+            return expiredSince(lastActivity, timeout)
         }
 
     private fun idleTimerFired() {
@@ -322,7 +487,7 @@ class AppLockModel(
             }
         }
         val since = backgroundedAt
-        if (since != null && clock.now - since >= settings.autoLockDelay.seconds) {
+        if (since != null && expiredSince(since, settings.autoLockDelay.seconds)) {
             lockFromTrip()
             return false
         }
@@ -347,6 +512,10 @@ class AppLockModel(
     }
 
     fun didEnterBackground() {
+        if (lockedPickerTrip) {
+            lockedPickerTrip = false
+            if (_state.value == State.LOCKED) return
+        }
         // A system screen the app opened itself (folder picker) is exempt from the "Immediately" rule only (Ruling 21);
         // other delays count the trip as usual.
         if (systemScreenSince != null && _state.value == State.UNLOCKED && settings.autoLockDelay == AutoLockDelay.IMMEDIATELY) return
@@ -359,13 +528,12 @@ class AppLockModel(
             lock(clearClipboard = false)
             return
         }
-        backgroundedAt = clock.now
+        backgroundedAt = elapsedMillis()
     }
 
     /** Timers do not run while the app is stopped (or the process sleeps): checks both limits here. */
     fun willEnterForeground() {
         if (_state.value != State.UNLOCKED) return
-        val now = clock.now
         if (systemScreenSince != null) {
             val expired = systemScreenExpired()
             endSystemScreen() // one trip only
@@ -375,7 +543,7 @@ class AppLockModel(
             }
         }
         val since = backgroundedAt
-        if (since != null && now - since >= settings.autoLockDelay.seconds) {
+        if (since != null && expiredSince(since, settings.autoLockDelay.seconds)) {
             lock(clearClipboard = false)
             return
         }
@@ -390,6 +558,9 @@ class AppLockModel(
     companion object {
         /** Ruling 21: how long a system screen the app opened (the folder picker) may stay on top before the vault locks. */
         const val SYSTEM_SCREEN_LIMIT_SECONDS = 120L
+
+        /** A YubiKey that leaves the reader mid-answer is asked this many times in one try. */
+        const val YUBIKEY_TRIES = 3
 
         @StringRes val VAULT_WITHOUT_KEY_MESSAGE = R.string.unlock_vault_without_key
         @StringRes val BIOMETRY_LOCKOUT_MESSAGE = R.string.unlock_biometry_lockout
@@ -429,6 +600,34 @@ class AppLockModel(
         /** What the unlock screen says after a failed unlock; null when the person cancelled (the Unlock button stays). */
         fun message(e: Throwable, t: Txt): String? = when (e) {
             is AppPasswordRequiredException -> null
+            is app.localgatekeys.android.duress.DuressException -> app.localgatekeys.android.duress.DuressText.message(e, t)
+            is FactorRequiredException -> t.s(
+                when {
+                    FactorKind.KEYFILE in e.kinds && FactorKind.YUBIKEY_HMAC in e.kinds -> R.string.factors_required_both
+                    FactorKind.KEYFILE in e.kinds -> R.string.factors_required_keyfile
+                    else -> R.string.factors_required_yubikey
+                },
+            )
+            is FactorMismatchException -> t.s(
+                if (e.kind == FactorKind.KEYFILE) R.string.factors_keyfile_mismatch else R.string.factors_yubikey_mismatch,
+            )
+            is KeyFileException -> t.s(R.string.factors_keyfile_invalid)
+            is FactorSettingsException -> t.s(
+                when (e.reason) {
+                    FactorSettingsException.Reason.NEEDS_FACTOR -> R.string.factors_always_ask_needs_factor
+                    FactorSettingsException.Reason.ALWAYS_ASK_ON -> R.string.factors_shortcuts_off
+                },
+            )
+            is KeyFileUnreadableException ->
+                if (e.tooLarge) t.s(R.string.factors_keyfile_too_large) else t.s(R.string.factors_keyfile_unreadable, e.name)
+            is YubiKeyException -> when (e.code) {
+                YubiKeyException.Code.CANCELLED -> null
+                YubiKeyException.Code.REMOVED -> t.s(R.string.factors_yubikey_removed)
+                YubiKeyException.Code.TIMEOUT -> t.s(R.string.factors_yubikey_timeout)
+                YubiKeyException.Code.SLOT_NOT_CONFIGURED -> t.s(R.string.factors_yubikey_slot_not_configured, e.slot)
+                YubiKeyException.Code.BAD_ANSWER -> t.s(R.string.factors_yubikey_bad_answer, e.slot)
+                YubiKeyException.Code.NO_TRANSPORT -> t.s(R.string.factors_yubikey_no_transport)
+            }
             is BiometricChangedException -> t.s(BIOMETRIC_CHANGED_MESSAGE)
             is AppPasswordWaitException -> waitMessage(e.seconds, t)
             is AppPasswordException -> when (e.kind) {

@@ -1,7 +1,8 @@
 import Foundation
 import LGKCore
 
-/// The two device-only Safari save keys (`VaultSlot.safariIndexKey`, `.safariInboxKey`). The app creates
+/// The two device-only Safari save keys (`VaultSlot.safariIndexKey`, `.safariInboxKey`), and on the iPhone the "just
+/// filled" marker key (`.safariFillKey`, also in the shared group for AutoFill). The app creates
 /// them after each unlock; the Safari extension only reads them, and does nothing while they are missing.
 /// They live in the Safari Keychain group (`AppGroup.safariKeychainAccessGroup`, audit 2026-10-24 L-8).
 public enum SafariKeys {
@@ -30,10 +31,21 @@ public enum SafariKeys {
 
     /// Creates each key that is missing (or not 32 bytes) from `length` random bytes; an existing key is
     /// kept, so the inbox and the index stay readable. Keychain errors are thrown.
+    /// On the iPhone also the "just filled" marker key (`VaultSlot.safariFillKey`, `SafariFillMarker`), in both the
+    /// shared and the Safari group through `SafariKeychainVault`; an error there is logged, never thrown, so the save
+    /// keys never depend on it. The Mac creates none: its AutoFill writes no marker (yet).
     public static func ensure(keychain: any KeychainVault, random: any RandomSource = SystemRandomSource()) throws {
         for slot in [VaultSlot.safariIndexKey, .safariInboxKey] {
             if let key = try keychain.read(slot), key.count == length { continue }
             try keychain.write(slot, random.bytes(count: length))
         }
+        #if !os(macOS)
+        do {
+            if let key = try keychain.read(.safariFillKey), key.count == length { return }
+            try keychain.write(.safariFillKey, random.bytes(count: length))
+        } catch {
+            AutoFillTrace.log("safari keys: fill key \(error: error)")
+        }
+        #endif
     }
 }

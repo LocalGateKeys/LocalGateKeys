@@ -1,0 +1,1682 @@
+{
+  "approve_b": {
+    "approve": [
+      "b2222222-0000-4000-8000-00000000000b"
+    ],
+    "approved": [
+      "a1111111-0000-4000-8000-00000000000a",
+      "b2222222-0000-4000-8000-00000000000b"
+    ],
+    "keyring": {
+      "device_wraps": {
+        "a1111111-0000-4000-8000-00000000000a": {
+          "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+          "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+          "nonce": "n3bEzdMEklBGh9IC"
+        },
+        "b2222222-0000-4000-8000-00000000000b": {
+          "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+          "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+          "nonce": "CVibG9pmee302p+G"
+        }
+      },
+      "epoch": 1,
+      "format": 2,
+      "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+      "kdf": {
+        "iterations": 4,
+        "memory_kib": 131072,
+        "name": "argon2id",
+        "parallelism": 4,
+        "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+      },
+      "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+      "members": [
+        {
+          "added_at": 1800000000,
+          "device_id": "a1111111-0000-4000-8000-00000000000a",
+          "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+          "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+          "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+          "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+        },
+        {
+          "added_at": 1800000060,
+          "device_id": "b2222222-0000-4000-8000-00000000000b",
+          "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+          "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+          "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+          "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+        }
+      ],
+      "metadata": {
+        "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "kind": "share",
+        "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+        "owner": "a1111111-0000-4000-8000-00000000000a",
+        "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "shared_mode": "read"
+      },
+      "owner_sig": {
+        "members": [
+          "a1111111-0000-4000-8000-00000000000a",
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+      },
+      "password_wrap": {
+        "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+        "nonce": "SAvnH6XdpCVzRJYQ"
+      },
+      "prev_mac": null
+    }
+  },
+  "argon2": {
+    "maple river onion seven lamp quote|ARgpJFUCgKtaMf6Z4O4jTQ==": "e4283e077cf5d4b62020038ff8c981c91cd73dcb756a640266a6fb3c2d56b5b4",
+    "violet tram sundial 1987 pebble|ARgpJFUCgKtaMf6Z4O4jTQ==": "73a45ee0979cdf49e9689068a86f912830c202ea26f312e21f26e87bbab23f43",
+    "violet tram sundial 1987 pebble|Mrq44O50e6P2Ihf+RrnWgA==": "455784d69e405da222fd476a16d791f4a95ce8473c45de7b69530b5423a89f4b"
+  },
+  "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+  "create": {
+    "approved": [
+      "a1111111-0000-4000-8000-00000000000a"
+    ],
+    "group_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2",
+    "keyring": {
+      "device_wraps": {
+        "a1111111-0000-4000-8000-00000000000a": {
+          "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+          "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+          "nonce": "n3bEzdMEklBGh9IC"
+        }
+      },
+      "epoch": 1,
+      "format": 2,
+      "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+      "kdf": {
+        "iterations": 4,
+        "memory_kib": 131072,
+        "name": "argon2id",
+        "parallelism": 4,
+        "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+      },
+      "mac": "kbiUMQmx336FzoJWAR8Wlz5sTuxFS5Y9DDTpVd6vA/4=",
+      "members": [
+        {
+          "added_at": 1800000000,
+          "device_id": "a1111111-0000-4000-8000-00000000000a",
+          "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+          "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+          "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+          "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+        }
+      ],
+      "metadata": {
+        "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "kind": "share",
+        "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+        "owner": "a1111111-0000-4000-8000-00000000000a",
+        "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "shared_mode": "read"
+      },
+      "owner_sig": {
+        "members": [
+          "a1111111-0000-4000-8000-00000000000a"
+        ],
+        "sig": "mTrycKvLZmR/J6YK2iLM2ffbanox7n4oHDssMZJAD8VSnN/4r92kzTjI1YDn4Ft1h6cHxSGb+RHSWiPQLQI+AQ=="
+      },
+      "password_wrap": {
+        "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+        "nonce": "SAvnH6XdpCVzRJYQ"
+      },
+      "prev_mac": null
+    },
+    "random_reads_hex": [
+      "d4d4b80e174fcfdbc03f4c3354f73a74",
+      "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2",
+      "01182924550280ab5a31fe99e0ee234d",
+      "480be71fa5dda42573449610",
+      "4035cade94090800d08eb5ce09b20684a066441f5f496b17b8235545845c5952",
+      "9f76c4cdd30492504687d202",
+      "b6ebb16a3df7df5b52a935c4",
+      "cdb71dd9ba1dbb91c57df6ff"
+    ]
+  },
+  "description": "Share keyrings written by localvault.sync.keyring with fixed randomness (scripts/make_share_collection_vectors.py). A owns the share, B and C join.",
+  "forged_notice": {
+    "device": "C",
+    "notice": "{\"device_id\":\"c3333333-0000-4000-8000-00000000000c\",\"epoch\":2,\"format\":1,\"group_id\":\"d4d4b80e-174f-4fdb-803f-4c3354f73a74\",\"issued_at\":1800000300,\"sig\":\"DC4JGyiMzLY2c14/rT8Yow6sKSYMtUy2+hk9R7iVvdFqUkKzH0C186pPhw5dluZnzIxGCH2Gac3EeYSuBAsbBg==\",\"signer\":\"b2222222-0000-4000-8000-00000000000b\"}",
+    "reason": "unknown-signer"
+  },
+  "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+  "join_b": {
+    "approved": [
+      "a1111111-0000-4000-8000-00000000000a"
+    ],
+    "keyring": {
+      "device_wraps": {
+        "a1111111-0000-4000-8000-00000000000a": {
+          "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+          "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+          "nonce": "n3bEzdMEklBGh9IC"
+        },
+        "b2222222-0000-4000-8000-00000000000b": {
+          "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+          "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+          "nonce": "CVibG9pmee302p+G"
+        }
+      },
+      "epoch": 1,
+      "format": 2,
+      "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+      "kdf": {
+        "iterations": 4,
+        "memory_kib": 131072,
+        "name": "argon2id",
+        "parallelism": 4,
+        "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+      },
+      "mac": "CpLDqduEH8w9bU+AKV2WQr0/PB3JY1QjzOY1nqMYS7c=",
+      "members": [
+        {
+          "added_at": 1800000000,
+          "device_id": "a1111111-0000-4000-8000-00000000000a",
+          "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+          "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+          "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+          "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+        },
+        {
+          "added_at": 1800000060,
+          "device_id": "b2222222-0000-4000-8000-00000000000b",
+          "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+          "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+          "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+          "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+        }
+      ],
+      "metadata": {
+        "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "kind": "share",
+        "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+        "owner": "a1111111-0000-4000-8000-00000000000a",
+        "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "shared_mode": "read"
+      },
+      "owner_sig": {
+        "members": [
+          "a1111111-0000-4000-8000-00000000000a"
+        ],
+        "sig": "mTrycKvLZmR/J6YK2iLM2ffbanox7n4oHDssMZJAD8VSnN/4r92kzTjI1YDn4Ft1h6cHxSGb+RHSWiPQLQI+AQ=="
+      },
+      "password_wrap": {
+        "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+        "nonce": "SAvnH6XdpCVzRJYQ"
+      },
+      "prev_mac": null
+    },
+    "random_reads_hex": [
+      "eae0cc8fccd7d19049609676cd49476544eb48fbfac058503c22a8a4e20e94c5",
+      "09589b1bda6679edf4da9f86",
+      "c38c3283514062f241f83255"
+    ]
+  },
+  "join_c": {
+    "approved": [
+      "a1111111-0000-4000-8000-00000000000a",
+      "b2222222-0000-4000-8000-00000000000b"
+    ],
+    "keyring": {
+      "device_wraps": {
+        "a1111111-0000-4000-8000-00000000000a": {
+          "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+          "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+          "nonce": "n3bEzdMEklBGh9IC"
+        },
+        "b2222222-0000-4000-8000-00000000000b": {
+          "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+          "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+          "nonce": "CVibG9pmee302p+G"
+        },
+        "c3333333-0000-4000-8000-00000000000c": {
+          "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+          "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+          "nonce": "iYRTSHJIj3joINYU"
+        }
+      },
+      "epoch": 1,
+      "format": 2,
+      "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+      "kdf": {
+        "iterations": 4,
+        "memory_kib": 131072,
+        "name": "argon2id",
+        "parallelism": 4,
+        "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+      },
+      "mac": "/wlfPBsJJUMiwd1VI4fIz7JtYlJthCKhBjusamvrnYw=",
+      "members": [
+        {
+          "added_at": 1800000000,
+          "device_id": "a1111111-0000-4000-8000-00000000000a",
+          "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+          "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+          "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+          "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+        },
+        {
+          "added_at": 1800000060,
+          "device_id": "b2222222-0000-4000-8000-00000000000b",
+          "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+          "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+          "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+          "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+        },
+        {
+          "added_at": 1800000120,
+          "device_id": "c3333333-0000-4000-8000-00000000000c",
+          "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+          "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+          "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+          "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+        }
+      ],
+      "metadata": {
+        "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "kind": "share",
+        "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+        "owner": "a1111111-0000-4000-8000-00000000000a",
+        "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "shared_mode": "read"
+      },
+      "owner_sig": {
+        "members": [
+          "a1111111-0000-4000-8000-00000000000a",
+          "b2222222-0000-4000-8000-00000000000b"
+        ],
+        "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+      },
+      "password_wrap": {
+        "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+        "nonce": "SAvnH6XdpCVzRJYQ"
+      },
+      "prev_mac": null
+    },
+    "random_reads_hex": [
+      "02580b1d2dd48c5e89724c971e105458b875d9403a4ab3d47acc6f81c2fbc0f4",
+      "8984534872488f78e820d614",
+      "0855870aecb4949e24726904"
+    ]
+  },
+  "name": "Family Ünïcode",
+  "names": {
+    "A": "Owner phone",
+    "B": "Bea",
+    "C": "Cy"
+  },
+  "negative": [
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "j5QYRd1cRVOEqqkiKeeQUsWyCmRw66lE5LdQhP5fTkmdwuLAaYotQFoO1FPICann",
+            "eph": "HuVE7cOHfwwX4i+i87dsWoftMm0QYl2wUGjrD5Ff4lY=",
+            "nonce": "5JRFmpWSKVZaeCoj"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "AmV8EfmQe94jL9ayVavyDVezzEGJtb+LUXpkfrmrGmvgLbh92pvaomLpJkJtSaTh",
+            "eph": "TuYAgLvTyS8o0s2JDnSQQyNGnqpEKBJ3FoldpGiTrB8=",
+            "nonce": "EzGTnv7Hl0J9p9xw"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "8br7Cfb0rRS1G6fIDsWhx6oXeqZ9BfsgsZmjB0DWIC9fnh9VgDan+X8KJbO4EWcF",
+            "eph": "XkHfx5NG+Es2zltmxHv7AuJHC6Kse4Zs7SSwi3M+2ig=",
+            "nonce": "lgemwUOChYeM3hWB"
+          }
+        },
+        "epoch": 2,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "X7zLo467aPPpJOT6XEKRpQ=="
+        },
+        "mac": "hUietmxoH3EiRfHj/H8aK7zTM6HQzrnYJ8CJOW8Y2x4=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "xI3oijTvkTYZ0uF4yneJtF0yIxTiXU/Ky82vvjOdLXg9t39qyDk5",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "BetnlZHX6i0M3fHnRdbaDbSXMPNmej/vKpUBH/65Pw==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "t4k74Oirjz2kqp9nb3H2gSR9IB5klWTM4upCv0AM",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "v/7Uy/bgEbha6nVz7sHnSAagzFrfzIRtJ0ek0aYElJZ3gwt37GdIdt0P/mg=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b",
+            "c3333333-0000-4000-8000-00000000000c"
+          ],
+          "sig": "relcHKLDIoSJn8aTdZdJILCzShGJOgpouRr2X4gd9cAt9H54fgiCKa8l/YiRGLmuDLZmCrLvGXX7SogegWYXCg=="
+        },
+        "password_wrap": {
+          "ct": "xoU9HK2q1Zge6/KamoeZPmZv7fXh2N6B2BQdXeui+nmnV/JWVtuEM0vHzHRGI/5F",
+          "nonce": "sXzYLJz0LZWIlcFx"
+        },
+        "prev_mac": "PiBrjK2Zp48ER0SnEcAiuupJ2STUBh/iaSppMNnU0dg="
+      },
+      "device": "C",
+      "name": "member_rotation_signed_by_member",
+      "reason": "bad-owner-sig",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+            "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+            "nonce": "iYRTSHJIj3joINYU"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/wlfPBsJJUMiwd1VI4fIz7JtYlJthCKhBjusamvrnYw=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+            "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+            "nonce": "iYRTSHJIj3joINYU"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "DtNVDwA8caayMCq1nEhHYuUwVqK1sVHGeefgr8/+ryo=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "b2222222-0000-4000-8000-00000000000b",
+          "owner_key": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b",
+            "c3333333-0000-4000-8000-00000000000c"
+          ],
+          "sig": "6ODiKBxT9WHIC+tzOCh+y/A5YlV3iSYGzGQOVZJ+Frw+OHxTJsmPc5ByqGCehVghWpYhpZpIMsdnyxcyTie5Cg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "C",
+      "name": "member_claims_ownership",
+      "reason": "tampered",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+            "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+            "nonce": "iYRTSHJIj3joINYU"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/wlfPBsJJUMiwd1VI4fIz7JtYlJthCKhBjusamvrnYw=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "A",
+      "name": "same_epoch_drop",
+      "reason": "tampered",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+            "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+            "nonce": "iYRTSHJIj3joINYU"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/wlfPBsJJUMiwd1VI4fIz7JtYlJthCKhBjusamvrnYw=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "aT3XJl4W2SDx5ikjnhJQh6tbJqBfYw570h/FABe8sHU=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "B",
+      "name": "wrong_owner_key",
+      "reason": "bad-owner",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "CpLDqduEH8w9bU+AKV2WQr0/PB3JY1QjzOY1nqMYS7c=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a"
+          ],
+          "sig": "mTrycKvLZmR/J6YK2iLM2ffbanox7n4oHDssMZJAD8VSnN/4r92kzTjI1YDn4Ft1h6cHxSGb+RHSWiPQLQI+AQ=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "A",
+      "name": "replayed_older_owner_signature",
+      "reason": "tampered",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "C88sIhSKc+aGKhUxDOwTHadnuCIhLCRniRjt9oFA0Mk=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "B",
+      "name": "owner_signature_garbage",
+      "reason": "bad-owner-sig",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    }
+  ],
+  "new_password": "violet tram sundial 1987 pebble",
+  "now": 1800000000,
+  "owner": "A",
+  "password": "maple river onion seven lamp quote",
+  "pinned": {
+    "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+    "owner": "a1111111-0000-4000-8000-00000000000a",
+    "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+    "shared_mode": "read"
+  },
+  "positive": [
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "B",
+      "name": "member_adopts_approval",
+      "new_epoch": 1,
+      "new_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "CpLDqduEH8w9bU+AKV2WQr0/PB3JY1QjzOY1nqMYS7c=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a"
+          ],
+          "sig": "mTrycKvLZmR/J6YK2iLM2ffbanox7n4oHDssMZJAD8VSnN/4r92kzTjI1YDn4Ft1h6cHxSGb+RHSWiPQLQI+AQ=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+            "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+            "nonce": "iYRTSHJIj3joINYU"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/wlfPBsJJUMiwd1VI4fIz7JtYlJthCKhBjusamvrnYw=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "device": "A",
+      "name": "owner_adopts_join",
+      "new_epoch": 1,
+      "new_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/M3tBpb/ZcIaYB41FWbpWhHE3ZQiEd5X7a3g/iiCXao=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    },
+    {
+      "candidate": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "j15XIDXXh5NjBco3jGuv+wukgaaJe9WXB3xloYkrmRB0eo3l4iNmy7cOTfpOS9P9",
+            "eph": "NIKJ8Duh4ciDFVEU66KKNELX/AQiVfyuAMMe6JQhmCw=",
+            "nonce": "/RPZIf/56UPSnywa"
+          }
+        },
+        "epoch": 2,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "Mrq44O50e6P2Ihf+RrnWgA=="
+        },
+        "mac": "Cz979ypYDOG+naX7tEu77v4HoLU84GVWIMdVJEhSvTo=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "P6zX7GdonvgQwyY90VnPPzj6LCfqnbOhWZuCg2/cGpDxyeSd/6Cn",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "yNtTfurtVFZoeBPmYzHN6LFLtRRf4/OWAzQvVIK5smeErQASybxoEjZoKWw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a"
+          ],
+          "sig": "9sXaxtqMzOzm1RaW3npoT+s1wBq8s0Zum4Os4lGRWxA+zNtevsWLB3ltKtg5q8hYh3oole2O01aluiGOvptJCQ=="
+        },
+        "password_wrap": {
+          "ct": "vtBXIiiTQrzEIbZ0jokqJSs96SJm1NRtX39P/h8wK67c2JLA50hetZY2WDLZDikY",
+          "nonce": "5MNJWMekNKfwPUQz"
+        },
+        "prev_mac": "6E7aBKlLdPvfEyrDUyccEYY286mUnbDBsVIXWOfdcYw="
+      },
+      "device": "A",
+      "name": "member_adopts_rotation",
+      "new_epoch": 2,
+      "new_key_hex": "90a8808e0b0e118eb484a93e756e67c143b3ec5925e5379cd50c287fc43ee116",
+      "stored": {
+        "device_wraps": {
+          "a1111111-0000-4000-8000-00000000000a": {
+            "ct": "5zIV2B1sRQdvswBnoO2J8g/jtSspC6+FL2hh/mDZnad+bE6GKrP19GU7q9CPu2ZF",
+            "eph": "hS0dpgKjNoYH+0g2iwnWcjI3KlkY+FYAQoIhJPnP4AM=",
+            "nonce": "n3bEzdMEklBGh9IC"
+          },
+          "b2222222-0000-4000-8000-00000000000b": {
+            "ct": "P9IjSuVjigSqXOyolW2O9azmbff9gCrWDIYOnx5UOM9elcqGZPzC/bR3rifpnhg6",
+            "eph": "/Wg7FJht0xTGqiK4bhSwjUjwkE1UCXPvm3NlKxR+WTA=",
+            "nonce": "CVibG9pmee302p+G"
+          },
+          "c3333333-0000-4000-8000-00000000000c": {
+            "ct": "JA+fx0f2GDfTOlLPXcYcrGSeGZ0dggP55r3muXVS2DdIK1DfObgmwxKnmf3mft3E",
+            "eph": "3PHx2VTV0D94aw9FqzYdmiVVrBz6S2tK4vcBE2HbsEs=",
+            "nonce": "iYRTSHJIj3joINYU"
+          }
+        },
+        "epoch": 1,
+        "format": 2,
+        "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+        "kdf": {
+          "iterations": 4,
+          "memory_kib": 131072,
+          "name": "argon2id",
+          "parallelism": 4,
+          "salt": "ARgpJFUCgKtaMf6Z4O4jTQ=="
+        },
+        "mac": "/wlfPBsJJUMiwd1VI4fIz7JtYlJthCKhBjusamvrnYw=",
+        "members": [
+          {
+            "added_at": 1800000000,
+            "device_id": "a1111111-0000-4000-8000-00000000000a",
+            "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+            "name_ct": "tuuxaj3331tSqTXEIlctBfvq3KO7wuA1VsbJslJXa5VMXpn3rSe3",
+            "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+            "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+          },
+          {
+            "added_at": 1800000060,
+            "device_id": "b2222222-0000-4000-8000-00000000000b",
+            "exchange_public": "/Uw7VhlT9Ur7MgmYV4pP5/4qqC7ATA6znbB8f1UlG0E=",
+            "name_ct": "w4wyg1FAYvJB+DJVXY1zw5PJX+6Mv2r1Hx9/1bmv9g==",
+            "signing_proof": "EARbX4P+1ojg4dax2yhNAx1WOaz/IXkBo3ICoL4aADSYXUyREhrBR5QbNZBvJyEHpKo04KpstZmP5VX3Xt/lAA==",
+            "signing_public": "hHMggFnF98meaeFYQqW6SJz0i7QGmB1OQ7rmSf/PMdw="
+          },
+          {
+            "added_at": 1800000120,
+            "device_id": "c3333333-0000-4000-8000-00000000000c",
+            "exchange_public": "g86gEoHoAWBsHy69032KTMuk16wmx3QwIyQhqgjDclM=",
+            "name_ct": "CFWHCuy0lJ4kcmkEOJ5rspA7YYoB3NomBbxgiLre",
+            "signing_proof": "ws9ANb77EemY8xv2F+OsHsE3r0atPvqACPinJNHb9xyxNieRonDP0k/BPcpwITt2lJJPosbH2MmiBBqCbhwNCA==",
+            "signing_public": "pl0XiPYzPZisZtbxoPMJIr7ziyemOHZb4viqbxKdUH4="
+          }
+        ],
+        "metadata": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share",
+          "name_ct": "zbcd2bodu5HFffb/c6Cwi+5+sJgnAhL6zPy/ICxzBtkeLRYMPdPfRMRixSw=",
+          "owner": "a1111111-0000-4000-8000-00000000000a",
+          "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+          "shared_mode": "read"
+        },
+        "owner_sig": {
+          "members": [
+            "a1111111-0000-4000-8000-00000000000a",
+            "b2222222-0000-4000-8000-00000000000b"
+          ],
+          "sig": "6WQo4LAI+U9JpXhWEv64Hr3aLW9uNzL/Q7ns3ktQU0opaxF8mFd/IRRaaentDUBu56LyOJA+2oeX7LOuZVEfDg=="
+        },
+        "password_wrap": {
+          "ct": "/BOf0ofn8O8yaE/sT/r/tOSeSUTMFVBgFU++ecwi0Cx+j0jSCnNVkY0Dr/xZzxEs",
+          "nonce": "SAvnH6XdpCVzRJYQ"
+        },
+        "prev_mac": null
+      },
+      "trusted_epoch": 1,
+      "trusted_key_hex": "b8932e8e2883406cd77d98ed7ddef2b7bf876b599688a0be75210edeeead56b2"
+    }
+  ],
+  "remove_b": {
+    "approved": [
+      "a1111111-0000-4000-8000-00000000000a"
+    ],
+    "group_key_hex": "90a8808e0b0e118eb484a93e756e67c143b3ec5925e5379cd50c287fc43ee116",
+    "keyring": {
+      "device_wraps": {
+        "a1111111-0000-4000-8000-00000000000a": {
+          "ct": "j15XIDXXh5NjBco3jGuv+wukgaaJe9WXB3xloYkrmRB0eo3l4iNmy7cOTfpOS9P9",
+          "eph": "NIKJ8Duh4ciDFVEU66KKNELX/AQiVfyuAMMe6JQhmCw=",
+          "nonce": "/RPZIf/56UPSnywa"
+        }
+      },
+      "epoch": 2,
+      "format": 2,
+      "group_id": "d4d4b80e-174f-4fdb-803f-4c3354f73a74",
+      "kdf": {
+        "iterations": 4,
+        "memory_kib": 131072,
+        "name": "argon2id",
+        "parallelism": 4,
+        "salt": "Mrq44O50e6P2Ihf+RrnWgA=="
+      },
+      "mac": "Cz979ypYDOG+naX7tEu77v4HoLU84GVWIMdVJEhSvTo=",
+      "members": [
+        {
+          "added_at": 1800000000,
+          "device_id": "a1111111-0000-4000-8000-00000000000a",
+          "exchange_public": "SsNVcHfeKDvhBjqPReM/4oxvo3oyq5aoun7YbpStoFM=",
+          "name_ct": "P6zX7GdonvgQwyY90VnPPzj6LCfqnbOhWZuCg2/cGpDxyeSd/6Cn",
+          "signing_proof": "5NSsfQDRDprVeeDTmmpU4sk1yqPpxdhYcje64m1hSoTwcw/mPYPgCpL7DZ46xXgRw0gM3PmeyaeMvT97z/BXCA==",
+          "signing_public": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+        }
+      ],
+      "metadata": {
+        "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+        "kind": "share",
+        "name_ct": "yNtTfurtVFZoeBPmYzHN6LFLtRRf4/OWAzQvVIK5smeErQASybxoEjZoKWw=",
+        "owner": "a1111111-0000-4000-8000-00000000000a",
+        "owner_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+        "shared_mode": "read"
+      },
+      "owner_sig": {
+        "members": [
+          "a1111111-0000-4000-8000-00000000000a"
+        ],
+        "sig": "9sXaxtqMzOzm1RaW3npoT+s1wBq8s0Zum4Os4lGRWxA+zNtevsWLB3ltKtg5q8hYh3oole2O01aluiGOvptJCQ=="
+      },
+      "password_wrap": {
+        "ct": "vtBXIiiTQrzEIbZ0jokqJSs96SJm1NRtX39P/h8wK67c2JLA50hetZY2WDLZDikY",
+        "nonce": "5MNJWMekNKfwPUQz"
+      },
+      "prev_mac": "6E7aBKlLdPvfEyrDUyccEYY286mUnbDBsVIXWOfdcYw="
+    },
+    "notice": "{\"device_id\":\"b2222222-0000-4000-8000-00000000000b\",\"epoch\":2,\"format\":1,\"group_id\":\"d4d4b80e-174f-4fdb-803f-4c3354f73a74\",\"issued_at\":1800000300,\"sig\":\"KrqXwg1/KV6MsUz4u5uhqeGGUfHx6eqsZihEzNSYhi3urgv2uWQkVGc9qsAN3Yt+uUYEdyjYyHIpLGm/2Sc1AQ==\",\"signer\":\"a1111111-0000-4000-8000-00000000000a\"}",
+    "notice_issued_at": 1800000300,
+    "random_reads_hex": [
+      "90a8808e0b0e118eb484a93e756e67c143b3ec5925e5379cd50c287fc43ee116",
+      "32bab8e0ee747ba3f62217fe46b9d680",
+      "e4c34958c7a434a7f03d4433",
+      "b8c0a7159102137265acd84623572b2f3d10f70035d68f191447d1ecf3108511",
+      "fd13d921fff9e943d29f2c1a",
+      "3facd7ec67689ef810c3263d",
+      "c8db537eeaed5456687813e6"
+    ],
+    "remove": [
+      "b2222222-0000-4000-8000-00000000000b",
+      "c3333333-0000-4000-8000-00000000000c"
+    ],
+    "watch_signers": {
+      "a1111111-0000-4000-8000-00000000000a": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+    }
+  },
+  "shared_mode": "read"
+}

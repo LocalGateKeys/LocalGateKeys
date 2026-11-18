@@ -19,16 +19,17 @@ enum class ImportFormat(val raw: String, val label: String) {
     PROTON_PASS("protonPass", "Proton Pass export (.zip / JSON)"),
     DASHLANE("dashlane", "Dashlane export (.zip of CSV files)"),
     GENERIC("generic", "Generic CSV (choose columns)"),
+    CXF("cxf", "Credential Exchange"),
     ;
 
-    /** Whether this phone can read the format (v1: browser CSVs, Bitwarden, 1Password .1pux and generic CSV). */
+    /** Whether this phone can read the format (browser CSVs, Bitwarden, 1Password .1pux, Credential Exchange and generic CSV). */
     val supported: Boolean get() = this in SUPPORTED
 
     /** The format asks for the file's password before it is read. */
     val needsPassword: Boolean get() = this == BITWARDEN_ENCRYPTED
 
     companion object {
-        private val SUPPORTED = setOf(APPLE_CSV, CHROME, FIREFOX, BITWARDEN, BITWARDEN_ENCRYPTED, ONE_PASSWORD_1PUX, GENERIC)
+        private val SUPPORTED = setOf(APPLE_CSV, CHROME, FIREFOX, BITWARDEN, BITWARDEN_ENCRYPTED, ONE_PASSWORD_1PUX, GENERIC, CXF)
 
         fun fromRaw(raw: String): ImportFormat? = entries.firstOrNull { it.raw == raw }
     }
@@ -56,7 +57,8 @@ data class ImportCustomField(val name: String, val value: String, val hidden: Bo
 /**
  * One item parsed from an import source, before it becomes a vault record (the iPhone's `ImportCandidate`, flattened).
  * [totp] is an `otpauth://` URI or "". [card] keys: cardholder, number, expiry (MM/YYYY), cvv, pin, brand; [identity]
- * keys as on Windows (name, given_name, email, ...). toString shows no values.
+ * keys as on Windows (name, given_name, email, ...). [passkey]: a [Kind.PASSKEY]'s vault payload ([CxfImport.PASSKEY_KEYS],
+ * the private key included). toString shows no values.
  */
 data class ImportCandidate(
     val kind: Kind,
@@ -75,14 +77,18 @@ data class ImportCandidate(
     val sourceRow: Int? = null,
     val card: Map<String, String> = emptyMap(),
     val identity: Map<String, String> = emptyMap(),
+    val passkey: Map<String, String> = emptyMap(),
 ) {
-    enum class Kind(val raw: String) { LOGIN("login"), NOTE("note"), CARD("card"), IDENTITY("identity") }
+    enum class Kind(val raw: String) { LOGIN("login"), NOTE("note"), CARD("card"), IDENTITY("identity"), PASSKEY("passkey") }
 
     override fun toString(): String = "ImportCandidate(kind=$kind, row=$sourceRow, fields=${customFields.size})"
 }
 
-/** A source item that was not imported, or a note about what was left out (the Windows diagnostics). */
-data class ImportSkip(val row: Int? = null, val message: String)
+/**
+ * A source item that was not imported, or a note about what was left out (the Windows diagnostics). [message] is
+ * English; [code] and [args], when set, let the app show it in the person's language (e.g. [CxfImport.SKIPPED_TYPES]).
+ */
+data class ImportSkip(val row: Int? = null, val message: String, val code: String? = null, val args: List<String> = emptyList())
 
 data class ImportResult(val candidates: List<ImportCandidate> = emptyList(), val skipped: List<ImportSkip> = emptyList())
 
@@ -125,6 +131,7 @@ object ImportSource {
             ImportFormat.BITWARDEN_ENCRYPTED -> BitwardenEncrypted.candidates(data, options)
             ImportFormat.ONE_PASSWORD_1PUX -> OnePassword1pux.candidates(data)
             ImportFormat.GENERIC -> GenericCsv.candidates(data, options)
+            ImportFormat.CXF -> CxfImport.candidates(data)
             else -> throw ImportException(
                 ImportException.Kind.UNSUPPORTED,
                 "${format.label} files cannot be imported on this phone yet. Import it in the LocalGateKeys app on your PC, then sync.",

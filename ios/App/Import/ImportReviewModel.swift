@@ -66,6 +66,9 @@ struct ImportRow: Identifiable, Sendable {
     /// The target record as reviewed; the commit refuses a target that changed since.
     var targetRecord: JSONValue?
     var limited = false
+    /// The target is in a collection shared with this vault as view only (sub-plan 07, 5l review): it is never
+    /// replaced or merged, as on Windows (`check_writable`); Skip or Keep both only.
+    var readOnly = false
 
     var kind: ImportDraft.Kind { draft.kind }
     var title: String { draft.title }
@@ -112,6 +115,9 @@ enum ImportReviewError: Error, Equatable {
     case targetRevisionChanged
     case itemLimit
     case invalid(row: Int, String)
+    /// A Replace or Merge target is in a collection shared with this vault as view only (also when it became so after
+    /// the review).
+    case readOnly
 
     /// The Windows (`import_workflow.py`, `vault.ItemLimitReached`) wording.
     var message: String {
@@ -121,6 +127,7 @@ enum ImportReviewError: Error, Equatable {
         case .itemLimit:
             return String(localized: "The free plan holds up to \(ItemLimit.freeItems) items. Upgrade to LocalGateKeys Pro for unlimited items.")
         case .invalid(let row, let m): return String(localized: "Row \(row): \(m)")
+        case .readOnly: return String(localized: "This item is in a collection shared with you as view only, so it can't be changed on this device.")
         }
     }
 }
@@ -151,6 +158,10 @@ final class ImportReviewModel: ObservableObject {
     private(set) var issues: [String]
     /// Free slots left on the free plan; nil on Pro.
     let freeSlots: Int?
+    /// The source's name for the import journal (feature pack §6.1), e.g. "bitwarden".
+    var source = ""
+    /// The journal of the last commit (what it created and replaced), nil when nothing was written.
+    private(set) var journal: ImportJournal?
     private let now: () -> Date
     private let random: any RandomSource
 
@@ -188,7 +199,7 @@ final class ImportReviewModel: ObservableObject {
         case .create: allowed = row.base == .new
         case .replace(let t), .merge(let t):
             allowed = !row.isSkippedSource && row.base != .new && !row.inImportDuplicate && row.kind != .passkey
-                && row.targetID == t
+                && row.targetID == t && !row.readOnly
         case .keepBoth: allowed = !row.isSkippedSource && row.base != .new && row.kind != .passkey
         }
         guard allowed else { return }
@@ -276,7 +287,9 @@ final class ImportReviewModel: ObservableObject {
     }
 
     private func apply(to store: any ItemStore) throws -> ImportOutcome {
-        var snap = try store.load()
+        journal = nil
+        let base = try store.load()
+        var snap = base
         let date = now()
         let stamp = Int64(date.timeIntervalSince1970)
         if freeSlots != nil {
@@ -308,6 +321,8 @@ final class ImportReviewModel: ObservableObject {
                     if let e = row.extra { try create(e, row: row, into: &snap, at: stamp, date: date); out.created += 1 }
                 }
             case .replace(let id), .merge(let id):
+                // A view-only item is never changed here, also when it became view-only after the review.
+                if Self.isReadOnly(id, in: snap) { throw ImportReviewError.readOnly }
                 let replace = if case .replace = row.decision { true } else { false }
                 try update(row, target: id, title: replace, in: &snap, at: stamp)
                 out.updated += 1
@@ -317,7 +332,16 @@ final class ImportReviewModel: ObservableObject {
             }
         }
         if out.created + out.updated > 0 {
-            try store.commit(StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync))
+            let ids = ImportUndo.changedIDs(before: base, planned: snap)
+            // Versions an import replaces are kept as `import` history (feature pack §1.3).
+            try HistoryContext.$changeType.withValue(.`import`) {
+                try store.commit(StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync))
+            }
+            // The journal is read back from what was committed; a failure to read it only loses the undo.
+            if let committed = try? store.load() {
+                journal = ImportUndo.journal(before: base, committed: committed, ids: ids, source: source, at: stamp,
+                                             random: random)
+            }
         }
         return out
     }
@@ -580,8 +604,9 @@ final class ImportReviewModel: ObservableObject {
     nonisolated static func classify(_ rows: inout [ImportRow], against snap: StoreSnapshot) {
         var logins: [[[UInt8]]: (String, [String: JSONValue])] = [:]
         var catalog: [String: (String, [String: JSONValue])] = [:]
-        for id in snap.records.keys.sorted() where snap.meta[id]?.deleted != true {
-            guard case .object(let w)? = snap.records[id], case .object(let r)? = w["record"] else { continue }
+        let records = snap.itemRecords   // never a collection state
+        for id in records.keys.sorted() where snap.meta[id]?.deleted != true {
+            guard case .object(let w)? = records[id], case .object(let r)? = w["record"] else { continue }
             if w["ns"] == .string(Namespace.entry.rawValue), r["kind"] == .string("web"),
                case .string(let raw)? = r["scope"]?.objectValue?["origin"], let origin = try? Origin.canonicalize(raw) {
                 let key = [Array(origin.utf8), Array((r["username"]?.stringValue ?? "").utf8)]
@@ -622,7 +647,16 @@ final class ImportReviewModel: ObservableObject {
             rows[i].targetRecord = .object(target.1)
             rows[i].base = same ? .duplicate : .conflict
             rows[i].decision = .skip
+            rows[i].readOnly = isReadOnly(target.0, in: snap)
         }
+    }
+
+    /// Whether `itemID` is in a collection this vault holds view only: as a member of a view-only share (a damaged
+    /// share store fails closed) or through another of this person's devices (`csl:` links); `EditorModel.itemIsReadOnly`.
+    nonisolated static func isReadOnly(_ itemID: String, in snap: StoreSnapshot) -> Bool {
+        let readOnly = ShareGroups.readOnlyCollectionIDs(in: snap).union(CollectionCatalog.linkedReadOnlyIDs(in: snap))
+        if readOnly.isEmpty { return false }
+        return CollectionCatalog.memberships(of: itemID, in: snap).contains { readOnly.contains($0) }
     }
 
     private nonisolated static func sameItem(_ stored: [String: JSONValue], _ d: ImportDraft) -> Bool {
@@ -892,8 +926,9 @@ final class ImportReviewModel: ObservableObject {
     /// The live web login with this canonical origin and exactly this username (desktop `_web_login_match`).
     /// Deleted items are not matched.
     nonisolated static func match(origin: String, username: String, in snapshot: StoreSnapshot) -> String? {
-        for id in snapshot.records.keys.sorted() where snapshot.meta[id]?.deleted != true {
-            guard case .object(let w)? = snapshot.records[id], w["ns"] == .string(Namespace.entry.rawValue),
+        let records = snapshot.itemRecords
+        for id in records.keys.sorted() where snapshot.meta[id]?.deleted != true {
+            guard case .object(let w)? = records[id], w["ns"] == .string(Namespace.entry.rawValue),
                   case .object(let r)? = w["record"], r["kind"] == .string("web"),
                   case .string(let raw)? = r["scope"]?.objectValue?["origin"],
                   let canonical = try? Origin.canonicalize(raw), canonical.utf8.elementsEqual(origin.utf8),
@@ -930,8 +965,9 @@ final class ImportReviewModel: ObservableObject {
     /// The live passkey with this relying party and credential id; passkeys are never overwritten.
     nonisolated static func passkeyID(_ p: PasskeyFields, in snapshot: StoreSnapshot) -> String? {
         let rp = PasskeyRecord.normaliseRPID(p.rpID), cred = base64URLNoPad(Array(p.credentialID))
-        for id in snapshot.records.keys.sorted() where snapshot.meta[id]?.deleted != true {
-            guard case .object(let o)? = snapshot.records[id], o["ns"] == .string(Namespace.item.rawValue),
+        let records = snapshot.itemRecords
+        for id in records.keys.sorted() where snapshot.meta[id]?.deleted != true {
+            guard case .object(let o)? = records[id], o["ns"] == .string(Namespace.item.rawValue),
                   case .object(let rec)? = o["record"], rec["kind"] == .string("passkey"),
                   case .object(let payload)? = rec["payload"] else { continue }
             if PasskeyRecord.normaliseRPID(payload["relying_party_id"]?.stringValue ?? "") == rp,

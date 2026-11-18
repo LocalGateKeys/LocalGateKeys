@@ -48,6 +48,7 @@ from .sync_view import (
     leave_job,
     leave_text,
     local_ipv4_addresses,
+    lost_device_checklist,
     orphan_members,
     refind_job,
     remove_lan_peer_job,
@@ -283,7 +284,8 @@ class SyncWebService:
     def __init__(self, controller: Any, port: Any, bus: Any, dialogs: Any, *,
                  factory: Callable[[Any, Callable[[Any, Any], None]], Any] = _default_factory,
                  on_licence: Callable[[], None] | None = None, timeout: float = JOB_TIMEOUT,
-                 network: Callable[[], Any] = _probe_network, firewall: Any = None) -> None:
+                 network: Callable[[], Any] = _probe_network, firewall: Any = None,
+                 on_removal: Callable[[], None] | None = None) -> None:
         self._controller = controller
         self._network = network
         self._firewall = firewall
@@ -292,6 +294,8 @@ class SyncWebService:
         self._dialogs = dialogs
         self._factory = factory
         self._on_licence = on_licence
+        # A folder run found a signed removal notice: the erase check (app.device_removal) runs.
+        self._on_removal = on_removal
         self._timeout = timeout
         self.service: Any = None
         self.status: Any = None
@@ -336,11 +340,14 @@ class SyncWebService:
         self._bus.emit("sync.status", {})
 
     def start(self) -> None:
+        from ..duress import is_decoy
         from ..error_log import log_exception
 
         with self._lock:
             if self.service is not None or not self._controller.is_unlocked():
                 return
+            if is_decoy(self._controller.session):
+                return  # a duress session never syncs: nothing of it reaches the group (sub-plan 08)
             try:
                 if self.sync_allowed():
                     service = self._factory(self._controller, self._status_changed)
@@ -383,6 +390,9 @@ class SyncWebService:
                 self._rollback_hidden.clear()  # a newer run: show what it reports
         if getattr(view, "license_adopted", False) and self._on_licence is not None:
             self._on_licence()
+        if self._on_removal is not None and any(getattr(i, "kind", "") == "removal-notice"
+                                                for i in getattr(view, "issues", ()) or ()):
+            self._on_removal()
         self._bus.emit("sync.status", {})
         changed = getattr(view, "items_changed", 0)
         if changed:
@@ -434,6 +444,9 @@ class SyncWebService:
     def _service(self) -> Any:
         service = self.service
         if service is None:
+            if self._duress():
+                # A duress session looks like a vault that never set up sync: no "unlock" hint gives it away.
+                raise ApiError("failed", t("duress.err.generic"))
             if self._controller.is_unlocked() and not self.sync_allowed():
                 raise ApiError("pro_required", t(PRO_REQUIRED))
             raise ApiError("unavailable", t(NOT_RUNNING))
@@ -499,10 +512,19 @@ class SyncWebService:
         return self.view()
 
     # ----------------------------------------------------------------- view
+    def _duress(self) -> bool:
+        from ..duress import is_decoy
+
+        return self._controller.is_unlocked() and is_decoy(self._controller.session)
+
+    def _available(self) -> bool:
+        """Sync can be used; a duress session reads as available with sync never set up (sub-plan 08)."""
+        return self.service is not None or self._duress()
+
     def view(self) -> dict[str, Any]:
         endpoint = getattr(self._controller.settings, "sync_lan_endpoint", "")
         view = sync_view(self.status, self._snapshot, lan_endpoint=endpoint if isinstance(endpoint, str) else "",
-                         now=time.time(), available=self.service is not None, state_corrupt=self._state_corrupt)
+                         now=time.time(), available=self._available(), state_corrupt=self._state_corrupt)
 
         def issue(item: Any) -> dict[str, Any] | None:
             if item is None:
@@ -536,9 +558,9 @@ class SyncWebService:
         if getattr(self.service, "lan_announcement", "off") == "public-network":
             wifi["hint"] = (t("sync.windowsTreatsThisNetworkAs"))
         return {"intro": t(INTRO), "status_line": status_line, "banner": issue(view.banner),
-                "cards": [wifi, card(view.folder)],
+                "cards": [wifi, card(view.folder)], "own_id": view.own_id,
                 "rollback": rollback_view(self.status, self._snapshot, hidden=set(self._rollback_hidden)), "skipped": list(view.skipped),
-                "available": self.service is not None, "busy": bool(self._busy_text),
+                "available": self._available(), "busy": bool(self._busy_text),
                 "advice": t(PASSWORD_ADVICE), "pro": self.sync_allowed() or not self._controller.is_unlocked(),
                 "pro_text": t(PRO_REQUIRED), "licence_only": self.licence_only()}
 
@@ -691,7 +713,7 @@ class SyncWebService:
     def _members(self, card: str) -> list[Any]:
         endpoint = getattr(self._controller.settings, "sync_lan_endpoint", "")
         view = sync_view(self.status, self._snapshot, lan_endpoint=endpoint if isinstance(endpoint, str) else "",
-                         now=time.time(), available=self.service is not None, state_corrupt=self._state_corrupt)
+                         now=time.time(), available=self._available(), state_corrupt=self._state_corrupt)
         return [m for m in (view.folder.members if card == "folder" else view.wifi.members) if m.removable]
 
     def remove_info(self, card: str) -> dict[str, Any]:
@@ -715,6 +737,12 @@ class SyncWebService:
         self._run(remove_lan_peer_job(device_id, service.install_id, service.lan_transport), t("sync.removing"))
         return {"message": t("sync.deviceRemovedFromWifi", name=name),
                 **self.refresh()}
+
+    def lost_device(self, card: str, device_id: str, password: str = "", confirm: str = "") -> dict[str, Any]:
+        """"I lost a device": the usual removal, then the checklist of what to do next."""
+        folder = bool(self._snapshot is not None and getattr(self._snapshot, "folder_path", None))
+        result = self.remove_device(card, device_id, password, confirm)
+        return {**result, "checklist": lost_device_checklist(folder=folder)}
 
     def orphans(self) -> dict[str, Any]:
         orphans = orphan_members(self._snapshot, now=time.time())

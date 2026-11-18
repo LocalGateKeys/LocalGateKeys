@@ -11,7 +11,7 @@ protocol SystemEvents: AnyObject {
     func idleSeconds() -> TimeInterval
 }
 
-/// Screen lock from `com.apple.screenIsLocked`, sleep from `NSWorkspace.willSleepNotification`, idle time
+/// Screen lock from `com.apple.screenIsLocked`, screensaver start, fast user switching and display sleep; sleep from `NSWorkspace.willSleepNotification`, idle time
 /// from `CGEventSource`.
 @MainActor
 final class MacSystemEvents: SystemEvents {
@@ -27,10 +27,20 @@ final class MacSystemEvents: SystemEvents {
         observers.append((dnc, dnc.addObserver(forName: .init("com.apple.screenIsLocked"), object: nil, queue: .main) { _ in
             lockedCont.yield()
         }))
+        // Screensaver start counts as a screen lock (routed to the same "lock on screen lock" setting).
+        observers.append((dnc, dnc.addObserver(forName: .init("com.apple.screensaver.didstart"), object: nil, queue: .main) { _ in
+            lockedCont.yield()
+        }))
         let wnc = NSWorkspace.shared.notificationCenter
         observers.append((wnc, wnc.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { _ in
             sleepCont.yield()
         }))
+        // Fast user switching away from this session and display sleep also count as a screen lock.
+        for name in [NSWorkspace.sessionDidResignActiveNotification, NSWorkspace.screensDidSleepNotification] {
+            observers.append((wnc, wnc.addObserver(forName: name, object: nil, queue: .main) { _ in
+                lockedCont.yield()
+            }))
+        }
     }
 
     deinit { for (center, token) in observers { center.removeObserver(token) } }

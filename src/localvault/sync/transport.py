@@ -32,9 +32,23 @@ after a device's long-term exchange key leaks (forward secrecy); the signed
 hellos and the pinned static keys still authenticate both ends.  An ephemeral
 private key is used for exactly one derivation and dropped.  A hello of
 another version is never used to derive a key: the responder answers with a
-plain ``{"refused":"version","version":2}`` frame (and remembers a paired
+plain ``{"refused":"version","version":3}`` frame (and remembers a paired
 device whose signed version-1 hello verified, ``outdated_peers``), and an
 initiator that receives that frame raises :class:`PeerVersionMismatch`.
+
+Sealed hello (protocol version 3, ``docs/formats/LAN_SYNC_V3.md``): the version-2
+hello went out in clear text, so any host at a saved address learned the group
+id, the device id and the public keys of a dialling device (tracking across
+networks, scan finding F-02).  A version-3 initiator encrypts its hello to the
+pinned exchange key of the peer it expects, under a fresh X25519 key, padded
+to a fixed size; the responder answers with its own hello sealed under the
+same exchange.  A host that is not that peer can open neither, so it learns
+nothing stable, and two sessions share no bytes.  The inner hellos, the
+session key and the encrypted frames work as in version 2 (with ``v3``
+labels).  This device never sends a clear-text hello; it still answers one
+from a peer that has never used the sealed hello (a released build), and
+refuses one with the version refusal once that peer has (``SyncState.sealed_peers``,
+persisted), so the clear-text form cannot be forced back.
 
 Every socket operation is bounded by a timeout and checks the transport's
 cancellation token.  ``stop()`` and ``cancel()`` close the listener and any
@@ -48,6 +62,7 @@ the peer to a :class:`~localvault.sync.pairing.PairedDevice` in
 from __future__ import annotations
 
 import base64
+import contextlib
 import dataclasses
 import errno
 import hashlib
@@ -70,12 +85,26 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
+from .. import net_ledger
 from .lan_address import is_lan_address
-from .pairing import ENROLL_REQUEST_MAGIC, MAX_ENROLL_BYTES, DeviceIdentity, PairedDevice
+from .pairing import (
+    ENROLL_REQUEST_MAGIC,
+    ENROLL_REVEAL_MAGIC,
+    MAX_ENROLL_BYTES,
+    DeviceIdentity,
+    PairedDevice,
+)
 from .state import SyncDisabled, SyncState
 
 #: Version 2 added the per-session ephemeral key (forward secrecy); a version-1 peer gets "update needed".
-TRANSPORT_VERSION = 2
+#: Version 3 seals the hellos (no identifier in clear text); see the module docstring.
+TRANSPORT_VERSION = 3
+#: The clear-text hello of released builds: answered (until the peer is pinned), never sent.
+PLAIN_HELLO_VERSION = 2
+#: Encrypted frames keep the version-2 layout (``"version":2``) in version-3 sessions too.
+FRAME_VERSION = 2
+#: Size of a sealed hello's padded plaintext (2-byte length, the inner hello, zero bytes).
+SEALED_HELLO_PLAINTEXT_BYTES = 1024
 MAX_FRAME_PAYLOAD = 1024 * 1024
 MAX_FRAME_BYTES = MAX_FRAME_PAYLOAD + 4
 MAX_MESSAGE_BYTES = MAX_FRAME_PAYLOAD - 256
@@ -217,7 +246,11 @@ def _reject_constant(name: str) -> Any:
 
 
 def _strict_json(value: bytes) -> Any:
-    return json.loads(value, object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_constant)
+    try:
+        return json.loads(value, object_pairs_hook=_reject_duplicate_keys, parse_constant=_reject_constant)
+    except RecursionError:
+        # Deeply nested input from an unauthenticated peer is a malformed frame, not a crash.
+        raise ValueError("nesting too deep") from None
 
 
 def _b64d(value: Any, length: int | None, field: str, *, max_length: int | None = None) -> bytes:
@@ -283,15 +316,30 @@ _FRAME_FIELDS = frozenset({"ciphertext", "counter", "nonce", "session_id", "vers
 _LEGACY_HELLO_FIELDS = _HELLO_FIELDS - {"ephemeral_public"}
 #: The plain answer of a responder to a hello of another version.
 _VERSION_REFUSAL_FIELDS = frozenset({"refused", "version"})
-_HELLO_LABEL = b"localgatekeys|sync|session-hello|v2|"
 _LEGACY_HELLO_LABEL = b"localgatekeys|sync|session-hello|v1|"
-_SALT_LABEL = b"localgatekeys|sync|session-salt|v2|"
-_KEY_LABEL = b"localgatekeys|sync|session-key|v2|"
+#: Per hello version: (signature label, session salt label, session key label).
+_LABELS = {
+    2: (b"localgatekeys|sync|session-hello|v2|", b"localgatekeys|sync|session-salt|v2|",
+        b"localgatekeys|sync|session-key|v2|"),
+    3: (b"localgatekeys|sync|session-hello|v3|", b"localgatekeys|sync|session-salt|v3|",
+        b"localgatekeys|sync|session-key|v3|"),
+}
+#: A sealed initiator hello and a sealed responder hello (version 3).
+_SEALED_FIELDS = frozenset({"box", "eph", "signature", "version"})
+_SEALED_REPLY_FIELDS = frozenset({"box", "version"})
+_SEALED_LABEL = b"localgatekeys|sync|sealed-hello|v3|"
+_SEALED_NONCE = bytes(12)
 
 
-def _is_version(value: Any) -> bool:
-    """True only for the JSON integer TRANSPORT_VERSION (not ``true`` or ``1.0``)."""
-    return type(value) is int and value == TRANSPORT_VERSION
+def _labels(version: Any) -> tuple[bytes, bytes, bytes]:
+    if type(version) is not int or version not in _LABELS:
+        raise AuthenticationError("Session hello version is not supported")
+    return _LABELS[version]
+
+
+def _is_version(value: Any, version: int = FRAME_VERSION) -> bool:
+    """True only for the JSON integer *version* (not ``true`` or ``1.0``)."""
+    return type(value) is int and value == version
 
 
 class EphemeralSecret:
@@ -335,7 +383,8 @@ class SessionHello:
     nonce: bytes
     counter: int
     signature: bytes
-    version: int = TRANSPORT_VERSION
+    #: 2: the clear-text hello; 3: the hello inside a sealed frame (another signature label).
+    version: int = PLAIN_HELLO_VERSION
     #: Set only on a hello this device created (never parsed or serialised).
     ephemeral_secret: EphemeralSecret | None = field(default=None, repr=False, compare=False)
 
@@ -348,7 +397,7 @@ class SessionHello:
                 "nonce": _b64e(self.nonce), "counter": self.counter}
 
     def signing_bytes(self) -> bytes:
-        return _HELLO_LABEL + _canonical(self.unsigned_dict())
+        return _labels(self.version)[0] + _canonical(self.unsigned_dict())
 
     def to_bytes(self) -> bytes:
         result = dict(self.unsigned_dict())
@@ -356,20 +405,24 @@ class SessionHello:
         return _canonical(result)
 
     @classmethod
-    def from_bytes(cls, value: bytes) -> SessionHello:
-        """Parse a version-2 hello; a hello of another version raises :class:`HelloVersionError`."""
+    def from_bytes(cls, value: bytes, *, version: int = PLAIN_HELLO_VERSION) -> SessionHello:
+        """Parse a hello of *version* (2: a clear-text first frame; 3: the inside of a sealed one).
+
+        A first frame of another version (a signed hello, or a sealed frame) raises
+        :class:`HelloVersionError` carrying the parsed object.
+        """
         if not isinstance(value, bytes) or len(value) > MAX_MESSAGE_BYTES:
             raise FrameTooLarge("Session hello exceeds the bound")
         try:
             raw = _strict_json(value)
         except (ValueError, TypeError):
             raise FrameError("Session hello is malformed") from None
-        if (isinstance(raw, Mapping) and type(raw.get("version")) is int and raw["version"] != TRANSPORT_VERSION
+        if (isinstance(raw, Mapping) and type(raw.get("version")) is int and raw["version"] != version
                 and "signature" in raw):
             raise HelloVersionError(raw["version"], raw)
         if not isinstance(raw, Mapping) or set(raw) != _HELLO_FIELDS:
             raise FrameError("Session hello is malformed")
-        if not _is_version(raw["version"]):
+        if version not in _LABELS or not _is_version(raw["version"], version):
             raise FrameError("Unsupported session hello")
         counter = raw.get("counter")
         if type(counter) is not int or not 0 <= counter <= 2**63 - 1:
@@ -381,7 +434,7 @@ class SessionHello:
             exchange_public=_b64d(raw.get("exchange_public"), 32, "exchange public key"),
             ephemeral_public=_b64d(raw.get("ephemeral_public"), 32, "ephemeral public key"),
             nonce=_b64d(raw.get("nonce"), 32, "session nonce"), counter=counter,
-            signature=_b64d(raw.get("signature"), 64, "session signature"),
+            signature=_b64d(raw.get("signature"), 64, "session signature"), version=version,
         )
 
 
@@ -435,12 +488,14 @@ def verify_legacy_hello(raw: Mapping[str, Any], expected_group_id: str, trusted_
 
 
 def create_session_hello(identity: DeviceIdentity, group_id: str, session_id: bytes,
-                         *, counter: int = 1, _nonce: bytes | None = None,
+                         *, counter: int = 1, version: int = PLAIN_HELLO_VERSION, _nonce: bytes | None = None,
                          _ephemeral: bytes | None = None) -> SessionHello:
     """A signed hello with a fresh ephemeral key (``ephemeral_secret``, good for one derivation).
 
+    *version* 3 is the hello sent inside a sealed frame (:func:`seal_initiator_hello`).
     ``_nonce`` and ``_ephemeral`` (a 32-byte X25519 private key) exist only for the test vectors.
     """
+    _labels(version)
     if not isinstance(identity, DeviceIdentity) or not isinstance(group_id, str) or not group_id:
         raise AuthenticationError("Session identity or group is malformed")
     if not isinstance(session_id, bytes) or len(session_id) != SESSION_ID_BYTES:
@@ -455,7 +510,8 @@ def create_session_hello(identity: DeviceIdentity, group_id: str, session_id: by
         raise AuthenticationError("Session ephemeral key is malformed")
     eph_public = eph.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
     hello = SessionHello(session_id, group_id, identity.device_id, identity.signing_public_key,
-                         identity.exchange_public_key, eph_public, _nonce or secrets.token_bytes(32), counter, b"")
+                         identity.exchange_public_key, eph_public, _nonce or secrets.token_bytes(32), counter, b"",
+                         version)
     return dataclasses.replace(hello, signature=identity.sign(hello.signing_bytes()),
                                ephemeral_secret=EphemeralSecret(eph))
 
@@ -501,6 +557,9 @@ def _derive_key(local: DeviceIdentity, remote: PairedDevice, session_id: bytes, 
     """
     if len(session_id) != SESSION_ID_BYTES or len(transcript) > MAX_MESSAGE_BYTES:
         raise AuthenticationError("Session transcript is malformed")
+    if local_hello.version != remote_hello.version:
+        raise AuthenticationError("Session hellos have different versions")
+    _sig_label, salt_label, key_label = _labels(local_hello.version)
     secret = local_hello.ephemeral_secret
     if not isinstance(secret, EphemeralSecret):
         raise AuthenticationError("Local session hello has no ephemeral key")
@@ -513,9 +572,137 @@ def _derive_key(local: DeviceIdentity, remote: PairedDevice, session_id: bytes, 
     finally:
         del eph
     static = _exchange(local.exchange_key, remote.exchange_public, "exchange")
-    salt = hashlib.sha256(_SALT_LABEL + transcript).digest()
+    salt = hashlib.sha256(salt_label + transcript).digest()
     return HKDF(algorithm=hashes.SHA256(), length=32, salt=salt,
-                info=_KEY_LABEL + session_id).derive(ephemeral + static)
+                info=key_label + session_id).derive(ephemeral + static)
+
+
+# --- sealed hello (version 3) ------------------------------------------------------------------
+
+
+class SealContext:
+    """The sealing secret of one sealed-hello exchange: ``es = X25519(x_i, S_R)``, ``X_i`` and ``S_R``.
+
+    Kept only for the length of one handshake; :meth:`wipe` drops the secret.
+    """
+
+    __slots__ = ("_shared", "initiator_ephemeral", "responder_static")
+
+    def __init__(self, shared: bytes, initiator_ephemeral: bytes, responder_static: bytes) -> None:
+        self._shared: bytes | None = shared
+        self.initiator_ephemeral = initiator_ephemeral
+        self.responder_static = responder_static
+
+    def key(self, role: str) -> bytes:
+        if self._shared is None:
+            raise AuthenticationError("Sealed hello secret was already wiped")
+        return HKDF(algorithm=hashes.SHA256(), length=32, salt=self.initiator_ephemeral + self.responder_static,
+                    info=_SEALED_LABEL + role.encode("ascii")).derive(self._shared)
+
+    def aad(self) -> bytes:
+        return _SEALED_LABEL + self.initiator_ephemeral
+
+    def wipe(self) -> None:
+        self._shared = None
+
+    def __repr__(self) -> str:
+        return "SealContext(<redacted>)"
+
+
+def _pad_hello(hello: SessionHello) -> bytes:
+    inner = hello.to_bytes()
+    room = SEALED_HELLO_PLAINTEXT_BYTES - 2
+    if len(inner) > room:
+        raise FrameTooLarge("Session hello does not fit a sealed hello")
+    return struct.pack(">H", len(inner)) + inner + bytes(room - len(inner))
+
+
+def _unpad_hello(plain: bytes) -> SessionHello:
+    if len(plain) != SEALED_HELLO_PLAINTEXT_BYTES:
+        raise FrameError("Sealed hello is malformed")
+    (length,) = struct.unpack(">H", plain[:2])
+    if not 1 <= length <= SEALED_HELLO_PLAINTEXT_BYTES - 2 or any(plain[2 + length:]):
+        raise FrameError("Sealed hello padding is malformed")
+    return SessionHello.from_bytes(plain[2:2 + length], version=TRANSPORT_VERSION)
+
+
+def seal_initiator_hello(hello: SessionHello, responder_exchange_public: bytes, *,
+                         _ephemeral: bytes | None = None) -> tuple[bytes, SealContext]:
+    """The first frame payload of a version-3 connection and its :class:`SealContext`.
+
+    ``{"box","eph","signature":"","version":3}``: ``box`` = AES-256-GCM over the padded
+    version-3 hello, under a key only the holder of *responder_exchange_public* can derive.
+    ``signature`` is always empty; it is there so a released (version-2) build answers with
+    its version refusal instead of closing.  ``_ephemeral`` exists only for the test vectors.
+    """
+    if not isinstance(hello, SessionHello) or hello.version != TRANSPORT_VERSION:
+        raise AuthenticationError("A version-3 session hello is required")
+    if not isinstance(responder_exchange_public, bytes) or len(responder_exchange_public) != 32:
+        raise AuthenticationError("Peer exchange key is malformed")
+    if _ephemeral is None:
+        eph = x25519.X25519PrivateKey.generate()
+    elif isinstance(_ephemeral, bytes) and len(_ephemeral) == 32:
+        eph = x25519.X25519PrivateKey.from_private_bytes(_ephemeral)
+    else:
+        raise AuthenticationError("Sealed hello ephemeral key is malformed")
+    eph_public = eph.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    try:
+        shared = _exchange(eph, responder_exchange_public, "exchange")
+    finally:
+        del eph
+    context = SealContext(shared, eph_public, responder_exchange_public)
+    box = AESGCM(context.key("initiator")).encrypt(_SEALED_NONCE, _pad_hello(hello), context.aad())
+    payload = _canonical({"box": _b64e(box), "eph": _b64e(eph_public), "signature": "",
+                          "version": TRANSPORT_VERSION})
+    return payload, context
+
+
+def open_initiator_hello(raw: Mapping[str, Any], identity: DeviceIdentity) -> tuple[SessionHello, SealContext]:
+    """Responder side: the hello inside a parsed sealed first frame (``HelloVersionError.raw``).
+
+    Raises :class:`TransportError` for anything that is not a sealed hello to *identity*;
+    the caller closes the connection without an answer.
+    """
+    if (not isinstance(raw, Mapping) or set(raw) != _SEALED_FIELDS
+            or not _is_version(raw["version"], TRANSPORT_VERSION) or raw["signature"] != ""):
+        raise FrameError("Sealed hello is malformed")
+    eph_public = _b64d(raw["eph"], 32, "sealed hello key")
+    box = _b64d(raw["box"], SEALED_HELLO_PLAINTEXT_BYTES + 16, "sealed hello")
+    own_static = identity.exchange_public_key
+    context = SealContext(_exchange(identity.exchange_key, eph_public, "sealed hello"), eph_public, own_static)
+    try:
+        plain = AESGCM(context.key("initiator")).decrypt(_SEALED_NONCE, box, context.aad())
+    except (InvalidTag, ValueError):
+        context.wipe()
+        raise AuthenticationError("Sealed hello is not for this device") from None
+    return _unpad_hello(plain), context
+
+
+def seal_responder_hello(hello: SessionHello, context: SealContext) -> bytes:
+    """The responder's answer: ``{"box","version":3}``, its padded version-3 hello sealed under *context*."""
+    if not isinstance(hello, SessionHello) or hello.version != TRANSPORT_VERSION:
+        raise AuthenticationError("A version-3 session hello is required")
+    box = AESGCM(context.key("responder")).encrypt(_SEALED_NONCE, _pad_hello(hello), context.aad())
+    return _canonical({"box": _b64e(box), "version": TRANSPORT_VERSION})
+
+
+def open_responder_hello(value: bytes, context: SealContext) -> SessionHello:
+    """Initiator side: the responder's version-3 hello from its sealed answer."""
+    if not isinstance(value, bytes) or len(value) > MAX_FIRST_FRAME_BYTES:
+        raise FrameTooLarge("Sealed hello exceeds the bound")
+    try:
+        raw = _strict_json(value)
+    except (ValueError, TypeError):
+        raise FrameError("Sealed hello is malformed") from None
+    if not isinstance(raw, Mapping) or set(raw) != _SEALED_REPLY_FIELDS or not _is_version(
+            raw["version"], TRANSPORT_VERSION):
+        raise FrameError("Sealed hello is malformed")
+    box = _b64d(raw["box"], SEALED_HELLO_PLAINTEXT_BYTES + 16, "sealed hello")
+    try:
+        plain = AESGCM(context.key("responder")).decrypt(_SEALED_NONCE, box, context.aad())
+    except (InvalidTag, ValueError):
+        raise AuthenticationError("Sealed hello answer is not from the expected peer") from None
+    return _unpad_hello(plain)
 
 
 class SecureChannel:
@@ -584,7 +771,7 @@ class SecureChannel:
         self._send_counter += 1
         counter = self._send_counter
         nonce = self._send_prefix + counter.to_bytes(8, "big")
-        metadata = {"version": TRANSPORT_VERSION, "session_id": _b64e(self.session_id),
+        metadata = {"version": FRAME_VERSION, "session_id": _b64e(self.session_id),
                     "counter": counter, "nonce": _b64e(nonce)}
         aad = _canonical(metadata)
         ciphertext = AESGCM(self._key).encrypt(nonce, payload, aad)
@@ -615,7 +802,7 @@ class SecureChannel:
             raise AuthenticationError("Encrypted nonce is not bound to the session direction")
         ciphertext = _b64d(raw.get("ciphertext"), None, "encrypted payload",
                             max_length=self.max_payload + 16)
-        metadata = {"version": TRANSPORT_VERSION, "session_id": _b64e(self.session_id),
+        metadata = {"version": FRAME_VERSION, "session_id": _b64e(self.session_id),
                     "counter": counter, "nonce": _b64e(nonce)}
         try:
             result = AESGCM(self._key).decrypt(nonce, ciphertext, _canonical(metadata))
@@ -753,20 +940,25 @@ class SyncTransport:
         """Accept one-frame enrollment requests from unpinned devices while *handler* is set.
 
         Install it only while a pairing offer is active and remove it afterwards.
-        The handler receives the raw request (``ENROLL_REQUEST_MAGIC`` prefix, at
-        most ``MAX_ENROLL_BYTES``) and returns the reply bytes, or None to close
-        without a reply.
+        The handler is called as ``handler(raw, send)`` with the raw request
+        (``ENROLL_REQUEST_MAGIC`` prefix, at most ``MAX_ENROLL_BYTES``) and a
+        ``send(frame_payload)`` for one interim frame (the commit-reveal frame,
+        ``pairing.ENROLL_REVEAL_MAGIC``), and returns the final reply bytes, or None
+        to close without a reply.
         """
 
         if handler is not None and not callable(handler):
             raise TransportError("Transport enrollment handler is malformed")
         self._enrollment_handler = handler
 
-    def enroll(self, endpoint: LANEndpoint, payload: bytes, *, timeout: float | None = None) -> bytes:
-        """Send one enrollment request to *endpoint* and return the one-frame reply.
+    def enroll(self, endpoint: LANEndpoint, payload: bytes, *, timeout: float | None = None,
+               on_interim: Callable[[bytes], None] | None = None) -> bytes:
+        """Send one enrollment request to *endpoint* and return the final one-frame reply.
 
         Needs no started listener or pinned peer: the payload is protected by the
         pairing offer (see :func:`localvault.sync.pairing.build_enrollment_request`).
+        A reveal frame (``ENROLL_REVEAL_MAGIC``) that arrives first is passed to
+        *on_interim* (which may raise to abort) and the final reply is read after it.
         """
 
         self._check_endpoint(endpoint)
@@ -785,6 +977,12 @@ class SyncTransport:
             reply = self._read_socket_frame(sock, deadline)[FRAME_HEADER.size:]
             if len(reply) > MAX_ENROLL_BYTES:
                 raise FrameTooLarge("Enrollment reply exceeds the bound")
+            if reply.startswith(ENROLL_REVEAL_MAGIC):
+                if on_interim is not None:
+                    on_interim(reply)
+                reply = self._read_socket_frame(sock, deadline)[FRAME_HEADER.size:]
+                if len(reply) > MAX_ENROLL_BYTES or reply.startswith(ENROLL_REVEAL_MAGIC):
+                    raise FrameError("Enrollment reply is malformed")
             return reply
         finally:
             self._release_socket(sock)
@@ -799,10 +997,22 @@ class SyncTransport:
         A single short ``connect`` timeout made a busy or power-saving peer (and a
         loaded test machine) look unreachable.
         """
+        # Network ledger: recorded as "LAN sync, local network" once the outcome is known; never the address.
+        outcome = "failed"
+        try:
+            self._connect_steps(sock, endpoint, deadline)
+            outcome = "ok"
+        except TransportTimeout:
+            outcome = "timeout"
+            raise
+        finally:
+            net_ledger.record(net_ledger.LAN_SYNC, None, outcome)
+
+    def _connect_steps(self, sock: socket.socket, endpoint: LANEndpoint, deadline: float) -> None:
         limit = min(deadline, time.monotonic() + CONNECT_SECONDS)
         try:
             sock.setblocking(False)
-            code = sock.connect_ex(self._socket_address(endpoint))
+            code = net_ledger.connect_ex(sock, self._socket_address(endpoint))
         except OSError as exc:
             raise TransportError("Transport connect failed") from exc
         if code not in self._CONNECT_PENDING:
@@ -888,7 +1098,7 @@ class SyncTransport:
             return True
 
     def _inbound_authenticated(self, sock: socket.socket) -> None:
-        """*sock*'s peer sent a verified session hello: it no longer counts against the pre-authentication
+        """*sock*'s peer sent a verified hello and a first encrypted frame that opened: it no longer counts against the pre-authentication
         caps, and its address may use the reserved slots for ``VERIFIED_ADDRESS_SECONDS``."""
         with self._socket_lock:
             self._pre_auth.pop(sock, None)
@@ -1065,11 +1275,17 @@ class SyncTransport:
                 raise TransportError("Transport write failed")
             offset += sent
 
-    def _local_hello(self, session_id: bytes) -> SessionHello:
+    def _local_hello(self, session_id: bytes, version: int = PLAIN_HELLO_VERSION) -> SessionHello:
         if self.state is None:
             raise AuthenticationError("A protected paired-device state is required")
         return create_session_hello(self.state.identity, self.state.group_id, session_id,
-                                    counter=self.state.next_counter())
+                                    counter=self.state.next_counter(), version=version)
+
+    def _pin_sealed(self, device_id: str) -> None:
+        """Remember (and persist, via ``SyncState.on_sealed``) that *device_id* speaks the sealed hello."""
+        if self.state is not None:
+            with contextlib.suppress(Exception):  # a failed save must not cost the finished exchange
+                self.state.mark_sealed(device_id)
 
     def _peer_for_hello(self, hello: SessionHello, expected_peer: str | None = None) -> PairedDevice:
         if self.state is None:
@@ -1118,28 +1334,56 @@ class SyncTransport:
                 enroll = self._enrollment_handler
                 if enroll is None or len(first) > MAX_ENROLL_BYTES:
                     return
-                reply = enroll(first)  # may wait for the user's Accept (lan_sync.ACCEPT_TIMEOUT_SECONDS)
+
+                def send_interim(frame: bytes) -> None:
+                    if not isinstance(frame, bytes) or not 1 <= len(frame) <= MAX_ENROLL_BYTES:
+                        raise FrameError("Enrollment interim frame is malformed")
+                    self._send_all(client, encode_frame(frame), self._deadline())
+
+                reply = enroll(first, send_interim)  # may wait for the user's Accept (lan_sync.ACCEPT_TIMEOUT_SECONDS)
                 if isinstance(reply, bytes) and 1 <= len(reply) <= MAX_ENROLL_BYTES:
                     self._send_all(client, encode_frame(reply), self._deadline())
                 return
+            if self.state is None:
+                raise AuthenticationError("A protected paired-device state is required")
+            seal: SealContext | None = None
             try:
                 remote_hello = SessionHello.from_bytes(first)
             except HelloVersionError as exc:
-                self._refuse_version(client, exc, deadline)
-                return
-            peer = self._peer_for_hello(remote_hello)
-            self._inbound_authenticated(client)
-            local_hello = self._local_hello(remote_hello.session_id)
+                if exc.version != TRANSPORT_VERSION:
+                    self._refuse_version(client, exc, deadline)
+                    return
+                # A sealed hello: anything that does not open, verify and carry a fresh counter
+                # is closed without a word (a non-member learns nothing).
+                remote_hello, seal = open_initiator_hello(exc.raw, self.state.identity)
             try:
-                self._send_all(client, encode_frame(local_hello.to_bytes()), deadline)
-                channel = establish_channel(
-                    self.state.identity, peer, group_id=self.state.group_id,
-                    session_id=remote_hello.session_id, role="responder",
-                    local_hello=local_hello, remote_hello=remote_hello, state=self.state,
-                )
+                peer = self._peer_for_hello(remote_hello)
+                if seal is None and self.state.is_sealed(peer.device_id):
+                    # Downgrade: this peer has used the sealed hello, so a clear-text hello from it
+                    # is refused (only after it verified, so the answer reveals nothing to others).
+                    self._send_all(client, encode_frame(version_refusal()), deadline)
+                    return
+                # A signed hello can be replayed from a capture: the address counts as verified only
+                # once the first encrypted frame opens (the peer holds the session keys).
+                local_hello = self._local_hello(remote_hello.session_id, remote_hello.version)
+                try:
+                    answer = (local_hello.to_bytes() if seal is None
+                              else seal_responder_hello(local_hello, seal))
+                    self._send_all(client, encode_frame(answer), deadline)
+                    channel = establish_channel(
+                        self.state.identity, peer, group_id=self.state.group_id,
+                        session_id=remote_hello.session_id, role="responder",
+                        local_hello=local_hello, remote_hello=remote_hello, state=self.state,
+                    )
+                finally:
+                    local_hello.ephemeral_secret.wipe()
             finally:
-                local_hello.ephemeral_secret.wipe()
+                if seal is not None:
+                    seal.wipe()
             request = channel.open(self._read_socket_frame(client, deadline))
+            self._inbound_authenticated(client)
+            if seal is not None:
+                self._pin_sealed(peer.device_id)
             self._cancel.check()
             peer_handler = self._peer_request_handler
             handler = self._request_handler
@@ -1168,8 +1412,11 @@ class SyncTransport:
 
         ``start()`` must have been called first.  The target is validated
         against the same private literal endpoint and allowlist rules as the
-        listener.  The remote signed hello supplies the pinned device identity
-        before any request payload is sent.
+        listener.  The first frame is a sealed hello to the pinned exchange key of
+        *peer_id* (required): a clear-text hello is never sent, also not to a peer
+        that answers with an older version's refusal (:class:`PeerVersionMismatch`).
+        The remote sealed hello supplies the pinned device identity before any
+        request payload is sent.
         """
 
         self.require_running()
@@ -1177,20 +1424,25 @@ class SyncTransport:
         self._cancel.check()
         if self.state is None:
             raise AuthenticationError("A protected paired-device state is required")
+        if not isinstance(peer_id, str) or not peer_id:
+            raise AuthenticationError("The expected paired device is required for a sealed hello")
+        expected = self.state.require_trusted(peer_id)
         deadline = self._deadline(timeout)
         sock = socket.socket(self._socket_family(endpoint), socket.SOCK_STREAM)
         if not self._reserve_socket(sock):
             self._close_socket(sock)
             raise TransportError("Sync transport already has an active connection")
         local_hello: SessionHello | None = None
+        seal: SealContext | None = None
         try:
             connected = False
             try:
                 self._connect(sock, endpoint, deadline)
                 connected = True
                 session_id = secrets.token_bytes(SESSION_ID_BYTES)
-                local_hello = self._local_hello(session_id)
-                self._send_all(sock, encode_frame(local_hello.to_bytes()), deadline)
+                local_hello = self._local_hello(session_id, TRANSPORT_VERSION)
+                first, seal = seal_initiator_hello(local_hello, expected.exchange_public)
+                self._send_all(sock, encode_frame(first), deadline)
                 hello_frame = self._read_socket_frame(sock, deadline)
             except (TransportCancelled, AuthenticationError, SyncDisabled):
                 raise
@@ -1200,10 +1452,7 @@ class SyncTransport:
             refused = parse_version_refusal(hello_frame[FRAME_HEADER.size:])
             if refused is not None:
                 raise PeerVersionMismatch(refused)
-            try:
-                remote_hello = SessionHello.from_bytes(hello_frame[FRAME_HEADER.size:])
-            except HelloVersionError as exc:
-                raise PeerVersionMismatch(exc.version) from exc
+            remote_hello = open_responder_hello(hello_frame[FRAME_HEADER.size:], seal)
             peer = self._peer_for_hello(remote_hello, peer_id)
             if remote_hello.session_id != session_id:
                 raise AuthenticationError("Session hello is bound to another session")
@@ -1215,8 +1464,12 @@ class SyncTransport:
             if not isinstance(payload, bytes):
                 raise FrameError("Transport request must be bytes")
             self._send_all(sock, channel.seal(payload), deadline)
-            return channel.open(self._read_socket_frame(sock, deadline))
+            response = channel.open(self._read_socket_frame(sock, deadline))
+            self._pin_sealed(peer.device_id)
+            return response
         finally:
+            if seal is not None:
+                seal.wipe()
             if local_hello is not None and local_hello.ephemeral_secret is not None:
                 local_hello.ephemeral_secret.wipe()
             self._release_socket(sock)
@@ -1281,8 +1534,10 @@ __all__ = [
     "MAX_FRAME_BYTES", "MAX_FRAME_PAYLOAD", "MAX_MESSAGE_BYTES",
     "AuthenticationError", "CancellationToken", "EphemeralSecret", "FrameError", "FrameTooLarge",
     "HelloVersionError", "LANEndpoint", "LANTransport", "LanTransport", "PeerNotAnswering", "PeerVersionMismatch",
-    "ReplayError", "RetryBackoff", "SecureChannel", "SessionHello", "SyncTransport", "TRANSPORT_VERSION",
+    "ReplayError", "RetryBackoff", "SealContext", "SecureChannel", "SessionHello", "SyncTransport",
+    "FRAME_VERSION", "PLAIN_HELLO_VERSION", "SEALED_HELLO_PLAINTEXT_BYTES", "TRANSPORT_VERSION",
     "TransportCancelled", "TransportError", "TransportTimeout", "create_session_hello", "decode_frame",
-    "encode_frame", "establish_channel", "parse_version_refusal", "verify_legacy_hello", "verify_session_hello",
+    "encode_frame", "establish_channel", "open_initiator_hello", "open_responder_hello", "parse_version_refusal",
+    "seal_initiator_hello", "seal_responder_hello", "verify_legacy_hello", "verify_session_hello",
     "version_refusal",
 ]

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The shell (UX workstream 1, Android parity Task 5): search screen, `>` actions, Settings › Breach checks. -->
+<resources>
+    <string name="search_recent_searches">最近の検索</string>
+    <string name="search_recent_items">最近の項目</string>
+    <string name="search_again_hint">もう一度検索します</string>
+    <string name="cmd_security_check">セキュリティチェック</string>
+    <string name="cmd_sync_settings">同期設定</string>
+    <string name="settings_breach_title">漏えいの確認</string>
+    <string name="settings_strict_offline">厳格オフラインモード</string>
+    <string name="settings_allow_breach">漏えいチェックを許可</string>
+    <string name="settings_breach_footer">%1$s 自動ではチェックされません。「セキュリティ」タブでその都度確認します。</string>
+</resources>

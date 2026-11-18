@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l): the Collections page, the Vault filter, the picker and the refusals. -->
+<resources>
+    <string name="collections_title">Collections</string>
+    <string name="collections_none">No collections yet.</string>
+    <string name="collections_footer">Notes, cards and other typed items can be added to collections. Logins can\'t.</string>
+    <string name="collections_add_starters">Add starter collections</string>
+    <string name="collections_new">New collection</string>
+    <string name="collections_name">Name</string>
+    <string name="collections_create">Create</string>
+    <string name="collections_delete_title">Delete collection?</string>
+    <string name="collections_delete_message">The items in it are kept.</string>
+    <string name="collections_view_only">View only</string>
+    <string name="collections_shared">Shared</string>
+    <string name="collections_picker_footer">An item can be in up to 20 collections.</string>
+    <string name="collections_all_items">All items</string>
+    <string name="collections_manage">Manage collections</string>
+    <string name="collections_filter">Collection: %1$s</string>
+    <string name="collections_filter_clear">Show all items</string>
+    <string name="collections_filter_empty">No items in this collection.</string>
+    <string name="collections_item_count" translatable="false">%1$s: %2$d</string>
+    <string name="collections_read_only_item">This item is in a collection shared with you as view only, so it can\'t be changed on this device.</string>
+    <string name="collections_read_only">This collection is shared with you as view only, so it can\'t be changed on this device.</string>
+    <string name="collections_shared_delete">A shared collection can\'t be deleted. Stop sharing it or leave it first.</string>
+    <string name="collections_limit">You can have at most 500 collections.</string>
+    <string name="collections_not_member">Logins and documents can\'t be added to a collection.</string>
+    <string name="collections_bad_name">This name can\'t be used.</string>
+    <string name="collections_gone">That collection no longer exists.</string>
+    <string name="collections_failed">The collection could not be changed.</string>
+    <string name="collections_empty_name">Enter a name for the collection.</string>
+    <string name="collections_long_name">Collection names can be at most 100 characters.</string>
+    <string name="collections_duplicate">A collection with this name already exists.</string>
+    <string name="collections_too_many">An item cannot belong to more than 20 collections.</string>
+    <string name="collections_read_failed">The vault could not be read on this device.</string>
+    <!-- Starter collections stay English in the vault; these are only shown on screen. -->
+    <string name="collection_starter_personal">Personal</string>
+    <string name="collection_starter_work">Work</string>
+    <string name="collection_starter_travel">Travel</string>
+    <string name="collection_starter_emergency">Emergency</string>
+</resources>

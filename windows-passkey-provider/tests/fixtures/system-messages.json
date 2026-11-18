@@ -1,0 +1,36 @@
+{
+  "_comment": "Golden messages of the system passkey pipe protocol (design note section 5.2). Shared by the C# tests (LocalGateKeys.PasskeyProvider.Tests/SystemMessagesTests.cs) and the Python tests (tests/test_passkey_system_fixtures.py): requests are exactly what the provider sends before the token is added; replies show every key the app sends.",
+  "transaction_id": "3f2b8c1e-5d4a-4b6f-9e21-7c0d8a9b1e42",
+  "requests": {
+    "passkey_create_system": {
+      "action": "passkey_create_system", "system_protocol": 1, "transaction_id": "3f2b8c1e-5d4a-4b6f-9e21-7c0d8a9b1e42",
+      "rp_id": "example.test", "rp_name": "Example", "user_id": "dXNlci0x", "user_name": "ada",
+      "user_display_name": "Ada", "client_data_hash": "KWP_BNIOH-3bk5rDnK8Y4uGkOSaVOX1HNXwbLx-D9EY",
+      "algorithms": [-7, -257], "exclude_credentials": [], "resident_key": true, "user_verification": "required",
+      "caller": {"image": "msedge.exe", "title": "Sign in - Example"}
+    },
+    "passkey_get_system": {
+      "action": "passkey_get_system", "system_protocol": 1, "transaction_id": "3f2b8c1e-5d4a-4b6f-9e21-7c0d8a9b1e42",
+      "rp_id": "example.test", "client_data_hash": "KWP_BNIOH-3bk5rDnK8Y4uGkOSaVOX1HNXwbLx-D9EY",
+      "allow_credentials": [], "user_verification": "required",
+      "caller": {"image": "msedge.exe", "title": "Sign in - Example"}
+    },
+    "passkey_cancel_system": {
+      "action": "passkey_cancel_system", "system_protocol": 1, "transaction_id": "3f2b8c1e-5d4a-4b6f-9e21-7c0d8a9b1e42"
+    },
+    "passkey_lock_status_system": {
+      "action": "passkey_lock_status_system", "system_protocol": 1, "transaction_id": "3f2b8c1e-5d4a-4b6f-9e21-7c0d8a9b1e42"
+    },
+    "passkey_credentials_system": {
+      "action": "passkey_credentials_system", "system_protocol": 1, "transaction_id": "3f2b8c1e-5d4a-4b6f-9e21-7c0d8a9b1e42"
+    }
+  },
+  "replies": {
+    "passkey_create_system": {"ok": true, "credential_id": "AAECAwQFBgcICQoLDA0ODw", "authenticator_data": "AQID", "attestation_object": "o2NmbXRkbm9uZQ", "attestation_format": "none", "public_key_algorithm": -7},
+    "passkey_get_system": {"ok": true, "credential_id": "AAECAwQFBgcICQoLDA0ODw", "authenticator_data": "AQID", "signature": "BAUG", "user_handle": "dXNlci0x", "user_name": "ada", "user_display_name": "Ada"},
+    "passkey_cancel_system": {"ok": true},
+    "passkey_lock_status_system": {"ok": true, "locked": false},
+    "passkey_credentials_system": {"ok": true, "credentials": [{"credential_id": "AAECAwQFBgcICQoLDA0ODw", "rp_id": "example.test", "rp_name": "Example", "user_id": "dXNlci0x", "user_name": "ada", "user_display_name": "Ada"}]},
+    "error": {"ok": false, "error": "busy"}
+  }
+}

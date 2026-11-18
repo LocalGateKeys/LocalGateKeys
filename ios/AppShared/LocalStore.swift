@@ -15,6 +15,13 @@ public enum LocalStoreError: Error, Equatable {
     case io(String)
 }
 
+/// A store that hands every call to another one (the Mac's `PublishingItemStore`, which republishes AutoFill
+/// identities after each commit). Code that needs the `LocalStore` underneath looks through it with
+/// `LocalStore.underlying`.
+public protocol ForwardingItemStore: ItemStore {
+    var forwardedStore: any ItemStore { get }
+}
+
 /// The encrypted item store in the app-group container (`ItemStore`).
 ///
 /// Layout of `directory`:
@@ -38,6 +45,18 @@ public enum LocalStoreError: Error, Equatable {
 /// No password KDF exists on any path here: both the app and the AutoFill extension open the store
 /// with the local key read from the Keychain.
 public final class LocalStore: ItemStore, @unchecked Sendable {
+    /// `store` itself when it is a `LocalStore`, else the `LocalStore` behind its forwarding wrappers; nil for any
+    /// other store.
+    public static func underlying(_ store: any ItemStore) -> LocalStore? {
+        var current = store
+        for _ in 0..<8 {
+            if let local = current as? LocalStore { return local }
+            guard let forwarding = current as? any ForwardingItemStore else { return nil }
+            current = forwarding.forwardedStore
+        }
+        return nil
+    }
+
     public let directory: URL
     private let key: [UInt8]
     private let random: any RandomSource
@@ -46,6 +65,11 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
     public var limitHints: AppSettings?
     /// Where each commit publishes the Safari fingerprint index (nil: not published). Best effort.
     public var safariIndex: (any SafariIndexPublishing)?
+    /// Called with each committed snapshot (the app's pinned-code widgets). Best effort, on the committing thread.
+    public var onCommit: (@Sendable (StoreSnapshot) -> Void)?
+    /// Called with the snapshot a commit replaced and the commit itself (item history, feature pack §1). Best effort,
+    /// on the committing thread, inside the store lock: keep it short (compute rows, then hop off).
+    public var onHistory: (@Sendable (_ before: StoreSnapshot, _ change: StoreChange) -> Void)?
 
     static let stateAAD = "localgatekeys|local-state|v1|"
     static let itemAAD = "localgatekeys|local-item|v1|"
@@ -199,16 +223,28 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
             try withFileLock {
                 let current = try currentRevision()
                 // The revision readers actually see (CURRENT, or the fallback generation if it is missing).
-                let visible = current == 0 ? 0 : try visibleSnapshot(current: current).revision
+                let seen: StoreSnapshot? = current == 0 ? nil : try visibleSnapshot(current: current)
+                let visible = seen?.revision ?? 0
                 guard change.baseRevision == visible else {
                     throw LocalStoreError.stale(expected: change.baseRevision, actual: visible)
                 }
+                // Share groups (sub-plan 07) are carried over unless this commit is about them.
+                let shares: JSONValue?
+                switch change.shares {
+                case .keep: shares = seen?.shares
+                case .set(let value): shares = value
+                }
+                // The collections migration marker (sub-plan 07) is carried over unless this commit sets it.
+                let migrated = change.collectionsMigrated ?? (seen?.collectionsMigrated ?? false)
+                // The kept identity (Leave sync) is carried over unless this commit sets it.
+                let kept = change.keptIdentity(after: seen?.keptIdentity)
                 let rev = current + 1
                 let fm = FileManager.default
                 let tmp = directory.appendingPathComponent("tmp-\(UUID().uuidString)", isDirectory: true)
                 do {
                     try fm.createDirectory(at: tmp, withIntermediateDirectories: false)
-                    try writeGeneration(records: change.records, meta: change.meta, sync: change.sync, revision: rev, into: tmp)
+                    try writeGeneration(records: change.records, meta: change.meta, sync: change.sync, shares: shares,
+                                        collectionsMigrated: migrated, keptIdentity: kept, revision: rev, into: tmp)
                     let gen = generationURL(rev)
                     if fm.fileExists(atPath: gen.path) { try fm.removeItem(at: gen) } // leftover of a crashed commit
                     try fm.moveItem(at: tmp, to: gen)
@@ -220,15 +256,19 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                     try? fm.removeItem(at: tmp); throw LocalStoreError.io("\(error)")
                 }
                 prune(keepingFrom: rev - 1, current: rev)
-                let committed = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: rev)
+                let committed = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: rev,
+                                              shares: shares, collectionsMigrated: migrated, keptIdentity: kept)
                 publishLimitHint(committed)
                 safariIndex?.publish(committed)   // never throws: a failed publish never fails the commit
+                onCommit?(committed)
+                if let seen { onHistory?(seen, change) }
             }
         }
     }
 
     /// Seals one generation's blobs (items, then state) into the existing folder `gen`, each fsynced.
     private func writeGeneration(records: [String: JSONValue], meta: [String: SyncMeta], sync: SyncGroupState?,
+                                 shares: JSONValue?, collectionsMigrated: Bool, keptIdentity: KeptIdentity? = nil,
                                  revision rev: Int64, into gen: URL) throws {
         var index: [JSONValue] = []
         for (n, id) in records.keys.sorted().enumerated() {
@@ -237,11 +277,20 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
             try writeFileSynced(try seal(plain, aad: Self.itemAAD + "\(rev)|" + id), to: gen.appendingPathComponent(file))
             index.append(.object(["id": .string(id), "file": .string(file)]))
         }
-        let state = JSONValue.object([
+        var fields: [String: JSONValue] = [
             "v": .int(1), "revision": .int(rev), "items": .array(index),
             "meta": .object(meta.mapValues(Self.encodeMeta)),
             "sync": sync.map(Self.encodeSync) ?? .null,
-        ])
+        ]
+        // Share groups (sub-plan 07): written only when there are some, so a store without shares is unchanged.
+        // Sealed with the rest of the state; never part of any backup or export.
+        if let shares { fields["shares"] = shares }
+        // The Mac's collections migration marker: written only once set, so other stores are unchanged.
+        if collectionsMigrated { fields["collections_migrated"] = .bool(true) }
+        // The identity Leave sync kept (`KeptIdentity`): written only while there is one, so other stores are
+        // unchanged. Sealed with the rest of the state; never part of any record, backup or export.
+        if let keptIdentity { fields["kept_identity"] = keptIdentity.json }
+        let state = JSONValue.object(fields)
         try writeFileSynced(try seal(try CanonicalJSON.encode(state, dialect: .utf8), aad: Self.stateAAD + "\(rev)"),
                             to: gen.appendingPathComponent("state.blob"))
         try syncDirectory(gen)
@@ -255,15 +304,20 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
         let gen = staging.appendingPathComponent("g\(revision)", isDirectory: true)
         try? FileManager.default.removeItem(at: gen)
         try FileManager.default.createDirectory(at: gen, withIntermediateDirectories: false)
-        try staged.writeGeneration(records: snapshot.records, meta: snapshot.meta, sync: snapshot.sync, revision: revision, into: gen)
+        try staged.writeGeneration(records: snapshot.records, meta: snapshot.meta, sync: snapshot.sync, shares: snapshot.shares,
+                                   collectionsMigrated: snapshot.collectionsMigrated, keptIdentity: snapshot.keptIdentity,
+                                   revision: revision, into: gen)
     }
 
     private func publishLimitHint(_ snap: StoreSnapshot) {
         guard let limitHints else { return }
-        let revision = snap.revision
-        let full = !ItemLimit.allows(.create, snapshot: snap, isPro: false)
+        limitHints.planFullRevision = Self.isPlanFull(snap) ? snap.revision : nil
+    }
+
+    /// The free plan is full in `snap` and no valid synced licence lifts it (StoreKit is asked separately).
+    public static func isPlanFull(_ snap: StoreSnapshot) -> Bool {
+        !ItemLimit.allows(.create, snapshot: snap, isPro: false)
             && ItemLimit.validLicense(in: snap, keys: LicenseKeys.production) == nil
-        limitHints.planFullRevision = full ? revision : nil
     }
 
     // MARK: files
@@ -315,7 +369,10 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
             records[id] = try CanonicalJSON.parse(plain)
         }
         return StoreSnapshot(records: records, meta: try meta.mapValues(Self.decodeMeta),
-                             sync: sync == .null ? nil : try Self.decodeSync(sync), revision: rev)
+                             sync: sync == .null ? nil : try Self.decodeSync(sync), revision: rev,
+                             shares: o["shares"] == .null ? nil : o["shares"],
+                             collectionsMigrated: o["collections_migrated"] == .bool(true),
+                             keptIdentity: Self.decodeKept(o["kept_identity"]))
     }
 
     /// Writes a new file and flushes it to stable storage (F_FULLFSYNC).
@@ -413,6 +470,10 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
         if !s.attachmentPeers.isEmpty { o["attachment_peers"] = .array(s.attachmentPeers.map { .string($0) }) }
         // Workstream 6: per-device last-synced times (desktop `peer_synced_at`), local only, written when not empty.
         if !s.peerSyncedAt.isEmpty { o["peer_synced_at"] = ints(s.peerSyncedAt) }
+        // Personal collections (sub-plan 07): Wi-Fi peers that read collection states, written when not empty.
+        if !s.collectionPeers.isEmpty { o["collection_peers"] = .array(s.collectionPeers.map { .string($0) }) }
+        // Wi-Fi peers that read the emergency access plan (sub-plan 08, desktop `heir_peers`): only when not empty.
+        if !s.heirPeers.isEmpty { o["heir_peers"] = .array(s.heirPeers.map { .string($0) }) }
         return .object(o)
     }
 
@@ -450,6 +511,13 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
         let f = try Fields(v)
         return SyncMeta(digest: try f.optStr("digest"), body: try f.optStr("body"), updatedAt: try f.optInt("updated_at"),
                         vv: try f.ints("vv"), deleted: try f.bool("deleted"), deletedAt: try f.optInt("deleted_at"))
+    }
+
+    /// The stored kept identity; absent, null or not valid is none (it is only ever reused, never needed: a vault
+    /// must still open without it, and the next join then makes a new identity).
+    static func decodeKept(_ v: JSONValue?) -> KeptIdentity? {
+        guard let v, v != .null else { return nil }
+        return try? KeptIdentity(json: v)
     }
 
     static func decodeSync(_ v: JSONValue) throws -> SyncGroupState {
@@ -515,6 +583,34 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
                 Identifier.isValid($0.key) && (0...SyncGroupState.maxSyncedAtValue).contains($0.value)
             }) else { throw LocalStoreError.corrupt("peer_synced_at") }
         }
+        // Wi-Fi peers that read personal collection states (sub-plan 07); absent in older states. Validated like the
+        // desktop (`collection_peers`: unique valid ids, at most 64).
+        let collectionPeers: [String]
+        switch f.o["collection_peers"] {
+        case nil: collectionPeers = []
+        case .array(let a)?:
+            collectionPeers = try a.map {
+                guard case .string(let s) = $0, Identifier.isValid(s) else { throw LocalStoreError.corrupt("collection_peers") }
+                return s
+            }
+            guard collectionPeers.count <= 64, Set(collectionPeers).count == collectionPeers.count else {
+                throw LocalStoreError.corrupt("collection_peers")
+            }
+        default: throw LocalStoreError.corrupt("collection_peers")
+        }
+        let heirPeers: [String]
+        switch f.o["heir_peers"] {
+        case nil: heirPeers = []
+        case .array(let a)?:
+            heirPeers = try a.map {
+                guard case .string(let s) = $0, Identifier.isValid(s) else { throw LocalStoreError.corrupt("heir_peers") }
+                return s
+            }
+            guard heirPeers.count <= 64, Set(heirPeers).count == heirPeers.count else {
+                throw LocalStoreError.corrupt("heir_peers")
+            }
+        default: throw LocalStoreError.corrupt("heir_peers")
+        }
         let witnessPeers: [String]
         switch f.o["witness_peers"] {
         case nil: witnessPeers = []
@@ -538,7 +634,7 @@ public final class LocalStore: ItemStore, @unchecked Sendable {
             viewSigners: signers, lanPeers: lanPeers, unackedMembers: unacked,
             peerGenerations: peerGenerations, rollbackSuspected: suspected, witnessPeers: witnessPeers.sorted(),
             witnessCounters: witnessCounters, generationOffset: offset, attachmentPeers: attachmentPeers.sorted(),
-            peerSyncedAt: peerSyncedAt)
+            peerSyncedAt: peerSyncedAt, collectionPeers: collectionPeers.sorted(), heirPeers: heirPeers.sorted())
     }
 }
 

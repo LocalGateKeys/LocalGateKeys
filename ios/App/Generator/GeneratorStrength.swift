@@ -63,6 +63,10 @@ enum GeneratorStrength {
             let size = wordlistCount > 0 ? wordlistCount : PasswordGenerator.fallbackWordlist.count
             let words = max(PasswordGenerator.wordsRange.lowerBound, min(o.words, PasswordGenerator.wordsRange.upperBound))
             return Double(words) * log2(Double(size)) + (o.appendNumber ? log2(90) : 0)
+        case .answer:
+            let size = wordlistCount > 0 ? wordlistCount : PasswordGenerator.fallbackWordlist.count
+            let words = max(PasswordGenerator.answerWordsRange.lowerBound, min(o.answerWords, PasswordGenerator.answerWordsRange.upperBound))
+            return Double(words) * log2(Double(size))
         }
     }
 

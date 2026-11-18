@@ -7,7 +7,7 @@ import AppShared
 
 /// Desktop `password_tools.GeneratorOptions`: same defaults and character sets.
 struct GeneratorOptions: Equatable, Sendable, Codable {
-    enum Mode: String, Sendable, CaseIterable, Codable { case password, passphrase }
+    enum Mode: String, Sendable, CaseIterable, Codable { case password, passphrase, answer }
     var mode: Mode = .password
     var length = 20
     var lowercase = true
@@ -23,6 +23,36 @@ struct GeneratorOptions: Equatable, Sendable, Codable {
     var separator = "-"
     var capitalize = false
     var appendNumber = false
+    /// Security-question answers: 2...6 lowercase words joined by spaces (mode `.answer`).
+    var answerWords = 3
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case mode, length, lowercase, uppercase, digits, symbols, avoidAmbiguous, symbolSet, exclude
+        case minDigits, minSymbols, words, separator, capitalize, appendNumber, answerWords
+    }
+
+    /// Options saved before `answerWords` existed have no such key: they keep every other value.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mode = try c.decode(Mode.self, forKey: .mode)
+        length = try c.decode(Int.self, forKey: .length)
+        lowercase = try c.decode(Bool.self, forKey: .lowercase)
+        uppercase = try c.decode(Bool.self, forKey: .uppercase)
+        digits = try c.decode(Bool.self, forKey: .digits)
+        symbols = try c.decode(Bool.self, forKey: .symbols)
+        avoidAmbiguous = try c.decode(Bool.self, forKey: .avoidAmbiguous)
+        symbolSet = try c.decode(String.self, forKey: .symbolSet)
+        exclude = try c.decode(String.self, forKey: .exclude)
+        minDigits = try c.decode(Int.self, forKey: .minDigits)
+        minSymbols = try c.decode(Int.self, forKey: .minSymbols)
+        words = try c.decode(Int.self, forKey: .words)
+        separator = try c.decode(String.self, forKey: .separator)
+        capitalize = try c.decode(Bool.self, forKey: .capitalize)
+        appendNumber = try c.decode(Bool.self, forKey: .appendNumber)
+        answerWords = try c.decodeIfPresent(Int.self, forKey: .answerWords) ?? 3
+    }
 }
 
 /// The generator's last-used options, kept in `AppSettings` (app group defaults) so new passwords start from
@@ -71,13 +101,28 @@ struct PasswordGenerator: Sendable {
     /// Desktop `_bounded_int(..., 8, 256)` and `max(3, min(words, 16))`.
     static let lengthRange = 8...256
     static let wordsRange = 3...16
+    /// Security-answer word count: 2...6.
+    static let answerWordsRange = 2...6
 
     let random: any RandomSource
 
     func generate(_ o: GeneratorOptions) throws -> String {
-        o.mode == .passphrase
-            ? try passphrase(words: o.words, separator: o.separator, capitalize: o.capitalize, appendNumber: o.appendNumber)
-            : try password(o)
+        switch o.mode {
+        case .password:
+            return try password(o)
+        case .passphrase:
+            return try passphrase(words: o.words, separator: o.separator, capitalize: o.capitalize, appendNumber: o.appendNumber)
+        case .answer:
+            return answer(words: o.answerWords)
+        }
+    }
+
+    /// Security-question answer: lowercase words from the passphrase list joined by single spaces.
+    func answer(words: Int, wordlist: [String]? = nil) -> String {
+        let count = max(Self.answerWordsRange.lowerBound, min(words, Self.answerWordsRange.upperBound))
+        let given = wordlist ?? Self.wordlist
+        let list = given.isEmpty ? Self.fallbackWordlist : given
+        return (0..<count).map { _ in choice(list) }.joined(separator: " ")
     }
 
     func password(_ o: GeneratorOptions) throws -> String {

@@ -18,11 +18,17 @@ public enum VaultSlot: String, CaseIterable, Sendable {
     case safariIndexKey = "safari-index-key"
     /// Safari save: AES-256-GCM key of the inbox the Safari extension writes (32 random bytes).
     case safariInboxKey = "safari-inbox-key"
+    /// Safari save: HMAC key of the "just filled" marker AutoFill writes (`SafariFillMarker`; 32 random bytes, created
+    /// by the iPhone app at unlock). Kept in two places (`fillMarker`).
+    case safariFillKey = "safari-fill-key"
     /// Mac scheduled backups: the folder and the mirror folder (security-scoped bookmarks), and the folder the last
     /// manual full backup went to.
     case scheduledBackupFolder = "scheduled-backup-folder"
     case scheduledBackupMirror = "scheduled-backup-mirror"
     case manualBackupFolder = "manual-backup-folder"
+    /// The key file remembered for unlocking (Mac: a read-only security-scoped bookmark; iPhone: a document-picker
+    /// bookmark of the app password's key file), its name and factor check; never the file's contents.
+    case unlockKeyFile = "unlock-key-file"
 
     /// Slots only the main app reads (sync). They live in the app-only Keychain access group, never the
     /// group shared with the AutoFill extension.
@@ -32,16 +38,17 @@ public enum VaultSlot: String, CaseIterable, Sendable {
     #if os(macOS)
     public static let appOnly: Set<VaultSlot> = [.pairedPeer, .installID, .folderBookmark, .helloCounter, .peerCounters,
                                                  .scheduledBackupFolder, .scheduledBackupMirror,
-                                                 .manualBackupFolder]
+                                                 .manualBackupFolder, .unlockKeyFile]
     #else
-    public static let appOnly: Set<VaultSlot> = [.pairedPeer, .installID, .folderBookmark]
+    // The iPhone remembers the app password's key file here too (a bookmark, never the file): AutoFill never reads it.
+    public static let appOnly: Set<VaultSlot> = [.pairedPeer, .installID, .folderBookmark, .unlockKeyFile]
     #endif
 
     /// The access-control flags a new item of this slot gets (always `WhenUnlockedThisDeviceOnly`).
     /// `deviceUnlocked` slots never get `.userPresence`; on the Mac the sync slots don't either, because the
     /// master password or Touch ID unlock already authenticated and counter writes must never prompt (ruling).
     public var accessFlags: SecAccessControlCreateFlags {
-        if Self.deviceUnlocked.contains(self) { return [] }
+        if Self.deviceUnlocked.contains(self) || Self.fillMarker.contains(self) { return [] }
         #if os(macOS)
         if Self.appOnly.contains(self) { return [] }
         #else
@@ -56,6 +63,12 @@ public enum VaultSlot: String, CaseIterable, Sendable {
     /// with no `.userPresence`, in their own Safari group (`SafariKeychainVault`; audit 2026-10-24 L-8), which
     /// is the only group the Safari extension is entitled to. Never `appOnly`.
     public static let deviceUnlocked: Set<VaultSlot> = [.safariIndexKey, .safariInboxKey]
+
+    /// The "just filled" marker key: no `.userPresence` either (AutoFill writes the marker without a second prompt, the
+    /// Safari extension checks it without Face ID), and the same bytes in two groups: the shared one, which AutoFill
+    /// reads, and the Safari one, which the Safari extension reads (`SafariKeychainVault`). AutoFill never gains the
+    /// Safari group. Never `appOnly`, never `deviceUnlocked` (those are moved out of the shared group).
+    public static let fillMarker: Set<VaultSlot> = [.safariFillKey]
 }
 
 /// The Keychain slots sync uses, and only those.
@@ -165,15 +178,17 @@ public final class SystemKeychainVault: KeychainVault, @unchecked Sendable {
     let accessGroup: String?
     /// An authenticated context lets one Face ID prompt cover several reads.
     let context: LAContext?
+    /// Mac profiles: `"<profile id>/"` before every account name; empty for the default profile (today's items).
+    let accountPrefix: String
 
-    public init(accessGroup: String? = AppGroup.keychainAccessGroup, context: LAContext? = nil) {
-        self.accessGroup = accessGroup; self.context = context
+    public init(accessGroup: String? = AppGroup.keychainAccessGroup, context: LAContext? = nil, accountPrefix: String = "") {
+        self.accessGroup = accessGroup; self.context = context; self.accountPrefix = accountPrefix
     }
 
     private func base(_ slot: VaultSlot) -> [String: Any] {
         var q: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
                                 kSecAttrService as String: Self.service,
-                                kSecAttrAccount as String: slot.rawValue,
+                                kSecAttrAccount as String: accountPrefix + slot.rawValue,
                                 kSecUseDataProtectionKeychain as String: true]
         if let accessGroup { q[kSecAttrAccessGroup as String] = accessGroup }
         if let context { q[kSecUseAuthenticationContext as String] = context }
@@ -263,7 +278,13 @@ public final class SafariKeychainVault: KeychainVault, @unchecked Sendable {
     /// Moves both Safari keys still in the shared group. Safe to call on every unlock.
     public func migrate() throws { for slot in VaultSlot.deviceUnlocked { _ = try read(slot) } }
 
+    /// `VaultSlot.fillMarker` slots are kept in both `safari` and `base`: read answers only when both copies are there
+    /// and equal (else nil, so `SafariKeys.ensure` writes a new key to both), write and delete touch both.
     public func read(_ slot: VaultSlot) throws -> [UInt8]? {
+        if VaultSlot.fillMarker.contains(slot) {
+            guard let mine = try safari.read(slot), let other = try base.read(slot), mine == other else { return nil }
+            return mine
+        }
         guard VaultSlot.deviceUnlocked.contains(slot) else { return try base.read(slot) }
         return try lock.withLock {
             if let b = try safari.read(slot) {
@@ -278,11 +299,20 @@ public final class SafariKeychainVault: KeychainVault, @unchecked Sendable {
     }
 
     public func write(_ slot: VaultSlot, _ bytes: [UInt8]) throws {
+        if VaultSlot.fillMarker.contains(slot) { return try lock.withLock { try safari.write(slot, bytes); try base.write(slot, bytes) } }
         guard VaultSlot.deviceUnlocked.contains(slot) else { return try base.write(slot, bytes) }
         try lock.withLock { try safari.write(slot, bytes); try? legacy.delete(slot) }
     }
 
     public func delete(_ slot: VaultSlot) throws {
+        if VaultSlot.fillMarker.contains(slot) {
+            return try lock.withLock {
+                var failure: Error?
+                do { try safari.delete(slot) } catch { failure = error }
+                do { try base.delete(slot) } catch { failure = failure ?? error }
+                if let failure { throw failure }
+            }
+        }
         guard VaultSlot.deviceUnlocked.contains(slot) else { return try base.delete(slot) }
         try lock.withLock { try safari.delete(slot); try? legacy.delete(slot) }
     }

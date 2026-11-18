@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">Codes épinglés</string>
+    <string name="tile_description">Vos codes à deux facteurs épinglés dans LocalGateKeys sur votre téléphone.</string>
+    <string name="tile_no_data">Ouvrez LocalGateKeys sur votre téléphone</string>
+    <string name="tile_locked">Déverrouillez LocalGateKeys sur votre téléphone pour voir les codes</string>
+    <string name="tile_locked_immediately">Réglez le verrouillage automatique du téléphone sur 1 minute ou plus pour voir les codes ici</string>
+    <string name="tile_empty">Épinglez un code dans LocalGateKeys</string>
+    <string name="tile_watch_locked">Déverrouillez votre montre pour voir les codes</string>
+    <string name="tile_updated_now">Mis à jour à l’instant</string>
+    <string name="tile_updated_minutes">Mis à jour il y a %1$d min</string>
+    <string name="tile_updated_hours">Mis à jour il y a %1$d h</string>
+    <string name="tile_updated_days">Mis à jour il y a %1$d j</string>
+</resources>

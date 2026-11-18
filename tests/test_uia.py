@@ -325,3 +325,29 @@ def test_same_binary_with_changed_window_is_adopted_without_confirmation() -> No
     assert signer_verified is True
     assert updated["scope"]["window_title"] == "DeCave"
     assert uia.desktop_entry_matches_snapshot(updated, snapshot)
+
+
+class _Node:
+    def __init__(self, control_type, parent=None, handle=0):
+        self.control_type, self.parent, self.handle = control_type, parent, handle
+
+
+def test_a_field_in_the_window_top_document_is_a_candidate():
+    window = _Node("Window", handle=42)
+    top = _Node("Document", _Node("Pane", window, handle=43))
+    assert uia._inside_nested_document(_Node("Edit", _Node("Group", top)), 42) is False
+
+
+def test_a_field_inside_an_iframe_document_is_refused():
+    window = _Node("Window", handle=42)
+    frame = _Node("Document", _Node("Group", _Node("Document", _Node("Pane", window, handle=43))))
+    assert uia._inside_nested_document(_Node("Edit", frame), 42) is True
+
+
+def test_an_unreadable_ancestor_chain_is_refused():
+    class Broken:
+        @property
+        def parent(self):
+            raise OSError("COM error")
+
+    assert uia._inside_nested_document(Broken(), 42) is True

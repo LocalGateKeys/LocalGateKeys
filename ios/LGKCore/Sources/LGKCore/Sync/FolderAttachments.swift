@@ -5,12 +5,20 @@
 /// * Capability: `attachments/<device_id>.lgkcap` is a zero-record format-1 view of the current epoch (counter
 ///   0), signed like a view in `attachments/<device_id>.lgkcap.lgksig`. It counts only when it decodes under the
 ///   group key, names that device and its signature verifies with the key this device trusts for it.
+/// * Personal collections (sub-plan 07 Task 5d), the same way: `attachments/<device_id>.lgkcol` (+ `.lgkcol.lgksig`),
+///   counter 1 (`FeatureCapability`), so a document capability copied under that name never counts.
 public struct FolderBlobs: Sendable {
     public let access: any FolderAccess
 
     public static let capSuffix = ".lgkcap"
     public static let capSigSuffix = ".lgkcap.lgksig"
+    /// The same kind of file advertising the `heir` feature (sub-plan 08): this device reads the emergency access plan.
+    public static let heirCapSuffix = ".lgkheircap"
+    public static let heirCapSigSuffix = ".lgkheircap.lgksig"
     public static let maxCapBytes = 4096
+    /// The view counter of the heir capability file (desktop `CAP_COUNTERS["heir"]`, review M1): 2^53 - 1, which no
+    /// real view, heartbeat or documents capability carries.
+    public static let heirCapCounter: Int64 = 9_007_199_254_740_991
     public static var dir: String { "\(FolderLayout.syncDir)/\(AttachmentSync.blobsDirName)" }
 
     public init(access: any FolderAccess) { self.access = access }
@@ -19,9 +27,9 @@ public struct FolderBlobs: Sendable {
         "\(dir)/\(try AttachmentSync.checkBlobID(blobID))\(AttachmentSync.blobSuffix)"
     }
 
-    static func capPaths(_ deviceID: String) -> (cap: String, sig: String)? {
+    static func capPaths(_ deviceID: String, feature: FeatureCapability.Feature = .documents) -> (cap: String, sig: String)? {
         guard Identifier.isSafeDeviceFile(deviceID) else { return nil }
-        return ("\(dir)/\(deviceID)\(capSuffix)", "\(dir)/\(deviceID)\(capSigSuffix)")
+        return ("\(dir)/\(deviceID)\(feature.suffix)", "\(dir)/\(deviceID)\(feature.signatureSuffix)")
     }
 
     // MARK: blobs
@@ -80,28 +88,46 @@ public struct FolderBlobs: Sendable {
 
     // MARK: capability
 
-    /// Whether `deviceID` published a valid capability file signed with `signer` (base64 Ed25519 key).
-    public func capable(_ gk: GroupKey, deviceID: String, signer: String?) -> Bool {
-        guard let signer, let paths = Self.capPaths(deviceID),
-              let raw = try? access.read(paths.cap, limit: Self.maxCapBytes + 1), raw.count <= Self.maxCapBytes,
-              let sig = try? access.read(paths.sig, limit: ViewSignature.maxBytes + 1), sig.count <= ViewSignature.maxBytes,
-              let view = try? ViewFile.decode(raw, key: gk, expectedDeviceID: deviceID, maxBytes: Self.maxCapBytes, maxRecords: 0),
-              let key = try? ViewSignature.verify(sig, raw: raw, header: view.header) else { return false }
-        return Base64.encode(key) == signer
+    /// Whether `deviceID` published a valid capability file for `feature` signed with `signer` (base64 Ed25519 key).
+    /// Each feature has its own counter: a file of the other feature copied under this name never counts.
+    public func capable(_ gk: GroupKey, deviceID: String, signer: String?,
+                        feature: FeatureCapability.Feature = .documents) -> Bool {
+        guard signer != nil, let paths = Self.capPaths(deviceID, feature: feature),
+              let raw = try? access.read(paths.cap, limit: Self.maxCapBytes + 1),
+              let sig = try? access.read(paths.sig, limit: ViewSignature.maxBytes + 1) else { return false }
+        return FeatureCapability.verify(raw, sig: sig, key: gk, deviceID: deviceID, signer: signer, feature: feature)
     }
 
-    /// Writes this device's capability file unless a valid one is there; whether it wrote.
+    /// Writes this device's capability file for `feature` unless a valid one is there; whether it wrote.
     @discardableResult
     public func writeCapability(_ gk: GroupKey, identity: DeviceIdentity, clock: some UnixClock,
-                                random: some RandomSource) throws -> Bool {
+                                random: some RandomSource, feature: FeatureCapability.Feature = .documents) throws -> Bool {
         let own = Base64.encode(identity.signingPublicKey)
-        if capable(gk, deviceID: identity.deviceID, signer: own) { return false }
-        guard let paths = Self.capPaths(identity.deviceID) else { throw FolderSyncError("write-failed", "device id is not a safe file name") }
-        let raw = try ViewFile.encode(key: gk, deviceID: identity.deviceID, counter: 0, states: [], now: clock, random: random)
-        let sig = try ViewSignature.sign(raw, header: try ViewFile.decodeHeader(raw), identity: identity)
-        try access.writeAtomic(paths.cap, raw)
-        try access.writeAtomic(paths.sig, sig)
+        if capable(gk, deviceID: identity.deviceID, signer: own, feature: feature) { return false }
+        guard let paths = Self.capPaths(identity.deviceID, feature: feature) else {
+            throw FolderSyncError("write-failed", "device id is not a safe file name")
+        }
+        let file = try FeatureCapability.encode(key: gk, identity: identity, feature: feature, clock: clock, random: random)
+        try access.writeAtomic(paths.cap, file.file)
+        try access.writeAtomic(paths.sig, file.sig)
         return true
+    }
+
+    /// The `heir` capability file (sub-plan 08, `.lgkheircap`) when `heir`, else the documents one.
+    static func capPaths(_ deviceID: String, heir: Bool) -> (cap: String, sig: String)? {
+        capPaths(deviceID, feature: heir ? .heir : .documents)
+    }
+
+    /// Whether `deviceID` published a valid capability file (`heir`: the `heir` one) signed with `signer`.
+    public func capable(_ gk: GroupKey, deviceID: String, signer: String?, heir: Bool) -> Bool {
+        capable(gk, deviceID: deviceID, signer: signer, feature: heir ? .heir : .documents)
+    }
+
+    /// Writes this device's capability file (`heir`: the `heir` one) unless a valid one is there; whether it wrote.
+    @discardableResult
+    public func writeCapability(_ gk: GroupKey, identity: DeviceIdentity, clock: some UnixClock,
+                                random: some RandomSource, heir: Bool) throws -> Bool {
+        try writeCapability(gk, identity: identity, clock: clock, random: random, feature: heir ? .heir : .documents)
     }
 
     // MARK: run steps

@@ -127,6 +127,7 @@ final class BIP39Tests: XCTestCase {
                                   "note": "TEST ONLY: written by the Swift BIP39Tests; the phrase and password are published."]
         let data = try JSONSerialization.data(withJSONObject: out, options: [.prettyPrinted, .sortedKeys]) + Data("\n".utf8)
         let url = Self.dir.appendingPathComponent("from_mac_vault.json")
-        if (try? Data(contentsOf: url)) != data { try data.write(to: url) }
+        // The tracked copy is rewritten only on request (`LGK_WRITE_FROM_MAC=1`): its bytes differ every run.
+        if ProcessInfo.processInfo.environment["LGK_WRITE_FROM_MAC"] == "1", (try? Data(contentsOf: url)) != data { try data.write(to: url) }
     }
 }

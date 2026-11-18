@@ -42,6 +42,8 @@ struct MacUpgradeSheet: View {
                 }
                 .buttonStyle(AccentButtonStyle())
                 .disabled(pro.busy || !pro.canBuy)
+                Text("One payment. Every update, forever, free. No subscription.")
+                    .font(.footnote).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
                 Button("Restore purchases") { Task { await pro.restore() } }
                     .buttonStyle(GlassButtonStyle())
                     .disabled(pro.busy)

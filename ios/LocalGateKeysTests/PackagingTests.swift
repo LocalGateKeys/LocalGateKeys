@@ -8,7 +8,8 @@ final class PackagingTests: XCTestCase {
         XCTAssertNil(Bundle.main.object(forInfoDictionaryKey: "ITSAppUsesNonExemptEncryption"))
     }
 
-    func test_iphone_only() {
-        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "UIDeviceFamily") as? [Int], [1])
+    func test_iphone_and_ipad() {
+        // iPad joined in the UX refresh (TARGETED_DEVICE_FAMILY "1,2").
+        XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "UIDeviceFamily") as? [Int], [1, 2])
     }
 }

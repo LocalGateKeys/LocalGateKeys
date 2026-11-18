@@ -7,6 +7,7 @@
   import Field from '../components/Field.svelte';
   import RecoveryPage from '../components/RecoveryPage.svelte';
   import CameraView from '../components/CameraView.svelte';
+  import FactorPrompt from '../components/FactorPrompt.svelte';
   import { call } from '../lib/api.js';
   import mark from '../../../src/localvault/assets/localgatekeys_icon.svg';
 
@@ -21,15 +22,27 @@
   let phrase = $state('');
   let wait = $state(0);
   const creating = $derived(!vault.vault_exists);
-  let alt = $state(''); // 'hello' | 'camera' while one is running
+  let alt = $state(''); // 'hello' | 'key' | 'camera' while one is running
   let altNote = $state('');
   let autoTried = false;
+  // The key file picked on this screen ({name}; Python keeps the path); without one the remembered file is used.
+  let keyfile = $state(null);
+  const factors = $derived(Array.isArray(vault.factors) ? vault.factors : []);
 
   async function useHello() {
     if (alt || busy) return;
     alt = 'hello'; error = '';
     altNote = t('unlock.helloNote');
     const result = await call('vault_unlock_hello');
+    alt = ''; altNote = '';
+    if (!result.ok) { error = result.error.message; backToPassword(result.error.code); }
+  }
+
+  async function useSecurityKey() {
+    if (alt || busy) return;
+    alt = 'key'; error = '';
+    altNote = t('unlock.securityKeyNote');
+    const result = await call('vault_unlock_security_key');
     alt = ''; altNote = '';
     if (!result.ok) { error = result.error.message; backToPassword(result.error.code); }
   }
@@ -75,15 +88,18 @@
     if (busy || wait) return;
     busy = true;
     error = '';
-    let result;
-    if (mode === 'recover') result = await call('vault_recover', phrase, password, confirm);
-    else if (creating) result = await call('vault_create', password, confirm);
-    else result = await call('vault_unlock', password);
-    busy = false;
-    // Never keep the master password or phrase in the page, whatever the outcome.
+    let pending;
+    if (mode === 'recover') pending = call('vault_recover', phrase, password, confirm);
+    else if (creating) pending = call('vault_create', password, confirm);
+    else if (keyfile) pending = call('vault_unlock', password, true);
+    else pending = call('vault_unlock', password);
+    // Sent: the master password and phrase leave the page now, not after the slow unlock, whatever the outcome.
     wipe();
+    const result = await pending;
+    busy = false;
     if (!result.ok) {
-      error = result.error.message;
+      // A cancelled YubiKey touch is the user's own choice: nothing to say.
+      error = result.error.code === 'cancelled' ? '' : result.error.message;
       if (result.error.code === 'throttled') {
         const state = await call('vault_state');
         if (state.ok) wait = state.backoff ?? 0;
@@ -147,6 +163,10 @@
       {/if}
     </div>
 
+    {#if mode === 'unlock' && !creating && factors.length}
+      <FactorPrompt {factors} keyfileName={vault.keyfile_name} remember={vault.keyfile_remember} bind:picked={keyfile}
+                    disabled={busy} onerror={(text) => (error = text)} />
+    {/if}
     {#if altNote}<p class="status" role="status">{altNote}</p>{/if}
     {#if wait}<p class="error" role="alert">{t('unlock.tooMany', { seconds: formatNumber(wait) })}</p>
     {:else if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
@@ -159,6 +179,10 @@
     {#if mode === 'unlock' && !creating && vault.hello}
       <div class="actions"><Button label={t('unlock.hello')} onclick={useHello} busy={alt === 'hello'} busyLabel={t('unlock.waitingWindows')} disabled={!!wait} /></div>
       <p class="or">{t('unlock.or')}</p>
+    {/if}
+    {#if mode === 'unlock' && !creating && vault.security_key}
+      <div class="actions"><Button label={t('unlock.securityKey')} onclick={useSecurityKey} busy={alt === 'key'} busyLabel={t('unlock.waitingWindows')} disabled={!!wait || (!!alt && alt !== 'key')} /></div>
+      {#if !vault.hello}<p class="or">{t('unlock.or')}</p>{/if}
     {/if}
     <div class="links">
       {#if mode === 'unlock' && !creating && vault.camera}

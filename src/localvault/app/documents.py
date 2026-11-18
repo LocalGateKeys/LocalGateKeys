@@ -42,11 +42,17 @@ class DocumentService:
         self._port = port
         self._dialogs = dialogs
         self._sweep_generation = 0
+        # The folder of the session now open (a duress session has its own), swept when it locks.
+        self._unlocked_dir: Any = None
         controller.on_lock.append(self._sweep_open_copies)
         controller.on_unlock.append(self._stop_sweeping)
 
     def _stop_sweeping(self) -> None:
         self._sweep_generation += 1  # a new unlock may open documents again: old retries stop
+        try:
+            self._unlocked_dir = self._controller.profiles.profile_dir()
+        except Exception:  # noqa: BLE001 - no profile: the lock sweeps the current one
+            self._unlocked_dir = None
 
     def _sweep_open_copies(self, generation: int | None = None, profile_dir: Any = None) -> None:
         """Delete decrypted copies opened in other apps; retry every 30 s while one is still in use.
@@ -57,10 +63,12 @@ class DocumentService:
         if generation is None:
             self._sweep_generation += 1
             generation = self._sweep_generation
-            try:
-                profile_dir = self._controller.profiles.profile_dir()
-            except Exception:  # noqa: BLE001 - no profile: nothing to sweep
-                return
+            profile_dir, self._unlocked_dir = self._unlocked_dir, None
+            if profile_dir is None:
+                try:
+                    profile_dir = self._controller.profiles.profile_dir()
+                except Exception:  # noqa: BLE001 - no profile: nothing to sweep
+                    return
         elif generation != self._sweep_generation or self._controller.is_unlocked():
             return
         try:

@@ -62,11 +62,6 @@ def test_pending_list_lives_in_the_isolated_data_folder(tmp_path):
     assert Path(os.environ["LOCALGATEKEYS_DATA_DIR"]).resolve() == config.data_dir()  # never the real folder
 
 
-def test_installers_associate_lgkshare_with_the_app():
-    iss = (ROOT / "build-personal" / "LocalGateKeys-Personal.iss").read_text(encoding="utf-8")
-    assert 'Subkey: "Software\\Classes\\.lgkshare"; ValueType: string; ValueName: ""; ValueData: "LocalGateKeys.Share"' in iss
-    assert 'LocalGateKeys.Share\\shell\\open\\command"; ValueType: string; ValueName: ""; ValueData: ' \
-           '"""{app}\\LocalGateKeys.exe"" ""%1"""' in iss
-    assert "ChangesAssociations=yes" in iss
+def test_msix_associates_lgkshare_with_the_app():
     manifest = (ROOT / "build-msix" / "AppxManifest.xml.in").read_text(encoding="utf-8")
     assert '<uap:FileTypeAssociation Name="lgkshare">' in manifest and "<uap:FileType>.lgkshare</uap:FileType>" in manifest

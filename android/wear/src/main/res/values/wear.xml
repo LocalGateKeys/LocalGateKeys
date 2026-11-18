@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sub-plan 06: the phone sends codes only to watches with this capability (WearCodes.CAPABILITY_WATCH). -->
+    <string-array name="android_wear_capabilities" translatable="false">
+        <item>lgk_codes_tile</item>
+    </string-array>
+</resources>

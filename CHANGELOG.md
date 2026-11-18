@@ -6,10 +6,178 @@ this repository.
 
 ## Unreleased
 
-In the source since 0.4.10. The Mac and Android apps are not in their stores
-yet.
+In the source since 0.4.11. Windows 0.4.12 was sent to Microsoft Store certification on 2026-11-14, and the
+browser extension 0.4.12 is on Edge Add-ons and Firefox Add-ons (Chrome Web Store: in review). The Mac app 1.3 is
+on the Mac App Store (2026-11-14). The Android app is not on Google Play yet.
+
+### Windows: the Inno Setup installer pipeline is removed (2026-11-18)
+- Windows ships only through the Microsoft Store. `build-personal/LocalGateKeys-Personal.iss` and the Inno Setup part
+  of `scripts/build_personal_installer.ps1` are gone; the script now only builds the frozen executables the MSIX packs.
+
+### Safari (Mac and iPhone): the new save prompt (2026-11-17)
+- **Safari shows the same save prompt as Chrome, Edge and Firefox**, drawn in the extension's own panel frame: the
+  username can be edited before saving (the app checks the new name when it saves), Not now and Never on this site as
+  before. A page that blocks the frame (strict CSP) gets the older in-page prompt instead. Safari still cannot list
+  a site's saved logins, so it never offers to choose which one to update. The prompt narrows on small screens.
+
+### iPhone: Safari no longer asks to save a login AutoFill just filled (2026-11-17)
+- **No "Save / update?" prompt after signing in with a login filled by LocalGateKeys AutoFill** (QuickType bar or the
+  list). AutoFill leaves a short-lived marker for the site and username (keyed hashes, nothing made from the
+  password); the Safari extension skips the prompt for that sign-in. A login typed by hand, a new login and a later
+  sign-in with another password still prompt. Not on the Mac yet.
+
+### A device keeps its id when it leaves sync and joins again (2026-11-17)
+- **No more duplicate rows after Leave sync.** Windows, Mac, iPhone and Android: Leave sync keeps the device's id
+  and keys in the vault. Pairing again over Wi-Fi, or joining the same cloud folder again, uses them, and the
+  other devices update the existing row instead of adding one. Reset sync, a reinstall and a removed device still
+  get a new id. Nothing sent between devices or written to the folder changed.
+- **With a device on an earlier version:** the first pairing after Leave is refused, the device says "The other
+  device could not pair this device under its earlier name. Show a new code there and scan it again.", and the
+  second pairing works under a new id, as before.
+
+### iPhone and Android: Sync automatically (2026-11-17)
+- **A "Sync automatically" switch in Settings, on by default.** On: the phone syncs when you unlock, when you come
+  back to the app while it is still unlocked (new) and after an edit. Off: it syncs only on Sync now or
+  pull-to-refresh.
+
+### Mac settings and Windows fixes (2026-11-13 and 2026-11-14)
+- **Mac: open documents in their default app** with the Windows rules: only with "Open documents in other apps" on,
+  only document, image, audio and video types, a one-time warning, each decrypted copy in its own private temporary
+  folder with the quarantine mark, and every copy deleted when the vault locks, at quit and at the next launch.
+- **Mac: auto-lock can count activity anywhere on the Mac (the default) or only in LocalGateKeys**, as on Windows.
+- **Mac: more Windows settings.** Ask before copying a 2FA code, how many automatic backups to keep as you save,
+  a custom quick-access shortcut, a Help & diagnostics section, and one Settings view for both windows with the
+  backup schedule and the weekly restore test.
+- **iPhone and Android: the restore test also checks a computer's full backup** (`.lgk` / `.lgkfull`) with its
+  backup and master passwords; on the iPhone it reads the picked file directly, so iCloud Drive and other
+  providers work.
+- **Windows:** a file dialog asked for while the app sits in the tray shows the main window first, so the dialog is
+  no longer hidden; Save As starts in the `LOCALGATEKEYS_DATA_DIR` folder when one is set; Network activity reloads
+  when you come back to the Security center; nothing is cut off at the 900 x 600 minimum window; the Store build's
+  Developer page no longer shows the `lgk mcp` line (the Store package has no `lgk`; it shows the Store command).
+- **Starter collections** (Personal, Work, Travel, Emergency) are shown in your language on every platform.
+
+- **Free plan now holds 7 items (was 15).** Pro (US$29.99 lifetime) is unchanged.
+
+### AI agents: secrets for commands, exposure tracking, the Mac, and a network ledger
+- **AI agents can run a command with your secrets (Pro, Windows).** Two new `lgk mcp` tools: `list_secrets` shows
+  the titles and field names, never the values, of the API keys, SSH keys and notes you allowed; `run_with_secrets`
+  runs one command with those secrets in its environment after you approve that exact command line, folder and set
+  of secrets. The output comes back with the secrets masked, and the command is stopped at its time limit. The
+  command itself receives the secrets and can send them anywhere, so approve only a command you would run yourself.
+- API keys, SSH keys and notes have an "AI agents may use this item" switch: off by default, this device only.
+  Imported, shared and restored items arrive with it off. Settings › Developer lists recent AI agent runs (agent,
+  command, secrets used, outcome), never a value. `lgk run` masks overlapping secrets as one span.
+- **Exposed to an AI agent.** Password health has a new group: every login whose password an AI agent filled into a
+  page, and every API key, SSH key or note a `run_with_secrets` command received, with the agent's name and date,
+  until you change it. The item shows the same notice and logins offer the change-password assistant; "Dismiss"
+  hides it on this PC. It is worked out from this PC's logs; nothing new is synced or stored in the vault. For an
+  API key, SSH key or note, any save of the item clears it.
+- **Network activity.** The Security center lists every connection LocalGateKeys makes to the internet: update
+  checks, the licence revocation list, breach checks, website icons, and sync with your devices on the local
+  network, each with the time, the host and the result. Websites you saved are shown for the running session only
+  and never written to disk; sync peers are shown as "Local network". A test fails if any code opens a connection
+  without recording it.
+- **Mac (Pro; built and unit-tested on a Mac on 2026-11-13, manual checks open): `lgk mcp`.** The same three sign-in tools and rules as on Windows
+  (`list_sites`, `request_login`, `fill_login`), turned on in Settings › Developer. Each request opens an approval
+  panel; "Approve once" is the only yes, optionally with Touch ID. An approved sign-in is filled in Safari only after
+  your click on the LocalGateKeys icon in the sign-in field and a second click on the login; a login with a passkey
+  is never filled with its password. The "AI agents may use this login" switch is set in the Windows app for now.
+
+### Command line and AI agents in the Microsoft Store version
+- The Store package may declare only one app execution alias (the browser bridge's), so the bridge exe now also runs
+  the `lgk` command line: `LocalGateKeysNativeHost.exe lgk <command>` and `LocalGateKeysNativeHost.exe mcp` (the MCP
+  server, `claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp`). A PowerShell profile line,
+  `function lgk { LocalGateKeysNativeHost.exe lgk @args }`, brings back `lgk`. Browser launches are unchanged; started
+  by anything but a browser, the app gives the bridge exe the CLI service only (switch, item allow list, approvals,
+  access log), never the browser broker. The Developer page shows the commands in the Store version.
+- AI agents see only the logins you switch to "AI agents may use this login" (login editor, off by default; other
+  logins answer like a site with no login). A login with a saved passkey signs in with the passkey for an agent and
+  never fills its password; the approval says which will happen.
+
+### Power-user pack
+- **Backup restore test.** The newest backup can be restored into a scratch folder under the data folder, unlocked
+  once, counted and deleted again; the live vault is never touched. A changed password reports "the backup uses
+  the old password". "Test now" on the Security page. Weekly by default (Settings › Backups switch): a verified
+  scheduled backup counts as the week's test; without one, the next unlock opens the newest rolling backup with
+  the unlocked key. No password is ever stored. Mac, iPhone and Android have "Test now".
+- **Password change assistant.** For a weak, reused or breached login the app works out the site's change-password
+  page: a short curated list first, then the site's standard `/.well-known/change-password` address, then the
+  sign-in page. It only opens the page; it never fills in a third-party site.
+- **Several vaults.** The free plan holds one vault and Pro any number; free users who already have more keep
+  them. The 15-item free limit now counts the items in all vaults together.
+- **Vault health report.** A one-page printable PDF (A4 or Letter) with the key-derivation settings, unlock
+  factors, backup and restore-test age, devices, licence and build. No passwords or item names.
+- **Expiring, one-use and revocable shares.** A shared item can expire after 1 hour instead of 24, can be marked
+  one use, and the sender can revoke it: the signed notice travels over folder sync, and the sender's other
+  devices then refuse to open the package. iPhone, Mac and Android send expiring and one-use shares too and honour
+  revoke notices from the sync folder. The Wi-Fi QR now says that it never expires. Phones and the Mac open such packages. All three are best
+  effort (`docs/formats/LGKSHARE_V1.md` v1.1).
+- **Estate pack.** A new "Estate pack" template: where the will is, the executor, accounts to close, devices and
+  their unlock, and the emergency-access holders.
+
+### Windows: Microsoft Store only
+- **LocalGateKeys for Windows now comes only from the Microsoft Store.** The website no longer offers the installer;
+  every download link points to the Microsoft Store listing.
+- **0.4.12 is the last installer release.** After unlock it shows "LocalGateKeys has moved to the Microsoft Store"
+  (in all eleven languages), and Settings has a "Get LocalGateKeys from the Microsoft Store" row. To switch,
+  uninstall the installer version and install LocalGateKeys from the Store: the vault stays where it is and the
+  Store app opens it with the same master password. "Later" hides the notice for three days. The update server
+  offers no installer updates after 0.4.12.
+- **The `lgk` command-line tool is dropped for now:** a Store app cannot put it on PATH, so the Store package no
+  longer contains it. It may come back later through a Store app execution alias. The 0.4.12 installer still has it.
+
+### AI agents can sign in, your passwords stay on your PC (Pro, Windows first)
+- **Local Agent Gate and `lgk mcp`:** an MCP server for Claude Code and other AI agents
+  (`claude mcp add localgatekeys -- lgk mcp`). An agent can list your sites (titles and domains only), ask to sign in
+  to one site, and have LocalGateKeys fill that site's sign-in form in your browser. It never sees the password.
+  Each request opens an approval in the quick-search window naming the agent, the program, the site and the
+  agent's stated purpose (shown as a quote); "Approve once" is the only yes, optionally confirmed with Windows Hello.
+  A grant lasts five minutes, works once, only on that site's domain and only for the agent session that asked.
+  Logins that ask for the master password every time are never used, no tool ever returns a secret, and an agent
+  can ask at most a few times a minute, one approval at a time. Off by default: Settings › Developer › "Allow AI agents to use
+  LocalGateKeys". Details: `docs/AGENTS.md`. Not usable from the Store build yet (it has no `lgk` command).
+- **Tamper-evident access log:** activity events are now hash-chained; the Security check shows "Access log
+  verified" or "Access log altered", and the log can be exported as JSON lines with each event's hash. The chain
+  helper is also in LGKCore (Mac, iPhone) and lgk-core (Android) with a shared test vector.
+
+### Emergency access and duress password (Pro)
+- **Emergency access without an account:** split your recovery phrase into up to five shards for people you trust
+  (any 2 to 5 of them can recover). Each gets a signed file, a QR code or a printed sheet. A holder asks from their own
+  LocalGateKeys; after the waiting period you chose (1 to 30 days) the app opens your latest encrypted backup from a
+  shared folder, unless one of your devices said No. You can also grant at once. Phones end by showing your recovery
+  phrase. Limit: holders who have enough shards and work together can open the backup at once.
+- **Duress password:** a second password opens a sample vault, keeps the real vault locked for the hours you choose and
+  syncs nothing. On Windows, iPhone and Android; the Mac gets it in its next release. It hides your vault from someone looking over your
+  shoulder or forcing you to open the app; it does not hide from someone who examines your files.
+- Format: `docs/formats/LGKHEIR_V1.md`.
 
 ### All apps and the website
+- **Collections sync, and Pro can share them:** collections and which items are in them now sync on Windows, Mac,
+  iPhone and Android. Pro can share a collection with family through a shared folder, view-only or with edit
+  rights. The owner signs who is in a share. The share password protects the items in the folder, so give it only to
+  people you invite; a joiner's device syncs nothing until the owner approves it, and from then on its edits count.
+  If someone damages or replaces the share's key file in the folder, the owner's device puts it back on its next
+  sync, also after Pro ended. Removing someone asks you to confirm. Creating a share asks you to confirm it's you
+  (master password on Windows and Mac, Face ID or passcode on iPhone, fingerprint, face or screen lock on Android).
+  Deletes in a share go to Recently deleted. **Forget share link** clears the link of a device that was lost or
+  reset, so you can share the collection again or delete it. Backups never contain a share's keys, and a restore
+  keeps your current shares. Older app versions drop share records if you downgrade. Nothing leaves your devices; there is no server. The pricing page
+  lists it in the Pro column.
+- **Pricing:** Pro is US$29.99 one-time. One payment. Every update, forever, free. If you already bought Pro,
+  nothing changes: you keep lifetime Pro and every future update, free. **Free tier:** 15 items instead of 4.
+- **Quick wins:** the Security check lists logins on plain `http://` sites, logins whose site offers
+  two-factor codes but have no code stored, and logins whose site offers passkeys (data from 2fa.directory and
+  passkeys.2fa.directory, credited in the notices); notes render Markdown (headings, bold, italic, links shown as text, not
+  clickable, lists, checklists, code) with a per-device "Show formatting" switch; a Wi-Fi item shows a QR code that a phone
+  can scan to join; a generator for security-question answers; and a printable emergency kit (recovery steps,
+  backup folders, optional recovery phrase) on Windows, Mac, iPhone and Android. On the iPhone and Android the
+  kit is tied to the app password.
+- **Verified site and lookalike warnings:** the browser extensions show "Verified site" on a saved site and warn
+  before a login or a save on a lookalike address, such as a swapped letter or a look-alike character. The check
+  runs on the device and your saved sites never leave the app. A page's own script can still bypass the warning.
+  On Android, the autofill save prompt shows Verified, Related or New and asks before saving on a lookalike
+  address or another suffix of a saved site.
 - **Ten languages:** English, German, Spanish, Italian, Japanese, Korean, Dutch,
   Polish, Brazilian Portuguese and Simplified Chinese, in the Windows app (with
   a language picker that switches at once), the browser extension (Edge/Chrome
@@ -19,6 +187,55 @@ yet.
   the licence server. Pairing carries it to your PCs, so a free PC becomes Pro.
   The app sends only the store's purchase record; a refund revokes the licence.
   The Mac takes Pro only from the App Store or from sync.
+- **Developer pack (opt-in, Settings › Developer):** an SSH agent that serves SSH-key items to `ssh` and `git` after
+  per-use approval (agent forwarding refused when `ssh` sends session binding; older clients cannot be checked), Git commit signing setup, the `lgk` command line on Windows
+  (`status`, `list`, `read`, `totp`, `run`, `inject`; installer PATH entry and MSIX alias), a plain-secrets scan
+  for `.env` files, and JWT decoding on API-key items on Windows, Mac, iPhone and Android. The Mac gets the agent
+  and the scan (no command line yet).
+- **Key file and YubiKey (optional):** the master password (Windows, Mac) or app password (iPhone, Android) can also
+  need a key file (any file, or a KeePass key file) and/or a YubiKey (HMAC-SHA1 challenge-response, slot 2; USB on Windows,
+  Mac and Android, NFC on iPhone and Android). A vault with factors is a new file version (Windows v4, Apple and Android
+  v2); vaults without factors are unchanged. The recovery phrase still opens the vault without factors and a reset with it
+  removes them. Windows Hello, security key and camera shortcuts keep working when a factor is added; they are removed and refused only when "Always ask" is on.
+  Mac backups of a factor vault are protected by the backup password only.
+
+### CXF import and export
+- **Windows:** imports Credential Exchange (CXF) files (Apple Passwords and other apps; logins, one-time codes,
+  notes and passkeys, up to 16 MiB) and exports a CXF file from the Export sheet beside CSV. The export is
+  unencrypted and asks you to re-authenticate before passkey keys are read.
+- **Android:** imports CXF files (up to 8 MiB) and adds **Settings > Export to a CXF file…** for logins, notes
+  and passkeys, behind your fingerprint, face or screen lock.
+- **iPhone:** exports a CXF file (a file export, not Apple's system Credential Exchange).
+- **Mac:** exports a CXF file (a file export, not Apple's system Credential Exchange).
+
+### Quick search and inline menu
+- **Windows:** the quick shortcut (Ctrl+Alt+K by default) opens a small always-on-top search palette, like the
+  Mac menu bar panel: search the vault, then copy a username, password or code, or fill the app you were in.
+  The palette never shows a password, locks with the vault and is hidden from screen capture. Settings can switch the shortcut back to the Quick access page.
+- **Browser extension:** the LocalGateKeys icon in a login field opens an account menu right under the field
+  (arrow keys and Enter work). New-password fields on sign-up and change-password forms get a Generate icon
+  that fills the form's new-password fields with a strong password. Sites set to "Never for this site" show no
+  inline menu; logins whose rule is "never fill" are not listed. In a login frame from another site the
+  extension stays off, so no inline menu shows there.
+
+### Mobile widgets and tiles
+- **iPhone:** lock-screen and Home-screen widgets show up to 4 pinned two-factor codes. Codes stay hidden on a
+  locked lock screen until Face ID. A "Copy code" Shortcuts action copies a code (Siri says "Code copied").
+  Pinning a code to widgets is Pro; showing pinned codes is not.
+- **Apple Watch:** a complication shows the first pinned code with a countdown ring. "Forget Apple Watch codes on
+  lock" also clears it.
+- **Android:** a home-screen widget shows pinned codes only before the auto-lock time (with Auto-lock
+  "Immediately" it explains to set 1 minute or longer), and a Quick Settings tile copies the first pinned code
+  (it asks you to unlock on the lock screen). Pinning a code to widgets is Pro; showing pinned codes is not.
+
+### Windows passkey provider
+- **Windows passkey provider (Microsoft Store build):** LocalGateKeys can serve passkeys to any app or browser on
+  Windows 11 24H2 or later. It is off by default: turn it on in Settings, then enable LocalGateKeys in Windows
+  Settings › Accounts › Passkeys. Every request shows the LocalGateKeys approval window and the private keys never
+  leave the app; Windows gets only signatures. Windows keeps passkey site and user names (never keys) in its own
+  list, also while the vault is locked; turning passkeys off in the app clears that list, and turning the switch off
+  unregisters. While it is on and Windows reports it enabled, the browser extension steps aside for passkeys
+  (logins, passwords and codes are unchanged). Microsoft Store build only: the installer build will not get it.
 
 ### Mac
 - **The Mac app** (macOS 14+): master password with optional Touch ID, the
@@ -39,6 +256,10 @@ yet.
 - **Secure sharing** of one item as a `.lgkshare` file or QR code, and Receive.
 
 ### iPhone
+- **Restore phone backups on the iPhone:** Settings › Import & Export › Restore from a backup (and the empty
+  vault screen) opens an iPhone or Android `.lgkm` backup with its password, shows a preview and merges it like
+  sync: nothing is wiped, deletions go to Recently deleted, documents come with their files. A backup this iPhone
+  made restores into an empty vault, for example after reinstalling the app.
 - **Import** every format the Mac reads (other password managers and
   browsers), in addition to Apple Passwords and CSV.
 - **App password** (optional) instead of the device passcode, with an optional
@@ -70,6 +291,26 @@ yet.
 - Wi-Fi sync finds the paired PC again after its address changes, and warns
   when a device brings back an older copy of the vault.
 
+## 0.4.11 (2026-11-06)
+
+### Desktop
+- **Developer pack (opt-in, Settings › Developer):** an SSH agent with per-use approval, Git commit signing setup,
+  the `lgk` command line (`status`, `list`, `read`, `totp`, `run`, `inject`), a scan for plain SSH keys and
+  `.env` files, and JWT decoding on API-key items. The Microsoft Store version does not include the `lgk` command line yet (the Developer page says so).
+- **Key file and YubiKey (optional)** as extra unlock factors next to the master password, and **security key
+  (FIDO2) unlock**.
+- **Backups to a public key:** scheduled backups no longer need the vault open to be written.
+- **Device removal and "I lost a device":** a signed removal notice erases the vault on the removed device.
+- **Security check:** logins on plain `http://` sites, and logins whose site offers two-factor codes or passkeys
+  you have not set up.
+- **Notes with Markdown**, a **Wi-Fi QR code** for phones, a **security-answer generator** and a printable
+  **emergency kit**.
+- **French**, the eleventh language.
+- **Sync status:** each device's "last synced" time now updates on every Wi-Fi and cloud folder sync, even
+  when nothing changed (cloud folder: within about 15 minutes).
+- **Connections:** the browser extension from the Chrome Web Store or Edge Add-ons no longer shows "Needs repair".
+- **Hardening:** lock on user switch and remote desktop disconnect, windows hidden from screen capture, stronger
+  key derivation (Argon2id 256 MiB) for new vaults and a one-time upgrade on unlock.
 ## 0.4.10 (2026-10-30)
 
 ### Desktop

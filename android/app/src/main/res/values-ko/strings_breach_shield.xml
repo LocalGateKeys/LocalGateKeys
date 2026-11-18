@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">확인된 사이트</string>
+    <string name="autofill_site_related">관련 사이트</string>
+    <string name="autofill_site_lookalike">유사 사이트</string>
+    <string name="autofill_site_new">새 사이트</string>
+    <string name="autofill_guard_title">올바른 사이트인가요?</string>
+    <string name="autofill_guard_body">%1$s은(는) 로그인이 저장된 %2$s과(와) 비슷하지만 다른 사이트입니다. 확실한 경우에만 계속하세요.</string>
+    <string name="autofill_guard_body_mixed">%1$s은(는) 서로 다른 문자 체계의 글자를 섞어 쓰며, 이는 흔한 피싱 수법입니다. 확실한 경우에만 계속하세요.</string>
+    <string name="autofill_guard_continue">%1$s에서 계속</string>
+    <string name="autofill_guard_go_back">뒤로 가기</string>
+    <string name="autofill_same_account_title">%1$s과(와) 같은 계정인가요?</string>
+    <string name="autofill_same_account_body">%1$s은(는) 로그인이 저장된 %2$s과(와) 이름은 같지만 끝부분이 다릅니다. 같은 회사인 경우에만 계속하세요.</string>
+    <string name="autofill_same_account_yes">같은 계정</string>
+    <string name="autofill_pick_other_site_body">이 로그인은 %1$s이(가) 아니라 %2$s에 저장되어 있습니다. 올바른 사이트라고 확신하는 경우에만 %1$s에서 입력하세요.</string>
+    <string name="autofill_pick_no_site_body">이 로그인에는 저장된 웹사이트가 없습니다. 올바른 사이트라고 확신하는 경우에만 %1$s에서 입력하세요.</string>
+    <string name="autofill_pick_scheme_unknown_body">브라우저가 %1$s이(가) 안전한 페이지(https)인지 알려 주지 않았습니다. 확실한 경우에만 입력하세요.</string>
+</resources>

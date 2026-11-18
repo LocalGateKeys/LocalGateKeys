@@ -56,6 +56,13 @@ class VaultEraserTest {
         v.store.commit(StoreChange(0, emptyMap(), emptyMap(), null))
         v.slots.write(Slot.INSTALL_ID, byteArrayOf(1, 2, 3))
         v.slots.write(Slot.PAIRED_PEER, byteArrayOf(4))
+        // What Leave sync kept (design 2026-11-17): erasing the vault drops it with the slots file.
+        v.slots.setKeptIdentity(
+            app.localgatekeys.core.sync.KeptIdentity(
+                "7c1d8e4f-0000-4000-8000-000000000001",
+                app.localgatekeys.core.lan.DeviceIdentity.generate(random = SystemRandomSource()), 4, 0,
+            ),
+        )
         v.close()
         settings.idleLock = IdleLock.NEVER
         settings.initials = "Ann Lee"
@@ -69,13 +76,14 @@ class VaultEraserTest {
         assertFalse(dirs.wrappedKey.exists())
         assertFalse(dirs.secrets.exists())
         assertFalse(key.exists())
-        for (k in AppSettings.Key.all - AppSettings.Key.ERASE_PENDING) {
+        for (k in AppSettings.Key.all - AppSettings.Key.keptByErase) {
             assertNull(k, prefs.getLong(k) ?: prefs.getString(k) ?: prefs.getBoolean(k))
         }
         assertTrue("the pending flag belongs to the lock model", settings.erasePending)
         assertTrue("never touches anything else", sibling.exists())
         // First run again: a new store with a new local key.
         val again = firstRun()
+        assertNull(again.slots.keptIdentity())
         assertTrue(again.store.load().records.isEmpty())
         assertEquals(0L, again.store.load().revision)
         assertNull(again.slots.read(Slot.INSTALL_ID))
@@ -92,6 +100,22 @@ class VaultEraserTest {
             x
         }
         assertEquals(listOf("fill-index"), e?.steps)
+    }
+
+    @Test fun extra_steps_all_run_and_failures_are_named() = runBlocking {
+        val ran = mutableListOf<String>()
+        VaultEraser(dirs, key, settings, extraSteps = listOf("reminders" to { ran += "r"; true }, "security-settings" to { ran += "s"; true })).erase()
+        assertEquals(listOf("r", "s"), ran)
+        val e = try {
+            VaultEraser(
+                dirs, key, settings,
+                extraSteps = listOf("reminders" to { false }, "security-settings" to { throw IllegalStateException("x") }, "ok" to { true }),
+            ).erase()
+            null
+        } catch (x: VaultEraseFailure) {
+            x
+        }
+        assertEquals(listOf("reminders", "security-settings"), e?.steps)
     }
 
     @Test fun erase_releases_every_persisted_folder_permission() = runBlocking {
@@ -157,6 +181,22 @@ class VaultEraserTest {
         key.failDelete = false
         e.erase() // missing items are not errors
         assertFalse(key.exists())
+    }
+
+    @Test fun erase_deletes_the_removal_watch_file() {
+        firstRun().close()
+        val watch = File(base, "Vault.sync-watch.json").also { it.writeText("{}") }
+        runBlocking { VaultEraser(dirs, key, settings, watchFile = watch).erase() }
+        assertFalse("an old notice must not erase a vault set up afresh", watch.exists())
+    }
+
+    @Test fun undeletable_watch_file_is_reported_as_sync_watch() {
+        firstRun().close()
+        val watch = File(base, "Vault.sync-watch.json").also { it.writeText("{}") }
+        val e = VaultEraser(dirs, key, settings, watchFile = watch)
+        e.deleteFile = { f -> if (f == watch) false else f.delete() }
+        assertEquals(listOf("sync-watch"), failure(e).steps)
+        assertFalse("the other steps ran", key.exists())
     }
 
     @Test fun store_directory_failure_is_reported() {

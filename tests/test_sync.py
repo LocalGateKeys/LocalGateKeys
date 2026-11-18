@@ -36,8 +36,6 @@ from localvault.sync import (
     encode_frame,
     encrypt_catalog_record,
     make_attachment_delta,
-    merge_records,
-    resolve_conflict,
 )
 
 
@@ -238,14 +236,6 @@ def test_manifest_delta_tombstone_conflicts_and_attachment_integrity():
     with pytest.raises(ManifestError):
         AttachmentDelta("att-1", attachment_bytes + b"tampered",
                          hashlib.sha256(attachment_bytes).hexdigest(), revision_a)
-
-    concurrent = SyncRecord("item-1", encrypt_catalog_record(b"remote", key, record_id="item-1"),
-                            Revision("device-b", 1))
-    result = merge_records([live], [concurrent])
-    assert result.has_conflicts and len(result.records) == 2
-    resolved = resolve_conflict(result, result.conflicts[0].conflict_id, choice="remote")
-    assert not resolved.has_conflicts
-    assert resolved.records[0].record_id == "item-1"
 
 
 def test_bounded_frames_endpoint_allowlist_and_explicit_transport_lifecycle():

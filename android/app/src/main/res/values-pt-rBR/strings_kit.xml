@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Kit de emergência</string>
+    <string name="kit_intro">Guarde esta página offline e separada do seu celular. Ela explica como voltar ao LocalGateKeys se você esquecer a senha do app.</string>
+    <string name="kit_device">Celular</string>
+    <string name="kit_date">Data</string>
+    <string name="kit_version">Versão do LocalGateKeys</string>
+    <string name="kit_app_password">Senha do app (escreva à mão ou guarde separada desta página):</string>
+    <string name="kit_phrase_heading">Frase de recuperação (%1$d palavras, em ordem)</string>
+    <string name="kit_steps_heading">Como voltar a entrar</string>
+    <string name="kit_step1">Na tela de bloqueio do LocalGateKeys, toque em “%1$s”.</string>
+    <string name="kit_step2">Digite as %1$d palavras acima, em ordem.</string>
+    <string name="kit_step3">Escolha uma nova senha do app. Suas senhas não mudam.</string>
+    <string name="kit_step4">Se o celular for perdido ou o cofre sumir, instale o LocalGateKeys em um celular novo e restaure seu último arquivo de backup ou sincronize pelo seu PC ou outro celular.</string>
+    <string name="kit_warning">Trate esta página como o seu cofre. Um PDF salvo com a frase de recuperação é tão sensível quanto o próprio cofre: guarde o papel trancado e apague qualquer PDF salvo quando terminar.</string>
+    <string name="kit_print_with_phrase">Imprimir kit de emergência com esta frase</string>
+    <string name="kit_print_blank">Imprimir kit de emergência (campos da frase em branco)</string>
+</resources>

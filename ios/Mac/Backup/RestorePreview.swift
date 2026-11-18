@@ -28,6 +28,8 @@ struct RestorePreview: Equatable, Sendable {
     let backupIsNewer: Bool?
     /// This Mac is in a sync group: the other devices get the restored vault on the next sync.
     let syncs: Bool
+    /// Collections shared on this Mac (sub-plan 07): their items stay as they are now, never restored from the backup.
+    var sharedCollections: Int = 0
 
     var items: Int { logins + otherItems }
 
@@ -53,6 +55,9 @@ struct RestorePreview: Equatable, Sendable {
         out.append(String(localized: "\(added) new items, \(replaced) items replaced by the backup's copy, \(unchanged) unchanged"))
         if removed > 0 { out.append(String(localized: "\(removed) items not in the backup move to Recently deleted")) }
         if syncs { out.append(String(localized: "Your other devices get the restored vault the next time they sync")) }
+        if sharedCollections > 0 {
+            out.append(String(localized: "Shared collections are not restored from the backup: their items stay as they are now"))
+        }
         return out
     }
 }

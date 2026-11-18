@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">Token</string>
+    <string name="jwt_alg">Algoritmo</string>
+    <string name="jwt_iss">Emissor</string>
+    <string name="jwt_sub">Assunto</string>
+    <string name="jwt_aud">Público</string>
+    <string name="jwt_iat">Emitido em</string>
+    <string name="jwt_nbf">Não antes de</string>
+    <string name="jwt_exp">Expira em</string>
+    <string name="jwt_expired">Expirado</string>
+    <string name="jwt_unchecked">Assinatura não verificada</string>
+    <string name="jwt_setExpiry">Definir validade a partir do token</string>
+    <string name="jwt_expirySet">Validade definida para %1$s.</string>
+    <string name="jwt_notSaved">Não foi possível definir a validade.</string>
+</resources>

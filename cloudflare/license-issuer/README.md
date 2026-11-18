@@ -17,7 +17,7 @@ LocalGateKeys Pro licences and lets the buyer retrieve them.
 | cron `0 4 * * *` | Play voided-purchases backstop |
 
 Licences are lifetime: every one is issued with `updates_until` 9999-12-31, so
-every build is covered and Pro removes the free 4-item limit for good.
+every build is covered and Pro removes the free 7-item limit for good.
 
 ## Retrieval token
 
@@ -79,19 +79,36 @@ KV keys in `LICENSES`:
 | `license:<token>` | signed licence bundle (JSON) |
 | `adjustment:<provider>:<adjustment id>` | refund / chargeback record (JSON, and as key metadata) |
 | `revoke:<license_id>:<adjustment id>` | same record, listed to build the revocation list |
+| `refund-state:<license_id>` | decisive refund / chargeback events of a web order; while the newest revokes, the licence page and `/recover` answer "refunded" (403) instead of the key |
+| `play:voided:cursor`, `play:voided:resume` | Play voided-purchases cron: next start time, and where a run that hit its page/time budget stopped (the next run continues; one alert per backlog) |
 | `recover-throttle:<HMAC(email)>` | `/recover` attempts this hour (`{count, reset}`, expires with the window) |
 
 ## Setup
 
+Zone rule kept outside this repo (recreate it if the zone is ever rebuilt): a
+Cloudflare rate-limiting rule named "Licence recovery limit", matching
+`http.request.uri.path eq "/recover"` on the licence host, 3 requests per 10
+seconds per IP, action Block. The KV throttles in `index.js` (5 per hour per
+email/order, 20 per hour per IP for store claims) work without it, but they
+are not atomic. Sales alerts (`SALES_NTFY_TOPIC`) are sent in the background
+(`ctx.waitUntil`) and de-duplicated per sale/refund with short-lived
+`alerted:*` keys in the `LICENSES` KV namespace (no new binding).
+
 `workers_dev` and `preview_urls` are off; the Worker is reachable only on its
 custom domain `licenses.localgatekeys.app` (the `routes` entry in `wrangler.jsonc`).
+wrangler is pinned (exact version, lockfile) as a devDependency of this
+package and of `cloudflare/update-feed`: run `npm ci` here once and every
+`npx wrangler ...` below resolves to that version, never to whatever npm
+serves that day. Raise the pin deliberately (`npm install --save-dev
+--save-exact wrangler@<version>`, review, commit the lockfile).
+
 The KV namespace and D1 database below already exist and their ids are in
 `wrangler.jsonc`; the commands are for a fresh setup.
 
 ```
 npx wrangler kv namespace create LICENSES   # put the id into wrangler.jsonc
 npx wrangler d1 create lgk-licence-claims   # put the database_id into wrangler.jsonc
-npx wrangler d1 migrations apply lgk-licence-claims --remote   # 0001 claims, 0002 store claims
+npx wrangler d1 migrations apply lgk-licence-claims --remote   # 0001 claims, 0002 store claims, 0003 event_at
 npx wrangler secret put LICENSE_PRIVATE_KEY # PKCS8 DER of the licence key, base64
 npx wrangler secret put WEBHOOK_SECRET      # signing secret from the payment provider
 npx wrangler secret put PADDLE_API_KEY      # Paddle only: reads customers
@@ -117,8 +134,9 @@ Set the non-secret settings as plain `vars` in `wrangler.jsonc`, not with
 **Sales alerts on your phone (optional).** Install the ntfy app, subscribe to a long random topic name
 (e.g. `lgk-sales-` plus 20 random characters; anyone who knows it can read the alerts), then
 `npx wrangler secret put SALES_NTFY_TOPIC` with that name. Every App Store `ONE_TIME_CHARGE`, `REFUND` and
-`REVOKE` notification and every Play purchase or voided purchase then sends a push (price and storefront for
-Apple; sandbox ones are marked). A failed push never fails the webhook.
+`REVOKE` notification, every Play purchase or voided purchase, and every Paddle sale, full refund or
+chargeback of an issued licence then sends a push (price and storefront for Apple, sandbox ones marked; the
+total paid for Paddle). A failed push never fails the webhook.
 
 `POST /appstore/claim` with `{"jws": "<signedTransactionInfo>"}` (StoreKit 2
 `jwsRepresentation`) answers `200 {"licence": "LGK1-..."}`, `400 Invalid`

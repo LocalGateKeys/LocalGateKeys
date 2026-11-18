@@ -42,16 +42,25 @@ import app.localgatekeys.android.editor.SaveResult
 import app.localgatekeys.android.ui.theme.AuroraBackground
 import app.localgatekeys.android.ui.theme.LgkTheme
 import app.localgatekeys.android.unlock.LocalActivityMonitor
+import app.localgatekeys.android.trash.PhoneTrash
+import app.localgatekeys.android.trash.UndoToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
  * Rename or delete a passkey (port of `PasskeyEditView` in `ios/App/Editor/PasskeyEditor.swift`). [onDone] gets SAVED
- * when the store changed (reload and close) or UNCHANGED (close).
+ * when the store changed (reload and close) or UNCHANGED (close). With [trash] a delete goes to Recently deleted.
  */
 @Composable
-fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, onCancel: () -> Unit) {
+fun PasskeyEditScreen(
+    model: PasskeyRenameModel,
+    onDone: (SaveResult) -> Unit,
+    onCancel: () -> Unit,
+    /** Recently deleted and its Undo toast (EditorSeams.trash / undo); null: the delete is immediate. */
+    trash: PhoneTrash? = null,
+    undo: UndoToast? = null,
+) {
     val txt = rememberTxt()
     val c = LgkTheme.colors
     val title by model.title.collectAsStateWithLifecycle()
@@ -115,7 +124,12 @@ fun PasskeyEditScreen(model: PasskeyRenameModel, onDone: (SaveResult) -> Unit, o
     if (confirmDelete) {
         ConfirmDelete(txt.s(PasskeyRenameModel.DELETE_TITLE), txt.s(PasskeyRenameModel.DELETE_MESSAGE), onDismiss = { confirmDelete = false }) {
             confirmDelete = false
-            run(model::delete) { r -> if (r == SaveResult.SAVED) onDone(SaveResult.SAVED) }
+            run({ model.delete(trash?.mover) }) { r ->
+                if (r == SaveResult.SAVED) {
+                    if (trash != null && undo != null) trash.offerUndo(undo)
+                    onDone(SaveResult.SAVED)
+                }
+            }
         }
     }
     if (alreadyRemoved) {

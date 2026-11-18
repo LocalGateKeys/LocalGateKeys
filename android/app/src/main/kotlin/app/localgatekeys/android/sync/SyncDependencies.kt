@@ -1,7 +1,10 @@
 package app.localgatekeys.android.sync
 
 import app.localgatekeys.core.sync.AttachmentVault
+import app.localgatekeys.android.backup.BackupPasswordCheck
 import app.localgatekeys.android.pro.LicenseKeys
+import app.localgatekeys.core.keyring.Keyring
+import app.localgatekeys.core.keyring.ShareKeyring
 import app.localgatekeys.android.vault.SecretSlots
 import app.localgatekeys.android.vault.VaultCounterStore
 import app.localgatekeys.core.lan.DeviceIdentity
@@ -50,6 +53,30 @@ data class SyncDependencies(
     val io: CoroutineDispatcher = Dispatchers.IO,
     /** The open vault's attachment files (attachment sync); null: documents are neither received nor published. */
     val attachments: AttachmentVault? = null,
+    /** The removal watch file (device removal); null: none is kept (tests). */
+    val removalWatch: RemovalWatchFile? = null,
+    /**
+     * A folder run reported a verified `removal-notice`. Called on the coordinator's thread and must not wait for the
+     * coordinator (the app launches the erase check in its own scope: the erase ends this coordinator first).
+     */
+    val onRemovalNotice: () -> Unit = {},
+    /** The sync password rule for a new sync password (desktop `_check_password`: 12+ characters, Strong). */
+    val strongSyncPassword: (String) -> Boolean = { Keyring.isStrongSyncPassword(it, BackupPasswordCheck.estimator) },
+    /**
+     * The share password rule (sub-plan 07; the sync password rule: 12+ characters, Strong): what `ShareGroups.create`
+     * and `ShareGroups.removeMember` get, never a rule that lets every password through.
+     */
+    val strongSharePassword: (String) -> Boolean = { ShareKeyring.isStrongPassword(it, BackupPasswordCheck.estimator) },
+    /**
+     * The unlock's hello counter source ([live]): the Wi-Fi host answers with it too, so hello counters keep increasing
+     * across both directions. null: no host (tests).
+     */
+    val counters: HelloCounterSource? = null,
+    /**
+     * "Sync automatically" (Settings, default on). Off: the unlock, the return to the app and an edit start no run;
+     * "Sync now" and pull-to-refresh still do.
+     */
+    val autoSync: () -> Boolean = { true },
 ) {
     /** Never shows the slots, keys or licence keys. */
     override fun toString(): String = "SyncDependencies(deviceName=$deviceName, editDebounceMillis=$editDebounceMillis)"
@@ -66,6 +93,9 @@ data class SyncDependencies(
             folders: FolderOpening = FolderOpening.UNAVAILABLE,
             localSubnet: () -> IPv4Subnet? = { null },
             attachments: AttachmentVault? = null,
+            removalWatch: RemovalWatchFile? = null,
+            onRemovalNotice: () -> Unit = {},
+            autoSync: () -> Boolean = { true },
         ): SyncDependencies {
             val clock = SystemClock()
             val random = SystemRandomSource()
@@ -73,6 +103,7 @@ data class SyncDependencies(
             return SyncDependencies(
                 slots = slots, folders = folders, lan = lan(counters, random, clock), random = random, clock = clock,
                 licenseKeys = LicenseKeys.production, localSubnet = localSubnet, attachments = attachments,
+                removalWatch = removalWatch, onRemovalNotice = onRemovalNotice, counters = counters, autoSync = autoSync,
             )
         }
     }

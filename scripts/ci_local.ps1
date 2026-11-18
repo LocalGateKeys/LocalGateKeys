@@ -3,9 +3,14 @@ Runs the GitHub CI jobs (.github/workflows/ci.yml) on this PC, plus the suites
 CI does not cover yet (web UI, Android core, licence Worker).
 
   .\scripts\ci_local.ps1               # every Windows job except the build
-  .\scripts\ci_local.ps1 -Build        # also the build-smoke job (PyInstaller, slow)
+  .\scripts\ci_local.ps1 -Build        # also the build-smoke job (PyInstaller frozen executables the MSIX packages, slow; never the retired installer)
   .\scripts\ci_local.ps1 -Only node,kotlin
   .\scripts\ci_local.ps1 -Snapshot     # also the public-snapshot privacy check
+  .\scripts\ci_local.ps1 -SkipSecurity # leave out pip-audit / npm audit / bandit (needs network)
+
+The security job (scripts/security_scan.py) fails on any known vulnerability in
+the Python locks, high/critical npm advisories, and bandit HIGH findings, minus
+the accepted ones in scripts/security_ignore.txt.
 
 The Swift job needs the Mac: scripts/ci_local_mac.sh. The pre-push hook in
 .githooks runs this script; enable it once with
@@ -15,10 +20,12 @@ as in CI).
 #>
 [CmdletBinding()]
 param(
-    # Comma-separated jobs: python, node, webui, kotlin, worker (default: all).
+    # Comma-separated jobs: python, node, webui, kotlin, worker, dotnet, security (default: all).
     [string]$Only = "",
     [switch]$Build,
     [switch]$Snapshot,
+    # Skip the security scanners (they query PyPI and the npm registry).
+    [switch]$SkipSecurity,
     # Use the environment as-is (no locked pip / npm ci install).
     [switch]$NoInstall
 )
@@ -30,7 +37,7 @@ $env:PIP_DISABLE_PIP_VERSION_CHECK = "1"
 $env:PYTHONUTF8 = "1"
 $results = [System.Collections.Generic.List[object]]::new()
 $Jobs = @($Only -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ })
-$unknown = @($Jobs | Where-Object { $_ -notin @("python", "node", "webui", "kotlin", "worker") })
+$unknown = @($Jobs | Where-Object { $_ -notin @("python", "node", "webui", "kotlin", "worker", "dotnet", "security") })
 if ($unknown.Count -gt 0) { throw "Unknown job(s): $($unknown -join ', ')" }
 
 function Want([string]$job) { $Jobs.Count -eq 0 -or $Jobs -contains $job }
@@ -56,6 +63,12 @@ function Step([string]$name, [string]$dir, [scriptblock]$body, [switch]$Advisory
     $results.Add([pscustomobject]@{ Step = $name; Result = $state; Seconds = [int]$watch.Elapsed.TotalSeconds })
 }
 
+# Always runs (cheap): no browser-profile files may be tracked (a committed Edge profile once leaked cookies).
+Step "repo: no browser-profile files tracked" $Root {
+    $bad = @(git ls-files | Where-Object { ($_ -split '/')[-1] -in @("Local State", "Login Data", "Cookies", "Web Data") })
+    if ($bad.Count -gt 0) { $bad | ForEach-Object { Write-Host "tracked browser-profile file: $_" -ForegroundColor Red }; $global:LASTEXITCODE = 1 }
+}
+
 if (Want "python") {
     if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
         throw "Virtual environment is missing. Create it with: py -3 -m venv .venv"
@@ -69,7 +82,9 @@ if (Want "python") {
     Step "python: ruff (advisory)" $Root { & $Python -m ruff check src tests scripts --quiet --statistics } -Advisory
     Step "python: mypy (advisory)" $Root { & $Python -m mypy } -Advisory
     Step "python: i18n catalogs" $Root { & $Python scripts/i18n_check.py }
-    Step "python: pytest" $Root { & $Python -m pytest -q -p no:cacheprovider }
+    # Parallel when pytest-xdist is installed (dev extra): about 3 minutes instead of 10+.
+    $xdist = @(); & $Python -c "import importlib.util, sys; sys.exit(importlib.util.find_spec('xdist') is None)"; if ($LASTEXITCODE -eq 0) { $xdist = @("-n", "auto") }
+    Step "python: pytest" $Root { & $Python -m pytest -q -p no:cacheprovider @xdist }
 }
 
 if (Want "node") {
@@ -92,19 +107,49 @@ if (Want "webui") {
 
 if (Want "kotlin") {
     Step "kotlin: lgk-core and app unit tests" (Join-Path $Root "android") {
-        .\gradlew.bat -q --console=plain :lgk-core:test :app:testDebugUnitTest
+        # --no-daemon: a Gradle daemon outlives the build (hours) and keeps the caller's output pipe open,
+        # so `git push` from the pre-push hook never returned when its output was piped.
+        .\gradlew.bat --no-daemon -q --console=plain :lgk-core:test :app:testDebugUnitTest
     }
 }
 
 if (Want "worker") {
     foreach ($w in @(@("license-issuer", "licence Worker"), @("update-feed", "update Worker"))) {
         $dir = Join-Path $Root "cloudflare\$($w[0])"
-        # The Workers have no dependencies (node:test only), so there may be no lock to install from.
+        # Both Workers pin wrangler as a devDependency (exact version, lockfile); install it so `npx wrangler` is the pinned one.
         if (-not $NoInstall -and (Test-Path -LiteralPath (Join-Path $dir "package-lock.json"))) {
             Step "worker: npm ci ($($w[0]))" $dir { npm ci --no-audit --no-fund --loglevel=error }
         }
         Step "worker: $($w[1]) tests" $dir { npm test }
     }
+}
+
+if (Want "dotnet") {
+    # The Windows passkey provider (windows-passkey-provider/). The .NET 10 SDK may be a per-user install that is
+    # not on PATH; prefer it, since global.json asks for 10.0.x.
+    $dotnet = Join-Path $env:LOCALAPPDATA "Microsoft\dotnet10\dotnet.exe"
+    if (Test-Path -LiteralPath $dotnet -PathType Leaf) {
+        $env:DOTNET_ROOT = Split-Path $dotnet
+    } else {
+        $dotnet = "dotnet"
+    }
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+    $env:DOTNET_NOLOGO = "1"
+    # Locked restore, as GitHub CI (CI=true): a drifted packages.lock.json fails here too.
+    Step "dotnet: locked restore" $Root {
+        & $dotnet restore windows-passkey-provider\LocalGateKeys.PasskeyProvider.sln --locked-mode
+    }
+    Step "dotnet: passkey provider tests" $Root {
+        & $dotnet test windows-passkey-provider\LocalGateKeys.PasskeyProvider.sln -c Release --no-restore
+    }
+}
+
+if ((Want "security") -and -not $SkipSecurity) {
+    if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
+        throw "Virtual environment is missing. Create it with: py -3 -m venv .venv"
+    }
+    # pip-audit and bandit come from the hash-pinned dev lock (installed by the python job).
+    Step "security: pip-audit, npm audit, bandit" $Root { & $Python -I scripts/security_scan.py }
 }
 
 if ($Build) {
@@ -116,7 +161,8 @@ if ($Build) {
         $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
         icacls $out /inheritance:r /grant:r "*${sid}:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" | Out-Null
     }
-    Step "build-smoke: frozen executables" $Root {
+    # Only the frozen executables build_msix_package.ps1 packages (there is no installer).
+    Step "build-smoke: frozen executables (MSIX input)" $Root {
         .\scripts\build_personal_installer.ps1 -SkipInstaller -OutputRoot $out
     }
 }

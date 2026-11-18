@@ -10,15 +10,7 @@ enum RemoteDeletes {
     /// Live logins and typed items in `before` that `records`/`meta` no longer hold live, as trash rows.
     static func trashRows(before: StoreSnapshot, records: [String: JSONValue], meta: [String: SyncMeta],
                           now: Int64) -> [LocalData.TrashRow] {
-        var rows: [LocalData.TrashRow] = []
-        for (id, wrapper) in before.records.sorted(by: { $0.key < $1.key }) where before.meta[id]?.deleted != true {
-            guard records[id] == nil || meta[id]?.deleted == true, case .object(let w) = wrapper,
-                  w["ns"] == .string(Namespace.entry.rawValue) || w["ns"] == .string(Namespace.item.rawValue),
-                  case .object? = w["record"], let record = AttachmentDocuments.trashRecord(.object(w)),
-                  let row = try? LocalData.TrashRow(record: record, deletedAt: now) else { continue }
-            rows.append(row)
-        }
-        return rows
+        RemovedItems.trashRows(before: before, records: records, meta: meta, now: now)   // one rule with share runs
     }
 
     /// Appends `rows` to Recently deleted. Throws when it can't be saved.
@@ -46,7 +38,11 @@ enum RemoteDeletes {
         let rows = trashRows(before: before, records: change.records, meta: change.meta, now: now)
         guard !rows.isEmpty else { try commit(change); return }
         nonisolated(unsafe) let local = local
-        try onMain { try save(rows, to: local) }
+        do { try onMain { try save(rows, to: local) } } catch let e as LocalDataError { throw e } catch {
+            // Always a `LocalDataError`, so a caller tells a Recently deleted failure from the store's own errors
+            // (`ShareTrashingStore`, 5g review R3).
+            throw LocalDataError.invalid("Recently deleted could not be saved: \(error)")
+        }
         do { try commit(change) } catch {
             try? onMain { try remove(rows, from: local) }
             throw error
@@ -54,10 +50,6 @@ enum RemoteDeletes {
     }
 
     private static func onMain<T: Sendable>(_ body: @MainActor () throws -> T) throws -> T {
-        if Thread.isMainThread { return try MainActor.assumeIsolated(body) }
-        nonisolated(unsafe) let body = body
-        nonisolated(unsafe) var result: Result<T, Error>!
-        DispatchQueue.main.sync { result = Result { try MainActor.assumeIsolated(body) } }
-        return try result.get()
+        try MainThreadHop.run(body)
     }
 }

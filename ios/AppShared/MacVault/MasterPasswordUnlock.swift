@@ -61,8 +61,11 @@ public enum MasterPasswordUnlock {
 
     /// Runs Argon2 off the calling actor; throws `MasterKeyError.wrongPassword` for a wrong password. Callers
     /// pass the outcome to `recordSuccess` or `recordWrongPassword` (both use the same shared throttle).
-    public static func deriveKey(_ file: MasterKeyFile, password: String) async throws -> [UInt8] {
-        try await Task.detached(priority: .userInitiated) { try file.open(password: password) }.value
+    /// A key file with factors (`MasterKeyFile` v2) takes them from `factors` first: a missing or wrong one throws
+    /// `FactorError.required` / `.mismatch` before Argon2 runs, and is never recorded as a wrong password.
+    public static func deriveKey(_ file: MasterKeyFile, password: String,
+                                 factors: FactorSecrets = FactorSecrets()) async throws -> [UInt8] {
+        try await Task.detached(priority: .userInitiated) { try await file.open(password: password, factors: factors) }.value
     }
 
     /// Records a wrong password at `now` (taken after Argon2, so the wait runs from when the attempt ended)
@@ -98,14 +101,22 @@ public enum MasterPasswordUnlock {
     /// The local key from the recovery phrase, under the shared throttle (Windows `unlock_with_recovery_phrase`):
     /// the throttle is checked first; a malformed phrase throws its `RecoveryPhraseError` without counting (nothing
     /// secret was tried); a well-formed phrase that does not open the wrapper counts as a failed attempt.
-    public static func openWithRecovery(directory: URL, phrase: String, now: () -> Date) throws -> (key: [UInt8], file: MasterKeyFile) {
+    ///
+    /// `held` (the duress password's hold on this vault, sub-plan 08): a right phrase is refused as a wrong one after
+    /// the same work, and counted like one (no faster answer, no different delay).
+    public static func openWithRecovery(directory: URL, phrase: String, now: () -> Date,
+                                        held: Bool = false) throws -> (key: [UInt8], file: MasterKeyFile) {
         try checkThrottle(directory: directory, now: now())
         var entropy = try BIP39.entropy(from: phrase)
         defer { entropy.resetBytes(in: 0..<entropy.count) }
         let file = try readKeyFile(directory: directory)
         guard let wrapper = file.recovery else { throw RecoveryPhraseError("This vault has no recovery phrase") }
         do {
-            let key = try RecoveryWrapper.open(wrapper, entropy: entropy)
+            var key = try RecoveryWrapper.open(wrapper, entropy: entropy)
+            if held {
+                for i in key.indices { key[i] = 0 }
+                throw MasterKeyError.wrongPassword   // counted below, exactly as a phrase that does not open
+            }
             recordSuccess(directory: directory, now: now())
             return (key, file)
         } catch {

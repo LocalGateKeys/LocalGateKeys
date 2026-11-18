@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">비상 키트</string>
+    <string name="kit_intro">이 페이지는 오프라인으로, 휴대폰과 따로 보관하세요. 앱 비밀번호를 잊었을 때 LocalGateKeys에 다시 들어가는 방법이 적혀 있습니다.</string>
+    <string name="kit_device">휴대폰</string>
+    <string name="kit_date">날짜</string>
+    <string name="kit_version">LocalGateKeys 버전</string>
+    <string name="kit_app_password">앱 비밀번호(직접 적거나 이 페이지와 따로 보관하세요):</string>
+    <string name="kit_phrase_heading">복구 문구(%1$d단어, 순서대로)</string>
+    <string name="kit_steps_heading">다시 들어가는 방법</string>
+    <string name="kit_step1">LocalGateKeys 잠금 화면에서 “%1$s”을(를) 탭하세요.</string>
+    <string name="kit_step2">위의 %1$d단어를 순서대로 입력하세요.</string>
+    <string name="kit_step3">새 앱 비밀번호를 정하세요. 저장된 비밀번호는 바뀌지 않습니다.</string>
+    <string name="kit_step4">휴대폰을 잃어버렸거나 보관함이 없어졌다면, 새 휴대폰에 LocalGateKeys를 설치한 뒤 최신 백업 파일을 복원하거나 PC 또는 다른 휴대폰에서 동기화하세요.</string>
+    <string name="kit_warning">이 페이지를 보관함처럼 다루세요. 복구 문구가 담긴 PDF는 보관함 자체만큼 민감합니다. 종이는 잠가서 보관하고, 저장한 PDF는 다 쓴 뒤 삭제하세요.</string>
+    <string name="kit_print_with_phrase">이 문구로 비상 키트 인쇄</string>
+    <string name="kit_print_blank">비상 키트 인쇄(문구 칸 비움)</string>
+</resources>

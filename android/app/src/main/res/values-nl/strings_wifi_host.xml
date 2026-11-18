@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">QR-code tonen</string>
+    <string name="sync_host_copy_code">Codetekst kopiëren</string>
+    <string name="sync_host_code">Code: %1$s</string>
+    <string name="sync_host_expires_in">Verloopt over %1$s</string>
+    <string name="sync_host_expired">Verlopen</string>
+    <string name="sync_host_accept_hint">Kies alleen Accepteren als het andere apparaat precies dezelfde code toont.</string>
+    <string name="sync_host_decline_hint">Kies anders Weigeren.</string>
+    <string name="sync_host_undo_hint">Herken je het niet, kies dan Ongedaan maken.</string>
+    <string name="sync_host_other_pc_hint">Gebruik op een andere pc Deelnemen met een code en plak in plaats daarvan de codetekst.</string>
+    <string name="sync_host_copied">Codetekst gekopieerd.</string>
+    <string name="sync_host_closed">Deze koppelcode is gesloten.</string>
+    <string name="sync_host_not_waiting">Dat verzoek wacht niet meer. Toon een nieuwe code om het opnieuw te proberen.</string>
+    <string name="sync_host_declined">Geweigerd. Het apparaat is niet toegevoegd. Toon een nieuwe code om het opnieuw te proberen.</string>
+    <string name="sync_host_not_listening">Zet eerst wifi-synchronisatie aan.</string>
+    <string name="sync_host_confirm">%1$s wil aansluiten. Kies alleen Accepteren als het de code %2$s toont.</string>
+    <string name="sync_host_adding">%1$s toevoegen…</string>
+    <string name="sync_host_adding_button">Toevoegen…</string>
+    <string name="sync_host_paired_key">Gekoppeld: %1$s (sleutel %2$s). %3$s</string>
+    <string name="sync_host_paired_plain">Gekoppeld: %1$s. %2$s</string>
+    <string name="sync_host_paired_title">Gekoppeld: %1$s</string>
+    <string name="sync_host_declines_in">Weigert automatisch over %1$d s.</string>
+    <string name="sync_host_stopped">Wifi-synchronisatie is gestopt. Controleer het netwerk en schakel het opnieuw in.</string>
+    <string name="sync_host_accept">Accepteren</string>
+    <string name="sync_host_decline">Weigeren</string>
+    <string name="sync_host_undo">Herstellen</string>
+    <string name="sync_host_keep">Bewaren</string>
+    <string name="sync_host_followed">Luistert nu op %1$s (adres gewijzigd).</string>
+    <string name="sync_host_scan_title">Scan deze code met LocalGateKeys op het andere apparaat</string>
+    <string name="sync_host_qr_description">Koppel-QR-code</string>
+    <string name="sync_host_add_named">%1$s toevoegen?</string>
+    <string name="sync_host_add_device">Dit apparaat toevoegen?</string>
+    <string name="sync_host_fingerprint">Sleutelvingerafdruk: %1$s</string>
+    <string name="sync_host_paired_heading">Gekoppelde apparaten</string>
+    <string name="sync_host_no_peers">Nog geen apparaten gekoppeld.</string>
+    <string name="sync_host_remove">Verwijderen…</string>
+    <string name="sync_host_toggle">Wifi-synchronisatie op deze telefoon hosten</string>
+    <string name="sync_host_intro">Andere apparaten op hetzelfde wifi-netwerk kunnen met deze telefoon koppelen en synchroniseren zolang LocalGateKeys hier open en ontgrendeld is.</string>
+    <string name="sync_host_listens">Deze telefoon luistert op %1$s.</string>
+    <string name="sync_host_free">Met het gratis abonnement luistert deze telefoon alleen terwijl er een koppelcode wordt getoond en 2 minuten na Nu synchroniseren.</string>
+    <string name="sync_host_no_wifi">Verbind deze telefoon met wifi om wifi-synchronisatie te hosten.</string>
+    <string name="sync_host_pair_hint">Beide apparaten moeten op hetzelfde wifi-netwerk zitten.</string>
+    <string name="sync_host_this_phone">Deze telefoon</string>
+    <string name="sync_host_remove_confirm">%1$s uit wifi-synchronisatie verwijderen? Het synchroniseert niet meer met deze telefoon, maar houdt wat het al heeft.</string>
+    <string name="sync_host_could_not_listen">Wifi-synchronisatie kon niet starten op deze telefoon. Controleer het netwerk en probeer het opnieuw.</string>
+</resources>

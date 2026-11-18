@@ -11,12 +11,14 @@
   let qr = $state(null);
   let error = $state('');
   let busy = $state(false);
+  let expiresHours = $state(24); // sub-plan 12: 1 h or 1 day (the 24 h lifetime is the ceiling)
+  let oneUse = $state(false);
 
   $effect(() => () => { pending = null; qr = null; call('share_cancel'); });
 
   async function start() {
     busy = true; error = '';
-    const r = await call('share_start', item);
+    const r = await call('share_start', item, expiresHours, oneUse);
     busy = false;
     if (r.ok) { pending = r; qr = null; } else if (r.error.code !== 'cancelled') error = r.error.message;
   }
@@ -25,6 +27,12 @@
     error = '';
     const r = await call('share_save_file', pending.handle);
     if (r.ok) toast(r.status); else if (r.error.code !== 'cancelled') error = r.error.message;
+  }
+
+  async function revoke() {
+    error = '';
+    const r = await call('share_revoke', pending.handle);
+    if (r.ok) toast(r.message); else error = r.error.message;
   }
 
   async function showQr() {
@@ -41,6 +49,15 @@
   </header>
   <p class="muted">{t('shareSheet.intro')}</p>
   {#if !pending}
+    <div class="options">
+      <label>{t('shareSheet.expiresIn')}
+        <select bind:value={expiresHours}>
+          <option value={1}>{t('shareSheet.oneHour')}</option>
+          <option value={24}>{t('shareSheet.oneDay')}</option>
+        </select>
+      </label>
+      <label><input type="checkbox" bind:checked={oneUse} /> {t('shareSheet.oneUse')}</label>
+    </div>
     <footer><Button label={t('common.cancel')} onclick={onclose} />
       <Button label={t('shareSheet.create')} variant="primary" {busy} busyLabel={t('shareSheet.encrypting')} onclick={start} /></footer>
   {:else}
@@ -61,7 +78,7 @@
         <figcaption class="muted">{t('shareSheet.qrCaption')}</figcaption></figure>
     {/if}
     <p class="muted" role="status">{t('shareSheet.sendNote', { count: pending.expires_hours, number: formatNumber(pending.expires_hours) })}</p>
-    <footer><Button label={t('common.done')} onclick={onclose} /></footer>
+    <footer><Button label={t('shareSheet.revoke')} onclick={revoke} /><Button label={t('common.done')} onclick={onclose} /></footer>
   {/if}
   {#if error}<p class="error" role="alert">{error}</p>{/if}
 </div>
@@ -81,4 +98,5 @@
   .qr img { background: #fff; padding: 8px; border-radius: 8px; image-rendering: pixelated; max-width: 100%; }
   .error { color: var(--danger); margin: 0; }
   footer { display: flex; justify-content: flex-end; gap: 8px; }
+  .options { display: flex; gap: 16px; align-items: center; margin: 8px 0; font-size: 13px; }
 </style>

@@ -1,0 +1,37 @@
+{
+  "note": "LGKSHARE v1.1 (sub-plan 12): generated with share.seal (fixed salt/nonce/id), checked by tests/test_share_expiry.py, ShareExpiryTest.kt and ShareExpiryTests.swift; open at now -> expires_at; open at expires_at -> expired.",
+  "opens": [
+    {
+      "name": "short-expiry-one-use",
+      "package": "{\"ciphertext\":\"hYyWeeUe9qqSEqVzpGaRlYPTNF4xYelsQTYDXAVAUhKWEarXlxgQgCtfkRTOwV8LXrrd2zc+TD7FZNF1ev/6KMHx0oIRdXUp51UH3DSqGW5xT20tuoUMZWoYVEkHxvXHwhVawCSOf8sGBkDVW3Zfrc2OJVhuuLOgiethSuwbSHudzyS6XoxKYUvjXSOQfFUplLlYAcm1Y9TJISNo6ewbfw4N4OcEIp4=\",\"format\":\"localgatekeys-share\",\"id\":\"00000000-0000-4000-8000-000000000001\",\"kdf\":{\"memory_cost_kib\":19456,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"AAECAwQFBgcICQoLDA0ODw==\",\"time_cost\":2},\"nonce\":\"AAECAwQFBgcICQoL\",\"sender\":\"Vector PC\",\"version\":1}",
+      "code": "maple river onion seven lamp quote",
+      "now": 1800000000,
+      "id": "00000000-0000-4000-8000-000000000001",
+      "expires_at": 1800003600,
+      "one_use": true,
+      "item": {
+        "kind": "note",
+        "title": "Vector note",
+        "fields": {
+          "text": "synthetic"
+        }
+      }
+    },
+    {
+      "name": "long-expiry-capped",
+      "package": "{\"ciphertext\":\"hYyWeeUe9qqSEqVzpGaRlYPTNF4xYelsQTYDXAVAUhKWEarXlxgQgCtfkRzLw18LXrrd2zc+TD7FZNF1ev/6KMHx0oIRdXUp51UH3DSqGW5xT20tuoUMZWoYVEkHxvXHwhVawCSOf8sGBkDVW3Zfrc2OJVhuuLOgiethSuwCQ2yx0zixXowPbvDoGnPK5RTNCRddQdIjz9s=\",\"format\":\"localgatekeys-share\",\"id\":\"00000000-0000-4000-8000-000000000002\",\"kdf\":{\"memory_cost_kib\":19456,\"name\":\"argon2id\",\"parallelism\":1,\"salt\":\"AAECAwQFBgcICQoLDA0ODw==\",\"time_cost\":2},\"nonce\":\"AAECAwQFBgcICQoL\",\"sender\":\"Vector PC\",\"version\":1}",
+      "code": "maple river onion seven lamp quote",
+      "now": 1800000000,
+      "id": "00000000-0000-4000-8000-000000000002",
+      "expires_at": 1800086400,
+      "one_use": false,
+      "item": {
+        "kind": "note",
+        "title": "Vector note",
+        "fields": {
+          "text": "synthetic"
+        }
+      }
+    }
+  ]
+}

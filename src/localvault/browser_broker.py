@@ -7,7 +7,8 @@ import secrets
 import time
 from typing import Any
 
-from .access_policy import may_sign_in, normalized_policy
+from .access_policy import enforced_policy, may_sign_in, normalized_policy
+from .agent_gate import agents_may_use, site_passkeys
 from .app.ui_port import safe_confirm
 from .bridge_status import record_warning
 from .identity_fill import (
@@ -35,14 +36,15 @@ from .origin import (
     normalize_url,
     origin_of,
 )
-from .passkey_broker import PASSKEY_ACTIONS, PASSKEY_PROTOCOL, PasskeyBrokerMixin
+from .passkey_broker import PASSKEY_ACTIONS, PASSKEY_PROTOCOL, PasskeyBrokerMixin, validate_passkey_context
+from .passkey_system import SystemPasskeyMixin
 from .session_guard import StaleSession
 from .i18n import t
 from .vault import ItemLimitReached, VaultError
 from .version import APP_VERSION, PROTOCOL_VERSION
 
 
-class BrowserBroker(PasskeyBrokerMixin):
+class BrowserBroker(PasskeyBrokerMixin, SystemPasskeyMixin):
     # Broker-issued gesture nonces: 16 random bytes (32 hex chars), single use,
     # bound to origin + browser context, expiring after GESTURE_NONCE_TTL seconds.
     GESTURE_NONCE_TTL = 30
@@ -58,6 +60,8 @@ class BrowserBroker(PasskeyBrokerMixin):
 
     def dispatch_remote(self, request: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(request, dict): return {"ok": False, "error": "invalid_request"}
+        # A page's passkey confirm/discard counts from the moment it arrives, not when the vault lock frees up.
+        self._passkey_note_outcome(request)
         stamp = self.guard.stamp()
         until = time.monotonic() + 90
         def run() -> dict[str, Any]:
@@ -79,11 +83,14 @@ class BrowserBroker(PasskeyBrokerMixin):
             if not self.settings.browser_enabled:
                 return {"ok": False, "error": "integration_disabled"}
             try:
-                identity_action = isinstance(action, str) and action.endswith("_identity_browser")
+                # The extension's timeout cancel carries only origin/context/session/grant fields: a cancel
+                # releases nothing, so it is accepted without the identity/card protocol fields.
+                timeout_cancel = action in {"cancel_identity_browser", "cancel_card_browser"}
+                identity_action = isinstance(action, str) and action.endswith("_identity_browser") and not timeout_cancel
                 if identity_action and request.get("identity_protocol") != IDENTITY_FILL_PROTOCOL:
                     return {"ok": False, "error": "version_mismatch",
                             "message": "Update and reload the identity-fill extension."}
-                card_action = isinstance(action, str) and action.endswith("_card_browser")
+                card_action = isinstance(action, str) and action.endswith("_card_browser") and not timeout_cancel
                 if card_action and request.get("card_protocol") != CARD_FILL_PROTOCOL:
                     return {"ok": False, "error": "version_mismatch",
                             "message": "Update and reload the card-fill extension."}
@@ -95,7 +102,11 @@ class BrowserBroker(PasskeyBrokerMixin):
                 context = request.get("context", "")
                 if not isinstance(context, str) or not 16 <= len(context) <= 8192:
                     raise ValueError("Missing browser document context")
-                if identity_action or card_action or passkey_action:
+                if passkey_action:
+                    # The same four-element context, plus the browser-read
+                    # top origin for a get from a cross-origin frame.
+                    validate_passkey_context(request, context, origin)
+                elif identity_action or card_action:
                     # Identity and card release have a stricter, structured
                     # context than the legacy credential actions. The
                     # extension's sender metadata is the source of
@@ -121,7 +132,14 @@ class BrowserBroker(PasskeyBrokerMixin):
                             "begin_totp_browser": self._begin_totp_browser,
                             "get_totp_browser": self._release_totp_browser,
                             "passkey_create_browser": self._passkey_create_browser,
-                            "passkey_get_browser": self._passkey_get_browser}
+                            "passkey_get_browser": self._passkey_get_browser,
+                            "passkey_confirm_browser": self._passkey_confirm_browser,
+                            "passkey_discard_browser": self._passkey_discard_browser,
+                            "classify_site_browser": self._classify_site_browser,
+                            "new_site_username_browser": self._new_site_username_browser,
+                            "fill_grant_browser": self._fill_grant_browser,
+                            "site_logins_browser": self._site_logins_browser,
+                            "passkey_hint_browser": self._passkey_hint_browser}
                 handler = handlers.get(action)
                 if handler is None: return {"ok": False, "error": "unsupported_action"}
                 gate = self._GESTURE_GATES.get(action)
@@ -258,7 +276,7 @@ class BrowserBroker(PasskeyBrokerMixin):
         # base_domain / starts_with), ranked exact-origin first.  The service
         # strips passwords, history, TOTP and recovery codes before returning.
         for entry in self.session.items.find_web_candidates(page_url):
-            policy = normalized_policy(entry.get("policy"))
+            policy = enforced_policy(entry)
             if policy["fill"] == "never":
                 continue
             rank = match_rank(entry_urls(entry), page_url)
@@ -277,6 +295,62 @@ class BrowserBroker(PasskeyBrokerMixin):
                 "session_id": lease.token, "profile": {"name": self.active_profile.name, "color": self.active_profile.color},
                 **self._gesture_fields(origin, context)}
 
+    def _fill_grant_browser(self, request, origin, context):
+        """An AI agent's approved sign-in (agent_gate): the sign-in page asks whether a grant is armed for it.
+
+        The extension asks only after the user clicked the LocalGateKeys icon in a sign-in field. Only an armed,
+        unexpired, unused grant whose approved hosts include this page's exact host takes effect; it is used up
+        here. The reply is a normal login offer (choices, broker grant, gesture nonce) limited to the logins the
+        user approved for the agent; the user picks one in the picker and the page fills through ``get_browser``.
+        Strict logins (master password every time) and fill-never logins are never offered, nor a login the owner
+        stopped allowing for agents, nor one that has a passkey for the site by now (its password is never filled
+        for an agent). A passkey grant fills nothing: the page is told to use the site's passkey sign-in.
+        """
+        service = getattr(self, "agent_gate_service", None)
+        gate = getattr(service, "gate", None)
+        if gate is None or not self._session_available():
+            return {"ok": False, "error": "not_found"}
+        page_url = self._page_url(request, origin)
+        grant = gate.take_for_origin(origin)
+        if grant is None:
+            if gate.passkey_pending(origin):
+                return {"ok": False, "error": "agent_passkey", "message": t("agents.page.usePasskey")}
+            return {"ok": False, "error": "not_found"}
+        lease = self.guard.lease()
+        passkeys = self.session.item_service.passkey_metadata()
+        choices = []
+        for entry in self.session.items.find_web_candidates(page_url):
+            if str(entry.get("id")) not in grant.entry_ids or not agents_may_use(entry):
+                continue
+            if site_passkeys(entry.get("username"), grant.hosts, grant.domain, passkeys):
+                continue
+            policy = enforced_policy(entry)
+            if policy["fill"] == "never" or policy["require_master_password"]:
+                continue
+            rank = match_rank(entry_urls(entry), page_url)
+            if rank is None:
+                continue
+            choices.append({"entry_id": str(entry["id"]), "username": str(entry.get("username", "")),
+                            "label": str(entry.get("label", "")), "favorite": bool(entry.get("favorite", False)),
+                            "require_master_password": False, "match": MATCH_MODES[rank]})
+        choices.sort(key=lambda e: (MATCH_MODES.index(e["match"]), not e["favorite"],
+                                    e["label"].casefold(), e["username"].casefold()))
+        if not choices:
+            gate.finish(grant, "none")
+            return {"ok": False, "error": "not_found"}
+        self.require_lease(lease)
+        login_grant = self.guard.grant(origin, context, [e["entry_id"] for e in choices], kind="login")
+        # The broker grant the page uses to fetch the picked password: that release is logged with the login's id.
+        fills = self.__dict__.setdefault("_agent_fill_grants", {})
+        fills[login_grant] = grant
+        while len(fills) > 16:
+            fills.pop(next(iter(fills)))
+        gate.finish(grant, "picker")  # the user picks the login with a click in the picker
+        return {"ok": True, "agent": True, "choices": choices, "grant": login_grant, "origin": origin,
+                "session_id": lease.token,
+                "profile": {"name": self.active_profile.name, "color": self.active_profile.color},
+                **self._gesture_fields(origin, context)}
+
     def _permission(self, request, origin, context, *, release=False, submit=False, kind="login"):
         # The grant kind is checked on every use: a 2FA grant never releases a
         # password (get_browser) and a login grant never releases a code.
@@ -293,7 +367,7 @@ class BrowserBroker(PasskeyBrokerMixin):
         if not entry or entry["kind"] != "web" or not matches(entry_urls(entry), page_url):
             if entry: entry.clear()
             raise StaleSession()
-        policy = normalized_policy(entry.get("policy"))
+        policy = enforced_policy(entry)
         if policy["fill"] == "never": return {"ok": False, "error": "fill_disabled"}
         if policy["require_master_password"] and not self.reauthenticate(t("broker.confirmMasterCredential"), lease):
             return {"ok": False, "error": "user_cancelled"}
@@ -304,11 +378,22 @@ class BrowserBroker(PasskeyBrokerMixin):
             self._store_site_icon(entry["id"], request)
         credential = {"entry_id": entry["id"], "username": entry["username"], "origin": origin}
         if not username_only: credential["password"] = entry["password"]
+        agent_grant = None if username_only else self.__dict__.get("_agent_fill_grants", {}).pop(request["grant"], None)
+        if agent_grant is not None:
+            gate = getattr(getattr(self, "agent_gate_service", None), "gate", None)
+            if gate is not None:
+                gate.password_filled(agent_grant, str(entry["id"]))
         result = {"ok": True, "credential": credential,
                   "sign_in": not username_only and may_sign_in(entry, self.settings.fill_and_sign_in)}
         entry.clear()
         self._touch_secret()
         return result
+
+    def _travel_hidden(self) -> frozenset[str]:
+        """Ids travel mode hides on this device: never offered or released to a page (contract 2.3)."""
+        from .travel import hidden_id_set
+
+        return hidden_id_set(self.session)
 
     def _begin_totp_browser(self, request, origin, context):
         """List exact-origin logins that have 2FA; metadata only, no codes."""
@@ -317,13 +402,15 @@ class BrowserBroker(PasskeyBrokerMixin):
         if not self.ensure_unlocked(): return {"ok": False, "error": "user_cancelled"}
         lease = self.guard.lease()
         choices = []
-        for summary in self.session.summaries():
+        hidden = self._travel_hidden()
+        for summary in self.session.summaries():  # type: ignore[attr-defined]  # host attribute
             if summary.kind != "web" or summary.scope.get("origin") != origin: continue
+            if str(summary.id) in hidden: continue
             entry = self.session.get_entry(summary.id)
             try:
                 totp = entry.get("totp")
                 if not isinstance(totp, dict) or not totp.get("secret"): continue
-                if normalized_policy(entry.get("policy"))["fill"] == "never": continue
+                if enforced_policy(entry)["fill"] == "never": continue
                 choices.append({"entry_id": summary.id, "username": summary.username, "label": summary.label,
                                 "favorite": summary.favorite})
             finally:
@@ -357,10 +444,12 @@ class BrowserBroker(PasskeyBrokerMixin):
         try:
             if not entry or entry["kind"] != "web" or entry["scope"].get("origin") != origin:
                 raise StaleSession()
+            if str(entry.get("id")) in self._travel_hidden():
+                raise StaleSession()
             totp = entry.get("totp")
             if not isinstance(totp, dict) or not totp.get("secret"):
                 return {"ok": False, "error": "totp_not_found"}
-            policy = normalized_policy(entry.get("policy"))
+            policy = enforced_policy(entry)
             if policy["fill"] == "never": return {"ok": False, "error": "fill_disabled"}
             if policy["require_master_password"] and not self.reauthenticate(t("broker.confirmMasterCode"), lease):
                 return {"ok": False, "error": "user_cancelled"}
@@ -402,7 +491,10 @@ class BrowserBroker(PasskeyBrokerMixin):
             return {"ok": False, "error": "user_cancelled"}
         lease = self.guard.lease()
         choices = []
+        hidden = self._travel_hidden()
         for summary in self.session.item_service.metadata_summaries(kinds={"identity"}):
+            if str(summary.id) in hidden:
+                continue
             view = self.session.item_service.identity_release_view(summary.id)
             choices.append({
                 "entry_id": summary.id,
@@ -445,6 +537,8 @@ class BrowserBroker(PasskeyBrokerMixin):
             raise StaleSession("The identity selection is malformed")
         fields = normalize_selected_fields(request.get("fields"))
         lease = self.guard.lease()
+        if entry_id in self._travel_hidden():
+            raise StaleSession("The identity is hidden by travel mode")
         view = self.session.item_service.identity_release_view(entry_id, expected_revision=revision)
         if set(fields) - set(view["fields"]):
             raise StaleSession("The selected identity fields changed")
@@ -495,6 +589,8 @@ class BrowserBroker(PasskeyBrokerMixin):
         manager = self._identity_release_manager()
 
         def resolve() -> dict[str, Any]:
+            if entry_id in self._travel_hidden():
+                raise StaleSession("The identity is hidden by travel mode")
             return self.session.item_service.identity_release_view(
                 entry_id, expected_revision=revision,
             )
@@ -535,7 +631,10 @@ class BrowserBroker(PasskeyBrokerMixin):
         lease = self.guard.lease()
         choices = []
         items = self.session.item_service
+        hidden = self._travel_hidden()
         for summary in items.metadata_summaries(kinds={"card"}):
+            if str(summary.id) in hidden:
+                continue
             view = items.card_fill_view(summary.id)
             try:
                 metadata = card_fill_metadata(view)
@@ -573,6 +672,8 @@ class BrowserBroker(PasskeyBrokerMixin):
             raise StaleSession("The card selection is malformed")
         fields = normalize_selected_card_fields(request.get("fields"))
         lease = self.guard.lease()
+        if entry_id in self._travel_hidden():
+            raise StaleSession("The card is hidden by travel mode")
         view = self.session.item_service.card_fill_view(entry_id, expected_revision=revision)
         if any(not view["fields"].get(field) for field in fields):
             raise StaleSession("The selected card fields changed")
@@ -633,6 +734,8 @@ class BrowserBroker(PasskeyBrokerMixin):
         manager = self._card_release_manager()
 
         def resolve() -> dict[str, Any]:
+            if entry_id in self._travel_hidden():
+                raise StaleSession("The card is hidden by travel mode")
             return self.session.item_service.card_fill_view(entry_id, expected_revision=revision)
 
         values = manager.release(
@@ -784,17 +887,18 @@ class BrowserBroker(PasskeyBrokerMixin):
         """
         username = self._validate_remote_text(request.get("username"), "username", 512, True)
         password = self._validate_remote_text(request.get("password"), "password", 4096, False)
-        if not username:
-            # A password-only step does not identify which account changed.
-            # Fail closed so automatic save cannot create a nameless entry or
-            # surface a misleading save prompt. Explicit manual save remains
-            # available through save_browser, where the user can choose the
-            # account name deliberately.
-            password = ""
-            return {"ok": True, "stored": False, "status": "username_required"}
         tab_id = self._browser_tab_id(context)
         status = "deferred"
-        if self._session_available():
+        if not username:
+            # A password-only step (a change-password form) does not say which account changed. It is kept like
+            # any capture (same store, 90 s expiry, one per tab and origin) but only as "update_only": the page
+            # offers this site's saved logins and the save must name one of them (entry_id). It never creates a
+            # login (see _save_pending_browser) and the chosen login keeps its own username.
+            if self._session_available() and not self._probe_allowed(origin):
+                password = ""
+                return self._probe_limited()
+            status = "update_only"
+        elif self._session_available():
             if not self._probe_allowed(origin):
                 password = ""
                 return self._probe_limited()
@@ -935,10 +1039,29 @@ class BrowserBroker(PasskeyBrokerMixin):
         # Saved for the origin it was typed on, also when the sign-in landed on
         # another subdomain of the same site; the confirmation names that origin.
         origin = key[1]
+        # Save panel extras: the username the user edited (replaces the captured one) and the existing
+        # login to update instead of the one the app would pick. Both are checked before any vault access.
+        edited = request.get("username")
+        if edited is not None and (not isinstance(edited, str) or len(edited) > 512 or "\0" in edited):
+            return {"ok": False, "error": "invalid_credential"}
+        target = request.get("entry_id")
+        if target is not None and (not isinstance(target, str) or not target or len(target) > 128):
+            return {"ok": False, "error": "invalid_entry_id"}
         if not self.ensure_unlocked():
             return {"ok": False, "error": "user_cancelled"}
         lease = self.guard.lease()
-        username, password = item["username"], item["password"]
+        refusal, lookalike_host = self._lookalike_save_refusal(origin, request)
+        if refusal is not None:
+            return refusal  # the capture stays pending for the confirmed retry
+        username, password = (item["username"] if edited is None else edited), item["password"]
+        if not item["username"]:
+            # A password-only capture updates a login the user picked; it never creates one (nameless or named by
+            # the page), and the chosen login keeps its own username whatever the page sends.
+            if target is None:
+                return {"ok": False, "error": "entry_required"}
+            return self._save_pending_into(item, key, origin, target, None, password, lease, lookalike_host)
+        if target is not None:
+            return self._save_pending_into(item, key, origin, target, username, password, lease, lookalike_host)
         status = self._submission_status(origin, username, password)
         if status == "exact":
             item["password"] = ""
@@ -949,7 +1072,9 @@ class BrowserBroker(PasskeyBrokerMixin):
             full = self._item_limit_full()
             if full is not None:
                 return full
-        approved = self._confirm_browser_save(origin, username, updating=updating)
+        target = self._update_target(origin, username) if updating else None
+        approved = self._confirm_browser_save(origin, username, updating=updating, lookalike_host=lookalike_host,
+                                              target=target)
         self.require_lease(lease)
         if not approved:
             return {"ok": False, "error": "user_cancelled"}
@@ -963,6 +1088,95 @@ class BrowserBroker(PasskeyBrokerMixin):
         self.refresh_entries()
         self._touch_secret()
         return {"ok": True, "status": written}
+
+    def _site_login_ids(self, origin: str) -> set[str]:
+        """Ids of the website logins whose URL rows match ``origin`` (the capture's or the tab's)."""
+        ids: set[str] = set()
+        for entry in self.session.items.find_web_candidates(origin):
+            if match_rank(entry_urls(entry), origin) is not None:
+                ids.add(str(entry["id"]))
+        return ids
+
+    def _save_pending_into(self, item, key, origin, entry_id, username, password, lease, lookalike_host):
+        """Update the login the user chose in the save panel with the pending capture.
+
+        The login must match the capture's origin, as the fill candidates do; anything else is refused with
+        ``entry_not_for_site`` and the capture stays pending. The desktop confirmation still asks.
+        ``username`` None (a password-only capture) keeps the login's own username."""
+        if entry_id not in self._site_login_ids(origin):
+            return {"ok": False, "error": "entry_not_for_site"}
+        entry = self.session.get_entry(entry_id)
+        keep_username = username is None
+        try:
+            if keep_username:
+                username = str(entry.get("username") or "") if entry else ""
+            same = bool(entry) and entry.get("username") == username and entry.get("password") == password
+            target = (str(entry.get("label") or ""), str(entry.get("username") or "")) if entry else ("", "")
+        finally:
+            if entry:
+                entry.clear()
+        store = self._pending_store()
+        if same:
+            item["password"] = ""
+            store.pop(key, None)
+            return {"ok": True, "status": "existing"}
+        approved = self._confirm_browser_save(origin, username, updating=True, lookalike_host=lookalike_host,
+                                              target=target)
+        self.require_lease(lease)
+        if not approved:
+            return {"ok": False, "error": "user_cancelled"}
+        if entry_id not in self._site_login_ids(origin):  # deleted or changed while the dialog was open
+            return {"ok": False, "error": "entry_not_for_site"}
+        if not self.session.update_entry_fields(entry_id, username=None if keep_username else username,
+                                                password=password):
+            return {"ok": False, "error": "entry_not_for_site"}
+        item["password"] = ""
+        store.pop(key, None)
+        self.refresh_entries()
+        self._touch_secret()
+        return {"ok": True, "status": "updated", "entry_id": entry_id}
+
+    def _passkey_hint_browser(self, request, origin, context):
+        """Popup hint: ``supported`` = the site is in the bundled passkey directory, ``has_passkey`` = the vault
+        already holds a passkey for the origin's registrable domain. Unlocked only (never prompts), no secrets."""
+        from . import site_features
+
+        if not self._session_available():
+            return {"ok": False, "error": "locked"}
+        if not self._probe_allowed(origin):  # a content script could ask it repeatedly (finding W-L2)
+            return self._probe_limited()
+        host = _split_url(origin)[1]
+        try:
+            domain = base_domain(host)
+        except (OriginError, ValueError):
+            domain = ""
+        return {"ok": True, "supported": site_features.load().supports(host, "passkey"),
+                "has_passkey": bool(domain) and domain in site_features.passkey_domains(self.session)}
+
+    def _site_logins_browser(self, request, origin, context):
+        """The popup's list for the active tab's top-frame origin: titles and usernames, never secrets.
+
+        Only while unlocked (it never prompts); at most 20; fill-never logins are left out, as in the in-page
+        picker. Filling a chosen login reuses ``begin_browser`` + ``get_browser`` from the tab's own frame."""
+        if not self._session_available():
+            return {"ok": False, "error": "locked"}
+        # Any top-frame content script can send this (the native host cannot tell the popup from a page), so it
+        # shares the per-site probe budget of check_browser: no unbounded username listing (finding W-L2).
+        if not self._probe_allowed(origin):
+            return self._probe_limited()
+        page_url = self._page_url(request, origin)
+        rows = []
+        for entry in self.session.items.find_web_candidates(page_url):
+            if enforced_policy(entry)["fill"] == "never":
+                continue
+            rank = match_rank(entry_urls(entry), page_url)
+            if rank is None:
+                continue
+            rows.append((rank, not entry.get("favorite", False), {
+                "entry_id": str(entry["id"]), "title": str(entry.get("label", ""))[:256],
+                "username": str(entry.get("username", ""))[:512]}))
+        rows.sort(key=lambda r: (r[0], r[1], r[2]["title"].casefold(), r[2]["username"].casefold()))
+        return {"ok": True, "logins": [row for _rank, _fav, row in rows[:20]]}
 
     @staticmethod
     def _item_limit_reply(limit: int) -> dict[str, Any]:
@@ -980,16 +1194,71 @@ class BrowserBroker(PasskeyBrokerMixin):
             return self._item_limit_reply(limit)
         return None
 
-    def _confirm_browser_save(self, origin: str, username: str, *, updating: bool) -> bool:
+    def _lookalike_save_refusal(self, origin: str, request: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+        """Review R1: classify the save origin in the app, after unlock, before any write.
+
+        A capture made while the vault was locked had no verdict, so the page
+        showed no guard. On a lookalike the save is refused with the verdict
+        (``lookalike_site``) until the extension has asked the guard question and
+        sends ``lookalike_confirmed``; an older extension simply cannot save there.
+        Returns (refusal or None, imitated host for the desktop confirmation;
+        "" for a mixed-script address that imitates no saved site).
+        """
+        verdict = self._site_verdict(origin)
+        if verdict.get("kind") != "lookalike":
+            return None, None
+        host = verdict.get("matched") or ""
+        if request.get("lookalike_confirmed") is True:
+            return None, host
+        refusal = {key: value for key, value in verdict.items() if key != "ok"}
+        return {"ok": False, "error": "lookalike_site", **refusal}, None
+
+    def _update_target(self, origin: str, username: str) -> tuple[str, str] | None:
+        """``(title, current username)`` of the login an automatic password update replaces."""
+        entries = self.session.find_web(origin)
+        try:
+            for entry in entries:
+                if entry.get("username") == username:
+                    return str(entry.get("label") or ""), str(entry.get("username") or "")
+        finally:
+            for entry in entries:
+                entry.clear()
+        return None
+
+    @staticmethod
+    def _target_lines(target: tuple[str, str] | None, username: str) -> str:
+        """The login being overwritten, named in the trusted dialog (finding W-L1): the page picks ``entry_id``."""
+        if target is None:
+            return ""
+        title, current = (" ".join(str(part).split())[:200] for part in target)
+        lines = f"Login to update: {title or '(untitled)'}\nIts current username: {current or '(none)'}\n"
+        if current != username:
+            lines += f"The username will change from {current or '(none)'} to {username or '(none)'}.\n"
+        return lines
+
+    def _confirm_browser_save(self, origin: str, username: str, *, updating: bool,
+                              lookalike_host: str | None = None, target: tuple[str, str] | None = None) -> bool:
         """The trusted desktop confirmation for every browser save (SECURITY.md).
 
         The in-page Save button lives in a page the site controls (it can be
         imitated or clickjacked), so a new login is confirmed here with the
-        canonical origin and username, exactly like a replaced password.
+        canonical origin and username, exactly like a replaced password. An update names the login it
+        overwrites (``target``: title and current username).
         """
+        if lookalike_host is not None:
+            # The user already answered the in-page guard; the trusted dialog says it again.
+            profile = self.active_profile.name  # type: ignore[attr-defined]  # host attribute
+            warning = (f"Warning: {origin} looks like {lookalike_host}, which you saved, but it is a different site."
+                       if lookalike_host else
+                       f"Warning: {origin} mixes letters from different alphabets, a common phishing trick.")
+            return bool(safe_confirm(self.ui, "Save login on a lookalike site?",
+                f"Profile: {profile}\nOrigin: {origin}\nUsername: {username or '(none)'}\n"
+                f"{self._target_lines(target, username)}\n"
+                f"{warning} Save this login for it anyway?"))
         if updating:
             return bool(safe_confirm(self.ui, "Update password?",
-                f"Profile: {self.active_profile.name}\nOrigin: {origin}\nUsername: {username}\n\n"
+                f"Profile: {self.active_profile.name}\nOrigin: {origin}\nUsername: {username}\n"
+                f"{self._target_lines(target, username)}\n"
                 "Replace the stored password? The previous password is kept in encrypted history."))
         return bool(safe_confirm(self.ui, "Save new login?",
             f"Profile: {self.active_profile.name}\nOrigin: {origin}\nUsername: {username or '(none)'}\n\n"
@@ -1062,6 +1331,88 @@ class BrowserBroker(PasskeyBrokerMixin):
         # ``match`` stays in the reply for older extensions and is always false.
         return {"ok": True, "locked": False, "match": False, "status": status, "prompt": show}
 
+    def _saved_web_origins(self) -> list[str]:
+        """Every URL row of every saved web login (the legacy origin when a login has none)."""
+        saved: dict[str, None] = {}  # insertion-ordered: the order breaks ties in lookalike.classify
+        for summary in self.session.summaries():  # type: ignore[attr-defined]  # host attribute
+            if summary.kind != "web":
+                continue
+            for row in entry_urls({"scope": summary.scope}):
+                saved.setdefault(row["url"], None)
+        return list(saved)
+
+    def _forget_site_verdicts(self) -> None:
+        """Lock hook: drop every saved origin the phishing shield parsed and cached."""
+        from . import lookalike
+
+        lookalike.clear_cache()
+
+    def _classify_site_browser(self, request, origin, context):
+        """Verified / related / lookalike / new for the page origin (phishing shield).
+
+        Computed here with the vault's saved origins, which never leave the app: the
+        reply is the verdict, plus for a lookalike the host it imitates (the guard
+        panel names it) and, for ``other-suffix``, an opaque id of the origin pair
+        so the extension can remember a "same account" answer. A locked vault is
+        never unlocked for this; the extension then shows no state.
+        """
+        from . import lookalike
+
+        if not self._session_available():
+            lookalike.clear_cache()
+            return {"ok": True, "locked": True}
+        return self._site_verdict(origin)
+
+    def _site_verdict(self, origin: str) -> dict[str, Any]:
+        """The classify_site_browser reply for an unlocked vault (see above)."""
+        from . import lookalike
+
+        verdict = lookalike.classify(origin, self._saved_web_origins())
+        reply: dict[str, Any] = {"ok": True, "kind": verdict.kind, "reason": verdict.reason}
+        if verdict.kind == "lookalike":
+            matched = None
+            if verdict.matched is not None:
+                try:
+                    raw = verdict.matched if "://" in verdict.matched else f"https://{verdict.matched}"
+                    matched = _split_url(raw)[1]
+                except OriginError:
+                    matched = None
+            reply["matched"] = matched
+            if verdict.reason == "other-suffix" and verdict.matched is not None:
+                # Keyed with the vault's data key: guessing pairs from a list of
+                # popular sites tells a reader of the browser profile nothing.
+                reply["pair"] = self.session.site_pair_id(origin, verdict.matched)
+        return reply
+
+    def _new_site_username_browser(self, request, origin, context):
+        """Ruling T4b: is the username typed on a new site saved for another site?
+
+        The extension asks only on the user's own submit of a username the user
+        typed, once per page. The answer is a bare yes/no, never which site, and
+        only for a page whose verdict is ``unknown`` (no saved or similar site).
+        It is a username oracle in principle, so it needs the user-gesture flag,
+        an unlocked vault (never prompts) and the per-site probe budget.
+        """
+        from . import lookalike
+
+        if request.get("user_gesture") is not True:
+            return {"ok": False, "error": "user_gesture_required"}
+        username = request.get("username")
+        if not isinstance(username, str) or not username.strip() or len(username) > 512 or "\x00" in username:
+            raise ValueError("username is invalid")
+        if not self._session_available():
+            return {"ok": True, "elsewhere": False}
+        if not self._probe_allowed(origin):
+            return self._probe_limited()
+        if lookalike.classify(origin, self._saved_web_origins()).kind != "unknown":
+            return {"ok": True, "elsewhere": False}
+        wanted = username.strip().casefold().encode("utf-8")
+        found = False
+        for summary in self.session.summaries():
+            if summary.kind == "web" and hmac.compare_digest(summary.username.strip().casefold().encode("utf-8"), wanted):
+                found = True
+        return {"ok": True, "elsewhere": found}
+
     def _store_site_icon(self, entry_id, request) -> None:
         """Keep the page icon the extension read from the browser's own cache.
 
@@ -1092,6 +1443,8 @@ class BrowserBroker(PasskeyBrokerMixin):
             if not self._session_id_matches(request.get("session_id"), self.guard.lease()): raise StaleSession()
         if not self.ensure_unlocked(): return {"ok": False, "error": "user_cancelled"}
         lease = self.guard.lease()
+        refusal, lookalike_host = self._lookalike_save_refusal(origin, request)
+        if refusal is not None: return refusal
         status = self._submission_status(origin, username, password)
         if status == "exact":
             self._clear_pending_for_context(origin, context)
@@ -1101,7 +1454,9 @@ class BrowserBroker(PasskeyBrokerMixin):
             full = self._item_limit_full()
             if full is not None:
                 return full
-        approved = self._confirm_browser_save(origin, username, updating=updating)
+        target = self._update_target(origin, username) if updating else None
+        approved = self._confirm_browser_save(origin, username, updating=updating, lookalike_host=lookalike_host,
+                                              target=target)
         self.require_lease(lease)
         if not approved: return {"ok": False, "error": "user_cancelled"}
         written = self._write_browser_save(origin, username, password, request)

@@ -1,0 +1,8 @@
+{
+  "note": "share_revoke.make_revoke with Ed25519 seed bytes 1..32, now=1800000000; checked by ShareRevokeTest.kt",
+  "seed": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+  "public_key": "ebVWLo/mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ=",
+  "signer": "vector-pc-device",
+  "package_id": "00000000-0000-4000-8000-000000000001",
+  "notice": "{\"format\":1,\"issued_at\":1800000000,\"package_id\":\"00000000-0000-4000-8000-000000000001\",\"sig\":\"QxPgyoIzGPcmHguUdxAs8cJt0ZwObXY+ox+DVS7PDmULZFn+jEK1gVbuUsS2nN/92ieJ4cA7ysocmXUymMXSCA==\",\"signer\":\"vector-pc-device\"}"
+}

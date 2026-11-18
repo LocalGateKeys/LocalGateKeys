@@ -34,6 +34,10 @@ class TrashService:
             rows.append({"id": str(row["id"]), "source": "typed", "title": _safe_display(str(row.get("title") or "")),
                          "kind_label": kind_label(str(row.get("kind") or "")), "username": "",
                          "deleted_at": int(row.get("deleted_at") or 0)})
+        from ..travel import hidden_id_set
+
+        hidden = hidden_id_set(session)
+        rows = [r for r in rows if r["id"] not in hidden]
         rows.sort(key=lambda r: r["deleted_at"], reverse=True)
         return rows
 

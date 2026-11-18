@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">Brak HTTPS</string>
+    <string name="security_expl_http">Te loginy używają nieszyfrowanego adresu. Sprawdź go i przełącz na https://, jeśli witryna to obsługuje.</string>
+    <string name="security_cat_passkey">Dostępny klucz dostępu</string>
+    <string name="security_expl_passkey">Te witryny obsługują klucze dostępu, czyli bezpieczniejszy sposób logowania. Zapisz klucz dla każdej z nich.</string>
+</resources>

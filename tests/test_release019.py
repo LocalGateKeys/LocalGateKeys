@@ -355,16 +355,17 @@ def test_browser_pending_save_rejects_late_same_origin_document(vault):
     assert b.request('pending_browser', context=json.dumps([10, 'document-B', 'https://example.test', 'operation-pending-3'])) == {'ok': True, 'pending': False}
 
 
-def test_browser_pending_save_requires_an_unambiguous_username():
-    # The fail-closed path runs before vault access, so keep this regression
-    # test independent of pytest's restricted temporary-directory fixture.
+def test_browser_password_only_capture_is_kept_as_update_only():
+    # A change-password form has no username: the capture is kept (same store and expiry) so the page can offer
+    # this site's logins; saving it needs one of them (tests/test_scan_browser_travel_fixes.py).
     b = Broker(None)
     result = b.request(
         'capture_browser', username='', password='Submitted-test-password-4!',
         context=json.dumps([11, 'document-A', 'https://example.test', 'operation-save-4'])
     )
-    assert result == {'ok': True, 'stored': False, 'status': 'username_required'}
-    assert not getattr(b, '_browser_pending_saves', {})
+    assert result['ok'] and result['stored'] and result['status'] == 'update_only'
+    (item,) = b._browser_pending_saves.values()
+    assert item['username'] == '' and item['status'] == 'update_only'
 
 
 def test_browser_pending_save_can_be_cleared_for_logout():

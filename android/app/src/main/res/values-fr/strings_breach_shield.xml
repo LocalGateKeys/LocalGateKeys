@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Site vérifié</string>
+    <string name="autofill_site_related">Site associé</string>
+    <string name="autofill_site_lookalike">Site imitateur</string>
+    <string name="autofill_site_new">Nouveau site</string>
+    <string name="autofill_guard_title">Est-ce le bon site ?</string>
+    <string name="autofill_guard_body">%1$s ressemble à %2$s, où votre identifiant est enregistré, mais c’est un autre site. Continuez seulement si vous en êtes sûr.</string>
+    <string name="autofill_guard_body_mixed">%1$s mélange des lettres de différents alphabets, une ruse courante d’hameçonnage. Continuez seulement si vous en êtes sûr.</string>
+    <string name="autofill_guard_continue">Continuer sur %1$s</string>
+    <string name="autofill_guard_go_back">Revenir en arrière</string>
+    <string name="autofill_same_account_title">Est-ce le même compte que sur %1$s ?</string>
+    <string name="autofill_same_account_body">%1$s porte le même nom que %2$s, où votre identifiant est enregistré, mais avec une autre extension. Continuez seulement s’il s’agit de la même entreprise.</string>
+    <string name="autofill_same_account_yes">Même compte</string>
+    <string name="autofill_pick_other_site_body">Cet identifiant est enregistré pour %2$s, pas pour %1$s. Remplissez-le sur %1$s seulement si vous êtes sûr que c’est le bon site.</string>
+    <string name="autofill_pick_no_site_body">Cet identifiant n’a aucun site web enregistré. Remplissez-le sur %1$s seulement si vous êtes sûr que c’est le bon site.</string>
+    <string name="autofill_pick_scheme_unknown_body">Le navigateur n’a pas indiqué si %1$s est une page sécurisée (https). Remplissez-le seulement si vous en êtes sûr.</string>
+</resources>

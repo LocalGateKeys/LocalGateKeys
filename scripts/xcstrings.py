@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOGS = ROOT / "src" / "localvault" / "assets" / "i18n"
-LANGS = ("es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl")
+LANGS = ("es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl", "fr")
 _PH = re.compile(r"\{([^{}]*)\}")
 
 # Placeholder names formatted as integers (%lld); every other name is an object (%@).
@@ -233,9 +233,9 @@ QUANTITIES = {
     "pl": ("one", "few", "many", "other"),
     "ja": ("other",), "ko": ("other",), "zh-Hans": ("other",),
     "es": ("one", "other"), "it": ("one", "other"), "pt-BR": ("one", "other"),
-    "de": ("one", "other"), "nl": ("one", "other"),
+    "de": ("one", "other"), "nl": ("one", "other"), "fr": ("one", "other"),
 }
-EXTRA_MANY = {"es", "it", "pt-BR"}
+EXTRA_MANY = {"es", "it", "pt-BR", "fr"}
 
 
 def specs(text: str) -> list[str]:

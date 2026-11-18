@@ -55,6 +55,7 @@ function makeEnv({ FETCH, ...extra } = {}) {
     LICENSES: fakeKv(),
     CLAIMS: fakeD1(),
     LICENSE_PRIVATE_KEY: TEST_PRIVATE_PKCS8_B64,
+    LICENSE_KEY_ID_OVERRIDE: "1fb2572acef33ca2", // the test key; production pins 9f76e21ed03c0482
     WEBHOOK_SECRET: SECRET,
     PADDLE_API_KEY: "pdl_test",
     PRODUCT_IDS: "777,pro_1", // the default lemonEvent / paddleEvent products
@@ -172,14 +173,18 @@ test("Lemon Squeezy: other events and unpaid orders are ignored with 200", async
   assert.equal((await lemon(env, lemonEvent({ status: "pending" }))).status, 200);
   const other = JSON.stringify({ meta: { event_name: "order_refunded" }, data: { id: "5", attributes: {} } });
   assert.equal((await lemon(env, other)).status, 200);
-  assert.equal(env.LICENSES.data.size, 0);
+  // A refund for an order not issued yet is recorded (so a later issue is revoked), but no licence is issued.
+  const keys = [...env.LICENSES.data.keys()];
+  assert.ok(keys.length > 0);
+  assert.ok(keys.every((k) => !k.startsWith("license:") && !k.startsWith("order:")), keys.join(","));
 });
 
 test("malformed JSON is 400 and oversized body is 413", async () => {
   const env = makeEnv();
   const junk = "{not json";
   assert.equal((await lemon(env, junk)).status, 400);
-  const big = JSON.stringify({ pad: "x".repeat(70 * 1024) });
+  // Webhooks take up to 256 KiB (scan 2026-11-15 F6); past that the body is refused.
+  const big = JSON.stringify({ pad: "x".repeat(257 * 1024) });
   assert.equal((await lemon(env, big)).status, 413);
 });
 
@@ -251,7 +256,7 @@ test("Paddle: other events are ignored; duplicate order does not refetch or reis
   assert.equal(calls.length, 1);
 });
 
-test("Paddle: customer lookup failure returns 500 so the provider retries, storing nothing", async () => {
+test("Paddle: customer lookup failure returns 503 so the provider retries, storing nothing", async () => {
   const env = makeEnv({ FETCH: async () => new Response("nope", { status: 500 }) });
   const { handle } = await load("index.js");
   const body = paddleEvent();
@@ -261,7 +266,8 @@ test("Paddle: customer lookup failure returns 500 so the provider retries, stori
     body,
     headers: { "Paddle-Signature": `ts=${ts};h1=${hmac(`${ts}:${body}`)}` },
   });
-  await assert.rejects(() => handle(request, env, depsFor(env)));
+  // A failure is answered with 503 (not thrown), which the provider retries.
+  assert.equal((await handle(request, env, depsFor(env))).status, 503);
   assert.equal(env.LICENSES.data.size, 0);
 });
 
@@ -278,7 +284,7 @@ async function rejectsWebhook(env, body) {
     body,
     headers: { "X-Signature": hmac(body) },
   });
-  await assert.rejects(() => handle(request, env, depsFor(env)));
+  assert.equal((await handle(request, env, depsFor(env))).status, 503);
   assert.equal(env.LICENSES.data.size, 0);
 }
 
@@ -286,7 +292,7 @@ test("an unusable private key fails the webhook and stores nothing", async () =>
   await rejectsWebhook(makeEnv({ LICENSE_PRIVATE_KEY: "AAAA" }), lemonEvent());
 });
 
-test("paid Lemon Squeezy order without a usable email throws so the provider retries", async () => {
+test("paid Lemon Squeezy order without a usable email returns 503 so the provider retries", async () => {
   await rejectsWebhook(makeEnv(), lemonEvent({ email: "" }));
 });
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sub-plan 06: the tile picker's preview (a round tile with two code rows and a footer; no real code). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M96,0a96,96 0,1 0,0.01 0z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M44,66h20v12h-20zM68,66h20v12h-20zM96,68h52v8h-52zM44,94h20v12h-20zM68,94h20v12h-20zM96,96h52v8h-52z" />
+    <path
+        android:fillColor="#FFB0B0B0"
+        android:pathData="M64,126h64v6h-64z" />
+</vector>

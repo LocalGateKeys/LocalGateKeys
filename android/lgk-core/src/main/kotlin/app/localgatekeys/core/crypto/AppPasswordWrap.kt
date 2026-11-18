@@ -28,10 +28,16 @@ class AppPasswordException(val kind: Kind, message: String = kind.name) : Except
 
 /**
  * `app-password.bin`: the 32-byte local key wrapped twice,
- * by Argon2id(app password) and by the recovery phrase. Immutable; [encode] gives the 165 bytes.
+ * by Argon2id(app password) and by the recovery phrase. Immutable; [encode] gives the 165 bytes of v1.
+ *
+ * With [factors] (a key file and/or a YubiKey, docs/formats/COMPOSITE_KEY_V1.md §7) the file is v2: the factor list
+ * follows the parameters, the password wrapper's key mixes in the factor secrets ([CompositeKey.combine]) and its AAD
+ * is the v2 header. The recovery wrapper keeps its v1 AAD, so its bytes never change when factors come or go.
  */
 class AppPasswordRecord private constructor(
     val params: AppPasswordParams,
+    /** The key file / YubiKey this password needs (empty: v1, unchanged). Public: nothing in it is secret. */
+    val factors: List<FactorSpec>,
     private val pwSalt: ByteArray,
     private val pwNonce: ByteArray,
     private val pwSealed: ByteArray,
@@ -39,15 +45,24 @@ class AppPasswordRecord private constructor(
     private val recNonce: ByteArray,
     private val recSealed: ByteArray,
 ) {
-    fun encode(): ByteArray = ByteBuffer.allocate(SIZE).apply {
-        put(header(params)); put(pwSalt); put(pwNonce); put(pwSealed); put(recSalt); put(recNonce); put(recSealed)
-    }.array()
+    fun encode(): ByteArray {
+        val head = passwordHeader(params, factors)
+        return ByteBuffer.allocate(head.size + 2 * (SALT + NONCE + SEALED)).apply {
+            put(head); put(pwSalt); put(pwNonce); put(pwSealed); put(recSalt); put(recNonce); put(recSealed)
+        }.array()
+    }
 
-    /** The local key (caller zeroes it). [password] is UTF-8 bytes from [passwordBytes]; it is not modified. */
-    fun unwrapWithPassword(password: ByteArray, argon: Argon2id = Argon2.default): ByteArray {
-        val key = derive(argon, password, pwSalt, params)
+    /**
+     * The local key (caller zeroes it). [password] is UTF-8 bytes from [passwordBytes]; it is not modified. With
+     * [factors], [secrets] holds one 32-byte secret per factor in list order: a missing one is
+     * [FactorRequiredException] and a wrong one [FactorMismatchException], both before any Argon2id run.
+     */
+    fun unwrapWithPassword(password: ByteArray, argon: Argon2id = Argon2.default, secrets: List<ByteArray> = emptyList()): ByteArray {
+        if (secrets.size != factors.size) throw FactorRequiredException(factors.map { it.kind })
+        CompositeKey.verify(factors, secrets)
+        val key = wrappingKey(argon, password, pwSalt, params, factors, secrets)
         try {
-            return CryptoBox.openGcm(key, pwNonce, pwSealed, aad(params, PASSWORD))
+            return CryptoBox.openGcm(key, pwNonce, pwSealed, passwordHeader(params, factors) + PASSWORD)
         } catch (e: CryptoBoxException) {
             throw AppPasswordException(AppPasswordException.Kind.WRONG_PASSWORD, "That app password is not right")
         } finally {
@@ -61,7 +76,7 @@ class AppPasswordRecord private constructor(
         val key = recoveryKey(entropy, recSalt)
         entropy.fill(0)
         try {
-            return CryptoBox.openGcm(key, recNonce, recSealed, aad(params, RECOVERY))
+            return CryptoBox.openGcm(key, recNonce, recSealed, header(params) + RECOVERY)
         } catch (e: CryptoBoxException) {
             throw AppPasswordException(AppPasswordException.Kind.WRONG_PHRASE, "This recovery phrase does not belong to this vault")
         } finally {
@@ -69,19 +84,34 @@ class AppPasswordRecord private constructor(
         }
     }
 
-    /** Same recovery wrapper, a new password wrapper for [newPassword] (fresh salt and nonce). */
-    fun withNewPassword(localKey: ByteArray, newPassword: ByteArray, random: RandomSource, argon: Argon2id = Argon2.default): AppPasswordRecord {
+    /**
+     * Same recovery wrapper, a new password wrapper for [newPassword] (fresh salt and nonce) that needs [factors]
+     * ([secrets]: one per factor, list order). No factors (the default) writes v1: callers that keep the factors pass
+     * them. The new wrapper is opened once with the same key before it is returned.
+     */
+    fun withNewPassword(
+        localKey: ByteArray,
+        newPassword: ByteArray,
+        random: RandomSource,
+        argon: Argon2id = Argon2.default,
+        factors: List<FactorSpec> = emptyList(),
+        secrets: List<ByteArray> = emptyList(),
+    ): AppPasswordRecord {
+        CompositeKey.verify(factors, secrets)
+        val aad = passwordHeader(params, factors) + PASSWORD
         val salt = random.bytes(SALT)
         val nonce = random.bytes(NONCE)
-        val key = derive(argon, newPassword, salt, params)
+        val key = wrappingKey(argon, newPassword, salt, params, factors, secrets)
         try {
-            return AppPasswordRecord(params, salt, nonce, CryptoBox.sealGcm(key, nonce, localKey, aad(params, PASSWORD)), recSalt, recNonce, recSealed)
+            val sealed = CryptoBox.sealGcm(key, nonce, localKey, aad)
+            CryptoBox.openGcm(key, nonce, sealed, aad).fill(0)
+            return AppPasswordRecord(params, factors.toList(), salt, nonce, sealed, recSalt, recNonce, recSealed)
         } finally {
             key.fill(0)
         }
     }
 
-    override fun toString(): String = "AppPasswordRecord($params)"
+    override fun toString(): String = "AppPasswordRecord($params, factors=${factors.map { it.kind.id }})"
 
     /** A new record and the recovery phrase to show once. */
     class Created(val record: AppPasswordRecord, val phrase: String) {
@@ -91,6 +121,7 @@ class AppPasswordRecord private constructor(
     companion object {
         private val MAGIC = "LGKAPW".toByteArray(Charsets.US_ASCII)
         private const val VERSION: Byte = 1
+        private const val VERSION_FACTORS: Byte = 2
         const val HEADER = 13
         private const val SALT = 16
         private const val NONCE = 12
@@ -117,34 +148,70 @@ class AppPasswordRecord private constructor(
                 val recSalt = random.bytes(SALT)
                 val recNonce = random.bytes(NONCE)
                 val rk = recoveryKey(entropy, recSalt)
-                val recSealed = try { CryptoBox.sealGcm(rk, recNonce, localKey, aad(params, RECOVERY)) } finally { rk.fill(0) }
-                val base = AppPasswordRecord(params, ByteArray(SALT), ByteArray(NONCE), ByteArray(SEALED), recSalt, recNonce, recSealed)
+                val recSealed = try { CryptoBox.sealGcm(rk, recNonce, localKey, header(params) + RECOVERY) } finally { rk.fill(0) }
+                val base = AppPasswordRecord(params, emptyList(), ByteArray(SALT), ByteArray(NONCE), ByteArray(SEALED), recSalt, recNonce, recSealed)
                 return Created(base.withNewPassword(localKey, password, random, argon), phrase)
             } finally {
                 entropy.fill(0)
             }
         }
 
+        /** v1 (165 bytes) or v2 (`167 + L` bytes, a canonical factor list of 1-1024 bytes); anything else is MALFORMED. */
         fun decode(bytes: ByteArray): AppPasswordRecord {
             fun bad(): Nothing = throw AppPasswordException(AppPasswordException.Kind.MALFORMED, "The app password file is damaged")
-            if (bytes.size != SIZE || !bytes.copyOf(MAGIC.size).contentEquals(MAGIC) || bytes[6] != VERSION) bad()
-            val b = ByteBuffer.wrap(bytes, 7, SIZE - 7)
+            if (bytes.size < SIZE || !bytes.copyOf(MAGIC.size).contentEquals(MAGIC)) bad()
+            val b = ByteBuffer.wrap(bytes, 7, bytes.size - 7)
             val mem = b.int
             val t = b.get().toInt() and 0xff
             val p = b.get().toInt() and 0xff
             val params = try { AppPasswordParams(mem, t, p) } catch (e: IllegalArgumentException) { bad() }
+            val factors = when (bytes[6]) {
+                VERSION -> if (bytes.size == SIZE) emptyList() else bad()
+                VERSION_FACTORS -> {
+                    val l = b.short.toInt() and 0xffff
+                    if (l !in 1..CompositeKey.MAX_LIST_BYTES || bytes.size != SIZE + 2 + l) bad()
+                    val list = ByteArray(l).also { b.get(it) }
+                    try { CompositeKey.parseList(list) } catch (e: IllegalArgumentException) { bad() }
+                }
+                else -> bad()
+            }
             fun take(n: Int) = ByteArray(n).also { b.get(it) }
-            return AppPasswordRecord(params, take(SALT), take(NONCE), take(SEALED), take(SALT), take(NONCE), take(SEALED))
+            return AppPasswordRecord(params, factors, take(SALT), take(NONCE), take(SEALED), take(SALT), take(NONCE), take(SEALED))
         }
 
+        /** The v1 header: also the start of the recovery wrapper's AAD in v2. */
         private fun header(params: AppPasswordParams): ByteArray = ByteBuffer.allocate(HEADER).apply {
             put(MAGIC); put(VERSION); putInt(params.memoryKiB); put(params.iterations.toByte()); put(params.parallelism.toByte())
         }.array()
 
-        private fun aad(params: AppPasswordParams, label: ByteArray) = header(params) + label
+        /** The header the file starts with and the password wrapper's AAD: v1 without factors, else v2 (`L` and the list). */
+        private fun passwordHeader(params: AppPasswordParams, factors: List<FactorSpec>): ByteArray {
+            if (factors.isEmpty()) return header(params)
+            val list = CompositeKey.info(factors)
+            require(list.size <= CompositeKey.MAX_LIST_BYTES) { "factor list too long" }
+            return ByteBuffer.allocate(HEADER + 2 + list.size).apply {
+                put(MAGIC); put(VERSION_FACTORS); putInt(params.memoryKiB); put(params.iterations.toByte()); put(params.parallelism.toByte())
+                putShort(list.size.toShort()); put(list)
+            }.array()
+        }
 
-        private fun derive(argon: Argon2id, password: ByteArray, salt: ByteArray, params: AppPasswordParams): ByteArray =
-            argon.derive(password, salt, params.memoryKiB, params.iterations, params.parallelism, 32)
+        /** Argon2id(password), then the composite key when there are factors (the caller zeroes the result). */
+        private fun wrappingKey(
+            argon: Argon2id,
+            password: ByteArray,
+            salt: ByteArray,
+            params: AppPasswordParams,
+            factors: List<FactorSpec>,
+            secrets: List<ByteArray>,
+        ): ByteArray {
+            val out = argon.derive(password, salt, params.memoryKiB, params.iterations, params.parallelism, 32)
+            if (factors.isEmpty()) return out
+            try {
+                return CompositeKey.combine(out, factors, secrets)
+            } finally {
+                out.fill(0)
+            }
+        }
 
         private fun recoveryKey(entropy: ByteArray, salt: ByteArray): ByteArray = CryptoBox.hkdf(entropy, salt, RECOVERY_KEY_INFO, 32)
     }

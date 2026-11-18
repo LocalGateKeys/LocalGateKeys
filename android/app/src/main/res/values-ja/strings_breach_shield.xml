@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">確認済みのサイト</string>
+    <string name="autofill_site_related">関連するサイト</string>
+    <string name="autofill_site_lookalike">なりすましの疑いがあるサイト</string>
+    <string name="autofill_site_new">新しいサイト</string>
+    <string name="autofill_guard_title">正しいサイトですか？</string>
+    <string name="autofill_guard_body">%1$s はログインが保存されている %2$s に似ていますが、別のサイトです。確信がある場合のみ続行してください。</string>
+    <string name="autofill_guard_body_mixed">%1$s は異なる文字体系の文字を混ぜています。これはよくあるフィッシングの手口です。確信がある場合のみ続行してください。</string>
+    <string name="autofill_guard_continue">%1$s で続行</string>
+    <string name="autofill_guard_go_back">戻る</string>
+    <string name="autofill_same_account_title">%1$s と同じアカウントですか？</string>
+    <string name="autofill_same_account_body">%1$s はログインが保存されている %2$s と同じ名前ですが、末尾が異なります。同じ会社の場合のみ続行してください。</string>
+    <string name="autofill_same_account_yes">同じアカウント</string>
+    <string name="autofill_pick_other_site_body">このログインは %1$s ではなく %2$s に保存されています。正しいサイトだと確信できる場合のみ %1$s で入力してください。</string>
+    <string name="autofill_pick_no_site_body">このログインにはウェブサイトが保存されていません。正しいサイトだと確信できる場合のみ %1$s で入力してください。</string>
+    <string name="autofill_pick_scheme_unknown_body">ブラウザは %1$s が安全なページ (https) かどうかを示していません。確信がある場合のみ入力してください。</string>
+</resources>

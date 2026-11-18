@@ -97,23 +97,27 @@ public final class LanClient: Sendable {
         self.random = random; self.clock = clock; self.retryDelayNanos = retryDelayNanos; self.sleep = sleep
     }
 
-    /// One connection: send a hello (fresh 16-byte session id, then a 32-byte hello nonce and a 32-byte
-    /// ephemeral X25519 key from `random`), check the responder's hello (pinned keys, same session id,
-    /// increasing counter), send one sealed request and open the one sealed response. A responder of
-    /// another protocol version (its version refusal, or its own signed hello of another version) throws
-    /// `LanSyncError` `peer-update-needed` (it is older) or `lan-update-needed` (this device is older);
-    /// nothing is derived and no other version is ever tried.
+    /// One connection (LAN protocol version 3): seal a version-3 hello to `peer`'s pinned exchange key (fresh
+    /// 16-byte session id, then a 32-byte hello nonce, a 32-byte ephemeral X25519 key and the 32-byte sealing
+    /// key from `random`; a clear-text hello is never sent), open the responder's sealed hello and check it
+    /// (pinned keys, same session id, increasing counter), send one sealed request and open the one sealed
+    /// response. A responder of another protocol version (its version refusal) throws `LanSyncError`
+    /// `peer-update-needed` (it is older) or `lan-update-needed` (this device is older); nothing is derived and
+    /// no other version is ever tried.
     public func request(_ plaintext: [UInt8], peer: PinnedPeer, connection: any LanConnection) async throws -> [UInt8] {
         let sessionID = random.bytes(count: LanTransport.sessionIDBytes)
         let localHello = try SessionHello.make(identity: identity, groupID: groupKey.groupID, sessionID: sessionID,
-                                               counter: try counters.nextCounter(), random: AnyRandom(random))
+                                               counter: try counters.nextCounter(), random: AnyRandom(random),
+                                               version: LanTransport.version)
         defer { localHello.ephemeralSecret?.wipe() }   // unused after a failed handshake: dropped all the same
-        let helloFrame = try await connection.exchange(try LanTransport.encodeFrame(try localHello.toBytes()))
+        let sealed = try SealedHello.sealInitiator(localHello, responderExchangePublic: peer.exchangePublic, random: AnyRandom(random))
+        defer { sealed.context.wipe() }
+        let helloFrame = try await connection.exchange(try LanTransport.encodeFrame(sealed.payload))
         let helloPayload = try LanTransport.decodeFrame(helloFrame)
-        if let announced = LanTransport.parseVersionRefusal(helloPayload) ?? SessionHello.otherVersion(helloPayload) {
+        if let announced = LanTransport.parseVersionRefusal(helloPayload) {
             throw Self.versionMismatch(announced, peer: peer)
         }
-        let remoteHello = try SessionHello.parse(helloPayload)
+        let remoteHello = try SealedHello.openResponder(helloPayload, context: sealed.context)
         guard remoteHello.deviceID == peer.deviceID else {
             throw LanTransportError.authentication("Session peer is not the expected paired device")
         }
@@ -242,6 +246,31 @@ public final class LanClient: Sendable {
         switch reply {
         case .blob: return true
         case .error("no-blob"): return true
+        case .error("bad-message"): return false
+        default: return nil
+        }
+    }
+
+    /// Personal collections (desktop `_exchange_features`): after the view exchange and before the witness exchange,
+    /// tells a peer not yet in `SyncGroupState.collectionPeers` what this version reads. True: the peer reads
+    /// collection states; false: an older app (`bad-message`); nil: any other answer (nothing learnt, the next
+    /// exchange asks again). The caller records true or false (`LanFeatures.peers`) and treats a thrown error as nil.
+    public func exchangeFeatures(peer: PinnedPeer, connector: any LanConnector) async throws -> Bool? {
+        let reply = try await call(.features(LanFeatures.ours), peer: peer, connector: connector)
+        switch reply {
+        case .features(let list): return LanFeatures.readsCollections(list)
+        case .error("bad-message"): return false
+        default: return nil
+        }
+    }
+
+    /// After a view exchange, asks a peer not yet known to read the emergency access plan (desktop `_probe_heir`):
+    /// true when it answers `heir-hello` (it gets the plan from now on), false when it refuses the message
+    /// (`bad-message`: an older app), nil when nothing told.
+    public func probeHeir(peer: PinnedPeer, connector: any LanConnector) async -> Bool? {
+        guard let reply = try? await call(.heirHello, peer: peer, connector: connector, retry: false) else { return nil }
+        switch reply {
+        case .heirHello: return true
         case .error("bad-message"): return false
         default: return nil
         }

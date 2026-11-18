@@ -54,21 +54,37 @@ struct MacSetupSheet: View {
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .glassField()
-            HStack {
-                if step == first {
-                    Button(Onboarding.skipSetup) { onboarding.closePages() }.buttonStyle(PillButtonStyle(primary: false))
-                        .keyboardShortcut(.cancelAction)
+            // Long labels (German: "Einrichtung überspringen", "Touch ID einrichten") do not fit one row at 460 pt:
+            // the buttons then stack instead of pushing the sheet's content past its edges.
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    skipSetupButton
+                    Spacer()
+                    stepButtons
                 }
-                Spacer()
-                if step != .vault {
-                    Button(Onboarding.skip, action: advance).buttonStyle(PillButtonStyle(primary: false))
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack { Spacer(); stepButtons }
+                    HStack { skipSetupButton; Spacer() }
                 }
-                Button(step.action, action: perform).buttonStyle(PillButtonStyle(primary: true))
-                    .keyboardShortcut(.defaultAction)
             }
         }
         .padding(22)
         .frame(width: 460)
+    }
+
+    @ViewBuilder private var skipSetupButton: some View {
+        if step == first {
+            Button(Onboarding.skipSetup) { onboarding.closePages() }.buttonStyle(PillButtonStyle(primary: false))
+                .keyboardShortcut(.cancelAction)
+        }
+    }
+
+    @ViewBuilder private var stepButtons: some View {
+        if step != .vault {
+            Button(Onboarding.skip, action: advance).buttonStyle(PillButtonStyle(primary: false))
+        }
+        Button(step.action, action: perform).buttonStyle(PillButtonStyle(primary: true))
+            .keyboardShortcut(.defaultAction)
     }
 
     private func perform() {
@@ -80,31 +96,5 @@ struct MacSetupSheet: View {
 
     private func advance() {
         if let next = onboarding.next(after: step) { step = next } else { onboarding.closePages() }
-    }
-}
-
-/// "Finish setting up · 3 of 5" above the item list: click to open setup again, Hide to put it away.
-struct MacSetupCard: View {
-    let text: String
-    let onOpen: () -> Void
-    let onHide: () -> Void
-    @Environment(\.macTheme) private var theme
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Button(action: onOpen) {
-                HStack(spacing: 8) {
-                    Image(systemName: "checklist").foregroundStyle(theme.accent).accessibilityHidden(true)
-                    Text(text).font(.system(size: 13)).foregroundStyle(theme.text)
-                    Spacer(minLength: 0)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Button(Onboarding.hide, action: onHide).buttonStyle(PillButtonStyle(primary: false))
-        }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .glassField()
-        .padding(.bottom, 10)
     }
 }

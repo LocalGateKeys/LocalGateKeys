@@ -7,6 +7,7 @@ NATIVE_MODULES = (
     "localvault.native_host", "localvault.protocol", "localvault.pipe_transport",
     "localvault.bridge_status", "localvault.browser_ancestry", "localvault.config",
     "localvault.distribution", "localvault.signature", "localvault.process_hardening",
+    "localvault.cli.main", "localvault.cli.run", "localvault.cli.inject", "localvault.cli.mcp_server",
 )
 WINDOWS_MODULES = ("win32api", "win32crypt", "win32file", "win32pipe", "win32security", "pywintypes", "psutil")
 # Must NOT be bundled: the browser starts this process for every message (audit 2026-10-24 L-10).

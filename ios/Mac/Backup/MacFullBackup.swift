@@ -150,7 +150,7 @@ final class MacFullBackup {
         // Checks the master password; with a recovery phrase enrolled, the backup's vault.json opens with it too (Ruling 9).
         var recoveryKey = try await passwords.recoveryVaultKey(password: masterPassword)
         defer { recoveryKey?.wipe() }
-        let inventory = try await write(to: url, backupPassword: backupPassword, vault: .password(masterPassword),
+        let inventory = try await write(to: url, encryption: .password(backupPassword), vault: .password(masterPassword),
                                         recovery: recoveryKey, withoutKeptData: withoutKeptData)
         message = String(localized: "Full backup saved to \(url.lastPathComponent) and checked.") + " " + Self.otherDeviceNote
         return inventory
@@ -163,19 +163,27 @@ final class MacFullBackup {
         case key(DesktopVaultFile.PasswordKey)
     }
 
-    /// A scheduled backup (Task 9): the same file as `create`, with the `vault.json` sealed by the stored password key
-    /// (and the stored recovery key), written to a staging name, checked in full, renamed, then its `.sha256.json`.
-    /// Nothing is asked: the schedule's secrets were checked when they were saved.
-    func createScheduled(to url: URL, backupPassword: String, passwordKey: DesktopVaultFile.PasswordKey,
+    /// How the backup itself is encrypted: a backup password (manual backups, full backup v2, unchanged) or the
+    /// public backup key record (scheduled backups, full backup v3; design `backup-public-key-2026-10-31.md`).
+    enum Encryption: Sendable {
+        case password(String)
+        case publicKey(BackupKeyRecord)
+    }
+
+    /// A scheduled backup (Task 9): a full backup **v3** to the record's public key, with the `vault.json` sealed by
+    /// the stored password key (and the stored recovery key), written to a staging name, checked without any password
+    /// (design 9.1: the wrap with the ephemeral key, every member with the data key, the vault layer with the password
+    /// key), renamed, then its `.sha256.json`. Nothing is asked: the schedule's record was checked when it was set.
+    func createScheduled(to url: URL, record: BackupKeyRecord, passwordKey: DesktopVaultFile.PasswordKey,
                          recovery: RecoveryWrapper.VaultKey?) async throws -> BackupInventory {
         guard !Self.inFlight else { throw RecoveryError(Self.busyMessage) }
         busy = true
         defer { busy = false }
-        return try await write(to: url, backupPassword: backupPassword, vault: .key(passwordKey), recovery: recovery,
+        return try await write(to: url, encryption: .publicKey(record), vault: .key(passwordKey), recovery: recovery,
                                withoutKeptData: false)
     }
 
-    private func write(to url: URL, backupPassword: String, vault credential: VaultCredential,
+    private func write(to url: URL, encryption: Encryption, vault credential: VaultCredential,
                        recovery recoveryKey: RecoveryWrapper.VaultKey?, withoutKeptData: Bool) async throws -> BackupInventory {
         let snap = try store.load()
         var kept = DesktopProfileStore.Contents.empty
@@ -188,12 +196,13 @@ final class MacFullBackup {
             kept = .empty
             attachments = []
         }
-        var payload = kept.payload
+        // A profile restored before minor 7 was fixed may still keep Windows share secrets: never export them.
+        var payload = Self.withoutDeviceSecrets(kept.payload)
         // This Mac's documents (task 12): each file as a Windows sidecar plus its catalog row, as Windows' full
         // backups carry them, so a Windows restore finds every document's file. A document whose file is not on
         // this Mac is left out (Windows refuses a document without its catalog row).
         var skippedDocuments = Set<String>()
-        let documents = snap.records.sorted(by: { $0.key < $1.key }).filter {
+        let documents = snap.itemRecords.sorted(by: { $0.key < $1.key }).filter {
             Self.isLiveItem($0.value, snap) && AttachmentDocuments.isDocument($0.value)
         }.map { (record: Self.record($0.value), wrapper: $0.value) }
         if !documents.isEmpty {
@@ -218,7 +227,7 @@ final class MacFullBackup {
             }
         }
         var items: [JSONValue] = kept.unsynced
-        for (id, wrapper) in snap.records.sorted(by: { $0.key < $1.key }) where Self.isLiveItem(wrapper, snap) && !skippedDocuments.contains(id) {
+        for (id, wrapper) in snap.itemRecords.sorted(by: { $0.key < $1.key }) where Self.isLiveItem(wrapper, snap) && !skippedDocuments.contains(id) {
             if case .object(let w) = wrapper, let r = w["record"] { items.append(r) }
         }
         // This Mac's licence goes in as the catalog's licence copy, as Windows keeps it (`vault.py` `license`).
@@ -230,7 +239,7 @@ final class MacFullBackup {
         let backupAttachments = attachments
         let backupPayload = payload
         let backupRecovery = recoveryKey
-        let data = try await Task.detached(priority: .userInitiated) { () throws -> Data in
+        var (data, written) = try await Task.detached(priority: .userInitiated) { () throws -> (Data, FullBackupV3.Written?) in
             let vault: Data
             switch credential {
             case .password(let masterPassword):
@@ -240,18 +249,36 @@ final class MacFullBackup {
                 vault = try DesktopVaultFile.seal(items: backupItems, settings: .object(backupPayload), passwordKey: key,
                                                   random: random, now: created, recovery: backupRecovery)
             }
-            return try FullBackupV2.write(vault: vault, settings: settings, attachments: backupAttachments, password: backupPassword,
-                                          random: random, progress: { _, _, _ in }, cancel: { false },
-                                          profileName: name, createdAt: created, kdf: kdf)
+            switch encryption {
+            case .password(let backupPassword):
+                return (try FullBackupV2.write(vault: vault, settings: settings, attachments: backupAttachments, password: backupPassword,
+                                               random: random, progress: { _, _, _ in }, cancel: { false },
+                                               profileName: name, createdAt: created, kdf: kdf), nil)
+            case .publicKey(let record):
+                let w = try FullBackupV3.write(vault: vault, settings: settings, attachments: backupAttachments, record: record,
+                                               random: random, progress: { _, _, _ in }, cancel: { false },
+                                               profileName: name, createdAt: created)
+                return (w.data, w)
+            }
         }.value
+        // The writer keeps dk and esk only until the self-verify below has run (design 9.1).
+        defer { written?.wipe() }
         let folder = url.deletingLastPathComponent()
         let staging = folder.appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).staging")
         defer { try? FileManager.default.removeItem(at: staging) }
         do { try data.write(to: staging, options: .withoutOverwriting) } catch { throw RecoveryError(String(localized: "Could not create the recovery backup")) }
+        data = Data()
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: staging.path)
         // Authenticate every member and the vault layer before reporting success (Windows `_preflight`).
-        var inventory = try await Self.check(staging, backupPassword: backupPassword, vault: credential,
-                                             expectedItems: backupItems.count)
+        var inventory: BackupInventory
+        switch encryption {
+        case .password(let backupPassword):
+            inventory = try await Self.check(staging, backupPassword: backupPassword, vault: credential, expectedItems: backupItems.count)
+        case .publicKey(let record):
+            guard let written else { throw RecoveryError(String(localized: "The recovery backup could not be checked")) }
+            inventory = try await Self.checkWritten(staging, written: written, record: record, vault: credential,
+                                                    expectedItems: backupItems.count)
+        }
         guard rename(staging.path, url.path) == 0 else { throw RecoveryError(String(localized: "Could not create the recovery backup")) }
         inventory.path = url.path
         inventory.createdAt = created
@@ -280,25 +307,48 @@ final class MacFullBackup {
     // MARK: verify
 
     /// Opens and decrypts the backup (backup password, then the vault's master password from backup time), checks
-    /// `<file>.sha256.json` when it is there and every item. Writes nothing.
-    func verify(url: URL, password: String, vaultPassword: String) async throws -> BackupInventory {
+    /// `<file>.sha256.json` when it is there and every item. Writes nothing. A vault with key-file / YubiKey factors
+    /// (a Windows v4 vault) takes them from `factors`; without them it throws `FactorError.required` (ask for them, or
+    /// for the recovery phrase), and a wrong one `FactorError.mismatch`.
+    func verify(url: URL, password: String, vaultPassword: String,
+                factors: FactorSecrets = FactorSecrets()) async throws -> BackupInventory {
+        try await Self.verifyFile(url: url, password: password, vaultPassword: vaultPassword, factors: factors, now: unixNow)
+    }
+
+    /// `verify` without an open vault (the lock screen's Backup & restore).
+    nonisolated static func verifyFile(url: URL, password: String, vaultPassword: String,
+                                       factors: FactorSecrets = FactorSecrets(),
+                                       now: Int64 = Int64(Date().timeIntervalSince1970)) async throws -> BackupInventory {
         guard !password.utf8.elementsEqual(vaultPassword.utf8) else { throw RecoveryError.samePassword }
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         try Self.checkManifestIfPresent(url)
-        var inventory = try await Self.check(url, backupPassword: password, vault: .password(vaultPassword), expectedItems: nil)
-        inventory.verifiedAt = unixNow
+        var inventory = try await Self.check(url, backupPassword: password, vault: .password(vaultPassword), expectedItems: nil,
+                                             factors: factors)
+        inventory.verifiedAt = now
         if FileManager.default.fileExists(atPath: ChecksumManifest.url(for: url).path) {
             inventory.manifestPath = ChecksumManifest.url(for: url).path
         }
         return inventory
     }
 
+    /// The key-file / YubiKey factors the vault inside `url` asks for (a Windows v4 vault; empty for any other), read
+    /// with the backup password only, so the Recovery centre can ask for them (and name the YubiKey's slot).
+    func vaultFactors(url: URL, password: String) async throws -> [FactorSpec] {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        return try await Task.detached(priority: .userInitiated) { () throws -> [FactorSpec] in
+            let (contents, _) = try Self.openContainer(url, password: password)
+            do { return try DesktopVaultFile.factors(in: contents.vault) } catch let e as DesktopVaultError { throw RecoveryError(e.message) }
+        }.value
+    }
+
     // MARK: restore
 
-    /// What restoring `url` by replacing would do. Writes nothing.
-    func previewRestore(url: URL, password: String, vaultPassword: String) async throws -> RestorePreview {
-        let opened = try await open(url, password: password, vaultPassword: vaultPassword)
+    /// What restoring `url` by replacing would do. Writes nothing. `factors` as in `verify`.
+    func previewRestore(url: URL, password: String, vaultPassword: String,
+                        factors: FactorSecrets = FactorSecrets()) async throws -> RestorePreview {
+        let opened = try await open(url, password: password, vaultPassword: vaultPassword, factors: factors)
         // A preview writes nothing: converted documents are sealed into a throwaway in-memory store.
         let previewBlobs: (any AttachmentBlobStore)? = attachmentFolder == nil ? nil : PreviewBlobs()
         return try plan(opened, snapshot: try store.load(), blobs: previewBlobs).preview
@@ -306,9 +356,11 @@ final class MacFullBackup {
 
     /// Asks for the master password (strict gate), then restores. False when another prompt is open.
     @discardableResult
-    func requestRestore(url: URL, password: String, vaultPassword: String,
+    func requestRestore(url: URL, password: String, vaultPassword: String, factors: FactorSecrets = FactorSecrets(),
                         then finished: (@MainActor (Bool) -> Void)? = nil) -> Bool {
-        gated(then: finished) { try await self.restoreReplacing(url: url, password: password, vaultPassword: vaultPassword) }
+        gated(then: finished) {
+            try await self.restoreReplacing(url: url, password: password, vaultPassword: vaultPassword, factors: factors)
+        }
     }
 
     /// Asks for the master password (strict gate), then puts a safety copy back (the same swap, so the vault as it
@@ -336,12 +388,22 @@ final class MacFullBackup {
     }
 
     /// Replaces this vault with the backup: stage, verify, swap. Refused unless the strict gate came first (once).
-    func restoreReplacing(url: URL, password: String, vaultPassword: String) async throws {
+    func restoreReplacing(url: URL, password: String, vaultPassword: String,
+                          factors: FactorSecrets = FactorSecrets()) async throws {
         try takeAuthorisation()
         busy = true
         defer { busy = false }
-        let staged = try await stage(url: url, password: password, vaultPassword: vaultPassword)
+        let staged = try await stage(url: url, password: password, vaultPassword: vaultPassword, factors: factors)
         try finish(staged)
+    }
+
+    /// The lock screen's restore: the vault was created a moment ago, empty, with the backup's master password (that
+    /// creation is the confirmation the strict gate asks for), and the backup goes into it.
+    func restoreIntoNewVault(url: URL, password: String, vaultPassword: String) async throws {
+        // Empty: no item and no licence (collection states alone, e.g. the starters, don't count).
+        guard try store.load().itemRecords.isEmpty else { throw Self.notAuthorised }
+        restoreAuthorised = true
+        try await restoreReplacing(url: url, password: password, vaultPassword: vaultPassword)
     }
 
     /// Puts a safety copy back (gated like a restore).
@@ -374,6 +436,9 @@ final class MacFullBackup {
         try beforeSwap()
         #endif
         try swap(staged)
+        // The removal watch belongs to the vault as it was: forgotten, as Leave does, so a notice for that vault never
+        // erases the restored one (the next folder run writes it again while the group is still joined).
+        try? FileManager.default.removeItem(at: SyncDependencies.watchFileURL(in: directory))
         message = Self.restoredMessage
         afterChange()
     }
@@ -381,8 +446,9 @@ final class MacFullBackup {
     /// Opens the backup and writes what it restores into a fresh staging folder in the vault directory (the records,
     /// sealed under this vault's key, the attachments, `desktop-profile.bin`), then reads all of it back. The live
     /// vault is not touched. (Phase 6 restores "as a new profile" from here.)
-    func stage(url: URL, password: String, vaultPassword: String) async throws -> StagedRestore {
-        let opened = try await open(url, password: password, vaultPassword: vaultPassword)
+    func stage(url: URL, password: String, vaultPassword: String,
+               factors: FactorSecrets = FactorSecrets()) async throws -> StagedRestore {
+        let opened = try await open(url, password: password, vaultPassword: vaultPassword, factors: factors)
         let (preview, records, contents) = try plan(opened, snapshot: try store.load(), blobs: attachmentFolder)
         return try writeStaging(records: records, contents: contents,
                                 attachments: opened.contents.attachments.map { (id: $0.id, data: $0.data) }, preview: preview)
@@ -449,7 +515,10 @@ final class MacFullBackup {
         if crashPoint == .afterPiecesSwapped { throw SimulatedCrash() }
         #endif
         // Licences stay: they belong to this Mac's purchase. A backup's licence copy is added when it verifies.
-        var records = staged.records
+        // Collections stay too (the catalog, share links, and the memberships of items the backup brings back), and the
+        // items of collections shared on this Mac stay as they are now (`keepingShared`). The share groups themselves
+        // are never touched (`StoreChange.shares` `.keep`).
+        var records = Self.keepingShared(current: snap, restored: CollectionCatalog.carriedOver(from: snap.records, into: staged.records))
         for (id, wrapper) in snap.records where Self.ns(wrapper) == Namespace.license.rawValue { records[id] = wrapper }
         if case .object? = staged.contents.payload["license"], let bundle = staged.contents.payload["license"],
            let info = try? License.verify(bundle: bundle, keys: licenseKeys) {
@@ -480,7 +549,11 @@ final class MacFullBackup {
     }
 
     /// The safety copies kept before restores, newest first.
-    func safetyCopies() -> [SafetyCopy] { Self.safetyCopies(in: directory) }
+    /// The copies the Recovery centre can put back, newest first: the safety copies and the automatic copies made as
+    /// the vault is saved (`MacAutomaticBackups`, Settings › Backups) that still open under the vault's key.
+    func safetyCopies() -> [SafetyCopy] {
+        (Self.safetyCopies(in: directory) + MacAutomaticBackups.restorable(in: profile)).sorted { $0.createdAtMillis > $1.createdAtMillis }
+    }
 
     /// Safety copies a key rotation couldn't read and set aside (`<name>.unreadable`, `MacVault.lastRotationSetAside`).
     func setAsideCopies() -> [String] {
@@ -606,30 +679,97 @@ final class MacFullBackup {
         let contents: FullBackupContents
         let payload: [String: JSONValue]
         let recoveryEnrolled: Bool
+        /// The container's `header.version` (2, or 3 for a scheduled backup to a public key).
+        var version: Int64 = FullBackupV2.version
     }
 
-    private func open(_ url: URL, password: String, vaultPassword: String) async throws -> Opened {
+    private func open(_ url: URL, password: String, vaultPassword: String,
+                      factors: FactorSecrets = FactorSecrets()) async throws -> Opened {
         guard !password.utf8.elementsEqual(vaultPassword.utf8) else { throw RecoveryError.samePassword }
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         try Self.checkManifestIfPresent(url)
-        return try await Task.detached(priority: .userInitiated) { () throws -> Opened in
-            try Self.openSync(url, password: password, vault: .password(vaultPassword))
+        return try await Task.detached(priority: .userInitiated) { () async throws -> Opened in
+            try await Self.openAsync(url, password: password, vault: .password(vaultPassword), factors: factors)
         }.value
     }
 
     nonisolated private static func openSync(_ url: URL, password: String, vault credential: VaultCredential) throws -> Opened {
+        let (contents, version) = try openContainer(url, password: password)
+        do {
+            let (payload, recovery) = try openVault(contents.vault, credential)
+            return Opened(contents: contents, payload: payload, recoveryEnrolled: recovery, version: version)
+        } catch let e as DesktopVaultError {
+            throw RecoveryError(e.message)
+        }
+    }
+
+    /// `openSync`, with a master password whose vault may ask for key-file / YubiKey factors (a Windows v4 vault):
+    /// they are taken from `factors`. `FactorError` (required or mismatch) reaches the caller as it is, so the UI can
+    /// ask for the factors or offer the recovery phrase; it is never a wrong password.
+    nonisolated private static func openAsync(_ url: URL, password: String, vault credential: VaultCredential,
+                                              factors: FactorSecrets) async throws -> Opened {
+        guard case .password(let vaultPassword) = credential else { return try openSync(url, password: password, vault: credential) }
+        let (contents, version) = try openContainer(url, password: password)
+        do {
+            let (payload, recovery) = try await DesktopVaultFile.openPayload(contents.vault, password: vaultPassword, factors: factors)
+            return Opened(contents: contents, payload: payload, recoveryEnrolled: recovery, version: version)
+        } catch let e as DesktopVaultError {
+            throw RecoveryError(e.message)
+        }
+    }
+
+    /// The backup file decrypted with the backup password, and its container version.
+    nonisolated private static func openContainer(_ url: URL, password: String) throws -> (contents: FullBackupContents, version: Int64) {
         let data: Data
         do { data = try Data(contentsOf: url, options: .alwaysMapped) } catch { throw RecoveryError(String(localized: "Recovery backup is not readable")) }
         guard data.count <= FullBackupV2.maxBackupBytes else { throw RecoveryError(String(localized: "Full backup is too large")) }
         do {
-            let contents = try FullBackupV2.open(data, password: password)
-            let (payload, recovery): ([String: JSONValue], Bool)
-            switch credential {
-            case .password(let vaultPassword): (payload, recovery) = try DesktopVaultFile.openPayload(contents.vault, password: vaultPassword)
-            case .key(let key): (payload, recovery) = try DesktopVaultFile.openPayload(contents.vault, passwordKey: key)
-            }
-            return Opened(contents: contents, payload: payload, recoveryEnrolled: recovery)
+            // Version 3 (scheduled, public key) goes to its own reader; every other file to the v2 reader, unchanged.
+            let version = FullBackup.headerVersion(data) == FullBackupV3.version ? FullBackupV3.version : FullBackupV2.version
+            return (try FullBackup.open(data, password: password), version)
+        } catch let e as FullBackupError {
+            throw RecoveryError(e.message)
+        }
+    }
+
+    nonisolated private static func openVault(_ vault: Data, _ credential: VaultCredential) throws -> ([String: JSONValue], Bool) {
+        switch credential {
+        case .password(let vaultPassword): return try DesktopVaultFile.openPayload(vault, password: vaultPassword)
+        case .key(let key): return try DesktopVaultFile.openPayload(vault, passwordKey: key)
+        }
+    }
+
+    /// Opens a backup file and checks every record of its vault; the inventory Windows reports.
+    nonisolated private static func check(_ url: URL, backupPassword: String, vault credential: VaultCredential,
+                                          expectedItems: Int?, factors: FactorSecrets = FactorSecrets()) async throws -> BackupInventory {
+        try await Task.detached(priority: .userInitiated) { () async throws -> BackupInventory in
+            try inventory(url, try await openAsync(url, password: backupPassword, vault: credential, factors: factors),
+                          expectedItems: expectedItems)
+        }.value
+    }
+
+    /// Design 9.1 for a scheduled v3 file just written (or re-locked): no password. The header, the wrap (with the
+    /// ephemeral key and the record's public key), every member (with the data key) and the vault layer (with the
+    /// stored password key) are checked as a restore preflight would.
+    nonisolated static func checkWritten(_ url: URL, written: FullBackupV3.Written, record: BackupKeyRecord,
+                                         vault credential: VaultCredential, expectedItems: Int?) async throws -> BackupInventory {
+        try await Task.detached(priority: .userInitiated) { () throws -> BackupInventory in
+            try inventory(url, try openWritten(url, written: written, record: record, vault: credential), expectedItems: expectedItems)
+        }.value
+    }
+
+    /// `checkWritten` without the inventory (re-lock checks files that have no vault key at hand: `vault` nil).
+    nonisolated static func openWritten(_ url: URL, written: FullBackupV3.Written, record: BackupKeyRecord,
+                                        vault credential: VaultCredential?) throws -> Opened {
+        let data: Data
+        do { data = try Data(contentsOf: url, options: .alwaysMapped) } catch { throw RecoveryError(String(localized: "Recovery backup is not readable")) }
+        do {
+            let contents = try FullBackupV3.verifyWritten(data, dataKey: written.dataKey, ephemeralSecret: written.ephemeralSecret,
+                                                          record: record)
+            guard let credential else { return Opened(contents: contents, payload: [:], recoveryEnrolled: false, version: FullBackupV3.version) }
+            let (payload, recovery) = try openVault(contents.vault, credential)
+            return Opened(contents: contents, payload: payload, recoveryEnrolled: recovery, version: FullBackupV3.version)
         } catch let e as FullBackupError {
             throw RecoveryError(e.message)
         } catch let e as DesktopVaultError {
@@ -637,11 +777,9 @@ final class MacFullBackup {
         }
     }
 
-    /// Opens a backup file and checks every record of its vault; the inventory Windows reports.
-    nonisolated private static func check(_ url: URL, backupPassword: String, vault credential: VaultCredential,
-                                          expectedItems: Int?) async throws -> BackupInventory {
-        try await Task.detached(priority: .userInitiated) { () throws -> BackupInventory in
-            let opened = try openSync(url, password: backupPassword, vault: credential)
+    /// The inventory of an opened backup, after checking every record id is unique (and the count, when known).
+    nonisolated private static func inventory(_ url: URL, _ opened: Opened, expectedItems: Int?) throws -> BackupInventory {
+        do {
             let records = Self.records(opened.payload)
             var ids = Set<String>()
             for r in records {
@@ -653,13 +791,13 @@ final class MacFullBackup {
             let size = try ChecksumManifest.fileSize(url)
             let mtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
                 .map { Int64($0.timeIntervalSince1970) } ?? 0
-            return BackupInventory(path: url.path, profileName: opened.contents.profileName,
+            return BackupInventory(version: opened.version, path: url.path, profileName: opened.contents.profileName,
                                    entries: opened.contents.entries.count, attachmentCount: opened.contents.attachments.count,
                                    attachmentBytes: opened.contents.attachments.reduce(0) { $0 + $1.sidecarSize },
                                    backupBytes: size, backupSHA256: try ChecksumManifest.sha256(of: url),
                                    createdAt: opened.contents.createdAt ?? mtime, verified: true,
                                    recoveryPhraseEnrolled: opened.recoveryEnrolled)
-        }.value
+        }
     }
 
     nonisolated private static func checkManifestIfPresent(_ url: URL) throws {
@@ -680,6 +818,67 @@ final class MacFullBackup {
     /// Kinds Windows keeps that never sync: restored into `desktop-profile.bin`, not the store.
     nonisolated static let keptKinds: Set<String> = ["document"]
 
+    /// Every shared collection this vault knows of: those this Mac's share records name (as owner or member) and those
+    /// another of this person's devices shares (their `csl:` links, any mode and role), whose edits reach the members
+    /// through that device. A share store that cannot be read counts every collection it might protect
+    /// (`ShareGroups.protectedCollectionIDs`), so a restore keeps more, never less.
+    nonisolated static func sharedCollectionIDs(_ snap: StoreSnapshot) -> Set<String> {
+        var out = Set<String>()
+        let prefix = CollectionStates.linkPrefix
+        for (id, wrapper) in snap.records where id.hasPrefix(prefix) {
+            if case .object(let w) = wrapper, case .object(let r)? = w["record"], case .string(let cid)? = r["collection_id"] {
+                out.insert(cid)
+            } else {
+                out.insert(String(id.dropFirst(prefix.count)))
+            }
+        }
+        guard snap.shares != nil else { return out }
+        if let all = try? ShareGroups.records(in: snap) { return out.union(all.values.map(\.collectionID)) }
+        return out.union(ShareGroups.protectedCollectionIDs(in: snap))
+    }
+
+    /// The live items now in a shared collection (`sharedCollectionIDs`): a restore keeps them as they are.
+    nonisolated static func sharedItemIDs(_ snap: StoreSnapshot) -> Set<String> {
+        var keep = Set<String>()
+        for cid in sharedCollectionIDs(snap) { keep.formUnion(CollectionCatalog.items(in: cid, snapshot: snap)) }
+        return keep
+    }
+
+    /// `restored` with the items of every collection shared on this Mac kept exactly as they are in `current` (their
+    /// records and `cm:` memberships), as `CollectionCatalog.carriedOver` keeps the catalog (sub-plan 07, 5e review):
+    /// a restore never takes a shared item out (which would tombstone it for every member) and never puts an older copy
+    /// over other people's edits. An item the backup brings back that is not in such a collection now is not put back in
+    /// it either (the shared ids leave its membership), so nothing old is republished to the others. The shared
+    /// collections' own catalog rows and share links stay as they are now too: a Mac safety copy (a whole store, whose
+    /// own catalog `carriedOver` brings back) may hold an older name for them, or predate them.
+    nonisolated static func keepingShared(current: StoreSnapshot, restored: [String: JSONValue]) -> [String: JSONValue] {
+        let shared = sharedCollectionIDs(current)
+        guard !shared.isEmpty else { return restored }
+        let keep = sharedItemIDs(current)
+        var out = restored
+        for cid in shared {
+            for prefix in [CollectionStates.catalogPrefix, CollectionStates.linkPrefix] {
+                out[prefix + cid] = current.records[prefix + cid]
+            }
+        }
+        let prefix = CollectionStates.membershipPrefix
+        // Memberships the restore would bring into a shared collection for an item that is not in it now.
+        for (sid, _) in restored where sid.hasPrefix(prefix) {
+            let item = String(sid.dropFirst(prefix.count))
+            guard !keep.contains(item) else { continue }
+            let ids = CollectionCatalog.memberships(of: item, in: StoreSnapshot(records: restored))
+            guard ids.contains(where: shared.contains) else { continue }
+            let left = ids.filter { !shared.contains($0) }
+            out[sid] = left.isEmpty ? nil : CollectionStates.wrapper(CollectionStates.membership(itemID: item, collectionIDs: left))
+        }
+        // The shared items as they are now.
+        for item in keep {
+            out[item] = current.records[item]
+            out[prefix + item] = current.records[prefix + item]
+        }
+        return out
+    }
+
     /// `blobs`: where converted documents' files are sealed (the real folder only once the restore is confirmed).
     private func plan(_ opened: Opened, snapshot snap: StoreSnapshot, blobs: (any AttachmentBlobStore)?) throws
         -> (preview: RestorePreview, records: [String: JSONValue], contents: DesktopProfileStore.Contents) {
@@ -692,7 +891,9 @@ final class MacFullBackup {
         let storeID: String? = { if case .string(let s)? = opened.payload["attachment_store_id"] { return s }; return nil }()
         let sidecars = Dictionary(opened.contents.attachments.map { ($0.id, $0.data) }, uniquingKeysWith: { a, _ in a })
         for r in Self.records(opened.payload) {
-            guard case .object(let o) = r, case .string(let id)? = o["id"], records[id] == nil else {
+            // No item may use a collection-state id (`col:`/`cm:`/`csl:`), also in a backup made before collections synced.
+            guard case .object(let o) = r, case .string(let id)? = o["id"], records[id] == nil,
+                  !CollectionStates.isStateID(id) else {
                 throw RecoveryError(String(localized: "Full backup contains an invalid encrypted vault"))
             }
             let kind: String? = { if case .string(let k)? = o["kind"] { return k }; return nil }()
@@ -708,15 +909,17 @@ final class MacFullBackup {
             if isLogin { logins += 1 } else { others += 1 }
             records[id] = Wrapper.make(ns: isLogin ? .entry : .item, record: r)
         }
-        var payload = opened.payload
+        var payload = Self.withoutDeviceSecrets(opened.payload)
         for key in ["version", "catalog", "generation", "entries", "items", "created_at", "updated_at"] { payload[key] = nil }
         let contents = DesktopProfileStore.Contents(payload: payload, unsynced: kept, settings: opened.contents.settings,
                                                     profileName: opened.contents.profileName)
-        let live = snap.records.filter { Self.isLiveItem($0.value, snap) }
+        let live = snap.itemRecords.filter { Self.isLiveItem($0.value, snap) }
         let added = records.keys.filter { live[$0] == nil }.count
-        let replaced = records.filter { live[$0.key] != nil && live[$0.key] != $0.value }.count
-        let unchanged = records.filter { live[$0.key] == $0.value }.count
-        let removed = live.keys.filter { records[$0] == nil }.count
+        // Items in a shared collection stay as they are now (`keepingShared`): neither replaced nor removed.
+        let sharedItems = Self.sharedItemIDs(snap)
+        let replaced = records.filter { live[$0.key] != nil && live[$0.key] != $0.value && !sharedItems.contains($0.key) }.count
+        let unchanged = records.filter { live[$0.key] == $0.value || (live[$0.key] != nil && sharedItems.contains($0.key)) }.count
+        let removed = live.keys.filter { records[$0] == nil && !sharedItems.contains($0) }.count
         let newest = live.values.map { Wrapper.rank(Self.record($0)) }.max()
         var newer: Bool?
         if let created = opened.contents.createdAt, let newest, newest > 0 { newer = created > newest }
@@ -725,8 +928,30 @@ final class MacFullBackup {
                                      attachments: opened.contents.attachments.count,
                                      recoveryPhraseEnrolled: opened.recoveryEnrolled, currentItems: live.count,
                                      added: added, replaced: replaced, unchanged: unchanged, removed: removed,
-                                     backupIsNewer: newer, syncs: snap.sync != nil)
+                                     backupIsNewer: newer, syncs: snap.sync != nil,
+                                     sharedCollections: Self.sharedCollectionIDs(snap).count)
         return (preview, records, contents)
+    }
+
+    /// Catalog fields of a Windows profile that never stay on, nor leave from, this Mac (final review minor 7): the
+    /// Windows share groups (owner signing key, group key, keyring), their bookkeeping and links, the Windows personal
+    /// device sync group. With the "shared" marks on the collection rows they would otherwise sit in
+    /// `desktop-profile.bin` and go back out in every later Mac full backup, and restoring that on the PC would bring
+    /// stale share records back (Windows ruling F3: share records never go into a backup).
+    nonisolated static let deviceOnlyPayloadKeys = ["share_groups", "share_sync_meta", "collection_links", "sync_group"]
+
+    /// `payload` without `deviceOnlyPayloadKeys` and without `shared_group_id` on its collection rows.
+    nonisolated static func withoutDeviceSecrets(_ payload: [String: JSONValue]) -> [String: JSONValue] {
+        var out = payload
+        for key in deviceOnlyPayloadKeys { out[key] = nil }
+        if case .array(let rows)? = out["collections"] {
+            out["collections"] = .array(rows.map { row -> JSONValue in
+                guard case .object(var o) = row else { return row }
+                o["shared_group_id"] = nil
+                return .object(o)
+            })
+        }
+        return out
     }
 
     nonisolated static func ns(_ wrapper: JSONValue) -> String? {
@@ -755,8 +980,10 @@ final class MacFullBackup {
     }
 
     /// The message for a failed backup, verify or restore.
-    nonisolated static func describe(_ error: Error) -> String {
-        switch error {
+    nonisolated static func describe(_ error: Error, slot: Int = 2) -> String {
+        // A Windows v4 vault's key file / YubiKey (a cancelled touch says nothing).
+        if let line = MacFactors.describe(error, slot: slot) { return line ?? "" }
+        return switch error {
         case let e as RecoveryError: e.message
         case MacVaultError.wrongPassword: String(localized: "The master password is wrong.")
         case LocalStoreError.stale: String(localized: "Nothing was restored: the vault changed while restoring. Try again.")

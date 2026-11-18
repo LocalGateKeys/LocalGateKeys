@@ -66,6 +66,18 @@ def test_disable_never_raises_even_when_wer_is_missing(monkeypatch):
     assert not cd.exclude_from_error_reporting()
 
 
+def test_disable_excludes_only_the_frozen_app(monkeypatch):
+    excluded = []
+    monkeypatch.setattr(cd, "exclude_from_error_reporting", lambda: excluded.append(True))
+    monkeypatch.setattr(cd, "suppress_fault_dialogs", lambda: True)
+    monkeypatch.delattr(cd.sys, "frozen", raising=False)
+    cd.disable_crash_dumps()
+    assert excluded == []
+    monkeypatch.setattr(cd.sys, "frozen", True, raising=False)
+    cd.disable_crash_dumps()
+    assert excluded == [True]
+
+
 def test_no_ops_off_windows(monkeypatch):
     monkeypatch.setattr(cd.os, "name", "posix")
     assert not cd.exclude_from_error_reporting()

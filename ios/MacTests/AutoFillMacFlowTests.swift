@@ -127,6 +127,27 @@ final class AutoFillMacFlowTests: XCTestCase {
     }
 
     /// Review Focus 3: a strict login asks for the master password even right after a Touch ID unlock.
+    /// A vault with a key file (MasterKeyFile v2): the extension cannot take the factor, so the master password is
+    /// refused with "Open LocalGateKeys…" (no password field); Touch ID still opens it, and a strict login says the same.
+    func testVaultWithAKeyFileSendsThePasswordToTheApp() async throws {
+        let ids = try await createVault([("bank.example", "sam", true, false)])
+        let vault = MacVault(directory: dir, keychain: InMemoryKeychainVault(), biometric: bio,
+                             clock: { [date] in date }, random: SystemRandomSource(), kdfParams: cheap)
+        try await vault.addKeyFile(password: "correct horse", keyFile: try KeyFile.newKeepassXMLv2(random: SystemRandomSource()))
+        let m = makeModel()
+        XCTAssertTrue(m.needsFactors)
+        m.begin(.password(recordID: ids[0]))
+        await m.unlock(password: "correct horse")
+        XCTAssertEqual(m.message, MacAutoFillModel.factorsNeedApp)
+        XCTAssertNil(ExtensionVaultOpener(directory: dir, biometric: bio, keychain: InMemoryKeychainVault()).retryAfter,
+                     "a factor problem is never a wrong password")
+        await m.unlockWithTouchID()
+        guard case .strict = m.screen else { return XCTFail("expected the strict prompt, got \(m.screen)") }
+        await m.confirmStrict(password: "correct horse")
+        XCTAssertEqual(m.message, MacAutoFillModel.factorsNeedApp)
+        XCTAssertTrue(sink.outcomes.isEmpty)
+    }
+
     func testStrictLoginNeedsMasterPassword() async throws {
         let ids = try await createVault([("bank.example", "sam", true, false)])
         let m = makeModel()

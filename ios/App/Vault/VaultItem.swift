@@ -27,9 +27,10 @@ struct VaultItem: Identifiable, Equatable, Sendable {
     var kindLabel: String { Self.kindLabel(kind) }
     var isLogin: Bool { kind == "web" || kind == "desktop" }
 
-    /// Live records of the snapshot: no tombstones, no licence states, nothing that fails to unwrap.
+    /// Live records of the snapshot: no tombstones, no licence states, no collection states (`itemRecords`), nothing
+    /// that fails to unwrap.
     static func items(from snapshot: StoreSnapshot) -> [VaultItem] {
-        snapshot.records.compactMap { id, wrapper in
+        snapshot.itemRecords.compactMap { id, wrapper in
             if snapshot.meta[id]?.deleted == true { return nil }
             guard case .object(let w) = wrapper, case .string(let ns)? = w["ns"], ns != Namespace.license.rawValue,
                   case .object(let r)? = w["record"] else { return nil }

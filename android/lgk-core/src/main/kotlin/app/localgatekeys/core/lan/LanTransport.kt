@@ -17,11 +17,23 @@ class LanTransportException(val kind: Kind, val detail: String) : Exception("${k
 
 /** Transport constants and frame helpers (desktop `sync.transport`). */
 object LanTransport {
-    /** Protocol version 2: ephemeral session keys (forward secrecy); never falls back to 1. */
-    const val VERSION: Long = 2
+    /**
+     * Protocol version 3 (`docs/formats/LAN_SYNC_V3.md`): the hellos are sealed to the pinned exchange key
+     * ([SealedHello]); version 2 added ephemeral session keys. This device never sends a clear-text hello.
+     */
+    const val VERSION: Long = 3
+
+    /** The clear-text hello of released builds (desktop `PLAIN_HELLO_VERSION`): answered until the peer is pinned, never sent. */
+    const val PLAIN_HELLO_VERSION: Long = 2
+
+    /** Encrypted frames keep the version-2 layout (`"version":2`) in version-3 sessions too. */
+    const val FRAME_VERSION: Long = 2
     const val MAX_FRAME_PAYLOAD: Int = 1 shl 20
     const val MAX_MESSAGE_BYTES: Int = MAX_FRAME_PAYLOAD - 256
     const val SESSION_ID_BYTES: Int = 16
+
+    /** Desktop `MAX_FIRST_FRAME_BYTES`: the bound of a first frame (a hello or a sealed hello). */
+    const val MAX_FIRST_FRAME_BYTES: Int = 64 * 1024
 
     /** 4-byte big-endian length prefix + payload (1 ... 1 MiB). */
     fun encodeFrame(payload: ByteArray): ByteArray {
@@ -52,7 +64,7 @@ object LanTransport {
         return frame.copyOfRange(4, frame.size)
     }
 
-    /** The plain frame payload a responder sends for a hello of another version: `{"refused":"version","version":2}`. */
+    /** The plain frame payload a responder sends for a hello of another version: `{"refused":"version","version":3}`. */
     fun versionRefusal(): ByteArray =
         canonical(JsonValue.Obj(mapOf("refused" to JsonValue.Str("version"), "version" to JsonValue.Int(VERSION))))
 

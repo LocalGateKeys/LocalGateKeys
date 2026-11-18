@@ -87,3 +87,26 @@ def test_hide_from_capture_defaults_on_and_round_trips(tmp_path: Path) -> None:
     assert AppSettings.load(path).hide_from_capture is False
     path.write_text('{"version": 8, "hide_from_capture": "no"}', encoding="utf-8")
     assert AppSettings.load(path).hide_from_capture is True
+
+
+def test_developer_settings_default_off_and_validated(tmp_path):
+    import json as _json
+
+    defaults = AppSettings()
+    assert defaults.developer_ssh_agent is False and defaults.developer_ssh_keys == []
+    assert defaults.developer_saved_env == {} and defaults.developer_saved_git == {}
+    path = tmp_path / "settings.json"
+    AppSettings(developer_ssh_agent=True, developer_ssh_keys=["a", "b", "a"],
+                developer_saved_env={"SSH_AUTH_SOCK": None},
+                developer_saved_git={"commit.gpgsign": "false"}).save(path)
+    loaded = AppSettings.load(path)
+    assert loaded.developer_ssh_agent is True and loaded.developer_ssh_keys == ["a", "b"]
+    assert loaded.developer_saved_env == {"SSH_AUTH_SOCK": None}
+    assert loaded.developer_saved_git == {"commit.gpgsign": "false"}
+    raw = _json.loads(path.read_text(encoding="utf-8"))
+    raw.update(developer_ssh_agent="yes", developer_ssh_keys=["ok", 3, "", "x" * 200, "bad\x00id"],
+               developer_saved_env=["not", "a", "dict"], developer_saved_git={"k": "v" * 20000})
+    path.write_text(_json.dumps(raw), encoding="utf-8")
+    loaded = AppSettings.load(path)
+    assert loaded.developer_ssh_agent is False and loaded.developer_ssh_keys == ["ok"]
+    assert loaded.developer_saved_env == {} and loaded.developer_saved_git == {}

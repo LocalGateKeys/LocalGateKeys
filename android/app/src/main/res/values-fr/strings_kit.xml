@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Kit d’urgence</string>
+    <string name="kit_intro">Conservez cette page hors ligne et séparée de votre téléphone. Elle explique comment retrouver l’accès à LocalGateKeys si vous oubliez le mot de passe de l’app.</string>
+    <string name="kit_device">Téléphone</string>
+    <string name="kit_date">Date</string>
+    <string name="kit_version">Version de LocalGateKeys</string>
+    <string name="kit_app_password">Mot de passe de l’app (écrivez-le à la main ou gardez-le à part de cette page) :</string>
+    <string name="kit_phrase_heading">Phrase de récupération (%1$d mots, dans l’ordre)</string>
+    <string name="kit_steps_heading">Comment retrouver l’accès</string>
+    <string name="kit_step1">Sur l’écran de verrouillage de LocalGateKeys, touchez « %1$s ».</string>
+    <string name="kit_step2">Saisissez les %1$d mots ci-dessus, dans l’ordre.</string>
+    <string name="kit_step3">Choisissez un nouveau mot de passe de l’app. Vos mots de passe ne changent pas.</string>
+    <string name="kit_step4">Si le téléphone est perdu ou le coffre disparu, installez LocalGateKeys sur un nouveau téléphone, puis restaurez votre dernière sauvegarde ou synchronisez depuis votre PC ou un autre téléphone.</string>
+    <string name="kit_warning">Traitez cette page comme votre coffre. Un PDF enregistré avec la phrase de récupération est aussi sensible que le coffre lui-même : rangez le papier sous clé et supprimez tout PDF enregistré une fois terminé.</string>
+    <string name="kit_print_with_phrase">Imprimer le kit d’urgence avec cette phrase</string>
+    <string name="kit_print_blank">Imprimer le kit d’urgence (cases de la phrase vides)</string>
+</resources>

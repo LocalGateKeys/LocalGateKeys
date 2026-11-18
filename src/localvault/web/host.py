@@ -78,11 +78,35 @@ class WebAgentHost(BrowserBroker):
         self._posted: queue.Queue[Callable[[], None] | None] = queue.Queue()
         self._poster: threading.Thread | None = None
         self.integrations: list[Any] = []
+        self.cli_service: Any = None
+        self.agent_gate_service: Any = None  # AI agents through `lgk mcp` (app/agent_gate_service.py)
+        self.ssh_agent_server: Any = None
+        self._ssh_agent_factory: Callable[[WebAgentHost], Any] | None = None
+        self._ssh_agent_lock = threading.Lock()
+        # The quick-search palette window (``PaletteWindow``); None keeps the app's Quick access page.
+        self.palette: Any = None
 
     # ------------------------------------------------- what the broker expects
+    def duress_session(self) -> bool:
+        """Whether the open session is a duress session (sub-plan 08): no browser extension, Windows passkey
+        provider, command line or SSH agent request is served from it, as if the vault were locked."""
+        from ..duress import is_decoy
+
+        return self._controller.is_unlocked() and is_decoy(self._controller.session)
+
     @property
     def session(self) -> Any:
-        return self._controller.session if self._controller.is_unlocked() else None
+        if not self._controller.is_unlocked() or self.duress_session():
+            return None
+        return self._controller.session
+
+    def _session_available(self) -> bool:
+        return not self.duress_session() and super()._session_available()
+
+    def dispatch_remote(self, request: dict[str, Any]) -> dict[str, Any]:
+        if self.duress_session() and not (isinstance(request, dict) and request.get("action") == "ping"):
+            return {"ok": False, "error": "integration_disabled"}
+        return super().dispatch_remote(request)
 
     @property
     def guard(self) -> Any:
@@ -117,7 +141,14 @@ class WebAgentHost(BrowserBroker):
         return value
 
     def run_on_ui(self, function: Callable[[], T], timeout: float = 90.0) -> T:
-        """Run ``function`` serialised with page calls and sync (the classic UI-thread contract)."""
+        """Run ``function`` serialised with page calls and sync (the classic UI-thread contract).
+
+        Re-entrant on the thread that already holds the vault lock through ``run_on_ui`` (as a call made on the UI
+        thread runs at once): the broker's handlers run under the lock, and a nested call from them (the agent
+        gate's activity record when an agent-approved fill releases the password) must not wait on its own lock.
+        """
+        if getattr(self._holding, "held", False):
+            return function()
         lock = self._controller.vault_lock
         if not lock.acquire(timeout=max(0.0, float(timeout))):
             raise TimeoutError("Interaction timed out; retry with a new explicit action")
@@ -142,9 +173,38 @@ class WebAgentHost(BrowserBroker):
             lock.acquire()
             self._holding.held = True
 
-    def ensure_unlocked(self) -> bool:
-        """Unlocked now, or after the user unlocks in the window (raised for them) within the timeout."""
+    def approve_local_client(self, request: Any) -> bool:
+        """Ask in the popup whether a local client (SSH agent, CLI) may have an item; remembered for 10 minutes.
+
+        Not the browser broker's path: it never touches ``_remote_busy`` and holds no vault lock while the user decides.
+        """
+        return self.approve_local_clients([request])
+
+    def approve_local_clients(self, requests: list[Any]) -> bool:
+        """One popup for several items of one client (``lgk run``/``inject``); each approval is remembered alone."""
+        from ..local_clients.approvals import default_approvals
+
+        def ask(pending: list[Any]) -> tuple[bool, bool]:
+            first = pending[0]
+            client = first.client
+            key = "local_clients.prompt.ssh" if first.kind == "ssh_sign" else "local_clients.prompt.cli"
+            if key == "local_clients.prompt.cli" and len(pending) > 1:
+                key = "local_clients.prompt.cliMany"
+            message = t(key, program=client.label, host=client.host_name, count=len(pending),
+                        item=", ".join(req.item_title for req in pending), detail=first.detail)
+            answer = self.ui.confirm_remember("LocalGateKeys", message, t("local_clients.remember"))
+            return answer.get("approved") is True, answer.get("remember") is True
+        return default_approvals().check_or_ask_many(list(requests), ask, time.monotonic())
+
+    def ensure_unlocked(self, stop: Callable[[], bool] | None = None) -> bool:
+        """Unlocked now, or after the user unlocks in the window (raised for them) within the timeout.
+
+        ``stop`` (polled with the wait) ends the wait early with False, e.g. when the Windows passkey request
+        was cancelled or ran past its deadline; the popup is then hidden like any finished unlock wait.
+        """
         controller = self._controller
+        if self.duress_session():
+            return False  # never served from a duress session, and no window is raised for it
         if controller.is_unlocked():
             return True
         startup = getattr(controller, "startup", None)
@@ -163,9 +223,13 @@ class WebAgentHost(BrowserBroker):
 
         def wait() -> bool:
             while time.monotonic() < deadline and not self._closing and not self._popup_cancelled.is_set():
+                if stop is not None and stop():
+                    return False
                 if controller.is_unlocked():
                     return True
                 time.sleep(0.1)
+            if stop is not None and stop():
+                return False
             return controller.is_unlocked()
         try:
             return self.released_while_waiting(wait)
@@ -178,6 +242,7 @@ class WebAgentHost(BrowserBroker):
     # ------------------------------------------------------------ the popup
     def show_popup(self) -> None:
         popup = self._popup
+        self.hide_palette()  # an approval in the popup is never covered by the on-top palette
         if popup is None:
             self.raise_window()
             return
@@ -224,7 +289,7 @@ class WebAgentHost(BrowserBroker):
             except Exception:  # noqa: BLE001
                 pass
 
-    def reauthenticate(self, title: str, lease: Any, *, allow_hello: bool = False) -> bool:
+    def reauthenticate(self, title: str, lease: Any, *, allow_hello: bool = False, fresh: bool = False) -> bool:
         from ..api.result import ApiError
         from ..app.secrets import SecretService
 
@@ -232,7 +297,8 @@ class WebAgentHost(BrowserBroker):
             native = getattr(self._controller, "hello_reauth", None)
             hello = None if native is None else (
                 lambda t, l: self.released_while_waiting(lambda: native(t, l)))
-            SecretService(self._controller, self.ui, hello=hello).reauthenticate(title, lease, allow_hello=allow_hello)
+            SecretService(self._controller, self.ui, hello=hello).reauthenticate(
+                title, lease, allow_hello=allow_hello, fresh=fresh)
             return True
         except ApiError:
             return False
@@ -262,12 +328,14 @@ class WebAgentHost(BrowserBroker):
 
     # -------------------------------------------------------------- locking
     def lock(self, reason: str = "palette.vaultLocked") -> None:
+        self.hide_palette()  # the palette never outlives the vault it searched
         self._controller.lock(t(reason))
 
     def emergency_lock(self) -> None:
         from ..app.lockmodes import LockModes
 
         self._overlay_off()
+        self.hide_palette()
         LockModes(self._controller).emergency_lock()
 
     def lock_and_switch_person(self) -> None:
@@ -303,8 +371,9 @@ class WebAgentHost(BrowserBroker):
     desktop_fill: Callable[[], None] | None = None
 
     def start_integrations(self, *, pipe: Any = None, hotkey: Any = None, monitor: Any = None,
-                           tray: Any = None, overlay: Any = None) -> None:
-        """Start the pipe server, global hotkeys, session monitor, tray and field button (the real app only)."""
+                           tray: Any = None, overlay: Any = None, ssh_agent: Any = None) -> None:
+        """Start the pipe server, global hotkeys, session monitor, tray, field button and, when it is on in
+        Settings › Developer, the SSH agent (the real app only)."""
         if overlay is None:
             from ..desktop_overlay import DesktopFieldOverlay as overlay
         if pipe is None:
@@ -316,7 +385,16 @@ class WebAgentHost(BrowserBroker):
         if tray is None:
             from ..tray import TrayController as tray
         controller = self._controller
-        self.server = pipe(self.dispatch_remote)
+        from ..cli_service import CliService
+
+        # Requests from the installed lgk.exe (pipe scope "cli") go to the CLI service, never the broker.
+        self.cli_service = CliService(self)
+        from ..app.agent_gate_service import AgentGateService
+
+        self.agent_gate_service = AgentGateService(self)
+        # Requests from the Windows passkey provider (pipe scope "system_passkey") reach only dispatch_system.
+        self.server = pipe(self.dispatch_remote, cli_dispatcher=self.cli_service.dispatch_from_pid,
+                           system_dispatcher=self.dispatch_system)
         # The fill waits on page prompts, so it gets its own thread: lock hotkeys and the tray never queue behind it.
         self._hotkey_factory = hotkey
         self.hotkey = self._make_hotkey(self._quick_hotkey())
@@ -344,11 +422,78 @@ class WebAgentHost(BrowserBroker):
                 _log.warning("%s could not start: %s", name, exc)
                 if name == "hotkey":
                     self.set_status(t("host.agentRunningHotkeyUnavailable2", exc=exc), "warning")
+            else:
+                if name == "hotkey":  # Windows refused some keys without raising (emergency lock first: it matters most)
+                    problems = [getattr(component, attr, None) for attr in ("emergency_error", "error", "quick_error")]
+                    problem = "; ".join(p for p in problems if isinstance(p, str) and p)
+                    if problem:
+                        self.set_status(t("host.agentRunningHotkeyUnavailable", problem=problem), "warning")
             self.integrations.append(component)
         controller.on_lock.append(self._refresh_tray)
+        controller.on_lock.append(self._forget_site_verdicts)  # phishing shield: no saved origin outlives the vault
+        # Passkeys a page never confirmed receiving go before the lock, and at the next unlock after a crash.
+        controller.before_lock.append(self._passkey_before_lock)
+        controller.on_unlock.append(self._passkey_after_unlock)
         controller.on_unlock.append(self._refresh_tray)
         controller.on_unlock.append(self.apply_overlay)  # back on after an emergency lock or a switch
         self.apply_overlay()
+        self._ssh_agent_factory = ssh_agent
+        self.apply_ssh_agent()
+        # A duress session stops the SSH agent pipe; the next lock starts it again (when it is on).
+        controller.on_unlock.append(self.apply_ssh_agent)
+        controller.on_lock.append(self.apply_ssh_agent)
+
+    # ------------------------------------------------------ SSH agent
+    @staticmethod
+    def _default_ssh_agent(host: WebAgentHost) -> Any:
+        from ..ssh_agent import SshAgentServer, SshAgentService, default_pipe_name
+
+        return SshAgentServer(default_pipe_name(), SshAgentService(host))
+
+    # Told every status apply_ssh_agent ends in (the developer service removes / restores SSH_AUTH_SOCK).
+    on_ssh_agent_status: Callable[[str], None] | None = None
+
+    def apply_ssh_agent(self) -> str:
+        """Start or stop the SSH agent pipe to match ``settings.developer_ssh_agent``; returns its status."""
+        status = self._apply_ssh_agent()
+        listener = self.on_ssh_agent_status
+        if listener is not None:
+            try:
+                listener(status)
+            except Exception:  # noqa: BLE001 - never stop the app over the agent
+                _log.warning("SSH agent status listener failed", exc_info=True)
+        return status
+
+    def _apply_ssh_agent(self) -> str:
+        with self._ssh_agent_lock:
+            enabled = (bool(getattr(self.settings, "developer_ssh_agent", False)) and not self._closing
+                       and not self.duress_session())
+            server = self.ssh_agent_server
+            if enabled and (server is None or server.status != "running"):
+                if server is not None:
+                    server.stop()  # an earlier start found the name taken: try again
+                try:
+                    server = (self._ssh_agent_factory or self._default_ssh_agent)(self)
+                    server.start()
+                except Exception as exc:  # noqa: BLE001 - never stop the app over the agent
+                    _log.warning("SSH agent could not start: %s", type(exc).__name__)
+                    server = None
+                    self.ssh_agent_server = None
+                    return "unavailable"
+                self.ssh_agent_server = server
+            elif not enabled and server is not None:
+                self.ssh_agent_server = None
+                try:
+                    server.stop()
+                except Exception:  # noqa: BLE001
+                    _log.warning("SSH agent did not stop cleanly", exc_info=True)
+            return self.ssh_agent_status()
+
+    def ssh_agent_status(self) -> str:
+        """"off", "running", "unavailable" (this user's process holds the pipe name), "taken" (another account's
+        process holds it) or "stopped"."""
+        server = self.ssh_agent_server
+        return "off" if server is None else str(server.status)
 
     # ------------------------------------------------------ field button
     desktop_fill_window: Callable[[int], None] | None = None
@@ -379,6 +524,7 @@ class WebAgentHost(BrowserBroker):
 
     def stop_integrations(self) -> None:
         self._closing = True
+        self.apply_ssh_agent()  # off while closing
         for component in reversed(self.integrations):
             try:
                 component.stop()
@@ -476,7 +622,37 @@ class WebAgentHost(BrowserBroker):
         self.raise_window()
 
     def quick_access(self) -> None:
+        if getattr(self.settings, "quick_access_palette", True) is not False and self.show_palette():
+            return
         self._navigate("quick-access")
+
+    def show_palette(self) -> bool:
+        """Show the quick-search palette over the app in front; False when it cannot be shown."""
+        palette = getattr(self, "palette", None)
+        if palette is None or getattr(palette, "disabled", False):
+            return False
+        try:
+            shown = palette.show_centered()
+        except Exception:  # noqa: BLE001 - logged; the app's Quick access page opens instead
+            _log.warning("The quick-search palette could not be shown", exc_info=True)
+            return False
+        if shown:
+            self._bus.emit("palette.show", {})
+        return bool(shown)
+
+    def hide_palette(self) -> None:
+        palette = getattr(self, "palette", None)
+        if palette is None:
+            return
+        self._bus.emit("palette.hide", {})
+        # A prompt the palette was showing is cancelled: its copy stops waiting and frees the vault lock.
+        cancel = getattr(self._port, "cancel_surface", None)
+        if cancel is not None:
+            cancel("palette")
+        try:
+            palette.hide()
+        except Exception:  # noqa: BLE001, S110 - already hidden or gone
+            pass
 
     def _spawn_desktop_fill(self) -> None:
         threading.Thread(target=self._run_desktop_fill, name="lgk-desktop-fill", daemon=True).start()

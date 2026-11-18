@@ -108,3 +108,87 @@ describe('Unlock with Windows Hello and camera', () => {
     expect(await screen.findByText('Face not recognised in time.')).toBeInTheDocument();
   });
 });
+
+describe('Security key', () => {
+  it('unlocks with the security key when offered and shows its error', async () => {
+    const api = fakeApi({ vault_unlock_security_key: vi.fn().mockResolvedValue({ ok: false, error: { code: 'security_key_failed', message: 'This is not the security key set up for this profile.' } }) });
+    render(Unlock, { vault: { ...LOCKED, hello: false, security_key: true, camera: false, chips: [], backoff: 0 } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Unlock with security key' }));
+    expect(api.vault_unlock_security_key).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('This is not the security key set up for this profile.')).toBeInTheDocument();
+  });
+
+  it('is not shown when not offered', () => {
+    fakeApi();
+    render(Unlock, { vault: { ...LOCKED, hello: false, security_key: false, camera: false, chips: [], backoff: 0 } });
+    expect(screen.queryByRole('button', { name: 'Unlock with security key' })).not.toBeInTheDocument();
+  });
+
+  it('sets up a security key from the Unlocking page', async () => {
+    const security_key_enable = vi.fn().mockResolvedValue({ ok: true, message: 'Security key unlock is enabled.' });
+    fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF),
+      security_key_status: vi.fn().mockResolvedValue({ ok: true, supported: true, enabled: false, incomplete: false, tone: 'neutral', status: 'Not set up.', guidance: 'Use a FIDO2 key.' }),
+      security_key_enable });
+    render(UnlockingPage, { onclose: () => {} });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Set up a security key' }));
+    expect(security_key_enable).toHaveBeenCalled();
+    expect(await screen.findByText('Security key unlock is enabled.')).toBeInTheDocument();
+  });
+
+  it('shows why a security key cannot be used', async () => {
+    fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF),
+      security_key_status: vi.fn().mockResolvedValue({ ok: true, supported: false, enabled: false, incomplete: false, tone: 'neutral', status: 'Windows is too old (version 3).', guidance: 'Use a FIDO2 key.' }) });
+    render(UnlockingPage, { onclose: () => {} });
+    expect(await screen.findByText('Windows is too old (version 3).')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Set up a security key' })).not.toBeInTheDocument();
+  });
+});
+
+describe('Key file and YubiKey on the Unlocking page', () => {
+  const STATUS = { ok: true, factors: [], keyfile_name: null, remember: true, always_ask: false, shortcuts_off: false,
+    hint: 'A key file or YubiKey is then needed.', yubikey_setup: 'Set it up in Yubico Authenticator.' };
+
+  it('adds a YubiKey on the chosen slot and a key file', async () => {
+    const factors_add_yubikey = vi.fn().mockResolvedValue({ ok: true, message: 'YubiKey added (slot 1).' });
+    const factors_add_keyfile = vi.fn().mockResolvedValue({ ok: true, message: 'Key file vault.keyx added.' });
+    fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF),
+      factors_status: vi.fn().mockResolvedValue(STATUS), factors_add_yubikey, factors_add_keyfile });
+    render(UnlockingPage, { onclose: vi.fn() });
+    expect(await screen.findByText('Set it up in Yubico Authenticator.')).toBeInTheDocument();
+    await fireEvent.change(screen.getByLabelText('Slot'), { target: { value: '1' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add YubiKey' }));
+    await waitFor(() => expect(factors_add_yubikey).toHaveBeenCalledWith(1));
+    expect(await screen.findByText('YubiKey added (slot 1).')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Add key file…' }));
+    await waitFor(() => expect(factors_add_keyfile).toHaveBeenCalled());
+  });
+
+  it('checks a backup YubiKey with its own call', async () => {
+    const factors_check_backup_yubikey = vi.fn().mockResolvedValue({ ok: true, message: 'This YubiKey gives the same answer.' });
+    fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF),
+      factors_status: vi.fn().mockResolvedValue({ ...STATUS, factors: [{ kind: 'yubikey-hmac', slot: 2 }] }),
+      factors_check_backup_yubikey });
+    render(UnlockingPage, { onclose: vi.fn() });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Check a backup YubiKey' }));
+    await waitFor(() => expect(factors_check_backup_yubikey).toHaveBeenCalledWith());
+    expect(await screen.findByText('This YubiKey gives the same answer.')).toBeInTheDocument();
+  });
+
+  it('turns on "Always ask" and then hides the Hello, security key and camera setup', async () => {
+    const set = [{ kind: 'keyfile', slot: null }];
+    const factors_status = vi.fn().mockResolvedValueOnce({ ...STATUS, factors: set, keyfile_name: 'vault.keyx' })
+      .mockResolvedValue({ ...STATUS, factors: set, keyfile_name: 'vault.keyx', always_ask: true, shortcuts_off: true });
+    const factors_set_always_ask = vi.fn().mockResolvedValue({ ok: true, always_ask: true,
+      message: 'The key file / YubiKey is now asked at every unlock. Windows Hello removed.' });
+    fakeApi({ hello_status: vi.fn().mockResolvedValue(HELLO_OFF), face_status: vi.fn().mockResolvedValue(FACE_OFF),
+      factors_status, factors_set_always_ask });
+    render(UnlockingPage, { onclose: vi.fn() });
+    expect(await screen.findByText(/vault\.keyx/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enable for this profile' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByLabelText('Always ask for the key file / YubiKey'));
+    await waitFor(() => expect(factors_set_always_ask).toHaveBeenCalledWith(true));
+    expect(await screen.findByText(/now asked at every unlock/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Enable for this profile' })).not.toBeInTheDocument());
+    expect(screen.getByText(/are off while/)).toBeInTheDocument();
+  });
+});

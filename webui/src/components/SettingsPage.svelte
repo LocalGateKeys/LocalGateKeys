@@ -5,7 +5,9 @@
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
+  import AutoTypeSection from './AutoTypeSection.svelte';
   import ErrorLogLink from './ErrorLogLink.svelte';
+  import TravelSection from './TravelSection.svelte';
   import { recall, remember } from '../lib/remember.js';
 
   let { section = null, onclose, onroute } = $props();
@@ -96,6 +98,16 @@
 {#snippet rowView(row)}
     {#if row.type === 'note'}
       <p class="note row">{row.text}</p>
+    {:else if row.type === 'notice'}
+      <div class="row notice" class:warning={row.kind === 'warning'} role={row.kind === 'warning' ? 'alert' : 'status'}>
+        <div class="text">
+          <div class="title">{row.title}</div>
+          <div class="desc">{row.text}</div>
+        </div>
+        {#each row.actions as a, i (i)}
+          <Button label={a.label} variant={i === 0 ? 'primary' : undefined} onclick={() => press(a)} />
+        {/each}
+      </div>
     {:else}
       <div class="row">
         <div class="text">
@@ -167,6 +179,8 @@
           <div class="group">
             {#each current.rows as row, i (row.key ?? row.title ?? i)}{@render rowView(row)}{/each}
           </div>
+          {#if current.key === 'privacy'}<TravelSection />{/if}
+          {#if current.key === 'autofill'}<AutoTypeSection />{/if}
         </section>
       {/if}
     </div>
@@ -201,6 +215,8 @@
   .desc, .note { color: var(--text-muted); font-size: 12px; }
   .path { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .error { color: var(--danger); font-size: 12px; }
+  .notice { background: color-mix(in srgb, var(--accent) 12%, transparent); flex-wrap: wrap; }
+  .notice.warning { background: color-mix(in srgb, var(--warning) 16%, transparent); }
   select, .textbox { background: var(--group); color: var(--text); border: 1px solid var(--separator); border-radius: 8px; padding: 5px 8px; }
   .textbox { width: 150px; user-select: text; }
   .seg { display: flex; border: 1px solid var(--separator); border-radius: 9px; overflow: hidden; }

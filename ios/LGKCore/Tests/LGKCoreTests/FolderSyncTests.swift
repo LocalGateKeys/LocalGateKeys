@@ -37,7 +37,8 @@ final class MemoryStore: ItemStore, @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         guard change.baseRevision == snapshot.revision else { throw FolderSyncError("vault-changed") }
         commits += 1
-        snapshot = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: snapshot.revision + 1)
+        snapshot = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: snapshot.revision + 1,
+                                 keptIdentity: change.keptIdentity(after: snapshot.keptIdentity))
     }
 }
 

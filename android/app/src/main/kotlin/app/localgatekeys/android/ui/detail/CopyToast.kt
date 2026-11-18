@@ -36,7 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.localgatekeys.android.ui.theme.LgkTheme
-import app.localgatekeys.android.ui.theme.lgkGlass
+import app.localgatekeys.android.ui.theme.lgkToastSurface
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -79,7 +79,7 @@ class CopyToast(private val showsMessage: Boolean) {
     }
 }
 
-/** Hosts [toast] at the top of [content]: a glass capsule with a check and the message, announced politely. */
+/** Hosts [toast] at the top of [content]: a solid capsule with a check and the message, announced politely. */
 @Composable
 fun CopyToastHost(toast: CopyToast, content: @Composable BoxScope.() -> Unit) {
     val shown by toast.current.collectAsStateWithLifecycle()
@@ -105,7 +105,7 @@ fun CopyToastHost(toast: CopyToast, content: @Composable BoxScope.() -> Unit) {
             val c = LgkTheme.colors
             Row(
                 Modifier
-                    .lgkGlass(CircleShape)
+                    .lgkToastSurface(CircleShape)
                     .semantics { liveRegion = LiveRegionMode.Polite }
                     .testTag("copy-toast")
                     .padding(horizontal = 16.dp, vertical = 10.dp),

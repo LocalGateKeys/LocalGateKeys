@@ -135,13 +135,17 @@
     "message": "Opgeslagen. Hij verschijnt in LocalGateKeys de volgende keer dat je het opent."
   },
   "bg_timeout": {
-    "message": "De LocalGateKeys-bridge antwoordde niet. Sluit verouderde desktopprompts en probeer het opnieuw."
+    "message": "Goedkeuring in LocalGateKeys is verlopen. Sluit open LocalGateKeys-vensters en probeer het opnieuw."
   },
   "content_autosignin_skipped": {
     "message": "Ingevuld. Automatisch aanmelden is overgeslagen omdat dit formulier niet wordt ondersteund of dubbelzinnig is. Meld handmatig aan."
   },
   "content_cancel": {
     "message": "Annuleren"
+  },
+  "panel_fill_login": {
+    "message": "Invullen",
+    "description": "Button on the right of a login row in the in-page picker; fills that login."
   },
   "content_card": {
     "message": "Kaart"
@@ -234,6 +238,12 @@
   },
   "content_err_not_found": {
     "message": "Geen opgeslagen login voor deze site."
+  },
+  "content_err_entry_required": {
+    "message": "Kies welke opgeslagen login dit wachtwoord krijgt. Een wachtwoord zonder gebruikersnaam wordt nooit als nieuwe login opgeslagen."
+  },
+  "content_err_entry_not_for_site": {
+    "message": "Die login is niet voor deze site opgeslagen, dus het wachtwoord is niet gewijzigd."
   },
   "content_err_session_changed": {
     "message": "Kluis of profiel gewijzigd. Klik opnieuw op het pictogram."
@@ -363,6 +373,9 @@
   "content_signin_question": {
     "message": "Heb je zojuist aangemeld?"
   },
+  "content_frame_blocked": {
+    "message": "Deze pagina heeft het LocalGateKeys-paneel geblokkeerd, dus er is niets ingevuld. Gebruik in plaats daarvan de LocalGateKeys-knop in de werkbalk van de browser."
+  },
   "content_tampered": {
     "message": "Deze pagina heeft een LocalGateKeys-knop verborgen, verplaatst of bedekt, dus de klik is genegeerd."
   },
@@ -454,7 +467,7 @@
     "message": "Vul logins in en sla ze op met de wachtwoordmanager LocalGateKeys voor Windows. De extensie praat alleen met de app op je eigen pc."
   },
   "ext_description_ios": {
-    "message": "Biedt aan om de logins waarmee je in Safari aanmeldt op te slaan in LocalGateKeys op deze iPhone."
+    "message": "Biedt aan om de logins waarmee je in Safari aanmeldt op te slaan in LocalGateKeys op dit apparaat."
   },
   "ext_description_macos": {
     "message": "Biedt aan om de logins waarmee je in Safari aanmeldt op te slaan in LocalGateKeys op deze Mac."
@@ -491,9 +504,6 @@
   },
   "popup_auto_update_failed": {
     "message": "Automatisch opslaan voor deze site kon niet worden bijgewerkt. Probeer het opnieuw."
-  },
-  "popup_checking_connection": {
-    "message": "Verbinding controleren…"
   },
   "popup_checking_connection_desc": {
     "message": "LocalGateKeys wordt benaderd zonder je kluis te ontgrendelen."
@@ -554,9 +564,6 @@
       }
     }
   },
-  "popup_current_site": {
-    "message": "Huidige site"
-  },
   "popup_diag_agent_offline": {
     "message": "Open LocalGateKeys, herstel de browserverbinding en probeer het opnieuw."
   },
@@ -597,7 +604,7 @@
     "message": "Er is geen huidig inlogveld gevonden. Voer een login in en probeer het opnieuw."
   },
   "popup_fill_card": {
-    "message": "Kaart invullen…"
+    "message": "Kaart invullen"
   },
   "popup_fill_card_desc": {
     "message": "Kies een kaart, vink velden aan, bevestig in de app"
@@ -629,26 +636,8 @@
   "popup_generate_password_desc": {
     "message": "Een wachtwoord maken voor registratie"
   },
-  "popup_guidance_checking": {
-    "message": "LocalGateKeys wordt gecontroleerd voordat de acties van deze pagina worden ingeschakeld."
-  },
-  "popup_guidance_connected": {
-    "message": "Alleen de oorsprong van deze site wordt gecontroleerd. Er wordt niets ingevuld totdat je een actie kiest."
-  },
-  "popup_guidance_locked": {
-    "message": "Kies een actie om te ontgrendelen; er wordt niets automatisch ingevuld."
-  },
-  "popup_guidance_offline": {
-    "message": "Verbind LocalGateKeys opnieuw om de acties van deze site te gebruiken."
-  },
-  "popup_guidance_setup": {
-    "message": "Rond de installatie van LocalGateKeys af voordat je de acties van deze site gebruikt."
-  },
   "popup_integration_disabled": {
     "message": "Browserintegratie is onderbroken. Schakel haar weer in via de instellingen van LocalGateKeys."
-  },
-  "popup_local_vault": {
-    "message": "LOKALE KLUIS"
   },
   "popup_locked_desc": {
     "message": "Kies een actie om door te gaan; de desktop-app vraagt toestemming vóór het ontgrendelen."
@@ -660,9 +649,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_manual_by_design": {
-    "message": "BEWUST HANDMATIG"
   },
   "popup_need_login_page": {
     "message": "Open eerst een http- of https-pagina met een inlogformulier."
@@ -676,9 +662,6 @@
   "popup_page_unreachable": {
     "message": "Deze pagina kon niet worden bereikt. Laad de pagina opnieuw en probeer het nogmaals."
   },
-  "popup_quick_actions": {
-    "message": "Snelle acties"
-  },
   "popup_ready_version": {
     "message": "LocalGateKeys is gereed$VERSION$. Er wordt niets ontgrendeld totdat je een actie kiest.",
     "placeholders": {
@@ -686,9 +669,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_refresh_connection": {
-    "message": "Verbindingsstatus vernieuwen"
   },
   "popup_refreshed_locked": {
     "message": "Verbinding vernieuwd. Ontgrendelen gebeurt pas nadat je een actie kiest."
@@ -700,16 +680,13 @@
     "message": "Verbinding vernieuwd. Rond de installatie van LocalGateKeys af en vernieuw dan."
   },
   "popup_save_login": {
-    "message": "Login opslaan"
+    "message": "Deze login opslaan"
   },
   "popup_save_login_desc": {
     "message": "Deze inlogvelden opslaan"
   },
   "popup_setup_desc": {
     "message": "LocalGateKeys meldde geen gereed browserprofiel. Rond de installatie af en vernieuw dan."
-  },
-  "popup_site_hint": {
-    "message": "Acties blijven op deze pagina en vereisen jouw keuze."
   },
   "popup_started": {
     "message": "$ACTION$ is gestart op deze pagina.",
@@ -719,9 +696,6 @@
       }
     }
   },
-  "popup_state_connected": {
-    "message": "Verbonden"
-  },
   "popup_state_locked": {
     "message": "Vergrendeld"
   },
@@ -730,12 +704,6 @@
   },
   "popup_state_setup": {
     "message": "Installatie vereist"
-  },
-  "popup_tagline": {
-    "message": "Jouw sleutels. Jouw controle."
-  },
-  "popup_this_page": {
-    "message": "DEZE PAGINA"
   },
   "popup_unlock_on_action": {
     "message": "Ontgrendelen wordt pas gevraagd nadat je een veldactie kiest."
@@ -750,5 +718,295 @@
   },
   "popup_wait_checking": {
     "message": "LocalGateKeys wordt nog gecontroleerd. Wacht op de verbindingsstatus en probeer het opnieuw."
+  },
+  "content_generate_password": {
+    "message": "Wachtwoord genereren"
+  },
+  "content_generate_title": {
+    "message": "Sterk wachtwoord genereren"
+  },
+  "content_generate_body": {
+    "message": "Vult de velden voor het nieuwe wachtwoord in dit formulier met een sterk wachtwoord."
+  },
+  "gen_title": {
+    "message": "Wachtwoordgenerator"
+  },
+  "gen_mode_password": {
+    "message": "Wachtwoord"
+  },
+  "gen_mode_passphrase": {
+    "message": "Wachtzin"
+  },
+  "gen_new": {
+    "message": "Nieuw"
+  },
+  "gen_length": {
+    "message": "Lengte"
+  },
+  "gen_avoid_ambiguous": {
+    "message": "Gelijkende tekens vermijden (l, 1, O, 0)"
+  },
+  "gen_words": {
+    "message": "Woorden"
+  },
+  "gen_separator": {
+    "message": "Scheidingsteken"
+  },
+  "gen_sep_space": {
+    "message": "Spatie"
+  },
+  "gen_sep_none": {
+    "message": "Geen"
+  },
+  "gen_capitalize": {
+    "message": "Hoofdletters"
+  },
+  "gen_add_number": {
+    "message": "Getal toevoegen"
+  },
+  "gen_copy": {
+    "message": "Kopiëren"
+  },
+  "gen_fill": {
+    "message": "Invullen op pagina"
+  },
+  "gen_copy_failed": {
+    "message": "Kopiëren mislukt. Selecteer de tekst en kopieer die."
+  },
+  "gen_pick_group": {
+    "message": "Kies minstens één soort teken."
+  },
+  "site_verified": {
+    "message": "Geverifieerde site"
+  },
+  "site_related": {
+    "message": "Verwante site"
+  },
+  "site_lookalike": {
+    "message": "Nagemaakte site"
+  },
+  "site_new": {
+    "message": "Nieuwe site"
+  },
+  "content_guard_title": {
+    "message": "Is dit de juiste site?"
+  },
+  "content_guard_body": {
+    "message": "$HOST$ lijkt op $SAVED$, waar uw login is opgeslagen, maar het is een andere site. Ga alleen verder als u het zeker weet.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_guard_body_mixed": {
+    "message": "$HOST$ mengt letters uit verschillende alfabetten, een veelgebruikte phishingtruc. Ga alleen verder als u het zeker weet.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_continue": {
+    "message": "Doorgaan op $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_go_back": {
+    "message": "Terug"
+  },
+  "content_same_account_title": {
+    "message": "Is dit hetzelfde account als op $SAVED$?",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_same_account_body": {
+    "message": "$HOST$ heeft dezelfde naam als $SAVED$, waar uw login is opgeslagen, maar een andere extensie. Ga alleen verder als het hetzelfde bedrijf is.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_same_account_yes": {
+    "message": "Hetzelfde account"
+  },
+  "content_new_site_title": {
+    "message": "Nieuwe site voor deze gebruikersnaam"
+  },
+  "content_new_site_body": {
+    "message": "U hebt deze gebruikersnaam voor een andere site opgeslagen, nooit voor $HOST$. Als u niet verwachtte dat deze pagina om uw wachtwoord vraagt, controleer dan het adres.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_chip_unlocked": {
+    "message": "Ontgrendeld"
+  },
+  "popup_chip_checking": {
+    "message": "Controleren"
+  },
+  "popup_logins_heading": {
+    "message": "Logins voor deze site"
+  },
+  "popup_fill_button": {
+    "message": "Invullen"
+  },
+  "popup_logins_note": {
+    "message": "Je opgeslagen logins voor deze site openen op de pagina, nooit in deze pop-up. Druk op Enter om in te vullen."
+  },
+  "popup_unlock_button": {
+    "message": "Ontgrendelen in de desktop-app"
+  },
+  "popup_unlock_explain": {
+    "message": "Er wordt niets ingevuld of getoond tot je ontgrendelt."
+  },
+  "popup_check_again": {
+    "message": "Opnieuw controleren"
+  },
+  "popup_auto_label": {
+    "message": "Vragen om logins op deze site op te slaan"
+  },
+  "cmd_fill_login": {
+    "message": "Login voor deze pagina invullen"
+  },
+  "content_use_toolbar": {
+    "message": "Gebruik in plaats daarvan de LocalGateKeys-knop in de werkbalk van de browser."
+  },
+  "content_username_label": {
+    "message": "Gebruikersnaam"
+  },
+  "content_update_which": {
+    "message": "Welke opgeslagen login moet worden bijgewerkt?"
+  },
+  "content_update_pw_title": {
+    "message": "Een opgeslagen wachtwoord bijwerken?"
+  },
+  "content_update_pw_one": {
+    "message": "Dit formulier stelde een nieuw wachtwoord in maar heeft geen veld voor de gebruikersnaam. Je bevestigt de wijziging in de desktop-app."
+  },
+  "content_update_pw_many": {
+    "message": "Dit formulier stelde een nieuw wachtwoord in maar heeft geen veld voor de gebruikersnaam. Kies de login waar het bij hoort, of kies Niet nu."
+  },
+  "content_update_pw_none": {
+    "message": "LocalGateKeys heeft nu geen opgeslagen login die het voor deze site kan bijwerken. Er is niets gewijzigd."
+  },
+  "content_update_pw_for": {
+    "message": "Wachtwoord bijwerken voor $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_update_pw_action": {
+    "message": "Bijwerken"
+  },
+  "content_passkey_title": {
+    "message": "Deze site ondersteunt passkeys"
+  },
+  "content_passkey_body": {
+    "message": "Je kunt een passkey toevoegen in de accountinstellingen van deze site. LocalGateKeys bewaart je wachtwoord ook; er wordt niets aangemaakt tenzij jij dat op de site doet."
+  },
+  "content_passkey_never": {
+    "message": "Niet meer vragen voor deze site"
+  },
+  "popup_site_logins_note": {
+    "message": "Kies een login om die op de pagina in te vullen. Wachtwoorden worden hier nooit getoond."
+  },
+  "popup_site_logins_empty": {
+    "message": "Nog geen opgeslagen logins voor deze site."
+  },
+  "popup_popup_only_label": {
+    "message": "Op deze site altijd deze pop-up gebruiken"
+  },
+  "popup_popup_only_on_hint": {
+    "message": "Aan: geen LocalGateKeys-pictogrammen of -menu's op de pagina's van deze site; vul hier in"
+  },
+  "popup_popup_only_off_hint": {
+    "message": "Uit: pictogrammen en menu's verschijnen naast de inlogvelden van deze site"
+  },
+  "popup_why_no_icon": {
+    "message": "Waarom staat er geen pictogram op de pagina?"
+  },
+  "popup_why_no_icon_text": {
+    "message": "LocalGateKeys toont geen pictogram als het inlogformulier in een frame van een andere site staat, het wachtwoord naar een andere site stuurt, verborgen is, of als pictogrammen voor deze site uit staan. Invullen via deze pop-up werkt nog steeds op de eigen formulieren van deze site."
+  },
+  "popup_frame_origin": {
+    "message": "Deze pagina heeft een inlogframe van $ORIGIN$. LocalGateKeys vult het frame van een andere site niet vanaf hier in.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_clears": {
+    "message": "Gekopieerd. Het klembord wordt over $SECONDS$ s gewist als deze pop-up open blijft.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_cleared": {
+    "message": "Klembord gewist."
+  },
+  "safari_popup_fill_title": {
+    "message": "Deze aanmelding invullen"
+  },
+  "safari_popup_fill_body": {
+    "message": "Klik in het e-mail- of wachtwoordveld en kies dan je login van LocalGateKeys in de lijst die Safari toont."
+  },
+  "safari_popup_offer_save": {
+    "message": "Aanbieden om logins op deze site te bewaren"
+  },
+  "safari_popup_waiting_one": {
+    "message": "1 login wacht op controle"
+  },
+  "safari_popup_waiting_many": {
+    "message": "$COUNT$ logins wachten op controle",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "safari_popup_waiting_when": {
+    "message": "bij de volgende ontgrendeling"
+  },
+  "safari_popup_open_app": {
+    "message": "LocalGateKeys openen"
+  },
+  "safari_popup_open_failed": {
+    "message": "LocalGateKeys kon niet worden geopend. Open de app vanuit de map Apps."
+  },
+  "safari_popup_footer": {
+    "message": "Je wachtwoorden blijven in de app. Deze knop ziet ze nooit."
+  },
+  "safari_popup_no_site": {
+    "message": "Geen website in dit tabblad"
+  },
+  "safari_popup_not_allowed": {
+    "message": "LocalGateKeys is nog niet toegestaan op deze website. Sta het toe in de extensie-instellingen van Safari."
+  },
+  "safari_popup_offer_save_full": {
+    "message": "Opslagvragen staan al uit op 2000 websites, het maximum dat LocalGateKeys bijhoudt. Zet ze eerst weer aan voor een website die je niet meer gebruikt."
+  },
+  "safari_popup_loading": {
+    "message": "Laden…"
   }
 }

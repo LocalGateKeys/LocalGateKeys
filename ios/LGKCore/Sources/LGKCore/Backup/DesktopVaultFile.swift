@@ -18,6 +18,11 @@ public struct DesktopVaultError: Error, Equatable, Sendable {
 /// Formats 1 and 2 (the Argon2id output used directly as the catalog key, AAD binding the KDF) are opened too, as
 /// `vault.py` does, because Windows backups copy `vault.json` as it is; writing is format 3 only.
 ///
+/// Format 4 (docs/formats/COMPOSITE_KEY_V1.md §5) is format 3 plus a key-file / YubiKey factor list in
+/// `wrappers.password.factors`: the password wrapper's key is the composite key (§4) and its AAD metadata also holds
+/// the factors; every AAD uses the literal v3 identity, so the recovery phrase opens a v4 vault without the factors.
+/// Opening one with the password alone throws `FactorError.required` (use `openPayload(_:password:factors:)`).
+///
 /// The catalog's `entries` (website and desktop logins) and `items` (typed items) are the records Windows syncs.
 /// A Mac full backup carries one of these, so a Windows PC restores it with its own code.
 public enum DesktopVaultFile {
@@ -26,6 +31,10 @@ public enum DesktopVaultFile {
     static let catalogFormat = "localgatekeys-catalog"
     static let legacyCatalog = "localgatekeys-credentials-v1"
     static let formatV2ID = "localgatekeys-vault-v2"
+    static let formatV4: Int64 = 4
+    static let formatV4ID = "localgatekeys-vault-v4"
+    /// `nonce`, `ciphertext`, `factors` (`vault.py` `MAX_PASSWORD_WRAPPER_FIELDS_V4`).
+    static let maxPasswordWrapperFieldsV4 = 3
     static let aadV1 = Array("localvault-prototype|vault|v1|".utf8)
     static let aadV2 = Array("localgatekeys|vault|v2|".utf8)
     static let catalogAAD = Array("localgatekeys|vault|v3|".utf8)
@@ -194,29 +203,70 @@ public enum DesktopVaultFile {
 
     /// The whole decrypted catalog (also `trash`, `sync_meta`, `license` and the rest) and the recovery flag.
     public static func openPayload(_ data: Data, password: String) throws -> (payload: [String: JSONValue], recoveryEnrolled: Bool) {
-        try openPayload(data, unlock: .password(password))
+        try openPayload(data, unlock: .password(password, secrets: []))
     }
 
-    /// The catalog opened with a key from `derivePasswordKey` (its salt and KDF must be the header's).
+    /// The catalog opened with a key from `derivePasswordKey` (its salt and KDF must be the header's). A format-4
+    /// vault throws `FactorError.required` (a stored password key never carries factors).
     public static func openPayload(_ data: Data, passwordKey: PasswordKey) throws -> (payload: [String: JSONValue], recoveryEnrolled: Bool) {
         try openPayload(data, unlock: .passwordKey(passwordKey))
     }
 
-    enum Unlock { case password(String), recovery(Data), passwordKey(PasswordKey) }
+    /// The live records of a vault that may have key-file / YubiKey factors (format 4, a `.lgkfull` made on Windows).
+    public static func open(_ data: Data, password: String, factors: FactorSecrets) async throws -> (items: [JSONValue], recoveryEnrolled: Bool) {
+        let (payload, recovery) = try await openPayload(data, password: password, factors: factors)
+        var out: [JSONValue] = []
+        for key in ["entries", "items"] {
+            if case .array(let rows)? = payload[key] { out += rows }
+        }
+        return (out, recovery)
+    }
 
-    static func openPayload(_ data: Data, unlock: Unlock) throws -> (payload: [String: JSONValue], recoveryEnrolled: Bool) {
+    /// The whole catalog of a vault that may have factors: the factors' secrets are taken from `factors` (and
+    /// checked: `FactorError.required` / `.mismatch`, neither a wrong password) before Argon2id runs, which then runs
+    /// on the calling task (callers run this detached). A vault without factors ignores `factors`.
+    public static func openPayload(_ data: Data, password: String, factors: FactorSecrets) async throws
+        -> (payload: [String: JSONValue], recoveryEnrolled: Bool) {
+        let specs = try self.factors(in: data)
+        guard !specs.isEmpty else { return try openPayload(data, unlock: .password(password, secrets: [])) }
+        guard !password.isEmpty else { throw DesktopVaultError("Master password cannot be empty") }
+        guard password.unicodeScalars.count <= 4096 else { throw DesktopVaultError("Master password is too long") }
+        var secrets = try await CompositeKey.secrets(for: specs, from: factors)
+        defer { for i in secrets.indices { FullBackupV2.wipe(&secrets[i]) } }
+        return try openPayload(data, unlock: .password(password, secrets: secrets))
+    }
+
+    /// The key-file / YubiKey factors a vault asks for (format 4), in list order; empty for any other format. The
+    /// header is fully checked first, so the UI asks for factors only for a vault it can then open.
+    public static func factors(in data: Data) throws -> [FactorSpec] {
+        let (header, version) = try readHeader(data)
+        guard version == formatV4 else { return [] }
+        _ = try validateV4Header(header)
+        return try factorSpecs(header)
+    }
+
+    enum Unlock { case password(String, secrets: [[UInt8]]), recovery(Data), passwordKey(PasswordKey) }
+
+    /// The parsed header and its version, refused as `vault.py` `_read_vault_header` does before any crypto.
+    static func readHeader(_ data: Data) throws -> (header: [String: JSONValue], version: Int64) {
         guard data.count <= maxVaultBytes else { throw DesktopVaultError("Vault exceeds the accepted size limit") }
         let parsed: JSONValue
         do { parsed = try CanonicalJSON.parse(Array(data)) } catch { throw DesktopVaultError("Unable to read vault") }
         guard case .object(let header) = parsed else { throw DesktopVaultError("Vault header must be an object") }
-        guard case .int(let version)? = header["version"], [1, 2, 3].contains(version) else {
+        guard case .int(let version)? = header["version"], [1, 2, formatVersion, formatV4].contains(version) else {
+            if case .int(let v)? = header["version"], v > formatV4 { throw DesktopVaultError("This vault needs a newer LocalGateKeys") }
             throw DesktopVaultError("Unsupported vault format version")
         }
+        return (header, version)
+    }
+
+    static func openPayload(_ data: Data, unlock: Unlock) throws -> (payload: [String: JSONValue], recoveryEnrolled: Bool) {
+        let (header, version) = try readHeader(data)
         guard case .object(let cipher)? = header["cipher"], cipher["name"] == .string("aes-256-gcm") else {
             throw DesktopVaultError("Unsupported vault cipher")
         }
         guard case .object(let kdf)? = header["kdf"] else { throw DesktopVaultError("Vault KDF metadata is missing") }
-        if case .password(let password) = unlock {
+        if case .password(let password, _) = unlock {
             guard !password.isEmpty else { throw DesktopVaultError("Master password cannot be empty") }
             guard password.unicodeScalars.count <= 4096 else { throw DesktopVaultError("Master password is too long") }
         }
@@ -224,23 +274,30 @@ public enum DesktopVaultFile {
         var recovery = false
         var dataKey: [UInt8]
         let catalogAADBytes: [UInt8]
-        if version == formatVersion {
-            catalogVersion = try validateHeader(header)
+        if version == formatVersion || version == formatV4 {
+            catalogVersion = try version == formatV4 ? validateV4Header(header) : validateHeader(header)
+            let specs: [FactorSpec] = try version == formatV4 ? factorSpecs(header) : []
             guard case .object(let wrappers)? = header["wrappers"], case .object(let pw)? = wrappers["password"] else {
                 throw DesktopVaultError("Vault has no master-password key wrapper")
             }
             if case .object? = wrappers["recovery"] { recovery = true }
             switch unlock {
-            case .password(let password):
+            case .password(let password, let secrets):
                 let (params, salt) = try kdfParameters(kdf)
                 let wrapperNonce = try field(pw, "nonce", 12), wrapped = try field(pw, "ciphertext", 48)
-                var kek = try derive(password, kdf: params, salt: salt)
+                // The factors are checked before Argon2id: missing or wrong ones are never a wrong password.
+                guard secrets.count == specs.count else { throw FactorError.required(specs.map(\.kind)) }
+                try CompositeKey.verify(specs, secrets: secrets)
+                var argonOut = try derive(password, kdf: params, salt: salt)
+                defer { FullBackupV2.wipe(&argonOut) }
+                var kek = try CompositeKey.combine(argonOut: argonOut, specs: specs, secrets: secrets)
                 defer { FullBackupV2.wipe(&kek) }
                 do {
                     dataKey = try CryptoBox.openGCM(key: kek, nonce: wrapperNonce, ciphertext: wrapped,
-                                                    aad: try wrapperAADFor(header, kdf: .object(kdf)))
+                                                    aad: try wrapperAADFor(header, kdf: .object(kdf), factors: specs))
                 } catch { throw DesktopVaultError.wrongPassword }
             case .passwordKey(let given):
+                guard specs.isEmpty else { throw FactorError.required(specs.map(\.kind)) }
                 let (params, salt) = try kdfParameters(kdf)
                 let wrapperNonce = try field(pw, "nonce", 12), wrapped = try field(pw, "ciphertext", 48)
                 guard params == given.kdf, salt == given.salt else { throw DesktopVaultError.wrongPassword }
@@ -268,7 +325,7 @@ public enum DesktopVaultFile {
                 throw DesktopVaultError("Unsupported vault format identifier")
             }
             catalogVersion = version
-            guard case .password(let password) = unlock else { throw RecoveryPhraseError("This vault has no recovery phrase") }
+            guard case .password(let password, _) = unlock else { throw RecoveryPhraseError("This vault has no recovery phrase") }
             let (params, salt) = try kdfParameters(kdf)
             dataKey = try derive(password, kdf: params, salt: salt)
             catalogAADBytes = try legacyAAD(header, version: version)
@@ -293,7 +350,7 @@ public enum DesktopVaultFile {
         }
         let generation: Int64
         if case .int(let g)? = payload["generation"] { generation = g } else { generation = 0 }
-        guard version != formatVersion || header["generation"] == .int(generation) else {
+        guard (version != formatVersion && version != formatV4) || header["generation"] == .int(generation) else {
             throw DesktopVaultError("Vault header generation does not match its encrypted catalog")
         }
         for key in ["entries", "items"] {
@@ -353,6 +410,34 @@ public enum DesktopVaultFile {
         return catalogVersion
     }
 
+    /// `_validate_v4_header`: `validateHeader` for a v4 header with its own format identifier, and a password wrapper
+    /// that holds `factors` (1-2 objects valid under §2, in §2 order) and at most three fields; the rest is checked by
+    /// the v3 rules on a copy without the factors. Returns the catalog version.
+    static func validateV4Header(_ h: [String: JSONValue]) throws -> Int64 {
+        guard h["format"] == .string(formatV4ID) else { throw DesktopVaultError("Unsupported vault format identifier") }
+        guard case .object(var wrappers)? = h["wrappers"] else { throw DesktopVaultError("Vault key wrappers are malformed") }
+        guard case .object(var password)? = wrappers["password"], password["factors"] != nil,
+              password.count <= maxPasswordWrapperFieldsV4 else {
+            throw DesktopVaultError("Vault key wrapper is malformed")
+        }
+        _ = try factorSpecs(h)
+        password.removeValue(forKey: "factors")
+        wrappers["password"] = .object(password)
+        var v3 = h
+        v3["format"] = .string(formatID)
+        v3["wrappers"] = .object(wrappers)
+        return try validateHeader(v3)
+    }
+
+    /// The factor list of a v4 header (`_header_factor_specs`), validated and in §2 order.
+    static func factorSpecs(_ h: [String: JSONValue]) throws -> [FactorSpec] {
+        guard case .object(let wrappers)? = h["wrappers"], case .object(let password)? = wrappers["password"],
+              let specs = try? CompositeKey.parseList(password["factors"]) else {
+            throw DesktopVaultError("Vault key factors are malformed")
+        }
+        return specs
+    }
+
     static func field(_ w: [String: JSONValue], _ name: String, _ size: Int) throws -> [UInt8] {
         guard case .string(let s)? = w[name], s.count <= maxWrapperField,
               let bytes = try? Base64.decodeStrict(s), bytes.count == size else {
@@ -385,16 +470,22 @@ public enum DesktopVaultFile {
         } catch { throw DesktopVaultError("Key derivation failed") }
     }
 
+    /// `vault._v3_identity`: a v4 header authenticates the literal v3 identity (§5), so its catalog, recovery wrapper
+    /// and unlock context match the same header written as v3.
     static func identity(_ h: [String: JSONValue]) -> [String: JSONValue] {
-        [
-            "version": .int(formatVersion), "format": h["format"] ?? .string(formatID),
+        let format: JSONValue = h["version"] == .int(formatV4) ? .string(formatID) : (h["format"] ?? .string(formatID))
+        return [
+            "version": .int(formatVersion), "format": format,
             "catalog": h["catalog"] ?? .string(catalogFormat), "catalog_version": h["catalog_version"] ?? .int(2),
             "vault_id": h["vault_id"] ?? .string(""), "key_generation": h["key_generation"] ?? .int(1),
         ]
     }
 
-    static func wrapperAADFor(_ h: [String: JSONValue], kdf: JSONValue) throws -> [UInt8] {
-        try wrapperAADFor(h, name: "password", metadata: .object(["kdf": kdf]))
+    /// The password wrapper's AAD (`_password_metadata`): the KDF, plus the factor list in v4.
+    static func wrapperAADFor(_ h: [String: JSONValue], kdf: JSONValue, factors: [FactorSpec] = []) throws -> [UInt8] {
+        var metadata: [String: JSONValue] = ["kdf": kdf]
+        if !factors.isEmpty { metadata["factors"] = .array(factors.map(\.json)) }
+        return try wrapperAADFor(h, name: "password", metadata: .object(metadata))
     }
 
     /// `vault._wrapper_aad`: the identity plus the wrapper's name and public metadata.

@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import struct
 import sys
@@ -145,6 +146,30 @@ def _is_frozen() -> bool:
 # Connections test starts the host from the app itself).
 DIAGNOSTIC_ACTIONS = frozenset({"ping"})
 
+# The ``lgk`` command line tool, relative to the agent's install directory in
+# frozen builds (installer: {app}\cli\lgk.exe; the MSIX execution alias
+# launches the same package file). Development builds name it in install.json
+# under ``cli_path``.
+CLI_RELATIVE_PATH = ("cli", "lgk.exe")
+CLI_EXECUTABLE_NAME = "lgk.exe"
+
+# The Windows passkey provider (COM server for the OS plugin passkey manager),
+# relative to the agent's install directory in frozen builds. Development
+# builds name it in install.json under ``passkey_provider_path``. Its peer
+# scope ``system_passkey`` may send only SYSTEM_PASSKEY_ACTIONS, and no other
+# scope may send them.
+PROVIDER_RELATIVE_PATH = ("PasskeyProvider", "LocalGateKeysPasskeyProvider.exe")
+PROVIDER_EXECUTABLE_NAME = "LocalGateKeysPasskeyProvider.exe"
+SYSTEM_PASSKEY_ACTIONS = frozenset({"passkey_create_system", "passkey_get_system", "passkey_cancel_system",
+                                    "passkey_lock_status_system", "passkey_credentials_system"})
+# ``LocalGateKeysNativeHost.exe lgk ...`` / ``... mcp`` (the Store package may
+# declare one execution alias, so it cannot ship lgk.exe): the pinned host
+# exe itself (not an interpreter chain) started by something other than a browser, asking with ``scope_hint`` "cli",
+# reaches the CLI service only, exactly as lgk.exe does. A browser-launched host
+# never does: its hint is ignored and it keeps the broker.
+CLI_SCOPE_HINT = "cli"
+HOST_SCOPE = "native_host"
+
 
 def _browser_ancestry(pid: int, self_images: set[str]) -> Any:
     """Browser-launcher check for the pipe peer; see browser_ancestry. Tests replace it."""
@@ -159,8 +184,14 @@ class PinDecision:
     code: str = "ok"
     authority: str = "registry"
     # "browser" only when an allow-listed, signed browser launched the pinned
-    # host; anything else may relay DIAGNOSTIC_ACTIONS only.
+    # host; "cli" only for the installed lgk.exe (its requests go to the CLI
+    # service, never the broker); "system_passkey" only for the installed
+    # passkey provider (SYSTEM_PASSKEY_ACTIONS only); "native_host" for the
+    # registered host exe not started by a browser (DIAGNOSTIC_ACTIONS, or the
+    # CLI service when it runs as lgk); anything else may relay
+    # DIAGNOSTIC_ACTIONS only.
     scope: str = "diagnostic"
+    pid: int = 0
 
     def __bool__(self) -> bool:
         return self.allowed
@@ -226,6 +257,122 @@ class ClientPinPolicy:
     def evaluate(self, handle: Any) -> PinDecision:
         if os.name != "nt":
             return PinDecision(True, "ok", "none")
+        cli = self._cli_decision(handle)
+        if cli is not None:
+            return cli
+        system = self._system_passkey_decision(handle)
+        if system is not None:
+            return system
+        return self._native_host_decision(handle)
+
+    def _cli_path(self) -> str:
+        """The one lgk.exe that earns the ``cli`` scope, or "" when there is none.
+
+        Frozen: <install dir>/cli/lgk.exe (install.json is ignored). Development:
+        install.json ``cli_path``, and only a file named lgk.exe, so a pin can
+        never name an interpreter that runs any script.
+        """
+        if _is_frozen():
+            return os.path.join(os.path.dirname(_agent_executable()), *CLI_RELATIVE_PATH)
+        config, _state = self._install()
+        path = str((config or {}).get("cli_path", "") or "")
+        if not path or os.path.basename(path.replace("\\", "/")).lower() != CLI_EXECUTABLE_NAME:
+            return ""
+        return path
+
+    def _cli_decision(self, handle: Any) -> PinDecision | None:
+        """``cli`` scope when the peer is the installed lgk.exe; None hands the
+        peer to the unchanged native-host pin. Frozen builds also need the
+        agent's install tree and Authenticode signer (as the native host does)."""
+        try:
+            expected = self._cli_path()
+            if not expected:
+                return None
+            pid = _named_pipe_client_pid(handle)
+            if not pid:
+                return None
+            import psutil
+
+            if not _same_file_path(str(psutil.Process(pid).exe()), expected):
+                return None
+            if _is_frozen():
+                checked = self._frozen_checks(expected)
+                if not checked.allowed:
+                    return checked
+            return PinDecision(True, "ok", "install_dir" if _is_frozen() else "install_json", "cli", int(pid))
+        except Exception:
+            return None
+
+    def _provider_path(self) -> str:
+        """The one passkey provider exe that earns the ``system_passkey`` scope, or "".
+
+        Frozen: <package root>/PasskeyProvider/LocalGateKeysPasskeyProvider.exe,
+        and only in a packaged (MSIX) build: an installer build ships no provider
+        and may live in a user-writable folder, so it has none (install.json is
+        ignored). Development: install.json ``passkey_provider_path``, and only a
+        file with the provider's name.
+        """
+        if _is_frozen():
+            root = _package_root()
+            if not root:
+                return ""
+            return os.path.join(str(root), *PROVIDER_RELATIVE_PATH)
+        config, _state = self._install()
+        path = str((config or {}).get("passkey_provider_path", "") or "")
+        if not path or os.path.basename(path.replace("\\", "/")).lower() != PROVIDER_EXECUTABLE_NAME.lower():
+            return ""
+        return path
+
+    def _system_passkey_decision(self, handle: Any) -> PinDecision | None:
+        """``system_passkey`` scope when the peer is the installed passkey provider
+        running as this user; None hands any other peer to the native-host pin.
+        Frozen builds also need the agent's install tree and Authenticode signer."""
+        try:
+            expected = self._provider_path()
+            pid = _named_pipe_client_pid(handle)
+            if not pid:
+                return None
+            import psutil
+
+            peer_exe = str(psutil.Process(pid).exe())
+            if not expected or not _same_file_path(peer_exe, expected):
+                # Only a peer named like the provider is worth a line (diagnostics: which check refused it).
+                if os.path.basename(peer_exe.replace("\\", "/")).lower() == PROVIDER_EXECUTABLE_NAME.lower():
+                    _system_refusal("path" if expected else "no_provider_path")
+                return None
+        except Exception:
+            return None
+        try:
+            # The pipe DACL already admits only this user; checked again here
+            # because this scope can ask for passkey signatures.
+            peer_sid = _process_user_sid(int(pid))
+            own_sid = _current_user_sid_string()
+            if not peer_sid or not own_sid or peer_sid != own_sid:
+                _system_refusal("sid")
+                return PinDecision(False, "client_not_allowed")
+            # Packaged: the peer must run with this package's identity. A copy of
+            # the genuine provider started by path (no identity, possibly with an
+            # injected runtime environment) is refused; COM activation and children
+            # of the packaged app keep the identity.
+            own_family = _own_package_family_name()
+            if own_family or _is_frozen():
+                peer_family = _process_package_family_name(int(pid))
+                if not own_family or not peer_family or not hmac.compare_digest(peer_family, own_family):
+                    _system_refusal("own_package_family" if not own_family else
+                                    "peer_package_family" if not peer_family else "package_family")
+                    return PinDecision(False, "client_not_allowed")
+            if _is_frozen():
+                checked = self._frozen_checks(expected)
+                if not checked.allowed:
+                    _system_refusal("signer" if _in_install_tree(expected) else "install_tree")
+                    return checked
+            return PinDecision(True, "ok", "install_dir" if _is_frozen() else "install_json", "system_passkey",
+                               int(pid))
+        except Exception:
+            _system_refusal("error")
+            return PinDecision(False, "client_not_allowed")
+
+    def _native_host_decision(self, handle: Any) -> PinDecision:
         try:
             registrations = _registered_native_host_paths()
             if not registrations:
@@ -246,9 +393,9 @@ class ClientPinPolicy:
             if _is_frozen():
                 if not _same_file_path(exe, registered):
                     return PinDecision(False, "client_pin_mismatch")
-                return self._with_browser_scope(self._frozen_checks(registered), pid, {registered})
+                return self._with_browser_scope(self._frozen_checks(registered), pid, {registered}, HOST_SCOPE)
             if _same_file_path(exe, registered):
-                return self._with_browser_scope(PinDecision(True), pid, {registered})
+                return self._with_browser_scope(PinDecision(True), pid, {registered}, HOST_SCOPE)
             if self._pinned_interpreter_chain(process, registered, config or {}):
                 chain = {registered, str((config or {}).get("interpreter_path", "")),
                          str((config or {}).get("venv_redirector_path", ""))}
@@ -258,26 +405,24 @@ class ClientPinPolicy:
             return PinDecision(False, "client_not_allowed")
 
     @staticmethod
-    def _with_browser_scope(decision: PinDecision, pid: int, self_images: set[str]) -> PinDecision:
-        """Extend the host pin to its launcher: a signed browser earns full scope."""
+    def _with_browser_scope(decision: PinDecision, pid: int, self_images: set[str],
+                            unverified: str = "diagnostic") -> PinDecision:
+        """Extend the host pin to its launcher: a signed browser earns full scope.
+
+        Otherwise ``unverified``: HOST_SCOPE when the peer is the registered host exe itself (it may also run
+        as lgk), "diagnostic" for the repository interpreter chain."""
         if not decision.allowed:
             return decision
         try:
             browser = _browser_ancestry(pid, {path for path in self_images if path})
         except Exception:
             browser = None
-        scope = "browser" if browser else "diagnostic"
-        return PinDecision(True, decision.code, decision.authority, scope)
+        scope = "browser" if browser else unverified
+        return PinDecision(True, decision.code, decision.authority, scope, int(pid))
 
     def _frozen_checks(self, registered: str) -> PinDecision:
         agent = _agent_executable()
-        install_dir = os.path.normcase(os.path.abspath(os.path.dirname(agent)))
-        host_abs = os.path.normcase(os.path.abspath(registered))
-        try:
-            same_tree = os.path.commonpath([install_dir, host_abs]) == install_dir
-        except ValueError:
-            same_tree = False
-        if not same_tree:
+        if not _in_install_tree(registered):
             return PinDecision(False, "client_signer_mismatch")
         agent_signer = _authenticode_thumbprint(agent)
         if agent_signer:
@@ -356,6 +501,29 @@ def _named_pipe_server_pid(handle: Any) -> int | None:
         return int(pid.value)
     except Exception:
         return None
+
+
+def _in_install_tree(path: str) -> bool:
+    """True when ``path`` lies under the running agent's install directory."""
+    install_dir = os.path.normcase(os.path.abspath(os.path.dirname(_agent_executable())))
+    host_abs = os.path.normcase(os.path.abspath(path))
+    try:
+        return os.path.commonpath([install_dir, host_abs]) == install_dir
+    except ValueError:
+        return False
+
+
+# Fixed words only in the system passkey diagnostics (SECURITY.md, "Passkey provider log").
+_SYSTEM_LOG_WORD = re.compile(r"[a-z0-9_]{1,40}")
+
+
+def _system_log_word(value: Any) -> str:
+    return value if isinstance(value, str) and _SYSTEM_LOG_WORD.fullmatch(value) else "other"
+
+
+def _system_refusal(check: str) -> None:
+    """One line naming the pin sub-check that refused the passkey provider (never a path, SID or family)."""
+    _pipe_log(f"system_passkey_refused check={_system_log_word(check)}")
 
 
 def _pipe_log(event: str, exc: BaseException | None = None) -> None:
@@ -456,6 +624,76 @@ def _current_user_sid_string() -> str:
     token = win32security.OpenProcessToken(win32api.GetCurrentProcess(), win32con.TOKEN_QUERY)
     sid = win32security.GetTokenInformation(token, win32security.TokenUser)[0]
     return win32security.ConvertSidToStringSid(sid)
+
+
+def _package_root() -> str:
+    """Install directory of this packaged build, or "" (unpackaged or not frozen)."""
+    from . import distribution
+
+    root = distribution.package_root()
+    return str(root) if root else ""
+
+
+def _own_package_family_name() -> str:
+    """Package family name of this packaged build, or "" (unpackaged or not frozen)."""
+    from . import distribution
+
+    return distribution.package_family_name() or ""
+
+
+def _process_package_family_name(pid: int) -> str:
+    """Package family name of another process (``GetPackageFamilyName``), or ""
+    when it has no package identity or anything fails (fails closed)."""
+    if os.name != "nt":
+        return ""
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+        get_family = kernel32.GetPackageFamilyName
+        get_family.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.UINT), wintypes.LPWSTR]
+        get_family.restype = wintypes.LONG
+        process = kernel32.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not process:
+            return ""
+        try:
+            length = wintypes.UINT(0)
+            if get_family(process, ctypes.byref(length), None) != 122 or not length.value:  # ERROR_INSUFFICIENT_BUFFER
+                return ""  # includes APPMODEL_ERROR_NO_PACKAGE (15700)
+            buffer = ctypes.create_unicode_buffer(length.value)
+            if get_family(process, ctypes.byref(length), buffer) != 0:
+                return ""
+            return str(buffer.value or "")
+        finally:
+            kernel32.CloseHandle(process)
+    except Exception:
+        return ""
+
+
+def _process_user_sid(pid: int) -> str:
+    """String SID of the user a process runs as, or "" (fails closed)."""
+    try:
+        import win32api
+        import win32con
+        import win32security
+
+        process = win32api.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
+        try:
+            token = win32security.OpenProcessToken(process, win32con.TOKEN_QUERY)
+            try:
+                sid = win32security.GetTokenInformation(token, win32security.TokenUser)[0]
+                return str(win32security.ConvertSidToStringSid(sid))
+            finally:
+                win32api.CloseHandle(token)
+        finally:
+            win32api.CloseHandle(process)
+    except Exception:
+        return ""
 
 
 def _security_attributes_for_current_user():
@@ -582,8 +820,12 @@ def _browser_unverified_response() -> dict[str, Any]:
 
 
 class NamedPipeAgentServer:
-    def __init__(self, dispatcher: Callable[[dict[str, Any]], dict[str, Any]]) -> None:
+    def __init__(self, dispatcher: Callable[[dict[str, Any]], dict[str, Any]],
+                 cli_dispatcher: Callable[[dict[str, Any], int], dict[str, Any]] | None = None,
+                 system_dispatcher: Callable[[dict[str, Any], int], dict[str, Any]] | None = None) -> None:
         self.dispatcher = dispatcher
+        self.cli_dispatcher = cli_dispatcher
+        self.system_dispatcher = system_dispatcher
         self.token = secrets.token_urlsafe(32)
         self.pipe_name = PIPE_PREFIX + secrets.token_hex(16)
         self.stop_event = threading.Event()
@@ -693,6 +935,27 @@ class NamedPipeAgentServer:
                     pass
             self._remove_owned_state()
 
+    def _dispatch_cli(self, request: dict[str, Any], pid: int) -> dict[str, Any]:
+        if self.cli_dispatcher is None or not pid:
+            return {"ok": False, "error": "cli_disabled", "message": "Command line access is not available."}
+        request.pop("scope_hint", None)  # lgk sends it; the scope comes from the pin alone
+        # The app side identifies the lgk.exe pid (local_clients), which the native host never bundles.
+        return self.cli_dispatcher(request, pid)
+
+    def _dispatch_system(self, request: dict[str, Any], pid: int) -> dict[str, Any]:
+        """The passkey provider: only the ``*_system`` passkey actions, never the browser broker."""
+        if request.get("action") not in SYSTEM_PASSKEY_ACTIONS:
+            return failure_response("client_not_allowed", stage="peer")
+        if self.system_dispatcher is None or not pid:
+            _system_refusal("no_dispatcher")
+            return {"ok": False, "error": "disabled"}
+        response = self.system_dispatcher(request, pid)
+        # Diagnostics: did the app get the request, and what did it answer (a fixed code)?
+        error = response.get("error") if isinstance(response, dict) else None
+        result = "ok" if isinstance(response, dict) and response.get("ok") is True else _system_log_word(error)
+        _pipe_log(f"system_passkey action={_system_log_word(request.get('action'))} result={result}")
+        return response
+
     def _handle_client(self, handle: Any) -> None:
         import win32file
         import win32pipe
@@ -708,7 +971,24 @@ class NamedPipeAgentServer:
                     request = _recv_pipe(handle)
                     supplied = request.pop("token", None)
                     if not isinstance(supplied, str) or not hmac.compare_digest(supplied, self.token):
+                        if getattr(decision, "scope", "diagnostic") == "system_passkey":
+                            _system_refusal("token")
                         response = failure_response("unauthorized", stage="peer")
+                    elif getattr(decision, "scope", "diagnostic") == "system_passkey":
+                        # The installed passkey provider: system passkey actions only.
+                        response = self._dispatch_system(request, getattr(decision, "pid", 0))
+                    elif request.get("action") in SYSTEM_PASSKEY_ACTIONS:
+                        # Browser, CLI and diagnostic peers never reach the system passkey actions.
+                        _pipe_log("pipe_peer_not_system_passkey")
+                        response = failure_response("client_not_allowed", stage="peer")
+                    elif getattr(decision, "scope", "diagnostic") == "cli":
+                        # The installed lgk.exe: only the CLI service, never the broker.
+                        response = self._dispatch_cli(request, getattr(decision, "pid", 0))
+                    elif (getattr(decision, "scope", "diagnostic") == HOST_SCOPE
+                          and request.get("scope_hint") == CLI_SCOPE_HINT):
+                        # ``LocalGateKeysNativeHost.exe lgk``/``mcp``: the CLI service (its switch,
+                        # approvals and access log), never the broker.
+                        response = self._dispatch_cli(request, getattr(decision, "pid", 0))
                     elif (getattr(decision, "scope", "diagnostic") != "browser"
                           and request.get("action") not in DIAGNOSTIC_ACTIONS):
                         # The pinned host binary was started by something other

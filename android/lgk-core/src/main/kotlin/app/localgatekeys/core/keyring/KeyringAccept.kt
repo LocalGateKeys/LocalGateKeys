@@ -12,10 +12,11 @@ internal object KeyringAccept {
      * Authenticate [ring] against the device's trusted `(group_id, epoch, G)` (desktop `accept_keyring`).
      * Returns the trusted key (same epoch) or the new key (epoch + 1). Reasons in order:
      * structural, `group-mismatch`, `rollback`, `missed-rotation`, `tampered` (same epoch);
-     * then `not-member`, `key-mismatch`, `device-wrap`, `tampered` (chain, then MAC).
+     * then `not-member`, `key-mismatch`, `device-wrap`, `tampered` (chain, then MAC). [share]: see
+     * [KeyringParse.verifyStructure] (a share keyring's owner signature is part of the structure).
      */
-    fun accept(ring: JsonValue, trusted: GroupKey, identity: DeviceIdentity): GroupKey {
-        KeyringParse.verifyStructure(ring)
+    fun accept(ring: JsonValue, trusted: GroupKey, identity: DeviceIdentity, share: Boolean = false): GroupKey {
+        KeyringParse.verifyStructure(ring, share)
         val o = obj(ring)
         if (str(o["group_id"]) != trusted.groupId) throw KeyringException("group-mismatch", "keyring belongs to another group")
         val epoch = int(o["epoch"])!!

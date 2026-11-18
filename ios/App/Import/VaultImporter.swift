@@ -45,6 +45,11 @@ final class VaultImporter {
     /// Runs after a commit that changed the vault. The app passes `SyncCoordinator.noteLocalEdit`, as after
     /// a Safari import or an editor save: it republishes the AutoFill identities and schedules a sync.
     let afterCommit: () -> Void
+    /// The journal of the last import that wrote something (feature pack §6.1); `onJournal` gets it too (the app
+    /// keeps it in the device's local data for the undo).
+    private(set) var journal: ImportJournal?
+    var source = "cxf"
+    var onJournal: (ImportJournal) -> Void = { _ in }
 
     init(store: any ItemStore, isPro: @escaping () -> Bool, now: @escaping () -> Date, random: any RandomSource,
          afterCommit: @escaping () -> Void = {}) {
@@ -52,6 +57,7 @@ final class VaultImporter {
     }
 
     func importCandidates(_ candidates: [ImportCandidate], unsupported: Int) throws -> ImportResult {
+        journal = nil
         var (snapshot, result, changed) = try plan(candidates, unsupported: unsupported)
         guard changed else { return result }
         do { try commit(snapshot) } catch LocalStoreError.stale {
@@ -63,8 +69,26 @@ final class VaultImporter {
         return result
     }
 
+    /// What `importCandidates` would do with the vault as it is now; writes nothing (the review before an import).
+    func preview(_ candidates: [ImportCandidate], unsupported: Int) throws -> ImportResult {
+        try plan(candidates, unsupported: unsupported).1
+    }
+
     private func commit(_ s: StoreSnapshot) throws {
-        try store.commit(StoreChange(baseRevision: s.revision, records: s.records, meta: s.meta, sync: s.sync))
+        // The vault the plan started from (a changed one makes the commit stale anyway).
+        let base = try store.load()
+        let ids = ImportUndo.changedIDs(before: base, planned: s)
+        // Versions an import replaces are kept as `import` history (feature pack §1.3).
+        try HistoryContext.$changeType.withValue(.`import`) {
+            try store.commit(StoreChange(baseRevision: s.revision, records: s.records, meta: s.meta, sync: s.sync))
+        }
+        // The journal is read back from what was committed; failing to read it only loses the undo.
+        if let committed = try? store.load(),
+           let j = ImportUndo.journal(before: base, committed: committed, ids: ids, source: source,
+                                      at: Int64(now().timeIntervalSince1970), random: random) {
+            journal = j
+            onJournal(j)
+        }
     }
 
     private func plan(_ candidates: [ImportCandidate], unsupported: Int) throws
@@ -156,7 +180,7 @@ final class VaultImporter {
     }
 
     private static func hasPasskey(rp: String, credentialID: String, in snapshot: StoreSnapshot) -> Bool {
-        for (id, w) in snapshot.records where snapshot.meta[id]?.deleted != true {
+        for (id, w) in snapshot.itemRecords where snapshot.meta[id]?.deleted != true {
             guard case .object(let o) = w, o["ns"] == .string(Namespace.item.rawValue),
                   case .object(let rec)? = o["record"], rec["kind"] == .string("passkey"),
                   case .object(let p)? = rec["payload"] else { continue }

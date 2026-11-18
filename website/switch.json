@@ -1,0 +1,105 @@
+{
+  "_note": "One entry per 'Switch from X' page. Text lives in website/i18n (keys switch.<slug>.*); names stay untranslated. Every whyPeopleLeave entry needs a dated fact and a source URL, or the build fails. Facts checked 2026-11-08 (docs/marketing/competitor-research-2026-11.md, [V] only).",
+  "competitors": [
+    {
+      "slug": "1password", "name": "1Password",
+      "exportSteps": ["switch.1password.export.1", "switch.1password.export.2"],
+      "importFormat": "1pux", "importer": "1Password export (.1pux) or 1Password CSV",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared", "switch.loss.attachments_csv"],
+      "whyPeopleLeave": [
+        {"key": "switch.1password.why.1", "date": "2026-03", "source": "https://costbench.com/compare/1password-vs-bitwarden/"}
+      ],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "bitwarden", "name": "Bitwarden",
+      "exportSteps": ["switch.bitwarden.export.1", "switch.bitwarden.export.2"],
+      "importFormat": "json", "importer": "Bitwarden JSON",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared", "switch.loss.attachments"],
+      "whyPeopleLeave": [
+        {"key": "switch.bitwarden.why.1", "date": "2026-02", "source": "https://www.thurrott.com/?p=332249"}
+      ],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "lastpass", "name": "LastPass",
+      "exportSteps": ["switch.lastpass.export.1", "switch.lastpass.export.2"],
+      "importFormat": "csv", "importer": "LastPass CSV",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared", "switch.loss.attachments_csv"],
+      "whyPeopleLeave": [],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "dashlane", "name": "Dashlane",
+      "exportSteps": ["switch.dashlane.export.1", "switch.dashlane.export.2"],
+      "importFormat": "csv", "importer": "Dashlane export (.zip of CSV files)",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared", "switch.loss.attachments_csv"],
+      "whyPeopleLeave": [
+        {"key": "switch.dashlane.why.1", "date": "2025-09", "source": "https://toolradar.com/guides/best-password-managers"}
+      ],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "enpass", "name": "Enpass",
+      "exportSteps": ["switch.enpass.export.1", "switch.enpass.export.2"],
+      "importFormat": "csv", "importer": "Generic CSV (choose columns)",
+      "lossList": ["switch.loss.passkeys", "switch.loss.attachments_csv"],
+      "whyPeopleLeave": [
+        {"key": "switch.enpass.why.1", "date": "2026-09-14", "source": "https://www.enpass.io/release-notes/macos/"}
+      ],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "keepass", "name": "KeePass",
+      "exportSteps": ["switch.keepass.export.1", "switch.keepass.export.2"],
+      "importFormat": "kdbx", "importer": "KeePass 2 database (.kdbx)",
+      "lossList": ["switch.loss.passkeys", "switch.loss.attachments"],
+      "whyPeopleLeave": [],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "proton-pass", "name": "Proton Pass",
+      "exportSteps": ["switch.proton-pass.export.1", "switch.proton-pass.export.2"],
+      "importFormat": "csv", "importer": "Proton Pass CSV or Proton Pass export (.zip / JSON)",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared", "switch.loss.attachments_csv"],
+      "whyPeopleLeave": [
+        {"key": "switch.proton-pass.why.1", "date": "2026-01", "source": "https://techradar.com/pro/identities-and-biometric-authentication-for-proton-pass-have-arrived-helping-you-boost-productivity-while-staying-secure"}
+      ],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "nordpass", "name": "NordPass",
+      "exportSteps": ["switch.nordpass.export.1", "switch.nordpass.export.2"],
+      "importFormat": "csv", "importer": "Generic CSV (choose columns)",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared", "switch.loss.attachments_csv"],
+      "whyPeopleLeave": [],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "apple-passwords", "name": "Apple Passwords",
+      "exportSteps": ["switch.apple-passwords.export.1", "switch.apple-passwords.export.2"],
+      "importFormat": "cxf", "importer": "Safari passwords CSV, or a CXF transfer on Mac and iPhone",
+      "lossList": ["switch.loss.passkeys", "switch.loss.shared"],
+      "whyPeopleLeave": [],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "google", "name": "Google Password Manager",
+      "exportSteps": ["switch.google.export.1", "switch.google.export.2"],
+      "importFormat": "csv", "importer": "Chrome / Edge / Brave passwords CSV",
+      "lossList": ["switch.loss.passkeys", "switch.loss.only_passwords"],
+      "whyPeopleLeave": [],
+      "priceLine": "switch.price"
+    },
+    {
+      "slug": "microsoft-authenticator", "name": "Microsoft Authenticator",
+      "exportSteps": ["switch.microsoft-authenticator.export.1", "switch.microsoft-authenticator.export.2"],
+      "importFormat": "csv", "importer": "Chrome / Edge / Brave passwords CSV",
+      "lossList": ["switch.loss.passkeys", "switch.loss.only_passwords"],
+      "whyPeopleLeave": [
+        {"key": "switch.microsoft-authenticator.why.1", "date": "2025-08", "source": "https://petri.com/microsoft-authenticator-password-autofill/"}
+      ],
+      "priceLine": "switch.price"
+    }
+  ]
+}

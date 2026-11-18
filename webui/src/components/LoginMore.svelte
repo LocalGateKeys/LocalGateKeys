@@ -3,9 +3,11 @@
   import { call } from '../lib/api.js';
   import { formatDate, t } from '../lib/i18n.svelte.js';
   import { notice, okOrToast, toast } from '../lib/toast.js';
+  import AccessRules from './AccessRules.svelte';
   import Button from './Button.svelte';
 
-  let { selected } = $props();
+  // withHistory: the Home detail pane shows Password history only when picked from its More menu.
+  let { selected, withHistory = true } = $props();
 
   let codesInfo = $state(null);
   let codes = $state(null);
@@ -57,7 +59,7 @@
     if (!policy.require_master_password) await loadFields(ref);
   }
 
-  async function openHistory() {
+  export async function openHistory() {
     const result = await call('history_list', selected);
     if (okOrToast(result, t('loginMore.historyNotOpened'))) history = result.rows;
   }
@@ -110,12 +112,22 @@
     }
     policy = { ...policy, [key]: value };
     toast(result.message);
-    if (key === 'require_master_password') {
+  }
+  // Filling and "always ask for the master password" are edited only in Access rules (one control, one
+  // enforced save path); this section follows what it saved.
+  async function rulesChanged(view) {
+    const ref = selected;
+    if (!policy || ref !== selected) return;
+    const fill = view.never_fill ? 'never' : (policy.fill === 'never' ? 'click' : policy.fill);
+    const reauth = Boolean(view.reauth);
+    const strictChanged = reauth !== Boolean(policy.require_master_password);
+    policy = { ...policy, fill, require_master_password: reauth };
+    if (strictChanged) {
       codes = null; history = null;
       dropFields();
       const count = await call('recovery_count', ref);
       if (ref === selected && count.ok) codesInfo = count;
-      if (!value) await loadFields(ref);
+      if (!reauth) await loadFields(ref);
     }
   }
   const when = (seconds) => formatDate(new Date(seconds * 1000), { dateStyle: 'medium', timeStyle: 'short' });
@@ -165,20 +177,23 @@
   {#if policy}
     <div class="section-label">{t('loginMore.autofillRules')}</div>
     <div class="group">
-      <label class="line"><span class="k">{t('loginMore.filling')}</span>
-        <select aria-label={t('loginMore.filling')} value={policy.fill} onchange={(e) => setPolicy('fill', e.currentTarget.value, e.currentTarget)}>
-          <option value="click">{t('loginMore.onClick')}</option><option value="never">{t('loginMore.off')}</option></select></label>
       <label class="line"><span class="k">{t('loginMore.signInAfter')}</span>
         <select aria-label={t('loginMore.signInAfter')} value={policy.sign_in} onchange={(e) => setPolicy('sign_in', e.currentTarget.value, e.currentTarget)}>
           <option value="inherit">{t('loginMore.default')}</option><option value="never">{t('loginMore.never')}</option><option value="enabled">{t('loginMore.always')}</option></select></label>
-      <label class="line"><span class="k">{t('loginMore.askMaster')}</span>
-        <input type="checkbox" checked={policy.require_master_password} onchange={(e) => setPolicy('require_master_password', e.currentTarget.checked, e.currentTarget)} /></label>
       <label class="line"><span class="k">{t('loginMore.offerSave')}</span>
         <input type="checkbox" checked={policy.save_prompts} onchange={(e) => setPolicy('save_prompts', e.currentTarget.checked, e.currentTarget)} /></label>
       <p class="hint pad">{t('loginMore.fillHint')}</p>
+      {#if policy.ai_agents !== undefined}
+        <label class="line"><span class="k">{t('loginMore.aiAgents')}</span>
+          <input type="checkbox" role="switch" checked={policy.ai_agents === true} onchange={(e) => setPolicy('ai_agents', e.currentTarget.checked, e.currentTarget)} /></label>
+        <p class="hint pad">{t('loginMore.aiAgentsHint')}</p>
+      {/if}
     </div>
   {/if}
 
+  <AccessRules {selected} onchanged={rulesChanged} />
+
+  {#if withHistory}
   <div class="section-label">{t('loginMore.passwordHistory')}</div>
   <div class="group">
     {#if history === null}
@@ -194,6 +209,7 @@
       {/each}
     {/if}
   </div>
+  {/if}
 </div>
 
 <style>

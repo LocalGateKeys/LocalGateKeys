@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -238,7 +239,8 @@ def test_begin_card_browser_returns_metadata_only_with_gesture_nonce(tmp_path) -
     assert choice["fields"]["cc-csc"]["protected"] is True and choice["fields"]["cc-name"]["present"] is True
     assert "pin" not in json.dumps(choice["fields"])
     serialized = json.dumps(start["choices"])
-    assert "4111111111111111" not in serialized and "123" not in serialized and "4321" not in serialized
+    # Whole-value checks: random ids and nonces may contain "123" or "4321" by chance.
+    assert not re.search(r"(?<![0-9A-Za-z])(4111111111111111|123|4321)(?![0-9A-Za-z])", serialized)
     assert "4111111111111111" not in json.dumps(start)
     assert len(start["gesture_nonce"]) == 32 and start["gesture_expires_in"] == 30
     assert start["session_id"] == broker.guard.lease().token
@@ -274,7 +276,7 @@ def test_card_approve_masks_protected_values_and_release_is_selected_only(tmp_pa
     # The trusted review dialog shows the cardholder and masked card/CVV only.
     assert len(prompts) == 1
     assert "Ada Example" in prompts[0] and "1111" in prompts[0] and "07/2029" in prompts[0]
-    assert "4111111111111111" not in prompts[0] and "123" not in prompts[0] and "4321" not in prompts[0]
+    assert not re.search(r"(?<![0-9A-Za-z])(4111111111111111|123|4321)(?![0-9A-Za-z])", prompts[0])
 
     released = broker.request("release_card_browser", approval=approved["approval"], entry_id=card_id,
                               revision=1, fields=["cc-name", "cc-number", "cc-csc", "cc-exp"],

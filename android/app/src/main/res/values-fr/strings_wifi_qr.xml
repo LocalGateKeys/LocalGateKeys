@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wi-Fi QR and the answer generator (Quick Wins Task 10). -->
+<resources>
+    <string name="detail_wifi_show_qr">Afficher le QR code</string>
+    <string name="detail_wifi_qr_hint">L\'image contient le mot de passe Wi-Fi. Ne la montrez qu\'aux personnes que vous voulez connecter.</string>
+    <string name="detail_wifi_enterprise_no_qr">Les réseaux d\'entreprise ne peuvent pas être partagés avec un QR code.</string>
+    <string name="generator_mode_answer">Réponse</string>
+</resources>

@@ -60,7 +60,7 @@ _KEY_ID_PATTERN = re.compile(r"[0-9a-f]{16}")
 _DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
-FREE_ITEM_LIMIT = 4
+FREE_ITEM_LIMIT = 7
 LIFETIME_UNTIL = dt.date(9999, 12, 31)
 _VAULT_LICENSE_KEY = "license"
 
@@ -70,6 +70,12 @@ class Feature(enum.Enum):
     SYNC = "sync"
     TOTP = "totp"
     ATTACHMENTS = "attachments"
+    EMERGENCY_ACCESS = "emergency_access"
+    DURESS = "duress"
+    ITEM_HISTORY_LONG = "item_history_long"
+    TRAVEL = "travel"
+    HYGIENE_BULK = "hygiene_bulk"
+    ACCESS_POLICIES = "access_policies"
 
 
 class LicenseError(ValueError):
@@ -377,6 +383,18 @@ def item_limit(st: LicenseStatus | None = None) -> int | None:
         return None if current.pro_enabled else FREE_ITEM_LIMIT
     except Exception:
         return FREE_ITEM_LIMIT
+
+
+FREE_VAULT_LIMIT = 1
+
+
+def vault_limit(st: LicenseStatus | None = None) -> int | None:
+    """Maximum vaults (profiles) a new one may be added under; ``None`` means unlimited (Pro). Fails closed."""
+    try:
+        current = status() if st is None else st
+        return None if current.pro_enabled else FREE_VAULT_LIMIT
+    except Exception:
+        return FREE_VAULT_LIMIT
 
 
 # --- encrypted copy of the licence inside the vault (survives backup/restore) ---------

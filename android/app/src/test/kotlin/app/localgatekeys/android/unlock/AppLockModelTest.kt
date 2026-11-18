@@ -772,4 +772,78 @@ class AppLockModelTest {
             VaultEraseFailure(listOf("store files", "local-key")).text(EnglishTxt()),
         )
     }
+
+    // ---- audit A2: the background and idle limits run on monotonic time ----
+
+    private fun monotonicModel(elapsed: () -> Long) =
+        AppLockModel(unlocker, clock, scheduler, settings, clipboard, eraser, elapsedMillis = elapsed, t = EnglishTxt())
+
+    @Test fun setting_the_date_back_does_not_keep_the_vault_open() = runBlocking {
+        settings.autoLockDelay = AutoLockDelay.ONE_MINUTE
+        settings.idleLock = IdleLock.NEVER
+        var elapsed = 10_000_000L
+        val m = monotonicModel { elapsed }
+        m.unlock()
+        m.didEnterBackground()
+        clock.now -= 86_400 // a day back
+        elapsed += 61_000
+        m.willEnterForeground()
+        assertEquals(State.LOCKED, m.st())
+    }
+
+    @Test fun deadline_follows_monotonic_time_and_is_zero_once_past() = runBlocking {
+        settings.autoLockDelay = AutoLockDelay.ONE_MINUTE
+        settings.idleLock = IdleLock.NEVER
+        var elapsed = 10_000_000L
+        val m = monotonicModel { elapsed }
+        m.unlock()
+        m.didEnterBackground()
+        elapsed += 20_000
+        clock.now -= 3600 // the deadline is put on today's wall clock, with the time actually left
+        assertEquals(clock.now + 40, m.lockDeadline())
+        elapsed += 41_000
+        assertEquals(0L, m.lockDeadline())
+    }
+
+    @Test fun time_running_backwards_counts_as_expired() = runBlocking {
+        settings.autoLockDelay = AutoLockDelay.ONE_HOUR
+        settings.idleLock = IdleLock.NEVER
+        var elapsed = 10_000_000L
+        val m = monotonicModel { elapsed }
+        m.unlock()
+        m.didEnterBackground()
+        elapsed -= 1_000
+        assertEquals(0L, m.lockDeadline())
+        m.willEnterForeground()
+        assertEquals(State.LOCKED, m.st())
+    }
+
+    @Test fun idle_limit_uses_monotonic_time() = runBlocking {
+        settings.autoLockDelay = AutoLockDelay.ONE_HOUR
+        settings.idleLock = IdleLock.ONE_MINUTE
+        var elapsed = 10_000_000L
+        val m = monotonicModel { elapsed }
+        m.unlock()
+        m.noteActivity()
+        m.didEnterBackground()
+        clock.now -= 86_400
+        elapsed += 61_000
+        m.willEnterForeground()
+        assertEquals(State.LOCKED, m.st())
+    }
+
+    @Test fun wall_clock_change_locks_when_the_background_limit_passed() = runBlocking {
+        settings.autoLockDelay = AutoLockDelay.ONE_MINUTE
+        settings.idleLock = IdleLock.NEVER
+        var elapsed = 10_000_000L
+        val m = monotonicModel { elapsed }
+        m.unlock()
+        m.didEnterBackground()
+        elapsed += 30_000
+        m.wallClockChanged()
+        assertEquals(State.UNLOCKED, m.st())
+        elapsed += 31_000
+        m.wallClockChanged()
+        assertEquals(State.LOCKED, m.st())
+    }
 }

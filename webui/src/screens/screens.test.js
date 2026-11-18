@@ -115,11 +115,38 @@ describe('App', () => {
     expect(await screen.findByLabelText('Master password')).toBeInTheDocument();
   });
 
+  it('says a vault was erased after a sync removal until OK', async () => {
+    const erased = { ...locked, erased: { erased_at: 1 } };
+    window.pywebview.api.vault_state = vi.fn().mockResolvedValue(erased);
+    window.pywebview.api.vault_dismiss_erased = vi.fn().mockResolvedValue(locked);
+    render(App);
+    expect(await screen.findByText('A vault was erased from this PC')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    expect(window.pywebview.api.vault_dismiss_erased).toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByText('A vault was erased from this PC')).toBeNull());
+  });
+
+  it('says where the kept scheduled backups are and what opens them', async () => {
+    const folder = 'C:\\Users\\x\\AppData\\Local\\LocalGateKeys\\Kept backups\\Work 2026-10-31';
+    const erased = { ...locked, erased: { erased_at: 1, kept_folders: [folder] } };
+    window.pywebview.api.vault_state = vi.fn().mockResolvedValue(erased);
+    render(App);
+    expect(await screen.findByText('A vault was erased from this PC')).toBeInTheDocument();
+    const message = screen.getByText((text) => text.includes(folder));
+    expect(message.textContent).toContain('backup password');
+    expect(message.textContent).toContain('master password');
+  });
+
   it('renders a confirm modal.request and answers it', async () => {
     render(App);
     await screen.findByLabelText('Master password');
     emit('modal.request', { id: 'r1', kind: 'confirm', title: 'Save new login?', message: 'Origin: https://a.test' });
-    await fireEvent.click(await screen.findByRole('button', { name: 'Allow' }));
+    // Arm delay: Allow starts disabled with Deny focused, so a click aimed at the main window cannot approve.
+    const allow = await screen.findByRole('button', { name: 'Allow' });
+    expect(allow).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Deny' })).toHaveFocus();
+    await waitFor(() => expect(allow).toBeEnabled(), { timeout: 2000 });
+    await fireEvent.click(allow);
     expect(window.pywebview.api.modal_answer).toHaveBeenCalledWith('r1', true);
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });

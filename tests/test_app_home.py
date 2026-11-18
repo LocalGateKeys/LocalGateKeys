@@ -9,6 +9,7 @@ from localvault.app.controller import WebController
 from localvault.app.home import HomeService
 from localvault.profiles import ProfileManager
 from localvault.settings import AppSettings
+from localvault.site_features import SiteFeatures
 
 KDF = {"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32}
 MASTER = "correct horse battery"
@@ -36,6 +37,9 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr("localvault.app.controller.clear_master_unlock_requirement", lambda _pid: None)
     # Unlimited (Pro): the fixture already fills the free plan's four items.
     monkeypatch.setattr("localvault.licensing.item_limit", lambda st=None: None)
+    # no_2fa needs site data: these two test sites offer TOTP
+    monkeypatch.setattr("localvault.site_features.load",
+                        lambda path=None: SiteFeatures({"alpha.test": ["totp"], "gamma.test": ["totp"]}))
     profiles = ProfileManager(tmp_path / "data")
     profiles.ensure_profile()
     controller = WebController(profiles=profiles, settings=AppSettings(auto_lock_seconds=300, idle_source="vault"),
@@ -255,7 +259,7 @@ def test_codes_lists_live_2fa_codes_without_secrets(env):
 def test_codes_empty_when_locked(env):
     home, controller, _alpha = env
     controller.lock()
-    assert home.codes() == {"codes": []}
+    assert home.codes() == {"codes": [], "collapsed": False}
 
 
 def _empty_home(tmp_path, monkeypatch, **settings_kwargs):
@@ -297,3 +301,11 @@ def test_import_card_not_shown_when_items_exist_or_locked(env):
     assert home.items(None, None, "")["import_card"] is False
     controller.lock()
     assert home.items(None, None, "")["import_card"] is False
+
+
+def test_codes_collapsed_is_remembered_and_validated(tmp_path):
+    from localvault.settings import AppSettings
+    path = tmp_path / "settings.json"
+    AppSettings(codes_collapsed=True).save(path)
+    assert AppSettings.load(path).codes_collapsed is True
+    assert AppSettings().codes_collapsed is False

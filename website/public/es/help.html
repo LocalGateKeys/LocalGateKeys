@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Guía de usuario | LocalGateKeys</title>
-  <meta name="description" content="Cómo funciona cada función de LocalGateKeys en Windows, la extensión del navegador, iPhone, Mac, Apple Watch y Android, con instrucciones paso a paso.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Guía de LocalGateKeys: Windows, Mac, iPhone y navegador</title>
+  <meta name="description" content="Ayuda paso a paso para cada función de LocalGateKeys en Windows, Mac, iPhone, Apple Watch y la extensión del navegador: configuración, autorrelleno y copias.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/es/help">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/help">
@@ -20,32 +19,64 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/help">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/help">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/help">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/help">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/help">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Guía de LocalGateKeys: Windows, Mac, iPhone y navegador">
+  <meta property="og:description" content="Ayuda paso a paso para cada función de LocalGateKeys en Windows, Mac, iPhone, Apple Watch y la extensión del navegador: configuración, autorrelleno y copias.">
+  <meta property="og:url" content="https://localgatekeys.app/es/help">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="El logotipo de LocalGateKeys: un gestor de contraseñas para Windows, Mac y iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Guía de LocalGateKeys: Windows, Mac, iPhone y navegador">
+  <meta name="twitter:description" content="Ayuda paso a paso para cada función de LocalGateKeys en Windows, Mac, iPhone, Apple Watch y la extensión del navegador: configuración, autorrelleno y copias.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
   <link rel="stylesheet" href="../styles.css">
 </head>
-<body class="page">
+<body class="help-page">
   <a class="skip" href="#main">Saltar al contenido</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../es/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../es/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Principal">
+      <nav class="nav-wide" aria-label="Principal">
         <ul class="nav">
-          <li><a href="../es/features.html">Funciones</a></li>
-          <li><a href="../es/pricing.html">Precios</a></li>
-          <li><a href="../es/security.html">Seguridad</a></li>
-          <li><a href="../es/get-started.html">Primeros pasos</a></li>
-          <li><a href="../es/help.html" aria-current="page">Guía</a></li>
-          <li><a href="../es/download.html">Descargar</a></li>
-          <li><a href="../es/support.html">Soporte</a></li>
-          <li><a href="../buy.html">Comprar Pro</a></li>
+          <li><a href="../es/features">Funciones</a></li>
+          <li><a href="../es/get-started">Primeros pasos</a></li>
+          <li><a href="../es/help" aria-current="page">Guía</a></li>
+          <li><a href="../es/security">Seguridad</a></li>
+          <li><a href="../es/pricing">Precios</a></li>
+          <li><a href="../es/support">Soporte</a></li>
+          <li><a class="nav-cta" href="../es/download">Descargar</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menú</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../es/features">Funciones</a></li>
+          <li><a href="../es/get-started">Primeros pasos</a></li>
+          <li><a href="../es/help" aria-current="page">Guía</a></li>
+          <li><a href="../es/security">Seguridad</a></li>
+          <li><a href="../es/pricing">Precios</a></li>
+          <li><a href="../es/support">Soporte</a></li>
+          <li><a class="nav-cta" href="../es/download">Descargar</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Idioma</span></summary>
+        <ul class="lang-menu-list"><li><a href="../help" hreflang="en" lang="en">English</a></li><li><a href="../es/help" hreflang="es" lang="es" aria-current="true">Español</a></li><li><a href="../it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/help" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/help" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/help" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -53,11 +84,15 @@
 <div class="wrap page-head">
   <h1>Guía de usuario</h1>
   <p class="lead">Ayuda paso a paso para cada pantalla y función. Elige tu dispositivo y salta a un tema. Cada título es un enlace que puedes compartir.</p>
+  <nav class="guide-links" aria-labelledby="guide-links-title">
+    <p id="guide-links-title">Guía para cada dispositivo</p>
+    <ul><li><a class="guide-link" href="../es/guide/windows">Windows</a></li><li><a class="guide-link" href="../es/guide/mac">Mac</a></li><li><a class="guide-link" href="../es/guide/iphone">iPhone y iPad</a></li><li><a class="guide-link" href="../es/guide/android">Android</a></li><li><a class="guide-link" href="../es/guide/extension">Extensión del navegador</a></li></ul>
+  </nav>
 </div>
 
 <div class="wrap page-body help">
 
-  <nav class="help-tabs" aria-label="Plataformas">
+  <nav class="help-tabs glass" aria-label="Plataformas">
     <a class="help-tab" href="#windows" data-tab="windows">Windows</a>
     <a class="help-tab" href="#extension" data-tab="extension">Extensión del navegador</a>
     <a class="help-tab" href="#iphone" data-tab="iphone">iPhone</a>
@@ -66,44 +101,49 @@
     <a class="help-tab" href="#android" data-tab="android">Android</a>
   </nav>
 
-  <aside class="help-basics">
+  <aside class="help-basics glass">
     <h2>Conviene saber, en cualquier dispositivo</h2>
     <ul>
       <li><strong>Tu bóveda se queda en tus dispositivos.</strong> No hay cuenta ni ningún servidor de LocalGateKeys que guarde tus contraseñas.</li>
       <li><strong>Nadie puede restablecer tu contraseña maestra ni tu contraseña de la app.</strong> Configura una frase de recuperación y guárdala en papel.</li>
-      <li><strong>Free</strong> admite hasta 4 elementos. <strong>Pro</strong> (US$4.99, pago único) añade elementos ilimitados, códigos de dos factores, archivos y sincronización. Editar, eliminar y rellenar los elementos que ya tienes nunca se bloquea.</li>
+      <li><strong>Free</strong> admite hasta 7 elementos. <strong>Pro</strong> (US$29.99, pago único) añade elementos ilimitados, códigos de dos factores, archivos y sincronización. Editar, eliminar y rellenar los elementos que ya tienes nunca se bloquea.</li>
     </ul>
   </aside>
 
   <!-- ============================== WINDOWS ============================== -->
   <section class="help-panel" id="windows" aria-labelledby="windows-title">
     <h2 class="panel-title" id="windows-title">LocalGateKeys para Windows</h2>
-    <p class="panel-lead">Windows 10 y 11, 64 bits. Instálalo desde Microsoft Store o desde la <a href="../es/download.html">página de descarga</a>.</p>
+    <p class="panel-lead">Windows 10 (versión 2004 o posterior) y Windows 11, 64 bits. Instálalo desde Microsoft Store o desde la <a href="../es/download">página de descarga</a>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Temas de Windows">
-        <p class="help-toc-title">En esta pestaña</p>
-        <ol>
-          <li><a href="#win-setup">Primer inicio y perfiles</a></li>
-          <li><a href="#win-unlock">Desbloquear y bloquear</a></li>
-          <li><a href="#win-screen">La ventana principal</a></li>
-          <li><a href="#win-items">Añadir y editar elementos</a></li>
-          <li><a href="#win-trash">Eliminar, papelera y deshacer</a></li>
-          <li><a href="#win-search">Búsqueda, paleta, Acceso rápido</a></li>
-          <li><a href="#win-generator">Generador de contraseñas</a></li>
-          <li><a href="#win-security">Centro de seguridad</a></li>
-          <li><a href="#win-2fa">Códigos de dos factores y QR</a></li>
-          <li><a href="#win-import">Importar</a></li>
-          <li><a href="#win-export">Exportar y transferir</a></li>
-          <li><a href="#win-backups">Copias de seguridad y restauración</a></li>
-          <li><a href="#win-sync">Sincronización</a></li>
-          <li><a href="#win-share">Compartir un elemento</a></li>
-          <li><a href="#win-apps">Rellenar apps de Windows</a></li>
-          <li><a href="#win-settings">Ajustes</a></li>
-          <li><a href="#win-pro">Licencia Pro</a></li>
-          <li><a href="#win-updates">Actualizaciones</a></li>
-          <li><a href="#win-keys">Atajos de teclado</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#win-setup">Primer inicio y perfiles</a></li>
+            <li><a href="#win-unlock">Desbloquear y bloquear</a></li>
+            <li><a href="#win-screen">La ventana principal</a></li>
+            <li><a href="#win-items">Añadir y editar elementos</a></li>
+            <li><a href="#win-trash">Eliminar, papelera y deshacer</a></li>
+            <li><a href="#win-search">Búsqueda, paleta, Acceso rápido</a></li>
+            <li><a href="#win-generator">Generador de contraseñas</a></li>
+            <li><a href="#win-security">Centro de seguridad</a></li>
+            <li><a href="#win-2fa">Códigos de dos factores y QR</a></li>
+            <li><a href="#win-import">Importar</a></li>
+            <li><a href="#win-export">Exportar y transferir</a></li>
+            <li><a href="#win-backups">Copias de seguridad y restauración</a></li>
+            <li><a href="#win-sync">Sincronización</a></li>
+            <li><a href="#win-share">Compartir un elemento</a></li>
+            <li><a href="#win-apps">Rellenar apps de Windows</a></li>
+            <li><a href="#win-shared">Colecciones compartidas</a></li>
+            <li><a href="#win-safety">Acceso de emergencia y contraseña de coacción</a></li>
+            <li><a href="#win-dev">Herramientas de desarrollo y agentes de IA</a></li>
+            <li><a href="#win-settings">Ajustes</a></li>
+            <li><a href="#win-pro">Licencia Pro</a></li>
+            <li><a href="#win-updates">Actualizaciones</a></li>
+            <li><a href="#win-keys">Atajos de teclado</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -130,7 +170,7 @@
           <h4>Formas de desbloquear</h4>
           <ul>
             <li><strong>Contraseña maestra</strong> y luego <strong>Desbloquear</strong>. Siempre funciona.</li>
-            <li><strong>Desbloquear con Windows Hello</strong>: huella, rostro o PIN. Configúralo en Ajustes › Desbloqueo › Windows Hello › <strong>Configurar</strong>. Activa <strong>Iniciar Windows Hello automáticamente</strong> para que aparezca en cuanto se abra la ventana.</li>
+            <li><strong>Desbloquear con Windows Hello</strong>: huella, rostro o PIN. Configúralo en Ajustes › Desbloqueo › Windows Hello › <strong>Configurar</strong>. <strong>Iniciar Windows Hello automáticamente</strong> (activado de forma predeterminada) muestra la solicitud en cuanto se abre la ventana.</li>
             <li><strong>Usar la cámara</strong>: reconocimiento facial con una webcam normal, hecho en el PC. Es menos seguro que Windows Hello. Configúralo con <strong>Configurar verificación con cámara</strong>.</li>
           </ul>
           <h4>¿Olvidaste tu contraseña maestra?</h4>
@@ -141,7 +181,7 @@
           </ol>
           <p class="note"><strong>Después</strong> vuelve a configurar Windows Hello y la verificación con cámara. La frase de recuperación sigue funcionando.</p>
           <h4>Cambiar la contraseña maestra</h4>
-          <p>Ajustes › Desbloqueo › Contraseña maestra › <strong>Cambiar…</strong>. Escribe la actual y la nueva dos veces. Las copias que ya hiciste conservan la contraseña con la que se crearon.</p>
+          <p>Ajustes › Desbloqueo › Contraseña maestra › <strong>Cambiar…</strong>. Escribe la actual y la nueva dos veces. Para que tu frase de recuperación siga funcionando, escribe también sus 24 palabras; si no, crea una frase nueva después. Las copias que ya hiciste conservan la contraseña con la que se crearon.</p>
           <h4>Bloqueo</h4>
           <ul>
             <li>Botón <strong>Bloquear</strong> en la barra superior, o <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
@@ -156,7 +196,7 @@
               </ul>
             </li>
           </ul>
-          <p>El menú del icono de la bandeja tiene <strong>Desbloquear bóveda</strong>, <strong>Bloquear bóveda</strong>, <strong>Acceso rápido</strong> y <strong>Salir</strong>.</p>
+          <p>El menú del icono de la bandeja tiene <strong>Abrir LocalGateKeys</strong>, <strong>Desbloquear bóveda</strong>, <strong>Bloquear bóveda</strong>, <strong>Bloquear y cambiar de persona</strong>, <strong>Acceso rápido</strong>, <strong>Buscar actualizaciones</strong>, interruptores para <strong>Integración con el navegador</strong> e <strong>Iconos de rellenado de escritorio</strong>, y <strong>Salir</strong>.</p>
         </article>
 
         <article class="topic" id="win-screen">
@@ -165,7 +205,7 @@
             <dt>Barra lateral · Bóveda</dt><dd><strong>Todos los elementos</strong>, <strong>Favoritos</strong>, <strong>Usados recientemente</strong>.</dd>
             <dt>Barra lateral · Tipos</dt><dd>Una entrada por cada tipo que tengas, como Inicios de sesión, Tarjetas, Identidades, Notas seguras, Documentos, Wi-Fi o Llaves de acceso.</dd>
             <dt>Barra lateral · Colecciones y vistas</dt><dd>Tus colecciones y vistas fijadas.</dd>
-            <dt>Barra lateral · Herramientas</dt><dd>Centro de seguridad, Recordatorios, Sincronización, Dispositivos y conexiones, Licencia, Importar y exportar, Escanear código QR, Actividad, Papelera. <strong>Ajustes</strong> está abajo.</dd>
+            <dt>Barra lateral · Herramientas</dt><dd>Centro de seguridad, Generador, Sync y dispositivos, Dispositivos y conexiones, Importar y exportar, Papelera. <strong>Ajustes</strong> está abajo. Los recordatorios se abren desde la tarjeta <em>Próximamente</em> de Inicio, la actividad desde el Centro de seguridad, Escanear código QR con <kbd>Ctrl</kbd>+<kbd>K</kbd> y la licencia desde Ajustes › Plan y sincronización. <kbd>Ctrl</kbd>+<kbd>K</kbd> llega a cualquier página.</dd>
             <dt>Barra superior</dt><dd>Cuadro de búsqueda, <strong>Nuevo elemento</strong>, <strong>Bloquear</strong> y <strong>Ctrl K</strong> para la paleta de comandos.</dd>
             <dt>Inicio</dt><dd>Tarjetas de Salud de contraseñas, Copia y recuperación, Próximamente y Generador, además de <strong>Códigos de un solo uso</strong> (haz clic en un código para copiarlo).</dd>
           </dl>
@@ -174,7 +214,7 @@
             <li>Filtros: <strong>Todos</strong>, <strong>Requiere atención</strong>, <strong>Sin 2FA</strong>, <strong>Por vencer</strong>.</li>
             <li><strong>Ordenar</strong>: Título A–Z, Título Z–A, Fecha de modificación, Fecha de creación.</li>
             <li>Las marcas en una fila indican una contraseña filtrada, débil o reutilizada.</li>
-            <li>Haz clic derecho en una fila (o <kbd>Mayús</kbd>+<kbd>F10</kbd>) para Copiar contraseña, Copiar usuario, Copiar código 2FA, Abrir sitio web, Favoritos, Compartir… y Mover a la papelera….</li>
+            <li>Haz clic derecho en una fila (o <kbd>Mayús</kbd>+<kbd>F10</kbd>) para Editar, Copiar usuario, Copiar contraseña, Copiar código 2FA, Abrir sitio web, Compartir…, Añadir a favoritos y Mover a la papelera….</li>
           </ul>
           <h4>El panel de detalles</h4>
           <p>Muestra los campos del elemento seleccionado. Las contraseñas permanecen ocultas hasta que haces clic en ellas. Los botones copian el usuario, la contraseña o el código 2FA, abren el sitio web, <strong>Editar</strong>, <strong>Compartir</strong> o <strong>Mover a la papelera</strong>. Los documentos añaden <strong>Abrir archivo</strong>, <strong>Vista previa segura</strong>, <strong>Guardar una copia…</strong> y <strong>Reemplazar archivo…</strong>.</p>
@@ -187,8 +227,8 @@
             <li>Elige un tipo (haz clic en él, pulsa su número o empieza a escribir su nombre):
               <ul>
                 <li><em>Inicios de sesión</em>: Inicio de sesión web, Inicio de sesión de app de escritorio, Llave de acceso</li>
-                <li><em>Personal</em>: Tarjeta de pago, Cuenta bancaria, Identidad, Nota segura, Documento, Red Wi-Fi</li>
-                <li><em>Cosas que tienes</em>: Licencia, Compra, Garantía, Suscripción, Marcador</li>
+                <li><em>Dinero</em>: Tarjeta de pago, Cuenta bancaria · <em>Personal</em>: Identidad, Nota segura, Documento</li>
+                <li><em>Tecnología</em>: Clave SSH, Clave de API, Red Wi-Fi, Marcador · <em>Cosas que tienes</em>: Licencia, Suscripción, Garantía, Compra</li>
               </ul>
             </li>
             <li>Rellena los campos y elige <strong>Guardar</strong>. Si sales con cambios sin guardar, se te pregunta <em>¿Descartar los cambios?</em></li>
@@ -196,18 +236,18 @@
           <h4>Inicios de sesión en detalle</h4>
           <ul>
             <li><strong>Título</strong>, <strong>Sitio web</strong>, <strong>Usuario</strong>, <strong>Contraseña</strong> y <strong>Notas</strong>.</li>
-            <li><strong>Cambiar</strong>, junto a la contraseña, crea una nueva con el generador. Cámbiala también en el sitio web y luego guarda.</li>
+            <li><strong>Cambiar</strong>, junto a la contraseña, te deja escribir una nueva; o elige <strong>Frase de contraseña</strong>, <strong>Aleatoria</strong> o <strong>PIN</strong> para crear una. Cámbiala también en el sitio web y luego guarda.</li>
             <li><strong>Dos factores</strong>: pega aquí la clave de configuración del sitio (Pro). Consulta <a href="#win-2fa">Códigos de dos factores</a>.</li>
             <li><strong>Campos personalizados</strong>: <strong>Añadir campo</strong> para cualquier otra cosa. Marca un campo como Oculto para tratarlo como una contraseña.</li>
-            <li><strong>Historial de contraseñas</strong>: las contraseñas antiguas se guardan, cifradas, durante un año. <strong>Copiar contraseña anterior</strong> o <strong>Restaurar esta contraseña</strong>.</li>
+            <li><strong>Historial de contraseñas</strong>: se conservan, cifradas, hasta 5 contraseñas antiguas durante un año. <strong>Copiar contraseña anterior</strong> o <strong>Restaurar esta contraseña</strong>.</li>
             <li><strong>Códigos de recuperación</strong>: uno por línea. <strong>Copiar y usar el siguiente código</strong> copia uno y lo quita de la lista.</li>
-            <li><strong>Reglas de autorrelleno</strong>: Relleno (Predeterminado, Al hacer clic, Nunca), Iniciar sesión tras rellenar, Pedir siempre la contraseña maestra y Ofrecer guardar cambios desde el navegador.</li>
+            <li><strong>Reglas de autorrelleno</strong>: Relleno (Al hacer clic o Desactivado), Iniciar sesión tras rellenar (Predeterminado, Nunca o Siempre), Pedir siempre la contraseña maestra y Ofrecer guardar cambios desde el navegador.</li>
           </ul>
           <h4>Otros tipos</h4>
           <p>Cada tipo tiene sus propios campos. Las fechas se escriben como AAAA-MM-DD. Cualquier elemento puede ser <strong>Favorito</strong> y llevar <strong>Etiquetas</strong> (sepáralas con comas). Los documentos usan <strong>Elegir archivo y guardar</strong> (Pro).</p>
           <h4>Colecciones y recordatorios</h4>
           <ul>
-            <li>Las colecciones agrupan elementos a tu manera: <strong>Añadir colección</strong>, <strong>Renombrar</strong>, <strong>Archivar</strong>. Se quedan en este PC y no se sincronizan.</li>
+            <li>Las colecciones agrupan elementos a tu manera: <strong>Añadir colección</strong>, <strong>Renombrar</strong>, <strong>Archivar</strong>. Se sincronizan con tus otros dispositivos y puedes compartir una con otras personas (consulta <a href="#win-shared">Colecciones compartidas</a>).</li>
             <li><strong>Recordatorios</strong> muestra los elementos que vencen pronto o ya vencieron, con <strong>Completar</strong> y <strong>Posponer 1 día</strong>.</li>
             <li><strong>Actividad</strong> muestra un historial de lo que ocurrió en la bóveda.</li>
           </ul>
@@ -228,15 +268,15 @@
           <ul>
             <li><strong>Búsqueda</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>, escribe y pulsa <kbd>Intro</kbd> para abrir el primer resultado o <kbd>↓</kbd> para entrar en la lista.</li>
             <li><strong>Paleta de comandos</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd> encuentra elementos y acciones. Empieza con <code>&gt;</code> para ver solo acciones (Hacer copia ahora, Generar contraseña, Bloquear ahora, Estado de sincronización…), <code>#</code> para etiquetas y <code>@</code> para colecciones.</li>
-            <li><strong>Acceso rápido</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> en cualquier parte de Windows abre una pequeña ventana de búsqueda de inicios de sesión, notas y marcadores. Cambia el atajo en Ajustes › Autorrelleno › Acceso rápido.</li>
+            <li><strong>Acceso rápido</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> en cualquier parte de Windows abre LocalGateKeys en la página Acceso rápido, para buscar un inicio de sesión, una nota o un marcador. Cambia el atajo en Ajustes › Autorrelleno › Acceso rápido.</li>
           </ul>
         </article>
 
         <article class="topic" id="win-generator">
           <h3><a href="#win-generator">Generador de contraseñas</a></h3>
-          <p>Ábrelo desde la tarjeta <strong>Generador</strong> en Inicio, desde <strong>Cambiar</strong> en un inicio de sesión o con Ctrl+K › Generar contraseña.</p>
+          <p>Ábrelo desde la tarjeta <strong>Generador</strong> en Inicio o con Ctrl+K › Generar contraseña.</p>
           <ul>
-            <li><strong>Aleatoria</strong>: elige la longitud y si usar mayúsculas y símbolos.</li>
+            <li><strong>Aleatoria</strong>: elige la longitud y qué caracteres usar: A–Z, a–z, 0–9 y símbolos.</li>
             <li><strong>Frase de contraseña</strong>: elige el número de palabras. Más fácil de escribir e igual de segura si es lo bastante larga.</li>
             <li><strong>Generar de nuevo</strong> para otra, <strong>Copiar</strong> para copiarla.</li>
           </ul>
@@ -247,9 +287,10 @@
           <p>Herramientas › <strong>Centro de seguridad</strong> muestra qué arreglar primero: contraseñas débiles, reutilizadas, antiguas y filtradas, e inicios de sesión que podrían tener 2FA.</p>
           <ul>
             <li><strong>Comprobar todas en filtraciones</strong> compara tus contraseñas con la lista de Have I Been Pwned. Solo los primeros 5 caracteres de un hash salen de tu PC, nunca la contraseña.</li>
-            <li>Las comprobaciones de filtraciones están desactivadas hasta que activas Ajustes › Privacidad › <strong>Comprobación de filtraciones</strong>. El <strong>Modo sin conexión estricto</strong> las bloquea, junto con los iconos de sitios web y cualquier otra solicitud de red.</li>
+            <li>La comprobación de filtraciones necesita dos cambios en Ajustes › Privacidad: desactiva el <strong>Modo sin conexión estricto</strong> (activado de forma predeterminada) y activa <strong>Comprobación de filtraciones</strong>. El modo sin conexión estricto bloquea la comprobación de filtraciones, los iconos de sitios web y cualquier otra solicitud de red.</li>
             <li>En <strong>Salud de contraseñas</strong> usa <strong>Abrir entrada</strong> o <strong>Cambiar contraseña</strong> para arreglar un elemento.</li>
           </ul>
+          <p><strong>Actividad de red</strong>, al final del Centro de seguridad, muestra cada vez que LocalGateKeys se conectó y por qué: búsqueda de actualizaciones, comprobaciones de filtraciones, iconos de sitios web y sincronización con tus propios dispositivos.</p>
         </article>
 
         <article class="topic" id="win-2fa">
@@ -257,7 +298,7 @@
           <p>LocalGateKeys puede mostrar los códigos de 6 dígitos que un sitio pide después de la contraseña, así que no necesitas una app de autenticación aparte.</p>
           <ol>
             <li>En el sitio web, activa el inicio de sesión con dos factores o app de autenticación para que muestre un código QR.</li>
-            <li>En LocalGateKeys elige Herramientas › <strong>Escanear código QR</strong>. Añade la imagen de una de estas tres formas:
+            <li>En LocalGateKeys elige Ctrl+K › <strong>Escanear código QR</strong>. Añade la imagen de una de estas tres formas:
               <ul>
                 <li><strong>Pegar captura</strong>: pulsa <kbd>Win</kbd>+<kbd>Mayús</kbd>+<kbd>S</kbd>, selecciona el código QR y luego <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
                 <li><strong>Elegir imagen…</strong> (PNG, JPEG, BMP) o arrastra la imagen.</li>
@@ -291,7 +332,7 @@
             <thead><tr><th scope="col">Desde</th><th scope="col">Archivo</th></tr></thead>
             <tbody>
               <tr><td>1Password 8</td><td>.1pux o CSV</td></tr>
-              <tr><td>Bitwarden</td><td>JSON, también protegido con contraseña</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (también protegido con contraseña) o CSV</td></tr>
               <tr><td>LastPass</td><td>CSV</td></tr>
               <tr><td>Dashlane</td><td>zip o CSV</td></tr>
               <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (se abre directamente), XML o CSV</td></tr>
@@ -301,7 +342,7 @@
               <tr><td>Cualquier otro</td><td>CSV, eligiendo columnas</td></tr>
             </tbody>
           </table>
-          <p class="note">No se importan: papelera, historial de contraseñas, llaves de acceso y adjuntos. Los sitios <code>http://</code> se guardan como https. Las entradas sin sitio web ni contraseña se convierten en notas seguras. En Free se aplica el límite de 4 elementos.</p>
+          <p class="note">No se importan: papelera, historial de contraseñas, llaves de acceso y adjuntos. Los sitios <code>http://</code> se guardan como https. Las entradas sin sitio web ni contraseña se convierten en notas seguras. En Free se aplica el límite de 7 elementos. También se reconocen los archivos Credential Exchange (CXF, <code>.json</code> o <code>.cxf</code>) de otros gestores, y traen también las claves de acceso.</p>
         </article>
 
         <article class="topic" id="win-export">
@@ -310,6 +351,7 @@
           <ul>
             <li><strong>KeePass KDBX 4</strong>: cifrado con una contraseña que eliges (12 caracteres o más). La opción segura.</li>
             <li>CSV compatible con Bitwarden, JSON de Bitwarden, XML de KeePass 2: <em>sin cifrar</em>. Elimínalos después de usarlos.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: los inicios de sesión, notas y claves de acceso que elijas, para otro gestor de contraseñas. <em>Sin cifrar</em>; las claves privadas de las claves de acceso solo se incluyen si lo aceptas.</li>
             <li>Marca <strong>Incluir secretos de contraseñas de un solo uso (2FA)</strong> para llevarte tus códigos 2FA.</li>
           </ul>
           <p><strong>Transferencia cifrada…</strong> mueve los elementos elegidos (por favoritos, tipos, etiquetas) a otro perfil o PC en un paquete protegido con contraseña. En el otro lado elige <strong>Importar un paquete</strong>, <strong>Inspeccionar</strong>, <strong>Vista previa</strong> y luego importa.</p>
@@ -323,6 +365,7 @@
             <li><strong>Copias programadas</strong>: diarias o semanales, con <strong>Hora del día</strong> y <strong>Día de la semana</strong>.</li>
             <li><strong>Copia en la nube</strong> › <strong>Elegir…</strong> una carpeta, como una unidad USB o un segundo disco, para una segunda copia.</li>
             <li><strong>Copias programadas antiguas</strong>: conservar solo la última, o la última y la anterior.</li>
+            <li><strong>Prueba de restauración semanal</strong>: cada semana LocalGateKeys comprueba que una copia programada se puede restaurar. No se guarda nada. <strong>Copias de seguridad automáticas que conservar</strong> fija cuántas copias automáticas se guardan.</li>
           </ol>
           <p class="note">Las copias solo se hacen con la bóveda desbloqueada. Una que se perdió con la app cerrada se hace en el siguiente desbloqueo.</p>
           <h4>Página Copia y restauración</h4>
@@ -335,7 +378,7 @@
             <li><strong>Frase de recuperación</strong> (Configurar / Reemplazar…) y <strong>Crear kit de recuperación</strong>, una hoja para imprimir.</li>
           </ul>
           <h4>Restaurar una copia del teléfono</h4>
-          <p>Importar y exportar › <strong>Restaurar copia del teléfono…</strong>, elige el archivo <code>.lgkm</code> de la app de iPhone o Android, escribe su contraseña, <strong>Vista previa</strong> y luego <strong>Restaurar</strong>. Los elementos se añaden a tu bóveda; no se borra nada.</p>
+          <p>Importar y exportar › <strong>Restaurar copia del teléfono…</strong>, elige el archivo <code>.lgkm</code> de la app de iPhone, escribe su contraseña, <strong>Vista previa</strong> y luego <strong>Restaurar</strong>. Los elementos se añaden a tu bóveda; no se borra nada.</p>
         </article>
 
         <article class="topic" id="win-sync">
@@ -343,7 +386,7 @@
           <p>La sincronización solo funciona con la bóveda desbloqueada: al desbloquear, cada 5 minutos y unos segundos después de un cambio. Hay dos formas y puedes usar ambas:</p>
           <h4>Wi-Fi (teléfono u otro PC en la misma red)</h4>
           <ol>
-            <li>Herramientas › Sincronización › <strong>Activar sincronización por Wi-Fi…</strong>. Deja la dirección y el puerto sugeridos (47821) y elige <strong>Permitir en el Firewall de Windows</strong> si se te pide.</li>
+            <li>Sync y dispositivos › <strong>Activar sincronización por Wi-Fi…</strong>. Deja la dirección y el puerto sugeridos (47821) y elige <strong>Permitir en el Firewall de Windows</strong> si se te pide.</li>
             <li>Elige <strong>Mostrar código QR…</strong>. El código funciona una vez, durante 120 segundos.</li>
             <li>Escanéalo en la pestaña Sincronización de la app del teléfono. Para otro PC, elige <strong>Copiar texto del código</strong> y usa allí <strong>Unirse con texto QR…</strong>.</li>
             <li>Ambos dispositivos muestran un código de 6 dígitos. Elige <strong>Aceptar</strong> solo si coinciden; si no, <strong>Rechazar</strong>.</li>
@@ -364,7 +407,7 @@
             <li><strong>Salir de la sincronización…</strong> conserva tus elementos y olvida el grupo. <strong>Restablecer la sincronización en este PC…</strong> también olvida sus claves (pregunta dos veces).</li>
             <li>Si un elemento cambió en dos dispositivos a la vez, la copia extra lleva <em>(conflicto de sincronización)</em> en el título.</li>
           </ul>
-          <p class="note">Cada PC necesita su propia licencia Pro; una compra Pro en el teléfono puede desbloquear un PC (consulta <a href="#win-pro">Licencia Pro</a>). Las colecciones no se sincronizan. Hasta 16 dispositivos por grupo.</p>
+          <p class="note">Todos los dispositivos del grupo necesitan Pro. Un PC gratuito emparejado con un iPhone que tiene Pro recibe la licencia por sincronización y pasa a ser Pro (consulta <a href="#win-pro">Licencia Pro</a>). Hasta 16 dispositivos por grupo.</p>
         </article>
 
         <article class="topic" id="win-share">
@@ -382,24 +425,48 @@
           <p>LocalGateKeys puede rellenar ventanas de inicio de sesión de programas normales de Windows, no solo sitios web.</p>
           <ol>
             <li>Abre la ventana de inicio de sesión del programa.</li>
-            <li>Crea un <strong>Inicio de sesión de app de escritorio</strong> y elige <strong>Vincular app…</strong> › <strong>Inspeccionar la app…</strong>.</li>
+            <li>Pulsa <kbd>Ctrl</kbd>+<kbd>N</kbd>, elige <strong>Inicio de sesión de app de escritorio</strong> y luego <strong>Inspeccionar la aplicación…</strong>.</li>
             <li><strong>Asignar campos de inicio de sesión</strong>: señala los cuadros de usuario y contraseña. Si quieres, <strong>Asignar botón de inicio de sesión…</strong>.</li>
-            <li><strong>Guardar vínculo</strong>.</li>
+            <li><strong>Guardar inicio de sesión</strong>.</li>
             <li>La próxima vez, pulsa <kbd>Ctrl</kbd>+<kbd>Mayús</kbd>+<kbd>Espacio</kbd> en ese programa o haz clic en el botón de relleno junto a su cuadro de contraseña.</li>
           </ol>
-          <p>Si el programa cambia tras una actualización, elige <strong>Actualizar vínculo</strong>. LocalGateKeys solo lee la disposición de la ventana, nunca lo que escribes.</p>
+          <p>Si el programa cambia tras una actualización, abre el inicio de sesión y elige <strong>Enlace de aplicación…</strong> › <strong>Actualizar enlace…</strong>. LocalGateKeys solo lee la disposición de la ventana, nunca lo que escribes.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Colecciones compartidas</a> <span class="badge-pro">Pro</span></h3>
+          <p>Comparte una colección con tu familia o un equipo mediante una carpeta a la que todos tengáis acceso, como una carpeta compartida de OneDrive. Abre la colección, elige <strong>Compartir colección</strong>, la carpeta, si los miembros pueden editar o solo ver, y una contraseña para compartir.</p>
+          <p>Los demás eligen <strong>Unirse a una colección compartida</strong>, la carpeta y escriben la contraseña; después tú eliges <strong>Dejarlos entrar</strong>. Solo esa colección pasa por la carpeta: tus demás elementos siguen siendo privados. Puedes quitar a alguien, <strong>Dejar de compartir</strong> o salir cuando quieras.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Acceso de emergencia y contraseña de coacción</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Acceso de emergencia</strong> (Pro): en la página Copia de seguridad y restauración elige <strong>Configurar el acceso de emergencia</strong>. Tu frase de recuperación se divide en fragmentos para personas de confianza; tú eliges cuántos hacen falta y un periodo de espera. Entrega a cada persona su hoja o su archivo de fragmento.</li>
+            <li>Cuando suficientes personas piden acceso a través de la carpeta compartida, tus dispositivos muestran la solicitud y puedes <strong>Rechazar</strong> hasta que termine el periodo de espera. Quien tiene un fragmento elige <strong>Me dieron acceso</strong>, añade los fragmentos y elige <strong>Pedir acceso</strong>; una vez concedido, la bóveda se abre como un perfil nuevo.</li>
+            <li><strong>Paquete sucesorio</strong>, en la misma página, crea una nota para tus herederos (dónde está el testamento, cuentas que cerrar, dispositivos y quién tiene un fragmento) y luego el <strong>Kit de emergencia</strong> para imprimir.</li>
+            <li><strong>Contraseña de coacción</strong> (Pro): Ajustes › Desbloqueo › <strong>Contraseña de coacción</strong> › <strong>Configurar</strong>. Es una segunda contraseña maestra para cuando alguien te obliga a desbloquear. Abre una bóveda aparte con solo los elementos que elijas, y tu bóveda real rechaza después su contraseña maestra durante las horas que fijes. Está en Windows, Mac, iPhone y Android.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Herramientas de desarrollo y agentes de IA</a></h3>
+          <p>Ajustes › <strong>Desarrollo</strong> ofrece claves SSH de tu bóveda a ssh y Git en este PC, para iniciar sesión y firmar commits. Cada firma pide tu aprobación. <strong>Generar</strong> crea una clave Ed25519 nueva en la bóveda.</p>
+          <p><strong>Permitir que agentes de IA usen LocalGateKeys</strong> deja que agentes como Claude Code se conecten por MCP. Apruebas cada inicio de sesión o lectura; el agente nunca ve una contraseña y cada solicitud queda registrada. En la versión de Microsoft Store, añádelo con <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
         </article>
 
         <article class="topic" id="win-settings">
           <h3><a href="#win-settings">Ajustes</a></h3>
           <p>Usa el cuadro <strong>Buscar ajustes</strong> de arriba (<kbd>Ctrl</kbd>+<kbd>F</kbd>) para encontrar cualquier opción. Los cambios se guardan al instante.</p>
           <dl class="defs">
-            <dt>Desbloqueo</dt><dd>Windows Hello, verificación con cámara, contraseña maestra, frase de recuperación.</dd>
+            <dt>Desbloqueo</dt><dd>Windows Hello, llave de seguridad, verificación con cámara, archivo de clave, YubiKey, contraseña maestra, frase de recuperación.</dd>
             <dt>Bloqueo</dt><dd>Tiempos y motivos del bloqueo automático (consulta <a href="#win-unlock">Desbloquear y bloquear</a>).</dd>
-            <dt>Autorrelleno</dt><dd>Autorrelleno del navegador, <strong>Ofrecer LocalGateKeys para llaves de acceso</strong>, autorrelleno de apps de escritorio, iniciar sesión tras rellenar, atajo de Acceso rápido.</dd>
-            <dt>Privacidad</dt><dd><strong>Borrar el portapapeles después de</strong> (de 5 segundos a 5 minutos), comprobación de filtraciones, modo sin conexión estricto, tiempo de la papelera, abrir documentos en otras apps.</dd>
+            <dt>Autorrelleno</dt><dd>Autorrelleno del navegador, <strong>Ofrecer LocalGateKeys para llaves de acceso</strong>, autorrelleno de apps de escritorio, iniciar sesión tras rellenar, atajo de Acceso rápido. <strong>Usar LocalGateKeys para las claves de acceso de Windows</strong> ofrece tus claves de acceso en todas las apps y navegadores de Windows 11, con tu aprobación cada vez.</dd>
+            <dt>Privacidad</dt><dd><strong>Borrar el portapapeles después de</strong> (de 5 segundos a 5 minutos), comprobación de filtraciones, modo sin conexión estricto, ocultar de capturas y de pantalla compartida, tiempo de la papelera, abrir documentos en otras apps.</dd>
             <dt>Copias de seguridad</dt><dd>Consulta <a href="#win-backups">Copias de seguridad y restauración</a>.</dd>
-            <dt>Apariencia y app</dt><dd><strong>Tema</strong> Sistema, Claro u Oscuro; <strong>Iniciar con Windows</strong> (se inicia bloqueada); <strong>Seguir en la bandeja</strong>; Actualizaciones.</dd>
+            <dt>Apariencia y app</dt><dd><strong>Tema</strong> Sistema, Claro u Oscuro; <strong>Idioma</strong>; <strong>Iniciar con Windows</strong> (se inicia bloqueada); <strong>Seguir en la bandeja</strong>; Actualizaciones.</dd>
+            <dt>Plan y sincronización</dt><dd>Tu licencia, la sincronización de dispositivos y <strong>Borrar este dispositivo si se quita de la sincronización</strong>.</dd>
+            <dt>Desarrollo</dt><dd>Agente SSH y firma de Git, y agentes de IA (consulta <a href="#win-dev">Herramientas de desarrollo y agentes de IA</a>).</dd>
             <dt>Ayuda y diagnóstico</dt><dd>Atajos de teclado, Mostrar la configuración de nuevo, Dispositivos y conexiones, Registro de errores, páginas legales.</dd>
           </dl>
         </article>
@@ -407,15 +474,15 @@
         <article class="topic" id="win-pro">
           <h3><a href="#win-pro">Licencia Pro</a></h3>
           <ol>
-            <li>Compra Pro en la <a href="../es/pricing.html">página de precios</a>. Tu clave (empieza por <code>LGK1-</code>) llega por correo.</li>
-            <li>Abre Herramientas › <strong>Licencia</strong>, pega la clave y elige <strong>Instalar</strong>, o <strong>Abrir archivo…</strong> para un archivo <code>.lgklicense</code>.</li>
+            <li>Compra Pro en la <a href="../es/pricing">página de precios</a>. Tu clave (empieza por <code>LGK1-</code>) llega por correo.</li>
+            <li>Abre Ajustes › Plan y sincronización › <strong>Licencia</strong>, pega la clave y elige <strong>Instalar</strong>, o <strong>Abrir archivo…</strong> para un archivo <code>.lgklicense</code>.</li>
           </ol>
-          <p>¿Compraste Pro en la app de iPhone o Android? En los Ajustes del teléfono elige <strong>Copiar clave</strong> e instálala en el PC de la misma forma. La página Licencia muestra cuántos de los 4 elementos gratuitos usas. Más en <a href="../es/licence.html">Tu licencia Pro</a>.</p>
+          <p>¿Compraste Pro en la aplicación para iPhone? Empareja el PC con el iPhone (consulta <a href="#win-sync">Sincronización</a>) y un PC gratuito pasa a ser Pro por sincronización. O, en los ajustes del iPhone, elige <strong>Copiar clave</strong> e instálala en el PC de la misma manera. La página de licencia muestra cuántos de los 7 elementos gratuitos usas. Más en <a href="../es/licence">Tu licencia Pro</a>.</p>
         </article>
 
         <article class="topic" id="win-updates">
           <h3><a href="#win-updates">Actualizaciones</a></h3>
-          <p>La versión de Microsoft Store se actualiza sola. Para la versión con instalador, elige <strong>Buscar actualizaciones</strong> (Ajustes, el menú de la bandeja o Ctrl+K). Si hay una versión más nueva, <strong>Abrir página de la versión</strong> te lleva a la descarga. La app nunca descarga ni ejecuta nada por sí sola.</p>
+          <p>LocalGateKeys de Microsoft Store se actualiza a través de la Store. ¿Sigues con la versión del instalador antiguo? Su última actualización es la 0.4.12: desinstálala en Configuración de Windows › Aplicaciones › Aplicaciones instaladas y luego instala LocalGateKeys desde Microsoft Store. Tu bóveda se queda donde está y se abre con la misma contraseña maestra.</p>
         </article>
 
         <article class="topic" id="win-keys">
@@ -428,7 +495,7 @@
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>Nuevo elemento</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Bloquear</td></tr>
               <tr><th scope="row"><kbd>Esc</kbd></th><td>Atrás</td></tr>
-              <tr><th scope="row"><kbd>Intro</kbd> / <kbd>F2</kbd></th><td>Abrir el elemento seleccionado</td></tr>
+              <tr><th scope="row"><kbd>Intro</kbd></th><td>Abrir el elemento seleccionado</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Copiar contraseña (pregunta antes)</td></tr>
               <tr><th scope="row"><kbd>Supr</kbd></th><td>Mover a la papelera</td></tr>
               <tr><th scope="row"><kbd>Mayús</kbd>+<kbd>F10</kbd></th><td>Menú del elemento</td></tr>
@@ -445,23 +512,25 @@
 
   <!-- ============================== EXTENSION ============================== -->
   <section class="help-panel" id="extension" aria-labelledby="extension-title">
-    <h2 class="panel-title" id="extension-title">Extensión del navegador para Edge y Chrome</h2>
-    <p class="panel-lead">Rellena y guarda inicios de sesión en sitios web. Solo se comunica con la app LocalGateKeys del mismo PC, así que instala primero la app de Windows.</p>
+    <h2 class="panel-title" id="extension-title">Extensión del navegador para Edge, Chrome y Firefox</h2>
+    <p class="panel-lead">Rellena y guarda inicios de sesión en sitios web. Solo se comunica con la app LocalGateKeys del mismo PC, así que instala primero la app de Windows. ¿Usas Safari? Aquí no hay nada que descargar: las apps para Mac y iPhone rellenan en Safari con Autorrelleno e incluyen una extensión de Safari. Consulta <a href="#mac-autofill">Autorrelleno y Safari en el Mac</a> o <a href="#ios-autofill">en el iPhone</a>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Temas de la extensión">
-        <p class="help-toc-title">En esta pestaña</p>
-        <ol>
-          <li><a href="#ext-install">Instalar y conectar</a></li>
-          <li><a href="#ext-popup">La ventana de la extensión</a></li>
-          <li><a href="#ext-fill">Rellenar un inicio de sesión</a></li>
-          <li><a href="#ext-save">Guardar un inicio de sesión</a></li>
-          <li><a href="#ext-2fa">Rellenar códigos 2FA</a></li>
-          <li><a href="#ext-cards">Tarjetas e identidades</a></li>
-          <li><a href="#ext-generate">Contraseñas nuevas</a></li>
-          <li><a href="#ext-passkeys">Llaves de acceso</a></li>
-          <li><a href="#ext-trouble">Solución de problemas</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#ext-install">Instalar y conectar</a></li>
+            <li><a href="#ext-popup">La ventana de la extensión</a></li>
+            <li><a href="#ext-fill">Rellenar un inicio de sesión</a></li>
+            <li><a href="#ext-save">Guardar un inicio de sesión</a></li>
+            <li><a href="#ext-2fa">Rellenar códigos 2FA</a></li>
+            <li><a href="#ext-cards">Tarjetas e identidades</a></li>
+            <li><a href="#ext-generate">Contraseñas nuevas</a></li>
+            <li><a href="#ext-passkeys">Llaves de acceso</a></li>
+            <li><a href="#ext-trouble">Solución de problemas</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -470,7 +539,7 @@
           <h3><a href="#ext-install">Instalar y conectar</a></h3>
           <ol>
             <li>Instala y configura la <a href="#windows">app de Windows</a>.</li>
-            <li>Añade la extensión: <strong>Edge</strong> desde <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Complementos de Edge</a> (elige <strong>Obtener</strong>). La ficha de Chrome Web Store llegará pronto.</li>
+            <li>Añade la extensión: <strong>Edge</strong> desde <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Complementos de Edge</a> (elige <strong>Obtener</strong>). <strong>Chrome</strong> desde <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Chrome Web Store</a> (elige <strong>Añadir a Chrome</strong>). <strong>Firefox</strong> desde <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Complementos de Firefox</a> (elige <strong>Agregar a Firefox</strong>).</li>
             <li>Haz clic en el icono de la pieza de puzle de la barra de herramientas y fija <strong>LocalGateKeys</strong>.</li>
             <li>Haz clic en el icono de LocalGateKeys. La tarjeta de conexión debería decir <strong>Conectada</strong> o <strong>Bloqueada</strong>.</li>
           </ol>
@@ -560,28 +629,31 @@
   <!-- ============================== IPHONE ============================== -->
   <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
     <h2 class="panel-title" id="iphone-title">LocalGateKeys para iPhone</h2>
-    <p class="panel-lead">Descárgala en la <a href="https://apps.apple.com/app/id6825488435">App Store</a>. La app tiene cuatro pestañas: <strong>Bóveda</strong>, <strong>Sincronización</strong>, <strong>Seguridad</strong> y <strong>Ajustes</strong>.</p>
+    <p class="panel-lead">Descárgala en la <a href="https://apps.apple.com/app/id6825488435">App Store</a> (iOS 17 o posterior). La app tiene cuatro pestañas: <strong>Bóveda</strong>, <strong>Sincronización</strong>, <strong>Seguridad</strong> y <strong>Ajustes</strong>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Temas de iPhone">
-        <p class="help-toc-title">En esta pestaña</p>
-        <ol>
-          <li><a href="#ios-setup">Primer inicio y desbloqueo</a></li>
-          <li><a href="#ios-apppw">Contraseña de la app y recuperación</a></li>
-          <li><a href="#ios-items">Elementos: añadir, editar, eliminar</a></li>
-          <li><a href="#ios-search">Búsqueda y acciones</a></li>
-          <li><a href="#ios-generator">Generador de contraseñas</a></li>
-          <li><a href="#ios-2fa">Códigos de dos factores</a></li>
-          <li><a href="#ios-autofill">Autorrelleno en apps y Safari</a></li>
-          <li><a href="#ios-passkeys">Llaves de acceso</a></li>
-          <li><a href="#ios-safari">Guardar desde Safari</a></li>
-          <li><a href="#ios-security">Pestaña Seguridad</a></li>
-          <li><a href="#ios-import">Importar y exportar</a></li>
-          <li><a href="#ios-sync">Sincronización</a></li>
-          <li><a href="#ios-share">Compartir un elemento</a></li>
-          <li><a href="#ios-settings">Ajustes</a></li>
-          <li><a href="#ios-pro">Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#ios-setup">Primer inicio y desbloqueo</a></li>
+            <li><a href="#ios-apppw">Contraseña de la app y recuperación</a></li>
+            <li><a href="#ios-items">Elementos: añadir, editar, eliminar</a></li>
+            <li><a href="#ios-search">Búsqueda y acciones</a></li>
+            <li><a href="#ios-generator">Generador de contraseñas</a></li>
+            <li><a href="#ios-2fa">Códigos de dos factores</a></li>
+            <li><a href="#ios-autofill">Autorrelleno en apps y Safari</a></li>
+            <li><a href="#ios-passkeys">Llaves de acceso</a></li>
+            <li><a href="#ios-safari">Guardar desde Safari</a></li>
+            <li><a href="#ios-security">Pestaña Seguridad</a></li>
+            <li><a href="#ios-import">Importar y exportar</a></li>
+            <li><a href="#ios-sync">Sincronización</a></li>
+            <li><a href="#ios-share">Compartir un elemento</a></li>
+            <li><a href="#ios-settings">Ajustes</a></li>
+            <li><a href="#ios-more">Contraseña de coacción y más</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -601,9 +673,8 @@
           <p>Una contraseña adicional opcional que abre LocalGateKeys en lugar del código del iPhone. Útil si otras personas conocen tu código.</p>
           <ol>
             <li>Ajustes › Contraseña de la app › activa <strong>Usar una contraseña de la app</strong>.</li>
-            <li>Elige una contraseña fuerte.</li>
+            <li>Elige una contraseña fuerte (al menos 12 caracteres) y deja activado <strong>Desbloquear con Face ID</strong> si lo quieres como atajo.</li>
             <li>Anota la <strong>frase de recuperación</strong> de 24 palabras, toca <strong>Ya las anoté</strong> y escribe las tres palabras que te pide.</li>
-            <li>Si quieres, conserva <strong>Desbloquear con Face ID</strong> como atajo.</li>
           </ol>
           <p><strong>¿La olvidaste?</strong> Toca <strong>¿Olvidaste la contraseña de la app?</strong> en la pantalla de desbloqueo, escribe las 24 palabras y elige una nueva contraseña de la app.</p>
           <p class="note">Si añades un rostro o una huella nuevos al iPhone, el atajo de Face ID se desactiva por seguridad: escribe la contraseña de la app una vez y vuelve a activarlo.</p>
@@ -616,9 +687,9 @@
             <li>Rellena los campos y toca <strong>Guardar</strong>. Si sales a medias, la app te ofrece <strong>Continuar</strong> el elemento sin guardar más tarde.</li>
           </ol>
           <ul>
-            <li>Abre un elemento para <strong>Copiar usuario</strong>, <strong>Copiar contraseña</strong>, <strong>Copiar código 2FA</strong>, <strong>Abrir sitio web</strong>, marcarlo como <strong>Favorito</strong> o <strong>Compartirlo</strong>. El texto copiado se borra del portapapeles al cabo de un rato y nunca va a tus otros dispositivos Apple.</li>
+            <li>Mantén pulsado un elemento de la bóveda para <strong>Copiar nombre de usuario</strong>, <strong>Copiar contraseña</strong>, <strong>Copiar código 2FA</strong>, <strong>Abrir sitio web</strong> o marcarlo como <strong>Favorito</strong>. Ábrelo para copiar cualquier campo, marcarlo con la estrella o <strong>Compartirlo</strong>. El texto copiado se borra del portapapeles al cabo de un rato y nunca va a tus otros dispositivos Apple.</li>
             <li>El <strong>Historial de contraseñas</strong> de un inicio de sesión guarda contraseñas antiguas: copia o restaura una (pide Face ID).</li>
-            <li>Las tarjetas, pasaportes, licencias y suscripciones pueden tener un <strong>recordatorio</strong> antes de caducar.</li>
+            <li>Cualquier elemento salvo un inicio de sesión (una tarjeta, una suscripción, una garantía, una licencia…) puede tener un <strong>recordatorio</strong> antes de su vencimiento; en una tarjeta se sugiere su fecha de caducidad.</li>
             <li><strong>Adjuntar un archivo</strong> (Pro, hasta 25 MB, guardado cifrado) desde <strong>+</strong>.</li>
             <li><strong>Eliminar</strong>: el elemento va a <em>Eliminados recientemente</em>, con <strong>Deshacer</strong> durante unos segundos. Ajustes › Datos › <strong>Eliminados recientemente</strong> te permite <strong>Restaurar</strong> o <strong>Eliminar para siempre</strong>.</li>
             <li><strong>Ordenar</strong> por nombre o fecha, favoritos primero, o agrupados por tipo.</li>
@@ -627,12 +698,12 @@
 
         <article class="topic" id="ios-search">
           <h3><a href="#ios-search">Búsqueda y acciones rápidas</a></h3>
-          <p>Desliza la bóveda hacia abajo o toca <strong>Buscar</strong> y escribe. Escribe primero <code>&gt;</code> para ver <strong>Acciones</strong>: Nuevo elemento, Generar contraseña, Escanear código QR, Bloquear ahora, Sincronizar ahora, Revisión de seguridad, Eliminados recientemente, Importar y exportar, y más.</p>
+          <p>Toca el botón de búsqueda (la lupa) en la parte superior de la bóveda y escribe; al deslizar la bóveda hacia abajo se sincroniza. Escribe primero <code>&gt;</code> para ver <strong>Acciones</strong>: Nuevo elemento, Generar contraseña, Escanear código QR, Bloquear ahora, Sincronizar ahora, Revisión de seguridad, Eliminados recientemente, Importar y exportar, y más.</p>
         </article>
 
         <article class="topic" id="ios-generator">
           <h3><a href="#ios-generator">Generador de contraseñas</a></h3>
-          <p>Desde <code>&gt;</code> Generar contraseña, o al editar la contraseña de un inicio de sesión. Elige una contraseña con una <strong>Longitud</strong>, o una frase de contraseña con un número de <strong>Palabras</strong> y un <strong>Separador</strong>. <strong>Generar de nuevo</strong> y luego <strong>Usar</strong>. Recuerda las opciones que usaste la última vez; <strong>Restablecer valores predeterminados</strong> las devuelve.</p>
+          <p>Desde <code>&gt;</code> Generar contraseña, o al editar la contraseña de un inicio de sesión. Elige una contraseña con una <strong>Longitud</strong>, o una frase de contraseña con un número de <strong>Palabras</strong> y un <strong>Separador</strong>. Toca el botón de actualizar para generar otra y luego <strong>Usar</strong>. Recuerda las opciones que usaste la última vez; Ajustes › Generador de contraseñas › <strong>Restablecer valores predeterminados</strong> devuelve los valores predeterminados.</p>
         </article>
 
         <article class="topic" id="ios-2fa">
@@ -656,15 +727,15 @@
           <p>Opciones en Ajustes › Autorrelleno:</p>
           <ul>
             <li><strong>Mostrar inicios de sesión en la barra QuickType</strong>: sugerencias sobre el teclado.</li>
-            <li><strong>Copiar código 2FA al rellenar</strong>: para que puedas pegar el código en la siguiente pantalla. Se borra a los 60 segundos.</li>
+            <li><strong>Copiar código 2FA al rellenar</strong>: para que puedas pegar el código en la siguiente pantalla. Se borra pasado el tiempo de <strong>Borrar el portapapeles tras</strong> (60 segundos de forma predeterminada).</li>
             <li><strong>Ofrecer LocalGateKeys para llaves de acceso</strong>.</li>
           </ul>
-          <p>Las tarjetas y los datos de contacto se rellenan igual. Un inicio de sesión guardado para un sitio <code>https</code> no se ofrece en una página <code>http</code> simple.</p>
+          <p>En iOS 18 y posterior también se rellenan tarjetas y datos de contacto: toca un campo de texto, elige <strong>Autorrelleno › Contraseñas</strong> y elige el campo. Un inicio de sesión guardado para un sitio <code>https</code> no se ofrece en una página <code>http</code> simple.</p>
         </article>
 
         <article class="topic" id="ios-passkeys">
           <h3><a href="#ios-passkeys">Llaves de acceso</a></h3>
-          <p>Con Autorrelleno activado, cuando un sitio web ofrezca crear una llave de acceso, elige LocalGateKeys. La llave se guarda en tu bóveda y se sincroniza con tu PC o Mac. También funciona iniciar sesión en un ordenador escaneando su código QR con el iPhone. La página de detalles de una llave de acceso muestra el sitio y la cuenta; la clave en sí nunca se muestra. Puedes renombrarla o eliminarla.</p>
+          <p>Con Autorrelleno activado, cuando un sitio web ofrezca crear una llave de acceso, elige LocalGateKeys. La llave se guarda en tu bóveda y se sincroniza con tu PC. También funciona iniciar sesión en un ordenador escaneando su código QR con el iPhone. La página de detalles de una llave de acceso muestra el sitio y la cuenta; la clave en sí nunca se muestra. Puedes renombrarla o eliminarla.</p>
         </article>
 
         <article class="topic" id="ios-safari">
@@ -679,7 +750,7 @@
 
         <article class="topic" id="ios-security">
           <h3><a href="#ios-security">Pestaña Seguridad</a></h3>
-          <p>Una puntuación y listas de inicios de sesión <strong>Filtrados</strong>, <strong>Reutilizados</strong>, <strong>Débiles</strong>, <strong>Antiguos</strong> o que podrían usar 2FA. Desliza a la izquierda en un inicio de sesión para <strong>Cambiar contraseña</strong> o <strong>Descartar</strong>. Las comprobaciones de filtraciones están desactivadas hasta que activas Ajustes › <strong>Permitir comprobación de filtraciones</strong>.</p>
+          <p>Una puntuación y listas de inicios de sesión <strong>Filtrados</strong>, <strong>Reutilizados</strong>, <strong>Débiles</strong>, <strong>Antiguos</strong> o que podrían usar 2FA. Desliza a la izquierda en un inicio de sesión para <strong>Cambiar contraseña</strong> o <strong>Descartar</strong>. Las comprobaciones de filtraciones están desactivadas hasta que en Ajustes desactivas el <strong>Modo estrictamente sin conexión</strong> (activado de forma predeterminada) y activas <strong>Permitir comprobaciones de filtraciones</strong>.</p>
         </article>
 
         <article class="topic" id="ios-import">
@@ -690,19 +761,20 @@
             <li>Elige <strong>LocalGateKeys</strong>. Se traen los inicios de sesión, los códigos 2FA y las llaves de acceso. Hacerlo de nuevo no duplica nada.</li>
           </ol>
           <h4>Desde un archivo</h4>
-          <p>Ajustes › Importar y exportar › <strong>Importar desde un archivo</strong>: CSV de Contraseñas de Apple, <code>.json</code> de Bitwarden (también protegido con contraseña), <code>.1pux</code> de 1Password o cualquier otro CSV. Revisas cada elemento antes de tocar <strong>Importar</strong>. Después, elimina el archivo exportado.</p>
+          <p>Ajustes › Importar y exportar › <strong>Importar desde un archivo</strong>: exportaciones de Contraseñas de Apple, Safari, Chrome, Edge, Brave, Firefox, Bitwarden (también protegidas con contraseña), 1Password (<code>.1pux</code>), LastPass, KeePass (<code>.kdbx</code>), Proton Pass, Dashlane o cualquier CSV. Revisas cada elemento antes de tocar <strong>Importar</strong>. Después, elimina el archivo exportado.</p>
           <h4>Copia de seguridad y exportación</h4>
           <ul>
-            <li><strong>Exportar copia cifrada</strong>: un archivo <code>.lgkm</code> con una contraseña de 12 caracteres o más. Restáurala en Windows, Mac u otro teléfono.</li>
+            <li><strong>Exportar copia cifrada</strong>: un archivo <code>.lgkm</code> con una contraseña de 12 caracteres o más. Restáurala en Windows.</li>
             <li><strong>Exportar como CSV</strong>: sin cifrar, para pasar a otra app. Se te pide confirmación.</li>
+            <li><strong>Exportar a un archivo CXF…</strong> guarda los inicios de sesión, notas y claves de acceso que elijas en un archivo Credential Exchange que otros gestores pueden importar. El archivo no está cifrado.</li>
           </ul>
         </article>
 
         <article class="topic" id="ios-sync">
-          <h3><a href="#ios-sync">Sincronizar con tu PC o Mac</a> <span class="badge-pro">Pro</span></h3>
+          <h3><a href="#ios-sync">Sincronizar con tu PC</a> <span class="badge-pro">Pro</span></h3>
           <h4>Por Wi-Fi</h4>
           <ol>
-            <li>En el PC o el Mac, abre Sincronización y elige <strong>Mostrar código QR</strong>.</li>
+            <li>En el PC, abre Sync y dispositivos y elige <strong>Mostrar código QR</strong>.</li>
             <li>En el iPhone, abre la pestaña <strong>Sincronización</strong> y toca <strong>Escanear código QR</strong> antes de 120 segundos. (La primera vez, permite el acceso a la red local). ¿Sin cámara? Toca <strong>Pegar texto del código</strong> y pega el texto de <strong>Copiar texto del código</strong> del ordenador.</li>
             <li>Comprueba que ambas pantallas muestran el mismo código y elige <strong>Aceptar</strong> en el ordenador.</li>
           </ol>
@@ -728,17 +800,26 @@
           <h3><a href="#ios-settings">Ajustes</a></h3>
           <dl class="defs">
             <dt>Seguridad</dt><dd><strong>Bloqueo automático al salir de la app</strong>, <strong>Bloquear en reposo</strong>, <strong>Ocultar contraseñas hasta tocarlas</strong>, <strong>Borrar el portapapeles después de</strong>, <strong>Bloquear ahora</strong>.</dd>
-            <dt>Privacidad</dt><dd><strong>Modo sin conexión estricto</strong>, iconos de sitios web, nombres de elementos en notificaciones, <strong>Olvidar códigos del Apple Watch al bloquear</strong>, comprobación de filtraciones.</dd>
+            <dt>Privacidad</dt><dd><strong>Modo sin conexión estricto</strong>, iconos de sitios web, nombres de elementos en notificaciones, comprobación de filtraciones.</dd>
             <dt>Apariencia</dt><dd>Sistema, Claro u Oscuro.</dd>
             <dt>Datos</dt><dd>Eliminados recientemente, cuánto tiempo conservar los elementos eliminados, Importar y exportar.</dd>
             <dt>Borrar</dt><dd><strong>Borrar la bóveda de este iPhone</strong> elimina la bóveda solo en este iPhone (pregunta dos veces). Tu PC y la carpeta de sincronización no cambian.</dd>
           </dl>
         </article>
 
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">Contraseña de coacción y más</a></h3>
+          <ul>
+            <li><strong>Contraseña de coacción</strong> (Pro): una segunda contraseña de la app para cuando alguien te obliga a desbloquear. Abre una bóveda aparte con solo los elementos que elijas, y tu bóveda rechaza después su contraseña de la app durante las horas que fijes. Activa primero la contraseña de la app y luego configúrala en Ajustes, en <strong>Contraseña de coacción</strong>.</li>
+            <li><strong>Alojar la sincronización por Wi-Fi en este teléfono</strong> (Pro), en la pestaña Sync, permite que tus otros dispositivos se emparejen con el propio iPhone, sin necesidad de un PC.</li>
+            <li>Un plan de acceso de emergencia creado en el PC llega al iPhone por sincronización, así que también puedes rechazar o conceder solicitudes aquí. <strong>Crear nota del paquete sucesorio</strong> añade la nota para tus herederos.</li>
+          </ul>
+        </article>
+
         <article class="topic" id="ios-pro">
           <h3><a href="#ios-pro">Pro</a></h3>
-          <p>Ajustes › Pro › <strong>Comprar Pro</strong>: un solo pago, sin suscripción, sin cuenta. También desbloquea la app de Mac. En un iPhone nuevo, usa <strong>Restaurar compras</strong> con la misma Cuenta de Apple.</p>
-          <p>Para desbloquear también Windows, elige <strong>Copiar clave</strong> en <em>También desbloquea Windows</em> e instala esa clave en el PC (Herramientas › Licencia).</p>
+          <p>Ajustes › Pro › <strong>Mejorar</strong> y luego compra: un solo pago, sin suscripción, sin cuenta. En un iPhone nuevo, usa <strong>Restaurar compras</strong> con la misma cuenta de Apple.</p>
+          <p>Tu compra también activa Windows. Empareja tu PC con el iPhone en la pestaña <strong>Sincronización</strong>, y un PC gratuito recibe la licencia por sincronización y pasa a ser Pro. O elige <strong>Copiar clave</strong> e instala esa clave en el PC (Ajustes › Plan y sincronización › Licencia).</p>
         </article>
 
       </div>
@@ -748,25 +829,29 @@
   <!-- ============================== MAC ============================== -->
   <section class="help-panel" id="mac" aria-labelledby="mac-title">
     <h2 class="panel-title" id="mac-title">LocalGateKeys para Mac</h2>
-    <p class="panel-lead">La barra lateral contiene <strong>Bóveda</strong>, <strong>Centro de seguridad</strong>, <strong>Centro de recuperación</strong>, <strong>Importar y exportar</strong>, <strong>Sincronización</strong>, <strong>Dispositivos y conexiones</strong> y <strong>Ajustes</strong>.</p>
+
+    <p class="panel-lead">La barra lateral muestra tus elementos (<strong>Todos los elementos</strong>, <strong>Favoritos</strong>, <strong>Usados recientemente</strong>, cada tipo y tus colecciones) y las herramientas <strong>Centro de seguridad</strong>, <strong>Generador</strong>, <strong>Sync y dispositivos</strong>, <strong>Importar y exportar</strong> y <strong>Papelera</strong>, con <strong>Ajustes</strong> abajo. El <strong>Centro de recuperación</strong> se abre desde Ajustes › Copias de seguridad, y <strong>Dispositivos y conexiones</strong> desde Sync y dispositivos.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Temas de Mac">
-        <p class="help-toc-title">En esta pestaña</p>
-        <ol>
-          <li><a href="#mac-setup">Crear la bóveda</a></li>
-          <li><a href="#mac-unlock">Desbloquear y bloquear</a></li>
-          <li><a href="#mac-items">Elementos</a></li>
-          <li><a href="#mac-2fa">Códigos de dos factores</a></li>
-          <li><a href="#mac-security">Centro de seguridad</a></li>
-          <li><a href="#mac-autofill">Autorrelleno y Safari</a></li>
-          <li><a href="#mac-import">Importar y exportar</a></li>
-          <li><a href="#mac-backups">Copias de seguridad</a></li>
-          <li><a href="#mac-sync">Sincronización</a></li>
-          <li><a href="#mac-share">Compartir</a></li>
-          <li><a href="#mac-pro">Pro</a></li>
-          <li><a href="#mac-keys">Atajos de teclado</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#mac-setup">Crear la bóveda</a></li>
+            <li><a href="#mac-unlock">Desbloquear y bloquear</a></li>
+            <li><a href="#mac-items">Elementos</a></li>
+            <li><a href="#mac-2fa">Códigos de dos factores</a></li>
+            <li><a href="#mac-security">Centro de seguridad</a></li>
+            <li><a href="#mac-autofill">Autorrelleno y Safari</a></li>
+            <li><a href="#mac-import">Importar y exportar</a></li>
+            <li><a href="#mac-backups">Copias de seguridad</a></li>
+            <li><a href="#mac-sync">Sincronización</a></li>
+            <li><a href="#mac-share">Compartir</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">Ajustes</a></li>
+            <li><a href="#mac-keys">Atajos de teclado</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -782,10 +867,10 @@
         <article class="topic" id="mac-unlock">
           <h3><a href="#mac-unlock">Desbloquear y bloquear</a></h3>
           <ul>
-            <li><strong>Touch ID</strong>: Ajustes › Desbloqueo › <strong>Desbloquear con Touch ID</strong>. Si cambias de huellas, usa la contraseña maestra una vez.</li>
+            <li><strong>Touch ID</strong>: Ajustes › Seguridad › Desbloqueo › <strong>Touch ID</strong>. Si cambias de huellas, usa la contraseña maestra una vez.</li>
             <li><strong>Cambiar contraseña maestra</strong>: Ajustes › Desbloqueo. Tus elementos se quedan como están.</li>
             <li><strong>Frase de recuperación</strong>: configúrala en el <strong>Centro de recuperación</strong> y confirma tres palabras. Si olvidas la contraseña maestra, elige <strong>¿Olvidaste tu contraseña maestra?</strong> › <strong>Recuperar con tu frase de recuperación</strong> en la pantalla de bloqueo.</li>
-            <li><strong>Bloquear</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Ajustes › Bloqueo fija el bloqueo por inactividad, con la pantalla, al dormir y una duración máxima de sesión.</li>
+            <li><strong>Bloquear</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Ajustes › Bloqueo fija el bloqueo por inactividad, con la pantalla, al dormir y una duración máxima de sesión. También puedes elegir qué cuenta como actividad para el bloqueo por inactividad.</li>
           </ul>
         </article>
 
@@ -794,8 +879,8 @@
           <ul>
             <li><strong>Nuevo elemento</strong> (<kbd>⌘</kbd><kbd>N</kbd>) ofrece los mismos tipos que el iPhone, además de <strong>Adjuntar un archivo…</strong> (Pro).</li>
             <li>Copia con <kbd>⌘</kbd><kbd>C</kbd> (contraseña), <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> (usuario), <kbd>⌘</kbd><kbd>T</kbd> (código 2FA).</li>
-            <li><strong>Añadir campo</strong> para campos personalizados, <strong>Etiquetas</strong> y <strong>Colecciones</strong> (se quedan en este Mac).</li>
-            <li><kbd>⌫</kbd> mueve un elemento a Eliminados recientemente. Allí usa <strong>Restaurar selección</strong> o <strong>Vaciar papelera</strong>.</li>
+            <li><strong>Añadir campo</strong> para campos personalizados, <strong>Etiquetas</strong> y <strong>Colecciones</strong> (se sincronizan con tus otros dispositivos).</li>
+            <li><kbd>⌫</kbd> mueve un elemento a Eliminados recientemente. Abre <strong>Papelera</strong> en la barra lateral y usa <strong>Restaurar selección</strong> o <strong>Vaciar papelera</strong>.</li>
             <li>Los archivos adjuntos se abren con Vista Rápida tras Touch ID o la contraseña maestra.</li>
             <li><strong>Generador</strong>: contraseña aleatoria (elige conjuntos de caracteres, evita los que se parecen) o frase de contraseña (mayúscula inicial, añadir un número, separador).</li>
           </ul>
@@ -803,7 +888,7 @@
 
         <article class="topic" id="mac-2fa">
           <h3><a href="#mac-2fa">Códigos de dos factores</a> <span class="badge-pro">Pro</span></h3>
-          <p>Elige <strong>Escanear código QR…</strong> y luego <strong>Elegir imagen…</strong>, pega una captura con <kbd>⌘</kbd><kbd>V</kbd> (hazla con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>) o arrastra una imagen. Los códigos se rellenan en Safari mediante Autorrelleno.</p>
+          <p>Elige <strong>Escanear código QR…</strong> y luego <strong>Elegir imagen…</strong>, pega una captura con <kbd>⌘</kbd><kbd>V</kbd> (cópiala con <kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>) o arrastra una imagen. Los códigos se rellenan en Safari mediante Autorrelleno.</p>
         </article>
 
         <article class="topic" id="mac-security">
@@ -818,7 +903,10 @@
             <li><strong>Abrir ajustes de Autorrelleno</strong> y activa LocalGateKeys en Ajustes del Sistema › Autorrelleno y contraseñas.</li>
             <li><strong>Abrir ajustes de Safari</strong> y activa la extensión LocalGateKeys en Safari › Ajustes › Extensiones.</li>
           </ol>
-          <p>A partir de ahí, las contraseñas, llaves de acceso y códigos 2FA se rellenan en Safari y en las apps. Los nuevos inicios de sesión en Safari se ofrecen para guardar; revísalos en el siguiente desbloqueo. Otros navegadores aún no son compatibles en el Mac.</p>
+          <p>Para rellenar un inicio de sesión en Safari, haz clic en el campo de usuario o contraseña. Safari muestra debajo tus inicios de sesión de LocalGateKeys: elige uno y confirma con Touch ID o tu contraseña maestra. Las llaves de acceso y los códigos 2FA se ofrecen igual, y el Autorrelleno también funciona en otras apps del Mac.</p>
+          <p>La extensión de Safari ofrece guardar un nuevo inicio de sesión después de entrar. Revisa lo que ha captado la próxima vez que desbloquees LocalGateKeys. Otros navegadores aún no son compatibles en el Mac.</p>
+          <p>¿No aparece ningún inicio de sesión? Abre <strong>Dispositivos y conexiones</strong> y comprueba que el Autorrelleno está activado. En la misma página de Ajustes del Sistema puedes desactivar Contraseñas para que solo LocalGateKeys ofrezca inicios de sesión.</p>
+          <p>Si LocalGateKeys se cierra al abrir <strong>Dispositivos y conexiones</strong>, actualízala desde la Mac App Store.</p>
         </article>
 
         <article class="topic" id="mac-import">
@@ -837,15 +925,15 @@
           <ul>
             <li><strong>Copia completa</strong>: <strong>Crear…</strong> un archivo <code>.lgk</code>, o <strong>Restaurar…</strong> uno (reemplaza la bóveda). Funciona entre Mac y Windows. Se guarda una copia de seguridad previa, así que <strong>Volver a poner…</strong> deshace una restauración.</li>
             <li><strong>Copias programadas</strong>: con qué frecuencia, día de la semana, hora, cuántas conservar, carpeta y carpeta espejo, y una contraseña de copia (12 caracteres o más).</li>
-            <li><strong>Kit de recuperación…</strong>: una hoja para imprimir con tus datos de recuperación.</li>
+            <li><strong>Kit de recuperación…</strong>: un archivo que describe tu última copia de seguridad, para guardarlo junto a ella. <strong>Imprimir kit de emergencia…</strong> imprime una página que indica dónde están tu bóveda y tus copias y cómo restaurarlas.</li>
           </ul>
         </article>
 
         <article class="topic" id="mac-sync">
           <h3><a href="#mac-sync">Sincronización</a> <span class="badge-pro">Pro</span></h3>
           <ul>
-            <li><strong>Alojar sincronización por Wi-Fi</strong>: muestra el código QR de emparejamiento. Cuando un dispositivo se une, comprueba su código y elige <strong>Aceptar</strong> o <strong>Rechazar</strong>. Si después no lo reconoces, elige <strong>Deshacer</strong>.</li>
-            <li><strong>Unirse a un PC con Windows</strong>: usa el texto del código de <strong>Copiar texto del código</strong> del PC.</li>
+            <li><strong>Wi-Fi (esta red)</strong>: <strong>Activar la sincronización por Wi-Fi</strong> y luego <strong>Mostrar código QR…</strong>. Cuando un dispositivo se une, comprueba su código y elige <strong>Aceptar</strong> o <strong>Rechazar</strong>. Si después no lo reconoces, elige <strong>Deshacer</strong>.</li>
+            <li><strong>Unirse con un código</strong>: en el otro dispositivo elige <strong>Mostrar código QR</strong> y luego <strong>Copiar texto del código</strong>, y pega el texto aquí.</li>
             <li><strong>Carpeta en la nube</strong>: únete a un grupo o créalo en una carpeta como Dropbox o iCloud Drive, con la contraseña de sincronización. OneDrive y Google Drive no están disponibles por ahora, hasta que se resuelva un problema con Apple.</li>
             <li><strong>Salir de la sincronización…</strong> / <strong>Restablecer la sincronización en este Mac…</strong>.</li>
           </ul>
@@ -853,12 +941,18 @@
 
         <article class="topic" id="mac-share">
           <h3><a href="#mac-share">Compartir</a></h3>
-          <p>Selecciona un elemento y elige <strong>Compartir…</strong>. Para recibir, elige Archivo › <strong>Recibir un elemento compartido…</strong>, abre o suelta el archivo (o pega el texto del QR) y escribe las seis palabras. Las llaves de acceso y los elementos con un archivo adjunto no se pueden compartir.</p>
+          <p>Selecciona un elemento y elige <strong>Compartir…</strong>. Para recibir, elige Edición › <strong>Recibir un elemento compartido…</strong> (o búscalo con <kbd>⌘</kbd><kbd>K</kbd>), abre o suelta el archivo (o pega el texto del QR) y escribe las seis palabras. Las llaves de acceso y los elementos con un archivo adjunto no se pueden compartir.</p>
         </article>
 
         <article class="topic" id="mac-pro">
           <h3><a href="#mac-pro">Pro</a></h3>
           <p>Compra Pro en Ajustes › Plan. Una compra cubre las apps de iPhone y Mac; usa <strong>Restaurar compras</strong> en el otro dispositivo. Un Mac gratuito sincronizado con un iPhone Pro muestra <em>Pro desde tus dispositivos sincronizados</em>.</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">Ajustes</a></h3>
+          <p>Los ajustes son iguales en la ventana principal y con <kbd>⌘</kbd><kbd>,</kbd>, y las herramientas siguen visibles al final de la barra lateral. Ajustes › Copias de seguridad contiene la programación, la <strong>Prueba de restauración semanal</strong> y cuántas copias automáticas conservar; el Centro de recuperación, la Licencia y Mostrar de nuevo la configuración se abren desde cualquiera de las dos ventanas. Otros ajustes: qué cuenta como actividad para el bloqueo automático, preguntar antes de copiar un código 2FA, abrir en otras apps los documentos guardados en la bóveda, tu propio atajo de acceso rápido y enlaces de ayuda.</p>
+          <p><strong>Contraseña de coacción</strong> (Pro), en Ajustes › Contraseña de coacción: una segunda contraseña maestra para cuando alguien te obliga a desbloquear. Abre una bóveda aparte con solo los elementos que elijas, y tu bóveda rechaza después su contraseña maestra durante las horas que fijes.</p>
         </article>
 
         <article class="topic" id="mac-keys">
@@ -884,17 +978,18 @@
   <!-- ============================== WATCH ============================== -->
   <section class="help-panel" id="watch" aria-labelledby="watch-title">
     <h2 class="panel-title" id="watch-title">LocalGateKeys para Apple Watch</h2>
-    <p class="panel-lead">Muestra tus códigos de dos factores en la muñeca. Viene con la app de iPhone. Solo contiene códigos: ni contraseñas ni edición. <span class="badge-pro">Pro</span></p>
-    <p class="callout-soon"><strong>Llega con la app de iPhone 1.1.</strong> La app del reloj y el botón <em>Mostrar en el Apple Watch</em> llegan con la versión 1.1, que está en revisión en App Review. Consulta tu versión en Ajustes del iPhone › Acerca de.</p>
+    <p class="panel-lead">Muestra tus códigos de dos factores en la muñeca. Viene con la app de iPhone y necesita watchOS 10 o posterior. Solo contiene códigos: ni contraseñas ni edición. <span class="badge-pro">Pro</span></p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Temas de Apple Watch">
-        <p class="help-toc-title">En esta pestaña</p>
-        <ol>
-          <li><a href="#watch-add">Poner un código en el reloj</a></li>
-          <li><a href="#watch-use">Usar los códigos</a></li>
-          <li><a href="#watch-remove">Quitar códigos</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#watch-add">Poner un código en el reloj</a></li>
+            <li><a href="#watch-use">Usar los códigos</a></li>
+            <li><a href="#watch-remove">Quitar códigos</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -915,7 +1010,7 @@
         </article>
         <article class="topic" id="watch-remove">
           <h3><a href="#watch-remove">Quitar códigos</a></h3>
-          <p>En el iPhone, abre el inicio de sesión y toca <strong>Quitar del Apple Watch</strong>. Para borrar todos los códigos del reloj cada vez que la app del iPhone se bloquee, activa Ajustes del iPhone › <strong>Olvidar códigos del Apple Watch al bloquear</strong>.</p>
+          <p>En el iPhone, abre el inicio de sesión y toca <strong>Quitar del Apple Watch</strong>. Para borrar todos los códigos del reloj cada vez que la app del iPhone se bloquee, activa <strong>Olvidar los códigos del Apple Watch al bloquear</strong> en LocalGateKeys › Ajustes › Autorrelleno.</p>
         </article>
       </div>
     </div>
@@ -925,43 +1020,45 @@
   <section class="help-panel" id="android" aria-labelledby="android-title">
     <h2 class="panel-title" id="android-title">LocalGateKeys para Android</h2>
     <p class="callout-soon"><strong>Próximamente.</strong> La app de Android aún no está en Google Play. Esta guía muestra cómo funcionará.</p>
-    <p class="panel-lead">La app tiene tres pestañas: <strong>Bóveda</strong>, <strong>Buscar</strong> y <strong>Sincronización</strong>. Los ajustes se abren desde tus iniciales en la esquina.</p>
+    <p class="panel-lead">La app tiene cuatro pestañas: <strong>Bóveda</strong>, <strong>Sync</strong>, <strong>Seguridad</strong> y <strong>Ajustes</strong>. La búsqueda es la lupa de la parte superior de la pestaña Bóveda.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Temas de Android">
-        <p class="help-toc-title">En esta pestaña</p>
-        <ol>
-          <li><a href="#and-setup">Primer inicio y desbloqueo</a></li>
-          <li><a href="#and-apppw">Contraseña de la app y recuperación</a></li>
-          <li><a href="#and-items">Elementos</a></li>
-          <li><a href="#and-search">Búsqueda y acciones</a></li>
-          <li><a href="#and-generator">Generador de contraseñas</a></li>
-          <li><a href="#and-2fa">Códigos de dos factores</a></li>
-          <li><a href="#and-autofill">Autorrelleno</a></li>
-          <li><a href="#and-passkeys">Llaves de acceso</a></li>
-          <li><a href="#and-import">Importar</a></li>
-          <li><a href="#and-backups">Copias de seguridad</a></li>
-          <li><a href="#and-sync">Sincronización</a></li>
-          <li><a href="#and-share">Compartir</a></li>
-          <li><a href="#and-settings">Ajustes y Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#and-setup">Primer inicio y desbloqueo</a></li>
+            <li><a href="#and-apppw">Contraseña de la app y recuperación</a></li>
+            <li><a href="#and-items">Elementos</a></li>
+            <li><a href="#and-search">Búsqueda y acciones</a></li>
+            <li><a href="#and-generator">Generador de contraseñas</a></li>
+            <li><a href="#and-2fa">Códigos de dos factores</a></li>
+            <li><a href="#and-autofill">Autorrelleno</a></li>
+            <li><a href="#and-passkeys">Llaves de acceso</a></li>
+            <li><a href="#and-import">Importar</a></li>
+            <li><a href="#and-backups">Copias de seguridad</a></li>
+            <li><a href="#and-sync">Sincronización</a></li>
+            <li><a href="#and-share">Compartir</a></li>
+            <li><a href="#and-settings">Ajustes y Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
 
         <article class="topic" id="and-setup">
           <h3><a href="#and-setup">Primer inicio y desbloqueo</a></h3>
-          <p>Tu bóveda se abre con la huella, el rostro o el bloqueo de pantalla del teléfono. (El teléfono necesita un bloqueo de pantalla). Sigue una configuración breve: desbloquear con huella, <strong>Abrir ajustes de Autocompletar</strong>, <strong>Importar…</strong> y una contraseña de la app opcional. Omite cualquier paso; la tarjeta <em>Termina la configuración</em> te lleva de vuelta.</p>
-          <p>Ajustes › Seguridad fija <strong>Bloqueo automático al salir de la app</strong> (de Inmediatamente a 1 hora, o Nunca) y tiene <strong>Bloquear ahora</strong>. La app se oculta en la vista de apps recientes.</p>
+          <p>Tu bóveda se abre con la huella, el rostro o el bloqueo de pantalla del teléfono. (El teléfono necesita un bloqueo de pantalla). Sigue una configuración breve: desbloquear con huella, <strong>Importar…</strong>, una contraseña de la app opcional y <strong>Abrir ajustes de Autocompletar</strong>. Omite cualquier paso; la tarjeta <em>Termina la configuración</em> te lleva de vuelta.</p>
+          <p>Ajustes › Bloqueo y seguridad fija <strong>Bloqueo automático al salir de la app</strong> (de Inmediatamente a 1 hora) y <strong>Bloquear por inactividad</strong> (de 1 a 30 minutos, o Nunca), y tiene <strong>Bloquear ahora</strong>. La app se oculta en la vista de apps recientes.</p>
         </article>
 
         <article class="topic" id="and-apppw">
           <h3><a href="#and-apppw">Contraseña de la app y frase de recuperación</a></h3>
           <ol>
-            <li>Ajustes › <strong>Activar contraseña de la app</strong> y elige una. A partir de ahí, es ella, y no el bloqueo de pantalla, la que abre LocalGateKeys.</li>
-            <li>Anota la frase de recuperación de 24 palabras, toca <strong>Ya las anoté</strong> y escribe las palabras que te pide.</li>
+            <li>Ajustes › Bloqueo y seguridad › activa <strong>Usar una contraseña de la app</strong>, elige una y toca <strong>Continuar</strong>. A partir de ahí, es ella, y no el bloqueo de pantalla, la que abre LocalGateKeys.</li>
+            <li>Anota la frase de recuperación de 24 palabras, toca <strong>Ya las anoté</strong>, escribe las palabras que te pide y toca <strong>Activar contraseña de la app</strong>.</li>
           </ol>
-          <p>¿La olvidaste? Toca <strong>¿Olvidaste la contraseña de la app?</strong>, escribe las 24 palabras y elige una nueva. <strong>Cambiar</strong> y <strong>Desactivar</strong> están en Ajustes.</p>
+          <p>¿La olvidaste? Toca <strong>¿Olvidaste la contraseña de la app?</strong>, escribe las 24 palabras y elige una nueva. <strong>Cambiar contraseña de la app</strong>, y el interruptor <strong>Usar una contraseña de la app</strong> para desactivarla, están en Ajustes › Bloqueo y seguridad.</p>
           <p class="note">Tras restaurar un teléfono desde una copia de Google, la bóveda no se puede abrir (su clave no se copia). Elige <strong>Empezar de cero</strong> y luego sincroniza con tu PC para recuperarlo todo.</p>
         </article>
 
@@ -978,7 +1075,7 @@
 
         <article class="topic" id="and-search">
           <h3><a href="#and-search">Búsqueda y acciones</a></h3>
-          <p>En la pestaña Buscar escribe un nombre, o empieza con <code>&gt;</code> para acciones como Exportar copia, Generar contraseña, Importar contraseñas, Bloquear, Recibir elemento compartido, Escanear código QR para emparejar y Sincronizar ahora.</p>
+          <p>Toca la lupa en la pestaña Bóveda y escribe un nombre, o empieza con <code>&gt;</code> para acciones como Exportar copia, Generar contraseña, Importar contraseñas, Bloquear, Recibir elemento compartido, Escanear código QR para emparejar y Sincronizar ahora.</p>
         </article>
 
         <article class="topic" id="and-generator">
@@ -1002,12 +1099,12 @@
 
         <article class="topic" id="and-passkeys">
           <h3><a href="#and-passkeys">Llaves de acceso</a></h3>
-          <p>Activa Ajustes › <strong>Ofrecer LocalGateKeys para llaves de acceso</strong>. Cuando un sitio o una app ofrezca una llave de acceso, elige LocalGateKeys; después inicia sesión con <strong>Usar tu llave de acceso</strong>.</p>
+          <p>Activa Ajustes › Autorrelleno › <strong>Ofrecer LocalGateKeys para las claves de acceso</strong>. Cuando un sitio o una app ofrezca una llave de acceso, elige LocalGateKeys; después inicia sesión con <strong>Usar tu llave de acceso</strong>.</p>
         </article>
 
         <article class="topic" id="and-import">
           <h3><a href="#and-import">Importar</a></h3>
-          <p><strong>Importar desde otra app</strong> ›<strong>Elegir archivo exportado</strong>: Chrome, Edge, Brave, Firefox, Contraseñas de Apple, <code>.json</code> de Bitwarden (también protegido con contraseña), <code>.1pux</code> de 1Password o cualquier CSV. Revísalo todo y luego importa. Después, elimina el archivo exportado.</p>
+          <p>Ajustes › Sincronización y datos › <strong>Importar desde un archivo</strong> › <strong>Elegir archivo de exportación</strong>: Chrome, Edge, Brave, Firefox, Contraseñas de Apple, <code>.json</code> de Bitwarden (también protegido con contraseña), <code>.1pux</code> de 1Password o cualquier CSV. Revísalo todo y luego importa. Después, elimina el archivo exportado.</p>
         </article>
 
         <article class="topic" id="and-backups">
@@ -1028,15 +1125,17 @@
 
         <article class="topic" id="and-share">
           <h3><a href="#and-share">Compartir</a></h3>
-          <p>Abre un elemento › <strong>Compartir este elemento</strong> › <strong>Enviar como archivo…</strong> o <strong>Mostrar como código QR</strong>, y di las seis palabras por separado. Para recibir: <strong>Recibir un elemento compartido</strong>, escribe las seis palabras y luego <strong>Añadir a la bóveda</strong>. Lo compartido se abre una vez en 24 horas; tres códigos erróneos lo eliminan. Las llaves de acceso y los archivos no se pueden compartir.</p>
+          <p>Abre un elemento, toca Compartir y luego <strong>Enviar como archivo…</strong> o <strong>Mostrar como código QR</strong>, y di las seis palabras por separado. Para recibir: Ajustes › Sincronización y datos › <strong>Recibir un elemento compartido</strong>, escribe las seis palabras, toca <strong>Abrir</strong> y luego <strong>Añadir a la bóveda</strong>. Lo compartido se abre una vez en 24 horas; tres códigos erróneos lo eliminan. Las llaves de acceso y los archivos no se pueden compartir.</p>
         </article>
 
         <article class="topic" id="and-settings">
           <h3><a href="#and-settings">Ajustes y Pro</a></h3>
           <ul>
             <li><strong>Apariencia</strong>: Sistema, Claro u Oscuro, y tus iniciales.</li>
-            <li><strong>Seguridad</strong>: ocultar contraseñas hasta tocarlas, borrar el portapapeles después de, <strong>Borrar la bóveda de este teléfono</strong> (solo este teléfono).</li>
-            <li><strong>Pro</strong>: <strong>Comprar</strong> una vez con Google Play, <strong>Restaurar compras</strong> en otro teléfono con la misma cuenta de Google, y <strong>Copiar clave</strong> para desbloquear también Windows.</li>
+            <li><strong>Bloqueo y seguridad</strong> tiene <strong>Borrar el portapapeles tras</strong>, <strong>Privacidad</strong> tiene <strong>Ocultar las contraseñas hasta que se toquen</strong>, y <strong>Sincronización y datos</strong> tiene <strong>Borrar la bóveda de este teléfono</strong> (solo este teléfono). Android solo deja comprobar el portapapeles mientras la app está abierta: una copia hecha desde el icono de Ajustes rápidos o justo antes de cambiar de app se borra la próxima vez que abras LocalGateKeys.</li>
+            <li><strong>Pro</strong> (arriba en Ajustes): <strong>Mejorar</strong> y comprar una vez con Google Play, <strong>Restaurar compras</strong> en otro teléfono con la misma cuenta de Google, y <strong>Copiar clave</strong> para desbloquear también Windows.</li>
+            <li><strong>Contraseña de coacción</strong> (Pro): una segunda contraseña de la app para cuando alguien te obliga a desbloquear. Abre una bóveda aparte con solo los elementos que elijas, y tu bóveda rechaza después su contraseña de la app durante las horas que fijes. Activa primero la contraseña de la app y luego configúrala en Ajustes, en <strong>Contraseña de coacción</strong>.</li>
+            <li><strong>Exportar a un archivo CXF…</strong> guarda los inicios de sesión, notas y claves de acceso que elijas en un archivo Credential Exchange que otros gestores pueden importar. El archivo no está cifrado.</li>
           </ul>
         </article>
 
@@ -1044,50 +1143,55 @@
     </div>
   </section>
 
-  <p class="help-more">¿No encuentras algo? Consulta <a href="../es/support.html">Soporte y preguntas frecuentes</a> o escribe a <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>.</p>
+  <p class="help-more">¿No encuentras algo? Consulta <a href="../es/support">Soporte y preguntas frecuentes</a> o escribe a <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>.</p>
 </div>
+<script src="../guide.js"></script>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Un gestor de contraseñas para Windows que guarda tu bóveda en tus propios dispositivos.</p>
-        <p class="quiet">Este sitio no usa cookies, no ejecuta analíticas y no carga nada de otras empresas.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestor de contraseñas para Windows, Mac y iPhone que mantiene tu bóveda en tus propios dispositivos.</p>
+        <p class="quiet">Este sitio cuenta las visitas con Cloudflare Web Analytics, que no usa cookies. No usa rastreadores publicitarios y no instala cookies.</p>
       </div>
       <nav aria-label="Producto">
         <h2>Producto</h2>
         <ul>
-          <li><a href="../es/features.html">Funciones</a></li>
-          <li><a href="../es/pricing.html">Precios</a></li>
-          <li><a href="../es/download.html">Descargar</a></li>
-          <li><a href="../es/licence.html">Tu licencia Pro</a></li>
+          <li><a href="../es/features">Funciones</a></li>
+          <li><a href="../es/pricing">Precios</a></li>
+          <li><a href="../es/download">Descargar</a></li>
+          <li><a href="../es/get-started">Primeros pasos</a></li>
+          <li><a href="../es/switch/">Cambiar</a></li>
+          <li><a href="../buy">Comprar Pro</a></li>
+          <li><a href="../es/licence">Tu licencia Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recuperar tu licencia</a></li>
         </ul>
       </nav>
       <nav aria-label="Ayuda">
         <h2>Ayuda</h2>
         <ul>
-          <li><a href="../es/help.html">Guía de usuario</a></li>
-          <li><a href="../es/support.html">Soporte y preguntas frecuentes</a></li>
-          <li><a href="../es/security.html">Seguridad</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Informar de una vulnerabilidad</a></li>
+          <li><a href="../es/help">Guía de usuario</a></li>
+          <li><a href="../es/support">Soporte y preguntas frecuentes</a></li>
+          <li><a href="../es/security">Seguridad</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Informar de una vulnerabilidad</a></li>
         </ul>
       </nav>
       <nav aria-label="Legal">
         <h2>Legal</h2>
         <p class="quiet">Estos documentos están en inglés, y la versión en inglés es la que se aplica y la vinculante.</p>
         <ul>
-          <li><a href="../legal/eula.html">Contrato de licencia</a></li>
-          <li><a href="../legal/privacy.html">Política de privacidad</a></li>
-          <li><a href="../legal/terms-of-sale.html">Condiciones de venta</a></li>
-          <li><a href="../legal/refunds.html">Política de reembolsos</a></li>
+          <li><a href="../legal/eula">Contrato de licencia</a></li>
+          <li><a href="../legal/privacy">Política de privacidad</a></li>
+          <li><a href="../legal/terms-of-sale">Condiciones de venta</a></li>
+          <li><a href="../legal/refunds">Política de reembolsos</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contacto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows es una marca comercial del grupo de empresas Microsoft. Chrome es una marca comercial de Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Idioma"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../es/help.html" hreflang="es" lang="es" aria-current="true">Español</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/help.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/help.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows es una marca comercial del grupo de empresas Microsoft. Chrome es una marca comercial de Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID y Safari son marcas comerciales de Apple Inc., registradas en EE. UU. y en otros países.</p>
+      <nav class="lang-switch" aria-label="Idioma"><ul><li><a href="../help" hreflang="en" lang="en">English</a></li><li><a href="../es/help" hreflang="es" lang="es" aria-current="true">Español</a></li><li><a href="../it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/help" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/help" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/help" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

@@ -155,6 +155,7 @@ class AppSettings(private val store: KeyValueStore) {
         const val CLIPBOARD_EXPIRY = "settings.clipboardExpirySeconds"
         const val CONCEAL_SECRETS_IN_DETAIL = "settings.concealFieldsInDetail"
         const val SHOW_CODES_ROW = "settings.showCodesRow"
+        const val PINNED_CODE_IDS = "settings.pinnedCodeIds"
         const val COPY_CODE_ON_FILL = "settings.copyCodeOnFill"
         const val APPEARANCE = "settings.appearance"
         const val GENERATOR_OPTIONS = "settings.generatorOptions"
@@ -165,6 +166,7 @@ class AppSettings(private val store: KeyValueStore) {
         const val FAVORITES_FIRST = "settings.listFavoritesFirst"
         const val IMPORT_CARD_DISMISSED = "settings.importCardDismissed"
         const val APP_PASSWORD_FAILURES = "settings.unlockFailures"
+        const val HEIR_FOLDERS = "settings.heirFolders"
         const val APP_PASSWORD_LAST_FAILURE = "settings.unlockFailureAt"
         const val APP_PASSWORD_LAST_FAILURE_ELAPSED = "settings.unlockFailureUptime"
         const val APP_PASSWORD_LAST_FAILURE_BOOT = "settings.unlockFailureBoot"
@@ -173,13 +175,30 @@ class AppSettings(private val store: KeyValueStore) {
         const val SETUP_CARD_HIDDEN = "settings.setupCardHidden"
         const val AUTOFILL_SUGGESTIONS = "settings.autofillSuggestions"
         const val PASSKEY_PROVIDER = "settings.passkeyProvider"
+        const val ERASE_ON_SYNC_REMOVAL = "settings.eraseOnSyncRemoval"
+        const val AUTO_SYNC = "settings.autoSync"
+        const val DEVICE_ERASED_NOTICE = "settings.deviceErasedNotice"
+        const val NOTES_SHOW_FORMATTING = "settings.notesShowFormatting"
+        const val UNLOCK_KEY_FILE_URI = "settings.unlockKeyFileUri"
+        const val UNLOCK_KEY_FILE_NAME = "settings.unlockKeyFileName"
+        const val FACTORS_ALWAYS_ASK = "settings.factorsAlwaysAsk"
+        const val VAULT_COLLECTION = "settings.listCollection"
+        const val WIFI_HOST_ON = "settings.wifiHostOn"
+        const val WIFI_HOST_PORT = "settings.wifiHostPort"
+        const val AUTOFILL_INLINE = "settings.autofillInline"
+        const val AUTOFILL_BANNER_DISMISSED = "settings.autofillBannerDismissed"
         val all = listOf(
-            AUTO_LOCK_DELAY, IDLE_LOCK, CLIPBOARD_EXPIRY, CONCEAL_SECRETS_IN_DETAIL, SHOW_CODES_ROW, COPY_CODE_ON_FILL,
+            AUTO_LOCK_DELAY, IDLE_LOCK, CLIPBOARD_EXPIRY, CONCEAL_SECRETS_IN_DETAIL, SHOW_CODES_ROW, PINNED_CODE_IDS, COPY_CODE_ON_FILL,
             APPEARANCE, GENERATOR_OPTIONS, ERASE_PENDING, INITIALS, PLAN_FULL_REVISION, VAULT_SORT, FAVORITES_FIRST,
             IMPORT_CARD_DISMISSED, APP_PASSWORD_FAILURES, APP_PASSWORD_LAST_FAILURE,
             APP_PASSWORD_LAST_FAILURE_ELAPSED, APP_PASSWORD_LAST_FAILURE_BOOT, SETUP_DONE, SETUP_SEEN, SETUP_CARD_HIDDEN,
-            AUTOFILL_SUGGESTIONS, PASSKEY_PROVIDER,
+            AUTOFILL_SUGGESTIONS, PASSKEY_PROVIDER, ERASE_ON_SYNC_REMOVAL, DEVICE_ERASED_NOTICE,
+            NOTES_SHOW_FORMATTING, UNLOCK_KEY_FILE_URI, UNLOCK_KEY_FILE_NAME, FACTORS_ALWAYS_ASK, VAULT_COLLECTION,
+            WIFI_HOST_ON, WIFI_HOST_PORT, AUTOFILL_INLINE, AUTOFILL_BANNER_DISMISSED,
         )
+
+        /** Kept by [eraseAllExceptPending]: the erase flag and the one-time notice that an erase on removal happened. */
+        val keptByErase = setOf(ERASE_PENDING, DEVICE_ERASED_NOTICE)
     }
 
     var autoLockDelay: AutoLockDelay
@@ -209,6 +228,11 @@ class AppSettings(private val store: KeyValueStore) {
         get() = store.getBoolean(Key.SETUP_SEEN) ?: false
         set(v) = store.putBoolean(Key.SETUP_SEEN, v)
 
+    /** Notes show Markdown formatting (the desktop's `notes_show_formatting`); this phone only. */
+    var notesShowFormatting: Boolean
+        get() = store.getBoolean(Key.NOTES_SHOW_FORMATTING) ?: true
+        set(v) = store.putBoolean(Key.NOTES_SHOW_FORMATTING, v)
+
     /** Hide on the vault's "Finish setting up" card. */
     var setupCardHidden: Boolean
         get() = store.getBoolean(Key.SETUP_CARD_HIDDEN) ?: false
@@ -224,6 +248,14 @@ class AppSettings(private val store: KeyValueStore) {
         get() = store.getBoolean(Key.SHOW_CODES_ROW) ?: true
         set(v) = store.putBoolean(Key.SHOW_CODES_ROW, v)
 
+    /**
+     * The item ids pinned for the home-screen codes widget, in pin order (ids only, never a secret or a title; the
+     * codes are read from the open vault). This phone only. See `codes.PinnedCodes` for the rules.
+     */
+    var pinnedCodeIds: List<String>
+        get() = store.getString(Key.PINNED_CODE_IDS)?.split(',')?.filter { it.isNotEmpty() } ?: emptyList()
+        set(v) = if (v.isEmpty()) store.remove(Key.PINNED_CODE_IDS) else store.putString(Key.PINNED_CODE_IDS, v.joinToString(","))
+
     /** Filling a login also copies its two-factor code. */
     var copyCodeOnFill: Boolean
         get() = store.getBoolean(Key.COPY_CODE_ON_FILL) ?: true
@@ -233,6 +265,19 @@ class AppSettings(private val store: KeyValueStore) {
     var autofillSuggestions: Boolean
         get() = store.getBoolean(Key.AUTOFILL_SUGGESTIONS) ?: true
         set(v) = store.putBoolean(Key.AUTOFILL_SUGGESTIONS, v)
+
+    /**
+     * Review 2026-11-15 UX 2: "Show in keyboard": on Android 11+ the matching logins also show as chips in the keyboard's
+     * suggestion strip (when the keyboard asks for them). On by default; off, only the dropdown under the field shows.
+     */
+    var autofillInline: Boolean
+        get() = store.getBoolean(Key.AUTOFILL_INLINE) ?: true
+        set(v) = store.putBoolean(Key.AUTOFILL_INLINE, v)
+
+    /** "Not now" on the Vault list's "Turn on autofill" banner (this phone only). */
+    var autofillBannerDismissed: Boolean
+        get() = store.getBoolean(Key.AUTOFILL_BANNER_DISMISSED) ?: false
+        set(v) = store.putBoolean(Key.AUTOFILL_BANNER_DISMISSED, v)
 
     /** Part C: "Offer LocalGateKeys for passkeys" (the desktop's `passkeys_enabled`). */
     var passkeyProvider: Boolean
@@ -247,6 +292,28 @@ class AppSettings(private val store: KeyValueStore) {
     var generatorOptions: String?
         get() = store.getString(Key.GENERATOR_OPTIONS)
         set(v) { if (v == null) store.remove(Key.GENERATOR_OPTIONS) else store.putString(Key.GENERATOR_OPTIONS, v) }
+
+    /**
+     * "Erase this device if it is removed from sync" (desktop `erase_on_sync_removal`), default on: a signed removal
+     * notice from another member erases this phone's vault. Off: the Sync screen says the phone was removed, nothing
+     * is erased.
+     */
+    var eraseOnSyncRemoval: Boolean
+        get() = store.getBoolean(Key.ERASE_ON_SYNC_REMOVAL) ?: true
+        set(v) = store.putBoolean(Key.ERASE_ON_SYNC_REMOVAL, v, durable = true)
+
+    /**
+     * "Sync automatically", default on: sync at unlock, on coming back to the app and after an edit. Off: only
+     * "Sync now" and pull-to-refresh sync.
+     */
+    var autoSync: Boolean
+        get() = store.getBoolean(Key.AUTO_SYNC) ?: true
+        set(v) = store.putBoolean(Key.AUTO_SYNC, v)
+
+    /** Set before an erase on removal, shown once after it ("A vault was erased from this phone") until dismissed. */
+    var deviceErasedNotice: Boolean
+        get() = store.getBoolean(Key.DEVICE_ERASED_NOTICE) ?: false
+        set(v) = store.putBoolean(Key.DEVICE_ERASED_NOTICE, v, durable = true)
 
     /** Set before an erase starts and cleared only when it succeeds; while set the app retries the erase before unlocking. */
     var erasePending: Boolean
@@ -272,10 +339,23 @@ class AppSettings(private val store: KeyValueStore) {
             store.putBoolean(Key.FAVORITES_FIRST, v.favoritesFirst)
         }
 
+    /** The Vault list's Collections filter (a collection id; null: All items). This phone only, never synced. */
+    var vaultCollection: String?
+        get() = store.getString(Key.VAULT_COLLECTION)
+        set(v) = if (v == null) store.remove(Key.VAULT_COLLECTION) else store.putString(Key.VAULT_COLLECTION, v)
+
     /** The avatar letters (Settings, Appearance), at most two; empty shows the person glyph. */
     var initials: String
         get() = store.getString(Key.INITIALS) ?: ""
         set(v) = store.putString(Key.INITIALS, AvatarInitials.from(v) ?: "")
+
+    /**
+     * The emergency access folders' tree URIs (sub-plan 08): their persisted permissions are kept when the sync folder
+     * changes ([app.localgatekeys.android.sync.SafFolderOpener.keepOnly]). Which vault uses which is in that vault.
+     */
+    var heirFolders: Set<String>
+        get() = store.getString(Key.HEIR_FOLDERS)?.split('\n')?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+        set(v) = store.putString(Key.HEIR_FOLDERS, v.sorted().joinToString("\n"), durable = true)
 
     /** Consecutive wrong app passwords or recovery phrases (the wrong-try delay); never the password itself. */
     var appPasswordFailures: Int
@@ -297,10 +377,40 @@ class AppSettings(private val store: KeyValueStore) {
         set(v) = store.putLong(Key.APP_PASSWORD_LAST_FAILURE_BOOT, v, durable = true)
 
     /**
+     * Task 9: the app password's key file as a content URI with a persisted read permission (null: none remembered; ""
+     * "Don't remember"). Only the location: the file is never copied. Device-only, like every setting here.
+     */
+    var unlockKeyFileUri: String?
+        get() = store.getString(Key.UNLOCK_KEY_FILE_URI)
+        set(v) = if (v == null) store.remove(Key.UNLOCK_KEY_FILE_URI, durable = true) else store.putString(Key.UNLOCK_KEY_FILE_URI, v, durable = true)
+
+    /** The remembered key file's display name (shown on the unlock screen). */
+    var unlockKeyFileName: String
+        get() = store.getString(Key.UNLOCK_KEY_FILE_NAME) ?: ""
+        set(v) = store.putString(Key.UNLOCK_KEY_FILE_NAME, v, durable = true)
+
+    /** Task 9: "Always ask for the key file / YubiKey": no fingerprint shortcut while factors are set. */
+    var factorsAlwaysAsk: Boolean
+        get() = store.getBoolean(Key.FACTORS_ALWAYS_ASK) ?: false
+        set(v) = store.putBoolean(Key.FACTORS_ALWAYS_ASK, v, durable = true)
+
+    /** "Host Wi-Fi sync on this phone" (the Sync screen's Wi-Fi card): off by default. */
+    var wifiHostOn: Boolean
+        get() = store.getBoolean(Key.WIFI_HOST_ON) ?: false
+        set(v) = store.putBoolean(Key.WIFI_HOST_ON, v, durable = true)
+
+    /** The port the Wi-Fi host last listened on (tried first on every start); null: none saved, or not a valid port. */
+    var wifiHostPort: Int?
+        get() = store.getLong(Key.WIFI_HOST_PORT)?.takeIf { it in 1..65535 }?.toInt()
+        set(v) {
+            if (v == null || v !in 1..65535) store.remove(Key.WIFI_HOST_PORT) else store.putLong(Key.WIFI_HOST_PORT, v.toLong())
+        }
+
+    /**
      * Part of "Erase this phone's vault": removes every preference (durably) except [erasePending], which the lock
-     * model sets before the erase and clears only when it succeeded.
+     * model sets before the erase and clears only when it succeeded, and [deviceErasedNotice] (shown after the erase).
      */
     fun eraseAllExceptPending() {
-        for (k in Key.all) if (k != Key.ERASE_PENDING) store.remove(k, durable = true)
+        for (k in Key.all) if (k !in Key.keptByErase) store.remove(k, durable = true)
     }
 }

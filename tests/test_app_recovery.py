@@ -206,3 +206,32 @@ def test_restore_closure_wipes_vault_password_after_confirm(env, monkeypatch):
     gc.collect()
     for secret in created:
         assert [r for r in gc.get_referrers(secret) if r is not created] == []
+
+
+def test_kit_facts_has_no_secret_fields(env):
+    service, controller, _p, _d, tmp = env
+    controller.settings.backup_mirror_dir = str(tmp / "mirror")
+    facts = service.kit_facts()
+    assert set(facts) == {"profile", "vault_path", "backup_folders", "created", "app_version", "heir_holders"}
+    assert facts["heir_holders"] == []
+    assert not [k for k in facts if any(word in k for word in ("phrase", "password", "key"))]
+    record = controller.profiles.active_profile()
+    assert facts["profile"] == record.name
+    assert facts["vault_path"] == str(controller.profiles.vault_path(record.id))
+    assert str(tmp / "mirror") in facts["backup_folders"] and len(facts["backup_folders"]) == 2
+    assert len(facts["created"]) == 10 and facts["created"][4] == "-"
+    assert MASTER not in json.dumps(facts)
+
+
+def test_kit_facts_list_emergency_access_holders_by_nickname_only(env):
+    from localvault import heir
+
+    service, controller, _p, _d, _tmp = env
+    session = controller.session
+    phrase = session.create_recovery_phrase(MASTER)
+    plan, packages = heir.create_plan(session, k=2, n=2, holders=("Mum", "Kostas"), wait_days=3, folder=None,
+                                      phrase=phrase, reauthenticate=lambda: True)
+    facts = service.kit_facts()
+    assert facts["heir_holders"] == ["Mum", "Kostas"]
+    text = json.dumps(facts)
+    assert plan.plan_id not in text and "lgkheir" not in text and phrase.split()[0] + " " not in text

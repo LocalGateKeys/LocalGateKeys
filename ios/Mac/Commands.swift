@@ -20,10 +20,11 @@ extension FocusedValues {
 }
 
 /// The menu bar: every Phase 1 shortcut is listed in a menu. ⌘, is the Settings scene's own item.
-/// ⌘C, ⇧⌘C and ⌘T are bound only by the window's key monitor (CopyShortcutPolicy); the Item menu lists them
-/// as text, so Edit › Copy is the menu bar's only ⌘C.
+/// ⌘C, ⇧⌘C and ⌘T are handled first by the window's key monitor (CopyShortcutPolicy); the Item menu carries them
+/// as key equivalents too, enabled only while the item list has focus.
 struct MacCommands: Commands {
     let lock: MacLockModel
+    let session: MacProfileSession
     @FocusedValue(\.macWindowActions) private var actions
 
     var body: some Commands {
@@ -36,6 +37,20 @@ struct MacCommands: Commands {
             Button("Lock") { lock.lock() }
                 .keyboardShortcut(MacKey.lock.shortcut)
                 .disabled(lock.state != .unlocked)
+            // Locks, then shows the profile chooser on the lock screen.
+            if session.canUseProfiles {
+                // Sub-plan 12: with several vaults, the menu says which one is open (a label, not an action).
+                if session.hasSeveral {
+                    Button("Vault: \(session.active.name)") {}
+                        .disabled(true)
+                }
+                Button("Switch Profile…") {
+                    if lock.state == .unlocked { lock.lock() }
+                    session.message = nil
+                    session.choosing = true
+                }
+                .disabled(lock.isBusy)
+            }
         }
         CommandGroup(after: .textEditing) {
             Button("Find") { actions?.search() }
@@ -53,13 +68,17 @@ struct MacCommands: Commands {
                 .disabled(actions == nil)
         }
         CommandMenu(String(localized: "Item")) {
-            // No key equivalents: ⌘C, ⇧⌘C and ⌘T belong to the window's key monitor (CopyShortcutPolicy) only,
-            // and these items are enabled only while the item list has focus.
-            Button("Copy Username  ⇧⌘C") { actions?.copyUsername?() }
+            // Real key equivalents (shown right-aligned, found by Help search, read by VoiceOver, remappable in
+            // System Settings). The window's key monitor (CopyShortcutPolicy) still runs first; these items are
+            // enabled only while the item list has focus, so elsewhere Edit › Copy (earlier in the bar) keeps ⌘C.
+            Button("Copy username") { actions?.copyUsername?() }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
                 .disabled(actions?.copyUsername == nil)
-            Button("Copy Password  ⌘C") { actions?.copyPassword?() }
+            Button("Copy password") { actions?.copyPassword?() }
+                .keyboardShortcut("c", modifiers: .command)
                 .disabled(actions?.copyPassword == nil)
-            Button("Copy 2FA Code  ⌘T") { actions?.copyCode?() }
+            Button("Copy 2FA code") { actions?.copyCode?() }
+                .keyboardShortcut("t", modifiers: .command)
                 .disabled(actions?.copyCode == nil)
             Divider()
             Button("Edit") { actions?.edit?() }

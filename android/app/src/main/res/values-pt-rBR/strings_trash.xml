@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Excluídos recentemente</string>
+    <string name="trash_empty">Excluídos recentemente está vazio.</string>
+    <string name="trash_save_failed">Não foi possível salvar Excluídos recentemente neste celular.</string>
+    <string name="trash_reset">Não foi possível ler os excluídos recentemente deste celular, e eles foram redefinidos.</string>
+    <string name="trash_moved">Movido para Excluídos recentemente</string>
+    <string name="trash_item_restored">Item restaurado</string>
+    <string name="trash_restore_needs_pro">Faça upgrade para o Pro para restaurar mais itens</string>
+    <string name="trash_gone">Ele não está mais em Excluídos recentemente.</string>
+    <string name="trash_cannot_restore">Esta entrada não pode ser restaurada.</string>
+    <string name="trash_vault_unreadable">Não foi possível ler o cofre.</string>
+    <string name="trash_same_id">Já existe um item com o mesmo ID.</string>
+    <string name="trash_restore_save_failed">Não foi possível salvar o item neste dispositivo.</string>
+    <string name="trash_delete_forever">Excluir definitivamente</string>
+    <string name="trash_keep_for">Manter os itens excluídos por</string>
+    <string name="trash_empty_all">Esvaziar Excluídos recentemente</string>
+    <string name="trash_footer">Os itens excluídos continuam criptografados neste celular e são removidos definitivamente após esse tempo. Eles não contam para os itens do plano gratuito. Backups mais antigos ainda podem contê-los.</string>
+    <string name="trash_empty_all_title">Esvaziar Excluídos recentemente?</string>
+    <string name="trash_empty_all_message">Todos os itens daqui são excluídos definitivamente. Isso não pode ser desfeito.</string>
+    <string name="trash_delete_forever_title">Excluir definitivamente?</string>
+    <string name="trash_delete_forever_message">‘%1$s’ será excluído definitivamente. Isso não pode ser desfeito.</string>
+    <string name="trash_removed_soon">removido em breve</string>
+    <string name="trash_undo">Desfazer</string>
+    <string name="trash_undo_hint">Restaura o item excluído</string>
+    <string name="trash_undo_announcement">%1$s. É possível desfazer.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d dia restante</item>
+        <item quantity="other">%1$d dias restantes</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d dia</item>
+        <item quantity="other">%1$d dias</item>
+    </plurals>
+</resources>

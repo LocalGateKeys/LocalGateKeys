@@ -36,15 +36,31 @@ object Enrollment {
     private val REQUEST_MAGIC_BYTES = ascii("LGKENROLL1\n")
     private val REPLY_MAGIC_BYTES = ascii("LGKENROLLOK1\n")
     private val REFUSED_MAGIC_BYTES = ascii("LGKENROLLNO1\n")
+    private val REVEAL_MAGIC_BYTES = ascii("LGKENROLLRV1\n")
 
-    /** Copies of the request, reply and refusal magics. */
+    /** Copies of the request, reply, refusal and reveal magics. */
     val REQUEST_MAGIC: ByteArray get() = REQUEST_MAGIC_BYTES.copyOf()
     val REPLY_MAGIC: ByteArray get() = REPLY_MAGIC_BYTES.copyOf()
     val REFUSED_MAGIC: ByteArray get() = REFUSED_MAGIC_BYTES.copyOf()
+
+    /** The interim frame of a version-2 offer: the inviter's reveal, before the reply (`LAN_SYNC_V3.md` 3.3). */
+    val REVEAL_MAGIC: ByteArray get() = REVEAL_MAGIC_BYTES.copyOf()
     const val MAX_BYTES = 16 * 1024
 
+    /** The largest reveal frame (desktop `open_enrollment_reveal`). */
+    const val MAX_REVEAL_BYTES = 256
+
+    /**
+     * Enrollment version 3 (desktop `ENROLL_VERSION`), used for and required by a version-2 offer: the code also
+     * covers the inviter's reveal. A version-1 offer keeps [LEGACY_VERSION].
+     */
+    const val VERSION: Long = 3
+
     /** Enrollment version 2: the request carries the device `name` and both screens show a verification code. */
-    const val VERSION: Long = 2
+    const val LEGACY_VERSION: Long = 2
+
+    /** The enrollment version of the transcript and body for [offer] (desktop `enroll_version`). */
+    fun version(offer: PairingOffer): Long = if (offer.commit != null) VERSION else LEGACY_VERSION
 
     /** The longest device name (UTF-8 bytes) a request may carry. */
     const val MAX_NAME_BYTES = 64
@@ -78,6 +94,8 @@ object Enrollment {
     private val SIG_LABEL = ascii("localgatekeys|sync|enroll-sig|v1|")
     private val REPLY_SIG_LABEL = ascii("localgatekeys|sync|enroll-reply-sig|v1|")
     private val VERIFY_LABEL = ascii("localgatekeys|sync|enroll-verify|v2|")
+    private val VERIFY_LABEL_V3 = ascii("localgatekeys|sync|enroll-verify|v3|")
+    private val COMMIT_LABEL = ascii("localgatekeys|sync|enroll-commit|v3|")
     private val REQUEST_FIELDS = setOf(
         "version", "offer_id", "device_id", "signing_public", "exchange_public", "endpoint", "name", "signature", "mac",
     )
@@ -100,21 +118,76 @@ object Enrollment {
 
     /**
      * `verification_code`: the 6-digit code both screens show for one enrollment, first 4 bytes of
-     * SHA-256(`enroll-verify|v2|` + transcript) as a big-endian unsigned integer mod 1 000 000.
+     * SHA-256(`enroll-verify|v2|` + transcript) as a big-endian unsigned integer mod 1 000 000; with
+     * [reveal] (a version-2 offer) SHA-256(`enroll-verify|v3|` + transcript + reveal).
      */
-    fun verificationCode(transcript: ByteArray): String {
-        val d = sha256(VERIFY_LABEL + transcript)
+    fun verificationCode(transcript: ByteArray, reveal: ByteArray? = null): String {
+        val d = if (reveal == null) {
+            sha256(VERIFY_LABEL + transcript)
+        } else {
+            if (reveal.size != 32) throw malformed("Pairing reveal is malformed")
+            sha256(VERIFY_LABEL_V3 + transcript + reveal)
+        }
         val n = ((d[0].toLong() and 0xFF) shl 24) or ((d[1].toLong() and 0xFF) shl 16) or
             ((d[2].toLong() and 0xFF) shl 8) or (d[3].toLong() and 0xFF)
         return (n % 1_000_000).toString().padStart(6, '0')
     }
 
     /**
-     * The verification code of this device's request for [offer] (the same inputs as [buildRequest]):
-     * the phone shows it before and while it waits for the reply.
+     * The verification code of this device's request for [offer] (the same inputs as [buildRequest]). For a
+     * version-1 offer the phone shows it while it waits for the reply; a version-2 offer needs the inviter's
+     * [reveal] ([openReveal]), so the code is shown only once the reveal checked out.
      */
-    fun verificationCode(offer: PairingOffer, identity: DeviceIdentity, endpoint: LanEndpoint?, name: String): String =
-        verificationCode(transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, revalidated(endpoint), name))
+    fun verificationCode(
+        offer: PairingOffer,
+        identity: DeviceIdentity,
+        endpoint: LanEndpoint?,
+        name: String,
+        reveal: ByteArray? = null,
+    ): String {
+        if (offer.commit != null) checkReveal(offer, reveal)
+        val t = transcript(offer, identity.deviceId, identity.signingPublicKey, identity.exchangePublicKey, revalidated(endpoint), name)
+        return verificationCode(t, if (offer.commit != null) reveal else null)
+    }
+
+    /** `enrollment_commit`: SHA-256(`enroll-commit|v3|` + [reveal]), the commitment a version-2 offer carries. */
+    fun commit(reveal: ByteArray): ByteArray {
+        if (reveal.size != 32) throw malformed("Pairing reveal is malformed")
+        return sha256(COMMIT_LABEL + reveal)
+    }
+
+    /** A 32-byte [reveal] that matches [offer]'s commitment, else [PairingException.Kind.AUTHENTICATION]. */
+    private fun checkReveal(offer: PairingOffer, reveal: ByteArray?) {
+        val expected = offer.commit ?: return
+        if (reveal == null || reveal.size != 32 || !MessageDigest.isEqual(commit(reveal), expected)) {
+            throw authentication("The inviting device sent no valid reveal before its reply")
+        }
+    }
+
+    /** Inviter side (`enrollment_reveal`): the interim reveal frame of a verified request; null for a version-1 offer. */
+    fun revealFrame(offer: PairingOffer): ByteArray? {
+        if (offer.commit == null) return null
+        val reveal = offer.reveal ?: throw malformed("This offer has no reveal")
+        return REVEAL_MAGIC_BYTES + Pairing.canonical(JsonValue.Obj(mapOf("reveal" to JsonValue.Str(Base64Std.encode(reveal)))))
+    }
+
+    /** Whether an enrollment frame from the inviter is a reveal frame (by its magic). */
+    fun isReveal(raw: ByteArray): Boolean = raw.startsWithBytes(REVEAL_MAGIC_BYTES)
+
+    /**
+     * New-device side (`open_enrollment_reveal`): the reveal from the interim frame [raw] (at most 256 bytes,
+     * `LGKENROLLRV1\n` + canonical `{"reveal"}`), checked against [offer]'s commitment. A malformed frame throws
+     * [PairingException.Kind.MALFORMED], a mismatch [PairingException.Kind.AUTHENTICATION].
+     */
+    fun openReveal(offer: PairingOffer, raw: ByteArray): ByteArray {
+        val expected = offer.commit ?: throw malformed("This offer has no commitment")
+        if (raw.size > MAX_REVEAL_BYTES || !raw.startsWithBytes(REVEAL_MAGIC_BYTES)) throw malformed("Enrollment reveal is malformed")
+        val value = (Pairing.strictJson(raw.copyOfRange(REVEAL_MAGIC_BYTES.size, raw.size)) as? JsonValue.Obj)?.fields
+        if (value == null || value.keys != setOf("reveal")) throw malformed("Enrollment reveal is malformed")
+        val reveal = Pairing.b64(value["reveal"], 32, "pairing reveal")
+        if (!MessageDigest.isEqual(commit(reveal), expected)) throw authentication("Enrollment reveal does not match the QR code")
+        return reveal
+    }
 
     /** A code shown as "123 456". */
     fun displayCode(code: String): String = if (code.length == 6) code.substring(0, 3) + " " + code.substring(3) else code
@@ -141,11 +214,13 @@ object Enrollment {
         val name: String,
         transcript: ByteArray,
         body: ByteArray,
+        reveal: ByteArray? = null,
     ) {
         private val signing = signingPublic.copyOf()
         private val exchange = exchangePublic.copyOf()
         private val transcriptBytes = transcript.copyOf()
         private val bodyBytes = body.copyOf()
+        private val revealBytes = reveal?.copyOf()
 
         val signingPublic: ByteArray get() = signing.copyOf()
         val exchangePublic: ByteArray get() = exchange.copyOf()
@@ -154,8 +229,11 @@ object Enrollment {
         /** The decrypted body as received. */
         val body: ByteArray get() = bodyBytes.copyOf()
 
-        /** The verification code the new device shows. */
-        val code: String get() = verificationCode(transcriptBytes)
+        /** The request came for a version-2 offer (commit-then-reveal): the new device is pinned to the sealed hello. */
+        val hasReveal: Boolean get() = revealBytes != null
+
+        /** The verification code the new device shows (covering the inviter's reveal for a version-2 offer). */
+        val code: String get() = verificationCode(transcriptBytes, revealBytes)
 
         override fun equals(other: Any?): Boolean =
             other is Request && deviceId == other.deviceId && signing.contentEquals(other.signing) &&
@@ -165,7 +243,7 @@ object Enrollment {
         override fun hashCode(): Int = deviceId.hashCode() * 31 + signing.contentHashCode()
     }
 
-    /** `enrollment_transcript` (version 2: with `invitee_name`). */
+    /** `enrollment_transcript` (with `invitee_name`; version 3 for a version-2 offer, else 2). */
     fun transcript(
         offer: PairingOffer,
         deviceId: String,
@@ -179,7 +257,7 @@ object Enrollment {
             JsonValue.Obj(
                 mapOf(
                     "protocol" to JsonValue.Str("localgatekeys-sync-enrollment"),
-                    "version" to JsonValue.Int(VERSION),
+                    "version" to JsonValue.Int(version(offer)),
                     "offer" to offer.publicJson,
                     "code" to JsonValue.Str(offer.code),
                     "invitee_device_id" to JsonValue.Str(deviceId),
@@ -221,7 +299,7 @@ object Enrollment {
         val body = Pairing.canonical(
             JsonValue.Obj(
                 mapOf(
-                    "version" to JsonValue.Int(VERSION),
+                    "version" to JsonValue.Int(version(offer)),
                     "offer_id" to JsonValue.Str(offer.offerId),
                     "device_id" to JsonValue.Str(identity.deviceId),
                     "signing_public" to JsonValue.Str(Base64Std.encode(identity.signingPublicKey)),
@@ -259,9 +337,18 @@ object Enrollment {
 
     /**
      * Inviter side (`_decrypt_enrollment_request` + `_verify_enrollment_body`): decrypt with the
-     * inviter's exchange key, then check the body, MAC and signature.
+     * inviter's exchange key, then check the body, MAC and signature. A request of an older enrollment version
+     * throws [PairingException.Kind.MALFORMED] here ([OfferSession] answers it with `update-needed`).
      */
-    fun openRequest(offer: PairingOffer, inviter: DeviceIdentity, raw: ByteArray): Request {
+    fun openRequest(offer: PairingOffer, inviter: DeviceIdentity, raw: ByteArray): Request = try {
+        verifyRequestBody(offer, decryptRequest(offer, inviter, raw))
+    } catch (e: PairingException) {
+        if (e.kind == PairingException.Kind.REFUSED) throw malformed("The new device needs an update (older enrollment version)")
+        throw e
+    }
+
+    /** `_decrypt_enrollment_request`: size, magic, JSON shape, offer id and AES-GCM (never an attempt). */
+    internal fun decryptRequest(offer: PairingOffer, inviter: DeviceIdentity, raw: ByteArray): ByteArray {
         if (raw.size > MAX_BYTES || !raw.startsWithBytes(REQUEST_MAGIC_BYTES)) throw malformed("Enrollment request is malformed")
         val outer = (Pairing.strictJson(raw.copyOfRange(REQUEST_MAGIC_BYTES.size, raw.size)) as? JsonValue.Obj)?.fields
         if (outer == null || outer.keys != setOf("offer_id", "eph", "nonce", "ct")) throw malformed("Enrollment request is malformed")
@@ -285,13 +372,23 @@ object Enrollment {
         } catch (e: CryptoBoxException) {
             throw authentication("Enrollment request authentication failed")
         }
+        return plain
+    }
+
+    /**
+     * `_verify_enrollment_body`: the checks after a successful decrypt (they count as attempts). A body of an older
+     * enrollment version throws [PairingException.Kind.REFUSED] `update-needed`.
+     */
+    internal fun verifyRequestBody(offer: PairingOffer, plain: ByteArray): Request {
         val body = (Pairing.strictJson(plain) as? JsonValue.Obj)?.fields
         val bodyVersion = (body?.get("version") as? JsonValue.Int)?.v
-        if (bodyVersion != null && bodyVersion < VERSION && body?.get("offer_id") == JsonValue.Str(offer.offerId)) {
-            // Desktop `EnrollmentOutdated`: the inviter answers `update-needed`.
-            throw malformed("The new device needs an update (enrollment version 1)")
+        val expected = version(offer)
+        if (bodyVersion != null && bodyVersion < expected && body?.get("offer_id") == JsonValue.Str(offer.offerId)) {
+            // Desktop `EnrollmentOutdated`: the inviter answers `update-needed` (also a version-2 body for a
+            // version-2 offer: without the reveal its code could be ground) and sends no reveal.
+            throw PairingException(PairingException.Kind.REFUSED, "update-needed")
         }
-        if (body == null || body.keys != REQUEST_FIELDS || body["version"] != JsonValue.Int(VERSION) ||
+        if (body == null || body.keys != REQUEST_FIELDS || body["version"] != JsonValue.Int(expected) ||
             body["offer_id"] != JsonValue.Str(offer.offerId)
         ) {
             throw malformed("Enrollment request is malformed")
@@ -315,15 +412,87 @@ object Enrollment {
         if (!MessageDigest.isEqual(mac, mac(offer, transcript))) throw authentication("Enrollment does not prove the pairing secret")
         val sig = Pairing.b64(body["signature"], 64, "enrollment signature")
         if (!DeviceIdentity.verify(sig, SIG_LABEL + transcript, signing)) throw authentication("Enrollment signature is invalid")
-        return Request(deviceId, signing, exchange, endpoint, name, transcript, plain)
+        return Request(deviceId, signing, exchange, endpoint, name, transcript, plain, offer.reveal)
+    }
+
+    /** The refusal frame the inviter sends for [reason] (`LGKENROLLNO1\n` + canonical `{"reason"}`). */
+    fun refusal(reason: String): ByteArray {
+        if (reason !in REFUSAL_REASONS) throw malformed("Unknown refusal reason")
+        return REFUSED_MAGIC_BYTES + Pairing.canonical(JsonValue.Obj(mapOf("reason" to JsonValue.Str(reason))))
+    }
+
+    /**
+     * Host side (`seal_enrollment_reply`): the group key for an accepted [request], sealed to the new device:
+     * `LGKENROLLOK1\n` + canonical `{"ct","eph","nonce","sig"}`. Randomness: the 32-byte ephemeral X25519 private key,
+     * then the 12-byte nonce.
+     */
+    fun sealReply(inviter: DeviceIdentity, offer: PairingOffer, request: Request, groupKey: GroupKey, random: RandomSource): ByteArray =
+        sealReply(offer, request, groupKey, random) { inviter.sign(it) }
+
+    /** [sign] is the inviter's Ed25519 signer; tests pass the desktop's signature to pin the bytes. */
+    internal fun sealReply(
+        offer: PairingOffer,
+        request: Request,
+        groupKey: GroupKey,
+        random: RandomSource,
+        sign: (ByteArray) -> ByteArray,
+    ): ByteArray {
+        if (groupKey.epoch < 1 || groupKey.key.size != 32) throw malformed("Group key is malformed")
+        if (!Identifier.isValid(groupKey.groupId)) throw malformed("group id is malformed")
+        val bound = sha256(request.transcript)
+        val ephPrivate = random.bytes(32)
+        val nonce = random.bytes(12)
+        if (ephPrivate.size != 32 || nonce.size != 12) throw malformed("Enrollment nonce is malformed")
+        val shared: ByteArray
+        val ephPublic: ByteArray
+        try {
+            shared = X25519.agree(ephPrivate, request.exchangePublic)
+            ephPublic = X25519.publicKey(ephPrivate)
+        } catch (e: RuntimeException) {
+            throw authentication("Invitee exchange key is unusable")
+        }
+        if (shared.none { it.toInt() != 0 }) throw authentication("Invitee exchange key is unusable")
+        val secret = CryptoBox.hkdf(shared, bound, REPLY_INFO + ascii(offer.offerId), 32)
+        val header = mapOf("eph" to JsonValue.Str(Base64Std.encode(ephPublic)), "nonce" to JsonValue.Str(Base64Std.encode(nonce)))
+        val headerBytes = Pairing.canonical(JsonValue.Obj(header))
+        val body = Pairing.canonical(
+            JsonValue.Obj(
+                mapOf(
+                    "group_id" to JsonValue.Str(groupKey.groupId), "epoch" to JsonValue.Int(groupKey.epoch),
+                    "key" to JsonValue.Str(Base64Std.encode(groupKey.key)), "device_id" to JsonValue.Str(request.deviceId),
+                    "signing_public" to JsonValue.Str(Base64Std.encode(request.signingPublic)),
+                ),
+            ),
+        )
+        val ct = try {
+            CryptoBox.sealGcm(secret, nonce, body, headerBytes + bound)
+        } catch (e: CryptoBoxException) {
+            throw malformed("Enrollment reply cannot be sealed")
+        }
+        val sig = try {
+            sign(REPLY_SIG_LABEL + bound + headerBytes + ct)
+        } catch (e: Exception) {
+            throw malformed("Signed transcript is malformed")
+        }
+        val outer = header + mapOf("ct" to JsonValue.Str(Base64Std.encode(ct)), "sig" to JsonValue.Str(Base64Std.encode(sig)))
+        return REPLY_MAGIC_BYTES + Pairing.canonical(JsonValue.Obj(outer))
     }
 
     /**
      * New-device side: verify the inviter's reply against the QR-pinned key and return the group key.
      * [endpoint] and [name] are the ones this device announced in its request. A refusal throws
-     * [PairingException.Kind.REFUSED] with its reason ([refusalIssue] maps it for the app).
+     * [PairingException.Kind.REFUSED] with its reason ([refusalIssue] maps it for the app). For a version-2
+     * offer [reveal] must be the one [openReveal] checked: a key reply without it is refused
+     * ([PairingException.Kind.AUTHENTICATION]).
      */
-    fun openReply(offer: PairingOffer, identity: DeviceIdentity, raw: ByteArray, name: String, endpoint: LanEndpoint? = null): GroupKey {
+    fun openReply(
+        offer: PairingOffer,
+        identity: DeviceIdentity,
+        raw: ByteArray,
+        name: String,
+        endpoint: LanEndpoint? = null,
+        reveal: ByteArray? = null,
+    ): GroupKey {
         if (raw.startsWithBytes(REFUSED_MAGIC_BYTES)) {
             var reason = "refused"
             val parsed = try {
@@ -336,6 +505,7 @@ object Enrollment {
             throw PairingException(PairingException.Kind.REFUSED, reason)
         }
         if (raw.size > MAX_BYTES || !raw.startsWithBytes(REPLY_MAGIC_BYTES)) throw malformed("Enrollment reply is malformed")
+        checkReveal(offer, reveal)
         val outer = (Pairing.strictJson(raw.copyOfRange(REPLY_MAGIC_BYTES.size, raw.size)) as? JsonValue.Obj)?.fields
         if (outer == null || outer.keys != setOf("eph", "nonce", "ct", "sig")) throw malformed("Enrollment reply is malformed")
         val ep = revalidated(endpoint)

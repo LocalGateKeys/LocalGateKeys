@@ -16,9 +16,10 @@ extension PairingOffer {
         public let code: String
     }
 
-    /// A new offer for `group` from `identity`, reachable at `endpoint`, expiring `ttlSeconds` after `now`.
-    /// Randomness, in order: 16 bytes (uuid4 offer id), 32 (transcript nonce), 32 (pairing secret), then
-    /// 4 bytes per draw for the code (big-endian, drawn again while >= `codeLimit`, then modulo 10^8).
+    /// A new version-2 offer (`commitVersion`) for `group` from `identity`, reachable at `endpoint`, expiring
+    /// `ttlSeconds` after `now`. Randomness, in order: 16 bytes (uuid4 offer id), 32 (transcript nonce), 32
+    /// (pairing secret), 4 bytes per draw for the code (big-endian, drawn again while >= `codeLimit`, then
+    /// modulo 10^8), then 32 (the reveal: kept in the returned offer only, its commitment goes in the QR).
     public static func create(group: String, identity: DeviceIdentity, endpoint: LanEndpoint,
                               now: some UnixClock, random: some RandomSource) throws -> (offer: PairingOffer, secretState: SecretState) {
         guard Identifier.isValid(group) else { throw PairingError.malformed("group id is malformed") }
@@ -44,10 +45,13 @@ extension PairingOffer {
         } while value >= codeLimit
         let digits = String(value % 100_000_000)
         let code = String(repeating: "0", count: codeDigits - digits.count) + digits
-        let offer = PairingOffer(version: 1, offerID: offerID, groupID: group, endpoint: ep,
+        let reveal = random.bytes(count: 32)
+        guard reveal.count == 32 else { throw PairingError.malformed("Pairing randomness is malformed") }
+        let offer = PairingOffer(version: commitVersion, offerID: offerID, groupID: group, endpoint: ep,
                                  inviterDeviceID: identity.deviceID, inviterSigningPublic: identity.signingPublicKey,
                                  inviterExchangePublic: identity.exchangePublicKey, certificateFingerprint: identity.fingerprint,
-                                 expiresAt: created + ttlSeconds, transcriptNonce: nonce, pairingSecret: secret, code: code)
+                                 expiresAt: created + ttlSeconds, transcriptNonce: nonce, pairingSecret: secret, code: code,
+                                 commit: Enrollment.commitment(reveal), reveal: reveal)
         return (offer, SecretState(offerID: offerID, pairingSecret: secret, code: code))
     }
 

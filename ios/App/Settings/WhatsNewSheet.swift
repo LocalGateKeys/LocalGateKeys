@@ -31,7 +31,8 @@ struct WhatsNewSheet: View {
                     Text("Continue").frame(maxWidth: .infinity).padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent).tint(Palette.accent).foregroundStyle(Palette.onAccent)
-                .padding(.horizontal, 20).padding(.bottom, 12)
+                .padding(.horizontal, 20).padding(.top, 10).padding(.bottom, 12)
+                .background(.bar)
             }
             .lgkAuroraBackground()
             .navigationTitle(WhatsNew.title)

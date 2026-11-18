@@ -39,7 +39,7 @@ from urllib.parse import urljoin, urlsplit
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from . import config, distribution
+from . import config, distribution, net_ledger
 from .version import APP_VERSION, BUILD_DATE
 from .i18n import t
 
@@ -257,6 +257,11 @@ def check_for_updates(
     return result
 
 
+def last_verified() -> UpdateResult | None:
+    """The last manifest verified in this process, if any (never fetches)."""
+    return _LAST_VERIFIED
+
+
 def open_release_page() -> bool:
     """Open the HTTPS release notes page of the last verified manifest."""
     result = _LAST_VERIFIED
@@ -289,10 +294,9 @@ def _fetch_feed(
     feed_url: str,
     opener_factory: Callable[..., object] | None,
     max_bytes: int = MAX_MANIFEST_BYTES,
+    purpose: str = net_ledger.UPDATE_CHECK,
 ) -> bytes:
-    opener_builder = opener_factory or urllib.request.build_opener
     origin = _origin(feed_url)
-    opener = opener_builder(_SameOriginRedirectHandler(origin))
     # feed_url has already been validated as a fixed HTTPS URL.
     request = urllib.request.Request(  # noqa: S310
         feed_url,
@@ -302,7 +306,10 @@ def _fetch_feed(
         method="GET",
     )
     try:
-        response = opener.open(request, timeout=REQUEST_TIMEOUT_SECONDS)
+        # Same opener, redirect handler and timeout as before; the ledger records only the host and result.
+        response = net_ledger.open_url(request, purpose=purpose, timeout=REQUEST_TIMEOUT_SECONDS,
+                                       handlers=(_SameOriginRedirectHandler(origin),),
+                                       opener_factory=opener_factory)
         with response:
             status = getattr(response, "status", None)
             if status is None:
@@ -541,7 +548,7 @@ def fetch_revocations(
     keys = revocation_keys()
     if url is None or keys is None:
         return frozenset()
-    raw = _fetch_feed(url, opener_factory, MAX_REVOCATIONS_BYTES)
+    raw = _fetch_feed(url, opener_factory, MAX_REVOCATIONS_BYTES, net_ledger.REVOCATION_LIST)
     manifest = _verified_revocations(raw, keys)
     # Replay protection: an older list must not replace a newer cached (or remembered) one.
     newest = _newest(_load_verified(revocation_cache_path(), keys), _load_verified(revocation_memory_path(), keys))

@@ -605,11 +605,15 @@ def _zip_tree(root: Path) -> bytes:
     return buffer.getvalue()
 
 
+CXF_SAMPLE = Path(__file__).resolve().parents[1] / "vectors" / "cxf" / "apple-passwords-sample.json"
+
+
 def _import_seeds() -> dict[str, tuple[bytes, Callable[[bytes], Any]]]:
     """(seed bytes, loader) per import target; loaders are called directly, not via load_records."""
     from localvault.importers import (
         bitwarden,
         chrome,
+        cxf,
         dashlane,
         kdbx,
         keepass_csv,
@@ -641,6 +645,7 @@ def _import_seeds() -> dict[str, tuple[bytes, Callable[[bytes], Any]]]:
         "protonpass-json": (fixture("protonpass", "Proton Pass", "data.json").read_bytes(),
                             protonpass.load_protonpass_json),
         "protonpass-csv": (fixture("protonpass.csv").read_bytes(), protonpass.load_protonpass_csv),
+        "cxf": (CXF_SAMPLE.read_bytes(), cxf.import_cxf),
         "dashlane-zip": (_zip_tree(fixture("dashlane")), dashlane.load_dashlane_zip),
         "dashlane-csv": (fixture("dashlane", "payments.csv").read_bytes(), dashlane.load_dashlane_csv),
     }

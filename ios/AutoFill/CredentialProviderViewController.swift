@@ -14,9 +14,10 @@ import AppShared
 struct SystemAutoFillAuth: AutoFillAuthenticating {
     func authenticate(reason: String) async throws -> any KeychainVault {
         // Task 7: with the app password on there is no passcode route. AutoFill uses the Face ID shortcut only (no
-        // password field here); without it the person unlocks the app with the password first.
+        // password field here); without it the person unlocks the app with the password first. Task 8: with a key
+        // file or YubiKey (and no shortcut, or "Always ask") the request says to open the app.
         if let appPassword = AppPasswordStore.shared(), appPassword.isOn {
-            guard appPassword.biometricOn else { throw AppPasswordError.openAppFirst }
+            try appPassword.autoFillGate(alwaysAsk: AppSettings.shared.factorsAlwaysAsk)
             let bio = LAContext()
             bio.touchIDAuthenticationAllowableReuseDuration = 0
             bio.localizedFallbackTitle = ""   // no "Enter Passcode"
@@ -65,7 +66,8 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         let flow = CredentialFlow(auth: SystemAutoFillAuth(), opener: ExtensionStoreOpener(), matcher: matcher,
                                   clipboard: SecretClipboard.shared, clock: SystemClock())
         let d = CredentialRequestDriver(passkeys: PasskeyFlow(credentials: flow, pro: StoreKitEntitlement(),
-                                                              identities: IdentityStoreSync(matcher: matcher.matcher)))
+                                                              identities: IdentityStoreSync(matcher: matcher.matcher,
+                                                                                            oneTimeCodes: IdentityStoreSync.platformOneTimeCodes)))
         d.sink = self
         return d
     }()
@@ -173,10 +175,11 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
 
     override nonisolated func prepareCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier]) {
         let urls = AutoFillMatcher.candidateURLs(serviceIdentifiers)
+        let fillOrigin = CredentialRequestDriver.fillOrigin(serviceIdentifiers)
         AutoFillTrace.log("entry prepareCredentialList(for:) services=\(hosts: urls) instance=\(instance: self)")
         MainThreadEntry.run { [weak self] in
             guard let driver = self?.driver else { return }
-            driver.whenAppeared("list") { driver.beginList(urls: urls) }
+            driver.whenAppeared("list") { driver.beginList(urls: urls, fillOrigin: fillOrigin) }
         }
     }
 
@@ -185,15 +188,30 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
     override nonisolated func prepareCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier],
                                                     requestParameters: ASPasskeyCredentialRequestParameters) {
         let urls = AutoFillMatcher.candidateURLs(serviceIdentifiers)
+        let fillOrigin = CredentialRequestDriver.fillOrigin(serviceIdentifiers)
         let rpID = requestParameters.relyingPartyIdentifier, allowed = requestParameters.allowedCredentials
         AutoFillTrace.log("entry prepareCredentialList(for:requestParameters:) services=\(hosts: urls) rp=\(host: rpID) allowed=\(allowed.count) instance=\(instance: self)")
         let clientDataHash = requestParameters.clientDataHash
         MainThreadEntry.run { [weak self] in
             guard let driver = self?.driver else { return }
-            guard AppSettings.shared.offerPasskeys else { return driver.whenAppeared("list") { driver.beginList(urls: urls) } }
+            guard AppSettings.shared.offerPasskeys else {
+                return driver.whenAppeared("list") { driver.beginList(urls: urls, fillOrigin: fillOrigin) }
+            }
             driver.whenAppeared("passkeyList") {
                 driver.beginPasskeyList(rpID: rpID, allowed: allowed, clientDataHash: clientDataHash)
             }
+        }
+    }
+
+    /// A 2FA field (iOS 18+, `ProvidesOneTimeCodes`): Face ID, then the page's logins that hold a 2FA secret. A pick
+    /// fills that login's current code, never its password.
+    @available(iOS 18.0, *)
+    override nonisolated func prepareOneTimeCodeCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier]) {
+        let urls = AutoFillMatcher.candidateURLs(serviceIdentifiers)
+        AutoFillTrace.log("entry prepareOneTimeCodeCredentialList(for:) services=\(hosts: urls) instance=\(instance: self)")
+        MainThreadEntry.run { [weak self] in
+            guard let driver = self?.driver else { return }
+            driver.whenAppeared("codeList") { driver.beginCodeList(urls: urls) }
         }
     }
 
@@ -319,10 +337,24 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         AutoFillTrace.log("vc.showList count=\(list.count)")
         passkeyRows = []
         logins = list
-        message.text = list.isEmpty ? String(localized: "No saved login matches this site.") : nil
+        message.text = list.isEmpty
+            ? (driver.listsCodes ? String(localized: "No saved 2FA code for this site.")
+                                 : String(localized: "No saved login matches this site."))
+            : nil
         table.reloadData()
     }
 
+    func completeOneTimeCode(_ code: String) {
+        AutoFillTrace.log("vc.completeOneTimeCodeRequest context=\(instance: extensionContext)")
+        logins = []; table.reloadData()
+        if #available(iOS 18.0, *) {
+            extensionContext.completeOneTimeCodeRequest(using: ASOneTimeCodeCredential(code: code), completionHandler: nil)
+        } else {
+            extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain, code: ASExtensionError.failed.rawValue))
+        }
+    }
+
+    /// A picked password. The driver then leaves the Safari "just filled" marker for a web page (`recordFill`).
     func completeRequest(user: String, password: String) {
         AutoFillTrace.log("vc.completeRequest(withSelectedCredential:) context=\(instance: extensionContext) inWindow=\(viewIfLoaded?.window != nil)")
         logins = []; table.reloadData()
@@ -369,6 +401,14 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
         } else {
             extensionContext.cancelRequest(withError: NSError(domain: ASExtensionErrorDomain, code: ASExtensionError.failed.rawValue))
         }
+    }
+
+    /// Task 8: the vault needs the app (a key file or YubiKey): the message stays with the Cancel button.
+    func showMessage(_ text: String) {
+        AutoFillTrace.log("vc.showMessage")
+        dismissCreateSheet()
+        logins = []; passkeyRows = []; textRows = []; table.reloadData()
+        message.text = text
     }
 
     func cancelRequest(_ code: ASExtensionError.Code) {

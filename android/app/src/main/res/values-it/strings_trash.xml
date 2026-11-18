@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Eliminati di recente</string>
+    <string name="trash_empty">Eliminati di recente è vuoto.</string>
+    <string name="trash_save_failed">Non è stato possibile salvare Eliminati di recente su questo telefono.</string>
+    <string name="trash_reset">Non è stato possibile leggere Eliminati di recente su questo telefono, che è stato reimpostato.</string>
+    <string name="trash_moved">Spostato in Eliminati di recente</string>
+    <string name="trash_item_restored">Elemento ripristinato</string>
+    <string name="trash_restore_needs_pro">Passa a Pro per ripristinare più elementi</string>
+    <string name="trash_gone">Non è più in Eliminati di recente.</string>
+    <string name="trash_cannot_restore">Questa voce non può essere ripristinata.</string>
+    <string name="trash_vault_unreadable">Impossibile leggere la cassaforte.</string>
+    <string name="trash_same_id">Esiste già un elemento con lo stesso ID.</string>
+    <string name="trash_restore_save_failed">Impossibile salvare l\'elemento su questo dispositivo.</string>
+    <string name="trash_delete_forever">Elimina definitivamente</string>
+    <string name="trash_keep_for">Conserva gli elementi eliminati per</string>
+    <string name="trash_empty_all">Svuota Eliminati di recente</string>
+    <string name="trash_footer">Gli elementi eliminati restano cifrati su questo telefono e vengono rimossi definitivamente dopo questo periodo. Non contano per gli elementi del piano gratuito. I backup meno recenti potrebbero ancora contenerli.</string>
+    <string name="trash_empty_all_title">Svuotare Eliminati di recente?</string>
+    <string name="trash_empty_all_message">Ogni elemento qui viene eliminato definitivamente. Non si può annullare.</string>
+    <string name="trash_delete_forever_title">Eliminare definitivamente?</string>
+    <string name="trash_delete_forever_message">‘%1$s’ viene eliminato definitivamente. Non si può annullare.</string>
+    <string name="trash_removed_soon">rimosso a breve</string>
+    <string name="trash_undo">Annulla</string>
+    <string name="trash_undo_hint">Ripristina l\'elemento eliminato</string>
+    <string name="trash_undo_announcement">%1$s. L\'annullamento è disponibile.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d giorno rimasto</item>
+        <item quantity="other">%1$d giorni rimasti</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d giorno</item>
+        <item quantity="other">%1$d giorni</item>
+    </plurals>
+</resources>

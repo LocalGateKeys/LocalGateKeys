@@ -182,8 +182,8 @@ final class SafariImporterTests: XCTestCase {
     }
 
     func test_over_limit_stays_in_inbox() throws {
-        // Free plan, 3 notes + 1 login = 4 items: the vault is full.
-        let store = MemoryStore(snapshot(numberedNotes(3) + [existingLogin()]))
+        // Free plan, (freeItems - 1) notes + 1 login: the vault is full.
+        let store = MemoryStore(snapshot(numberedNotes(ItemLimit.freeItems - 1) + [existingLogin()]))
         try saveInSafari(password: "Changed-Pass")                         // an update: always allowed
         clock.now += 10
         try saveInSafari("https://shop.example.org", "ada", "Shop-Pass")   // a new login: needs a slot
@@ -292,11 +292,11 @@ final class SafariImporterTests: XCTestCase {
     }
 
     func test_update_for_deleted_login_becomes_new() throws {
-        // 4 notes + the login: over the free limit. The update waits in the inbox while the login is deleted.
-        let store = MemoryStore(snapshot(numberedNotes(4) + [existingLogin()]))
+        // freeItems notes + the login: over the free limit. The update waits in the inbox while the login is deleted.
+        let store = MemoryStore(snapshot(numberedNotes(ItemLimit.freeItems) + [existingLogin()]))
         try saveInSafari(password: "Changed-Pass")
         XCTAssertEqual(EditorModel.delete(id: SafariFixture.existingID, store: store, clock: clock, background: FakeBackgroundTasks()), .saved)
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 4)
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems)
 
         // It is now a new login, and the free vault is full: it waits.
         XCTAssertEqual(try importer(store, pro: false).run(), SafariImportResult(saved: 0, waiting: 1, damaged: 0))
@@ -312,7 +312,7 @@ final class SafariImporterTests: XCTestCase {
         XCTAssertEqual(r["password"], .string("Changed-Pass"))
         XCTAssertEqual(r["label"], .string("example.com"))
         XCTAssertNil(r["password_history"])
-        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), 5)
+        XCTAssertEqual(ItemLimit.liveCount(store.snapshot), ItemLimit.freeItems + 1)
     }
 
     func test_deleted_tombstoned_login_is_not_matched() throws {
@@ -514,6 +514,24 @@ final class SafariImporterTests: XCTestCase {
         XCTAssertEqual(byUser["ada@example.com"]?["password"], .string("New-Pass-1"))
         XCTAssertNil(byUser["bo"])
         XCTAssertEqual(byUser["cy"]?["password"], .string("Pass-3"))
+    }
+
+    /// Review minor 3: the app checks each waiting origin itself (also when the extension had no site list) and the
+    /// review row says when it looks like a saved site.
+    func test_review_names_a_lookalike_origin() throws {
+        let store = MemoryStore(snapshot([existingLogin()]))
+        try saveInSafari("https://accounts.examp1e.com", "ada@example.com", "Pass-1")
+        clock.now += 1
+        try saveInSafari("https://xn--pple-43d.com", "ada", "Pass-2")
+        clock.now += 1
+        try saveInSafari("https://shop.example.com", "ada", "Pass-3")
+        let checker = SafariImporter(store: store, inbox: inbox(), clock: clock, isPro: true,
+                                     lookalike: Lookalike(rules: PublicSuffixRules.parse(lines: ["com"])))
+        let pending = try checker.review()
+        XCTAssertEqual(pending.count, 3)
+        XCTAssertEqual(pending[0].warning, "Looks like accounts.example.com, a different site where your login is saved.")
+        XCTAssertEqual(pending[1].warning, "This address mixes letters from different alphabets, a common phishing trick.")
+        XCTAssertNil(pending[2].warning, "a related site of a saved login")
     }
 
     /// "Decide later" keeps every entry for the next review; a capture arriving after the review is not

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Segurança</string>
+    <string name="security_cat_breached">Vazada</string>
+    <string name="security_cat_reused">Reutilizada</string>
+    <string name="security_cat_weak">Fraca</string>
+    <string name="security_cat_old">Antiga</string>
+    <string name="security_cat_no_2fa">2FA disponível</string>
+    <string name="security_expl_breached">Estas senhas aparecem em vazamentos de dados conhecidos. Altere-as primeiro.</string>
+    <string name="security_expl_reused">Estas senhas são usadas em mais de um login. Se um site vazar, os outros ficam expostos.</string>
+    <string name="security_expl_weak">Estas senhas são curtas ou fáceis de adivinhar.</string>
+    <string name="security_expl_old">Estas senhas não mudam há mais de um ano. A idade, por si só, não é motivo para alterá-las.</string>
+    <string name="security_expl_no_2fa">Este site oferece códigos de dois fatores, mas este login não tem nenhum.</string>
+    <string name="security_blocked_offline">O modo offline estrito está ativado, então as verificações de vazamento estão bloqueadas. Desative-o em Ajustes › Verificação de vazamentos.</string>
+    <string name="security_blocked_disabled">As verificações de vazamento estão desativadas. Ative-as em Ajustes › Verificação de vazamentos.</string>
+    <string name="security_status_cancelled">Verificação de vazamentos cancelada.</string>
+    <string name="security_status_checking">Verificando senhas…</string>
+    <string name="security_status_none_found">Nenhuma senha vazada encontrada.</string>
+    <string name="security_status_found">%1$d senha(s) vazada(s) encontrada(s).</string>
+    <string name="security_status_some_failed">Não foi possível verificar algumas senhas. Tente novamente mais tarde.</string>
+    <string name="security_band_none">Ainda não há logins</string>
+    <string name="security_band_good">Boa</string>
+    <string name="security_band_fair">Razoável</string>
+    <string name="security_band_poor">Ruim</string>
+    <string name="security_empty_hint">Adicione logins para ver o quanto suas senhas são saudáveis.</string>
+    <string name="security_score_description">Pontuação de segurança %1$d de 100</string>
+    <string name="security_no_score">Ainda sem pontuação de segurança</string>
+    <string name="security_checks_header">Verificações</string>
+    <string name="security_breach_header">Verificação de vazamentos</string>
+    <string name="security_breach_start">Verificar senhas vazadas</string>
+    <string name="security_cancel">Cancelar</string>
+    <string name="security_checking">Verificando…</string>
+    <string name="security_show_dismissed">Mostrar novamente os itens dispensados</string>
+    <string name="security_confirm_title">Verificar todas as senhas com o Have I Been Pwned?</string>
+    <string name="security_confirm_action">Verificar</string>
+    <string name="security_consent">As verificações de vazamento enviam apenas os 5 primeiros caracteres do hash SHA-1 de cada senha ao Have I Been Pwned, por HTTPS e com preenchimento, e somente quando você inicia uma. Nenhuma senha, hash completo, nome de usuário ou site é enviado. O serviço vê o seu endereço IP.</string>
+    <string name="security_nothing_to_fix">Nada para corrigir aqui.</string>
+    <string name="security_dismiss">Dispensar</string>
+    <string name="security_change_password">Alterar senha</string>
+    <string name="security_dismiss_item">Dispensar para este item</string>
+    <string name="security_row_description">%1$s, %2$d itens</string>
+    <string name="security_checks_footer">As verificações locais são uma orientação, não uma garantia. Nada sai deste telefone a menos que você inicie uma verificação de vazamentos.</string>
+    <string name="security_issue_footer">%1$s Use o menu de um login para alterar a senha ou dispensar o aviso aqui.</string>
+    <string name="security_row_menu">Mais ações para %1$s</string>
+    <string name="security_untitled">Login sem título</string>
+</resources>

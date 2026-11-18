@@ -53,6 +53,16 @@ def env(tmp_path, monkeypatch):
     return controller, bus, sched, marks
 
 
+def _cheap_record(password):
+    from localvault.backup_key import build_record, derive_backup_key, new_kdf
+
+    key = derive_backup_key(password, new_kdf(parameters={"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1}))
+    try:
+        return build_record(key, now=1793000000, set_by="set", reset_authority=None)
+    finally:
+        key.wipe()
+
+
 def _toasts(bus):
     return [d["message"] for n, d in bus.events if n == "toast"]
 
@@ -69,7 +79,8 @@ def test_schedule_skips_without_a_backup_password(env):
 
 def test_schedule_runs_when_due_and_reports(env, monkeypatch):
     controller, bus, _s, _m = env
-    monkeypatch.setattr(controller.session, "scheduled_backup_password", lambda: "backup-secret-pw", raising=False)
+    record = _cheap_record("backup-secret-pw")
+    monkeypatch.setattr(controller.session, "scheduled_backup_key", lambda: record, raising=False)
     seen = []
 
     def run_backup(**job):
@@ -78,14 +89,15 @@ def test_schedule_runs_when_due_and_reports(env, monkeypatch):
 
     runner = ScheduleRunner(controller, bus, spawn=lambda fn: fn(), run_backup=run_backup)
     assert runner.check() is True
-    assert seen[0]["password"] == "backup-secret-pw"
+    assert seen[0]["record"] == record and "password" not in seen[0]
     assert _toasts(bus) == ["Scheduled backup saved."]
     assert "backup-secret-pw" not in repr(bus.events)
 
 
 def test_schedule_failure_waits_before_retry(env, monkeypatch):
     controller, bus, _s, _m = env
-    monkeypatch.setattr(controller.session, "scheduled_backup_password", lambda: "pw", raising=False)
+    record = _cheap_record("synthetic backup pw")
+    monkeypatch.setattr(controller.session, "scheduled_backup_key", lambda: record, raising=False)
     clock = [datetime(2026, 10, 17, 12, 0)]
 
     def boom(**job):
@@ -156,7 +168,7 @@ def test_throttle_starts_the_backoff(env, monkeypatch):
     def throttled(*a, **k):
         raise UnlockThrottled(30)
 
-    monkeypatch.setattr("localvault.app.controller.unlock_vault", throttled)
+    monkeypatch.setattr("localvault.duress.unlock_vault", throttled)
     with pytest.raises(ApiError):
         controller.unlock("wrong")
     state = controller.state()
@@ -203,7 +215,8 @@ def test_failed_lock_does_not_leave_handover(env, monkeypatch):
 def test_schedule_check_runs_once_when_called_concurrently(env, monkeypatch):
     import threading
     controller, bus, _s, _m = env
-    monkeypatch.setattr(controller.session, "scheduled_backup_password", lambda: "pw", raising=False)
+    record = _cheap_record("synthetic backup pw")
+    monkeypatch.setattr(controller.session, "scheduled_backup_key", lambda: record, raising=False)
     started, release = [], threading.Event()
     runner = ScheduleRunner(controller, bus, spawn=lambda fn: threading.Thread(target=fn).start(),
                             run_backup=lambda **job: (started.append(1), release.wait(5),

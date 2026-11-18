@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">已固定的验证码</string>
+    <string name="widget_codes_description">您已固定的双重验证码。</string>
+    <string name="widget_codes_locked">解锁以查看验证码</string>
+    <string name="widget_codes_empty">在 LocalGateKeys 中固定一个验证码</string>
+    <string name="detail_pin_code">在小组件中显示</string>
+    <string name="detail_pin_code_note">LocalGateKeys 解锁期间（直到自动锁定），主屏幕小组件会显示此验证码。</string>
+    <string name="detail_pin_full">最多可固定 %1$d 个验证码。</string>
+    <string name="widget_codes_locked_immediately">将自动锁定设为 1 分钟或更长时间，即可在此查看验证码</string>
+    <string name="detail_pin_code_note_immediately">自动锁定设为“立即”，离开 LocalGateKeys 时会锁定，小组件无法显示此验证码。请在设置中将自动锁定设为 1 分钟或更长时间，以便在主屏幕上查看。</string>
+    <string name="tile_codes_name">复制验证码</string>
+    <string name="tile_codes_empty">没有已固定的验证码</string>
+    <string name="tile_codes_locked">解锁后复制</string>
+    <string name="tile_codes_locked_subtitle">已锁定</string>
+    <string name="tile_codes_tap_to_copy">点按以复制</string>
+    <string name="tile_codes_copied">已复制</string>
+    <string name="tile_codes_no_code">无验证码</string>
+</resources>

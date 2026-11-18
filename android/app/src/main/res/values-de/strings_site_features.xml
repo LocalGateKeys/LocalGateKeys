@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">Nicht HTTPS</string>
+    <string name="security_expl_http">Diese Logins verwenden eine unverschlüsselte Adresse. Prüfen Sie sie und wechseln Sie zu https://, wenn die Website das unterstützt.</string>
+    <string name="security_cat_passkey">Passkey verfügbar</string>
+    <string name="security_expl_passkey">Diese Websites unterstützen Passkeys, eine sicherere Anmeldung. Speichern Sie für jede einen.</string>
+</resources>

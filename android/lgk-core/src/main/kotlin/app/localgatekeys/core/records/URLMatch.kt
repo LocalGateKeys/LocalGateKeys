@@ -32,6 +32,9 @@ enum class UrlMatchMode(val stored: String) {
 /** One `{"url", "match"}` row. */
 data class UrlRow(val url: String, val mode: UrlMatchMode)
 
+/** Result of [UrlMatcher.webHosts]. */
+class WebHosts(val hosts: List<String>, val insecure: Boolean)
+
 /** The desktop's URL matcher. [rules] null = no usable suffix list (`base_domain` matches the exact host). */
 class UrlMatcher(val rules: PublicSuffixRules?) {
     companion object {
@@ -60,6 +63,25 @@ class UrlMatcher(val rules: PublicSuffixRules?) {
             val origin = (scope["origin"] as? JsonValue.Str)?.v
             if (rows.isEmpty() && origin != null && origin.isNotEmpty()) rows.add(UrlRow(origin, UrlMatchMode.EXACT_ORIGIN))
             return rows
+        }
+
+        /**
+         * The hosts of a login's saved URLs, and whether any is plain HTTP on a non-loopback host (desktop
+         * `_web_hosts`). A URL that does not parse as http(s) adds nothing.
+         */
+        fun webHosts(urls: List<String>): WebHosts {
+            val hosts = ArrayList<String>()
+            var insecure = false
+            for (url in urls) {
+                val parts = try {
+                    Origin.splitURL(url)
+                } catch (_: Exception) {
+                    continue
+                }
+                hosts.add(parts.host)
+                if (parts.scheme == "http" && !Origin.isLoopback(parts.host)) insecure = true
+            }
+            return WebHosts(hosts, insecure)
         }
 
         /** `_starts_with` on normalised URLs, at a path boundary. */

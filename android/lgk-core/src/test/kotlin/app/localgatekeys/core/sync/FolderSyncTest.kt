@@ -58,6 +58,23 @@ class FolderSyncTest {
         return Joined(folder, store, fs, report)
     }
 
+    @Test fun heartbeat_is_written_throttled_and_checked_against_the_signer() {
+        val j = joined("heartbeat")
+        val state = j.store.load().sync!!
+        val me = state.deviceId
+        val own = app.localgatekeys.core.primitives.Base64Std.encode(state.identity.signingPublicKey)
+        val gk = epochKey("1")
+        assertEquals(T0 + 1000, j.fs.readHeartbeat(gk, me, own)) // the join's first run wrote it
+        val path = FolderLayout.heartbeatFile(me)!!
+        val first = j.folder.read(path, 1 shl 20).toList()
+        j.fs.runOnce(j.store, DetRand("h2"), FixedClock(T0 + 1200))
+        assertEquals(first, j.folder.read(path, 1 shl 20).toList())
+        j.fs.runOnce(j.store, DetRand("h3"), FixedClock(T0 + 1000 + FolderSync.HEARTBEAT_SECONDS))
+        assertEquals(T0 + 1000 + FolderSync.HEARTBEAT_SECONDS, j.fs.readHeartbeat(gk, me, own))
+        assertEquals(null, j.fs.readHeartbeat(gk, me, "AAAA"))
+        assertEquals(null, j.fs.readHeartbeat(gk, me, null))
+    }
+
     private fun storedStates(store: MemoryStore, device: String, now: Long): List<ItemState> {
         val v = SyncMeta.localView(store.snapshot.records, store.snapshot.meta, device, now)
         return v.states.values.sortedBy { it.itemId }

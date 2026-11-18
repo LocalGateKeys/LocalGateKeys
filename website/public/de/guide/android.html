@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys für Android: Anleitung</title>
+  <meta name="description" content="So funktioniert die Android-App von LocalGateKeys: Einrichtung, Ausfüllen, 2FA-Codes, Import, Sicherungen und Synchronisation.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/android">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/android">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/android">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/android">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/android">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/android">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys für Android: Anleitung">
+  <meta property="og:description" content="So funktioniert die Android-App von LocalGateKeys: Einrichtung, Ausfüllen, 2FA-Codes, Import, Sicherungen und Synchronisation.">
+  <meta property="og:url" content="https://localgatekeys.app/de/guide/android">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Das LocalGateKeys-Logo: ein Passwort-Manager für Windows, Mac und iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys für Android: Anleitung">
+  <meta name="twitter:description" content="So funktioniert die Android-App von LocalGateKeys: Einrichtung, Ausfüllen, 2FA-Codes, Import, Sicherungen und Synchronisation.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../de/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Hauptnavigation">
+        <ul class="nav">
+          <li><a href="../../de/features">Funktionen</a></li>
+          <li><a href="../../de/get-started">Erste Schritte</a></li>
+          <li><a href="../../de/help">Handbuch</a></li>
+          <li><a href="../../de/security">Sicherheit</a></li>
+          <li><a href="../../de/pricing">Preise</a></li>
+          <li><a href="../../de/support">Support</a></li>
+          <li><a class="nav-cta" href="../../de/download">Download</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menü</summary>
+        <nav aria-label="Hauptnavigation">
+          <ul class="nav nav-stack">
+            <li><a href="../../de/features">Funktionen</a></li>
+          <li><a href="../../de/get-started">Erste Schritte</a></li>
+          <li><a href="../../de/help">Handbuch</a></li>
+          <li><a href="../../de/security">Sicherheit</a></li>
+          <li><a href="../../de/pricing">Preise</a></li>
+          <li><a href="../../de/support">Support</a></li>
+          <li><a class="nav-cta" href="../../de/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Sprache</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys für Android</h1>
+  <p class="lead">Schritt-für-Schritt-Hilfe zu jedem Bildschirm und jeder Funktion auf diesem Gerät. Jede Überschrift ist ein teilbarer Link.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Plattformen">
+    <ul><li><a class="help-tab" href="../../de/guide/windows">Windows</a></li><li><a class="help-tab" href="../../de/guide/mac">Mac</a></li><li><a class="help-tab" href="../../de/guide/iphone">iPhone und iPad</a></li><li><a class="help-tab" href="../../de/guide/android" aria-current="page">Android</a></li><li><a class="help-tab" href="../../de/guide/extension">Browsererweiterung</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Gut zu wissen, auf jedem Gerät</h2>
+    <ul>
+      <li><strong>Ihr Tresor bleibt auf Ihren Geräten.</strong> Es gibt kein Konto und keinen LocalGateKeys-Server, der Ihre Passwörter speichert.</li>
+      <li><strong>Niemand kann Ihr Master-Passwort oder App-Passwort zurücksetzen.</strong> Richten Sie eine Wiederherstellungsphrase ein und bewahren Sie sie auf Papier auf.</li>
+      <li><strong>Free</strong> fasst bis zu 7 Einträge. <strong>Pro</strong> (US$29.99, einmalig bezahlt) bietet unbegrenzte Einträge, Zwei-Faktor-Codes, Dateien und Synchronisierung. Bearbeiten, Löschen und Ausfüllen vorhandener Einträge wird nie gesperrt.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Themen zu Android</h2>
+    <p class="callout-soon"><strong>Demnächst verfügbar.</strong> Die Android-App ist noch nicht bei Google Play. Diese Anleitung zeigt, wie sie funktionieren wird.</p>
+    <p class="panel-lead">Die App hat vier Tabs: <strong>Tresor</strong>, <strong>Sync</strong>, <strong>Sicherheit</strong> und <strong>Einstellungen</strong>. Die Suche ist die Lupe oben im Tab Tresor.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Themen zu Android">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Auf diesem Tab</summary>
+          <ol>
+            <li><a href="#and-setup">Erster Start und Entsperren</a></li>
+            <li><a href="#and-apppw">App-Passwort und Wiederherstellung</a></li>
+            <li><a href="#and-items">Einträge</a></li>
+            <li><a href="#and-search">Suche und Aktionen</a></li>
+            <li><a href="#and-generator">Passwortgenerator</a></li>
+            <li><a href="#and-2fa">Zwei-Faktor-Codes</a></li>
+            <li><a href="#and-autofill">Automatisches Ausfüllen</a></li>
+            <li><a href="#and-passkeys">Passkeys</a></li>
+            <li><a href="#and-import">Importieren</a></li>
+            <li><a href="#and-backups">Sicherungen</a></li>
+            <li><a href="#and-sync">Synchronisierung</a></li>
+            <li><a href="#and-share">Teilen</a></li>
+            <li><a href="#and-settings">Einstellungen und Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">Erster Start und Entsperren</a></h3>
+          <p>Ihr Tresor öffnet sich mit Fingerabdruck, Gesicht oder Displaysperre Ihres Telefons. (Das Telefon braucht eine Displaysperre.) Es folgt eine kurze Einrichtung: mit Fingerabdruck entsperren, <strong>Importieren…</strong>, ein optionales App-Passwort und <strong>Einstellungen für Autofill öffnen</strong>. Überspringen Sie jeden Schritt; die Karte <em>Einrichtung abschließen</em> bringt Sie zurück.</p>
+          <p>Einstellungen › Sperre &amp; Sicherheit legt <strong>Automatisch sperren nach Verlassen der App</strong> fest (Sofort bis 1 Stunde) und <strong>Bei Inaktivität sperren</strong> (1 bis 30 Minuten oder Nie) und bietet <strong>Jetzt sperren</strong>. In der Ansicht der letzten Apps ist die App verborgen.</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">App-Passwort und Wiederherstellungsphrase</a></h3>
+          <ol>
+            <li>Einstellungen › Sperre &amp; Sicherheit › <strong>App-Passwort verwenden</strong> einschalten, eines wählen und auf <strong>Weiter</strong> tippen. Ab dann öffnet es LocalGateKeys, nicht die Displaysperre.</li>
+            <li>Schreiben Sie die Wiederherstellungsphrase aus 24 Wörtern auf, tippen Sie auf <strong>Ich habe sie aufgeschrieben</strong>, geben Sie die abgefragten Wörter ein und tippen Sie auf <strong>App-Passwort einschalten</strong>.</li>
+          </ol>
+          <p>Vergessen? Tippen Sie auf <strong>App-Passwort vergessen?</strong>, geben Sie die 24 Wörter ein und wählen Sie ein neues. <strong>App-Passwort ändern</strong> und den Schalter <strong>App-Passwort verwenden</strong> zum Ausschalten finden Sie unter Einstellungen › Sperre &amp; Sicherheit.</p>
+          <p class="note">Nach dem Wiederherstellen eines Telefons aus einer Google-Sicherung lässt sich der Tresor nicht öffnen (sein Schlüssel wird nicht gesichert). Wählen Sie <strong>Neu beginnen</strong> und synchronisieren Sie dann mit Ihrem PC, um alles zurückzubekommen.</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">Einträge</a></h3>
+          <ul>
+            <li>Tippen Sie auf <strong>+</strong> und wählen Sie eine Art: Website-Anmeldung, Notiz, Zahlungskarte, Identität, Bankkonto, Kauf, Abonnement, Garantie, WLAN-Netzwerk, Lizenz, API-Schlüssel, SSH-Schlüssel, Lesezeichen.</li>
+            <li>Öffnen Sie einen Eintrag, um Felder zu kopieren, <strong>Website öffnen</strong>, <strong>Bearbeiten</strong>, <strong>Löschen</strong> oder <strong>Zu Favoriten hinzufügen</strong>.</li>
+            <li><strong>Passwortverlauf</strong>: ein früheres Passwort kopieren oder wiederherstellen.</li>
+            <li><strong>Datei hinzufügen</strong> (Pro): ein Foto aufnehmen, ein Foto oder eine Datei wählen, jeweils bis 25 MB.</li>
+            <li><strong>Sortieren</strong> nach Titel oder Datum, Favoriten zuerst.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">Suche und Aktionen</a></h3>
+          <p>Tippen Sie im Tab Tresor auf die Lupe und geben Sie einen Namen ein, oder beginnen Sie mit <code>&gt;</code> für Aktionen wie Sicherung exportieren, Passwort generieren, Passwörter importieren, Sperren, Geteilten Eintrag empfangen, QR-Code zum Koppeln scannen und Jetzt synchronisieren.</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">Passwortgenerator</a></h3>
+          <p><strong>Passwort</strong> (Länge, Groß- und Kleinbuchstaben, Ziffern, Sonderzeichen, Verwechselbares vermeiden) oder <strong>Passphrase</strong> (Wörter, Großschreibung, Zahl hinzufügen, Trennzeichen). <strong>Erneut generieren</strong>, dann <strong>Kopieren</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">Zwei-Faktor-Codes</a> <span class="badge-pro">Pro</span></h3>
+          <p>Bearbeiten Sie eine Anmeldung und tippen Sie neben dem 2FA-Feld auf <strong>QR-Code scannen</strong>, oder geben Sie den Einrichtungsschlüssel ein. Codes erscheinen im Eintrag und in der Zeile <strong>Codes</strong>: Tippen Sie auf einen, um ihn zu kopieren.</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">Automatisches Ausfüllen</a></h3>
+          <ol>
+            <li>Einstellungen › Autofill › <strong>Einstellungen für Autofill öffnen</strong> und LocalGateKeys wählen. (Öffnet sich nichts, suchen Sie in den Telefoneinstellungen nach <em>Autofill-Dienst</em>.)</li>
+            <li>Tippen Sie in einer beliebigen App oder Website auf ein Anmeldefeld und wählen Sie Ihre Anmeldung aus den Vorschlägen. Entsperren Sie, wenn Sie gefragt werden.</li>
+            <li>Nach einer neuen Anmeldung wählen Sie bei <em>Anmeldung speichern?</em> <strong>Speichern</strong> oder <strong>Passwort aktualisieren</strong>, wenn es sich geändert hat.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">Passkeys</a></h3>
+          <p>Schalten Sie Einstellungen › Autofill › <strong>LocalGateKeys für Passkeys anbieten</strong> ein. Bietet eine Website oder App einen Passkey an, wählen Sie LocalGateKeys; später melden Sie sich mit <strong>Passkey verwenden</strong> an.</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">Importieren</a></h3>
+          <p>Einstellungen › Synchronisierung &amp; Daten › <strong>Aus einer Datei importieren</strong> › <strong>Exportdatei wählen</strong>: Chrome, Edge, Brave, Firefox, Apple Passwörter, Bitwarden <code>.json</code> (auch passwortgeschützt), 1Password <code>.1pux</code> oder jede CSV-Datei. Prüfen Sie alles und importieren Sie dann. Löschen Sie die Exportdatei danach.</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">Sicherungen</a></h3>
+          <p><strong>Sicherung exportieren…</strong> speichert eine verschlüsselte <code>.lgkm</code>-Datei mit einem Passwort Ihrer Wahl (es lässt sich nicht wiederherstellen). <strong>Aus einer Sicherung wiederherstellen…</strong> öffnet eine, zeigt eine Vorschau und überschreibt nie einen neueren Eintrag. Funktioniert auch mit PC und iPhone.</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">Mit Ihrem PC synchronisieren</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>Wählen Sie am PC auf der WLAN-Karte <strong>QR-Code anzeigen</strong>.</li>
+            <li>Auf dem Telefon: Tab Synchronisierung › <strong>QR-Code scannen</strong> (oder <strong>Codetext einfügen</strong>).</li>
+            <li>Prüfen Sie, dass beide denselben Code zeigen, und nehmen Sie am PC an.</li>
+          </ol>
+          <p>Oder <strong>Einem Ordner beitreten…</strong> in Dropbox oder Nextcloud mit dem Synchronisierungspasswort. Der PC braucht ebenfalls Pro.</p>
+          <p class="note">OneDrive und Google Drive sind für die Synchronisierung vorerst nicht verfügbar, bis ein Problem mit Apple gelöst ist. Verwenden Sie stattdessen Dropbox, Nextcloud oder die WLAN-Synchronisierung.</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">Teilen</a></h3>
+          <p>Öffnen Sie einen Eintrag, tippen Sie auf Teilen, dann auf <strong>Als Datei senden…</strong> oder <strong>Als QR-Code anzeigen</strong>, und teilen Sie die sechs Wörter getrennt mit. Zum Empfangen: Einstellungen › Synchronisierung &amp; Daten › <strong>Geteilten Eintrag empfangen</strong>, die sechs Wörter eingeben, auf <strong>Öffnen</strong> tippen, dann <strong>Zum Tresor hinzufügen</strong>. Die Freigabe lässt sich einmal innerhalb von 24 Stunden öffnen; drei falsche Codes löschen sie. Passkeys und Dateien können nicht geteilt werden.</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">Einstellungen und Pro</a></h3>
+          <ul>
+            <li><strong>Darstellung</strong>: System, Hell oder Dunkel sowie Ihre Initialen.</li>
+            <li><strong>Sperre &amp; Sicherheit</strong> enthält <strong>Zwischenablage leeren nach</strong>, <strong>Datenschutz</strong> enthält <strong>Passwörter verbergen, bis sie angetippt werden</strong>, und <strong>Synchronisierung &amp; Daten</strong> enthält <strong>Tresor dieses Telefons löschen</strong> (nur dieses Telefon). Android erlaubt die Prüfung der Zwischenablage nur, solange die App geöffnet ist: Eine Kopie aus der Schnelleinstellungs-Kachel oder kurz vor dem Wechsel in eine andere App wird beim nächsten Öffnen von LocalGateKeys gelöscht.</li>
+            <li><strong>Pro</strong> (oben in den Einstellungen): <strong>Upgraden</strong> und einmal über Google Play kaufen, auf einem anderen Telefon mit demselben Google-Konto <strong>Käufe wiederherstellen</strong> und mit <strong>Schlüssel kopieren</strong> auch Windows freischalten.</li>
+            <li><strong>Zwangspasswort</strong> (Pro): ein zweites App-Passwort für den Fall, dass Sie jemand zum Entsperren zwingt. Es öffnet einen separaten Tresor mit nur den Einträgen, die Sie wählen, und Ihr Tresor lehnt danach sein App-Passwort für die eingestellten Stunden ab. Schalten Sie zuerst das App-Passwort ein und richten Sie es dann in den Einstellungen unter <strong>Zwangspasswort</strong> ein.</li>
+            <li><strong>In eine CXF-Datei exportieren…</strong> schreibt ausgewählte Logins, Notizen und Passkeys in eine Credential-Exchange-Datei, die andere Passwortmanager importieren können. Die Datei ist nicht verschlüsselt.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../de/help">Die ganze Anleitung auf einer Seite</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Ein Passwortmanager für Windows, Mac und iPhone, der Ihren Tresor auf Ihren eigenen Geräten behält.</p>
+        <p class="quiet">Diese Website zählt Seitenaufrufe mit Cloudflare Web Analytics, das ohne Cookies arbeitet. Sie verwendet keine Werbe-Tracker und setzt keine Cookies.</p>
+      </div>
+      <nav aria-label="Produkt">
+        <h2>Produkt</h2>
+        <ul>
+          <li><a href="../../de/features">Funktionen</a></li>
+          <li><a href="../../de/pricing">Preise</a></li>
+          <li><a href="../../de/download">Download</a></li>
+          <li><a href="../../de/get-started">Erste Schritte</a></li>
+          <li><a href="../../de/switch/">Wechseln</a></li>
+          <li><a href="../../buy">Pro kaufen</a></li>
+          <li><a href="../../de/licence">Ihre Pro-Lizenz</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Lizenz wiederherstellen</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hilfe">
+        <h2>Hilfe</h2>
+        <ul>
+          <li><a href="../../de/help">Benutzerhandbuch</a></li>
+          <li><a href="../../de/support">Support und FAQ</a></li>
+          <li><a href="../../de/security">Sicherheit</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Sicherheitslücke melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Rechtliches">
+        <h2>Rechtliches</h2>
+        <p class="quiet">Diese Dokumente liegen auf Englisch vor, und es gilt die englische Fassung, die verbindlich ist.</p>
+        <ul>
+          <li><a href="../../legal/eula">Lizenzvereinbarung</a></li>
+          <li><a href="../../legal/privacy">Datenschutzerklärung</a></li>
+          <li><a href="../../legal/terms-of-sale">Verkaufsbedingungen</a></li>
+          <li><a href="../../legal/refunds">Rückerstattungsrichtlinie</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Kontakt: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows ist eine Marke der Microsoft-Unternehmensgruppe. Chrome ist eine Marke von Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID und Safari sind Marken von Apple Inc., eingetragen in den USA und anderen Ländern.</p>
+      <nav class="lang-switch" aria-label="Sprache"><ul><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de" aria-current="true">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

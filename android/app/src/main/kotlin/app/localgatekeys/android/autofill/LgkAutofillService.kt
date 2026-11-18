@@ -34,6 +34,8 @@ class LgkAutofillService : AutofillService() {
     }
 
     private fun respond(request: FillRequest): FillResponse? {
+        // Sub-plan 08: nothing is offered while a duress session is open or the vault is held after one.
+        if (app.duress.servicesBlocked()) return null
         val structure = request.fillContexts.lastOrNull()?.structure ?: return null
         val form = FormParser.parse(StructureReader.nodes(structure))
         if (form.passwords.isEmpty() && form.usernames.isEmpty()) return null
@@ -46,14 +48,13 @@ class LgkAutofillService : AutofillService() {
 
         val specs = if (Build.VERSION.SDK_INT >= 30) request.inlineSuggestionsRequest?.inlinePresentationSpecs ?: emptyList() else emptyList()
         val maxChips = if (Build.VERSION.SDK_INT >= 30) request.inlineSuggestionsRequest?.maxSuggestionCount ?: 0 else 0
+        // "Show in keyboard" (on by default): every dataset also gets a keyboard chip while the keyboard asks for them.
+        val inline = app.settings.autofillInline
         val b = FillResponse.Builder()
         var n = 0
         fun add(title: String, subtitle: String?, itemId: String?) {
-            val chip = if (Build.VERSION.SDK_INT >= 30 && specs.isNotEmpty() && n < maxChips) {
-                Presentations.chip(this, specs[minOf(n, specs.size - 1)], title, subtitle)
-            } else {
-                null
-            }
+            val spec = InlineChips.specIndex(inline, specs.size, maxChips, n)
+            val chip = if (Build.VERSION.SDK_INT >= 30 && spec != null) Presentations.chip(this, specs[spec], title, subtitle) else null
             val intent = FillAuthActivity.intent(this, target, itemId, form.usernames, form.passwords)
             val pi = PendingIntent.getActivity(this, codes.incrementAndGet(), intent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
             b.addDataset(Presentations.locked(fields, Presentations.row(this, title, subtitle), chip, pi))
@@ -74,6 +75,7 @@ class LgkAutofillService : AutofillService() {
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
         try {
+            if (app.duress.servicesBlocked()) return callback.onSuccess()
             val structure = request.fillContexts.lastOrNull()?.structure ?: return callback.onSuccess()
             val form = FormParser.parse(StructureReader.nodes(structure))
             val password = form.passwords.firstNotNullOfOrNull { StructureReader.text(structure, it)?.takeIf { p -> p.isNotEmpty() } }

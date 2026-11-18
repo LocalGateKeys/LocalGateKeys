@@ -26,6 +26,10 @@ class AppSettings:
     # Answer websites' passkey requests (WebAuthn) from the vault; off hands
     # every request to the browser's own authenticator.
     passkeys_enabled: bool = True
+    # Serve passkeys to every Windows app through the operating system's plugin
+    # passkey manager (LocalGateKeysPasskeyProvider.exe over the pipe scope
+    # ``system_passkey``). Off by default; every system request is refused while off.
+    windows_passkey_provider: bool = False
     desktop_overlay_enabled: bool = True
     minimize_to_tray: bool = True
     lock_on_session_lock: bool = True
@@ -44,6 +48,8 @@ class AppSettings:
     # Optional folder (e.g. a cloud client's sync folder) that receives a copy
     # of each scheduled encrypted backup. Empty means no mirror.
     backup_mirror_dir: str = ""
+    # Weekly restore test of the newest scheduled backup into a scratch folder (sub-plan 12).
+    restore_test_weekly: bool = True
     trash_retention_days: int = 30
     # Off keeps deleted items in the trash until they are deleted by hand.
     trash_auto_purge: bool = True
@@ -69,7 +75,12 @@ class AppSettings:
     unlock_count: int = 0
     # Set once the user has answered the "rate us on the Microsoft Store?" prompt.
     rate_prompt_answered: bool = False
+    # ISO date until which the installer build's "moved to the Microsoft Store"
+    # notice stays quiet after "Later" ("" = show it at the next unlock).
+    store_move_snoozed_until: str = ""
     quick_access_hotkey: str = "Ctrl+Alt+K"
+    # The quick-access shortcut opens a small search window instead of the app's Quick access page.
+    quick_access_palette: bool = True
     appearance: str = "light"
     # When Windows Hello is enrolled, start its prompt as soon as the unlock
     # dialog opens; cancelling it falls back to the master password.
@@ -101,6 +112,42 @@ class AppSettings:
     list_favorites_first: bool = True
     # "Not now" on the empty-vault "Import your passwords" card; this device only.
     import_card_dismissed: bool = False
+    # The Home "One-time codes" section is collapsed to its header; this device only.
+    codes_collapsed: bool = False
+    # Notes and login notes are shown with Markdown formatting (display only); this device only.
+    notes_show_formatting: bool = True
+    # Erase a profile's vault from this PC once a device it trusted signed that it was removed from
+    # sync (app.device_removal; never on the ambiguous "maybe removed" sync issues).
+    erase_on_sync_removal: bool = True
+    # Developer pack, this device only. The SSH agent pipe (ssh_agent package) is off by default and offers only the
+    # ssh_key item ids in ``developer_ssh_keys``. The setup actions keep the values they replaced (environment,
+    # global Git config) in ``developer_saved_env`` / ``developer_saved_git`` so Undo can restore them.
+    developer_ssh_agent: bool = False
+    developer_ssh_keys: list[str] = field(default_factory=list)
+    developer_saved_env: dict[str, Any] = field(default_factory=dict)
+    developer_saved_git: dict[str, Any] = field(default_factory=dict)
+    # "Command line access" for the lgk tool (cli_service): off by default; it serves only the item ids in
+    # ``developer_cli_items`` (never a strict login).
+    developer_cli: bool = False
+    developer_cli_items: list[str] = field(default_factory=list)
+    # "Allow AI agents to use LocalGateKeys" (agent_gate, ``lgk mcp``): Pro, off by default, this device only.
+    # Every sign-in or read still needs the user's approval; with ``require_hello_for_agents`` also Windows Hello.
+    agents_enabled: bool = False
+    require_hello_for_agents: bool = False
+    # "AI agents may use this item" for API keys, SSH keys and notes (run_with_secrets): the item ids, this device
+    # only. Never exported or restored (a restore clears it); a transfer import drops the ids it writes.
+    agent_items: list[str] = field(default_factory=list)
+    # "Exposed to an AI agent" dismissals (agent_exposure): "<item id>@<unix time>", this device only. Never
+    # exported; a restore clears it.
+    agent_exposure_dismissed: list[str] = field(default_factory=list)
+    # The last plain-secrets scan ({"count": found, "at": unix time}); empty before the first one. Feeds the
+    # Security check's "Plain secrets found on this PC".
+    developer_last_scan: dict[str, Any] = field(default_factory=dict)
+    # KeePass-style unlock factors, this device only. ``unlock_keyfile_paths`` maps a vault_id to the key file's
+    # path (never a copy of the file); "" means "Don't remember" for that vault. ``unlock_factors_always_ask``
+    # turns Windows Hello, the security key and the camera off for vaults with a key file / YubiKey.
+    unlock_keyfile_paths: dict[str, str] = field(default_factory=dict)
+    unlock_factors_always_ask: bool = False
 
     @classmethod
     def load(cls, path: Path | None = None) -> AppSettings:
@@ -127,11 +174,20 @@ class AppSettings:
             scheduled_backup_weekday=_bounded(raw.get("scheduled_backup_weekday", 0), 0, 6, 0),
             scheduled_backup_keep=_validated_keep(raw.get("scheduled_backup_keep")),
             backup_mirror_dir=_validated_mirror_dir(raw.get("backup_mirror_dir")),
+            restore_test_weekly=raw.get("restore_test_weekly", True) is not False,
             sync_lan_endpoint=_validated_lan_endpoint(raw.get("sync_lan_endpoint")),
             sync_lan_endpoint_confirmed=_validated_lan_endpoint(raw.get("sync_lan_endpoint_confirmed")),
             unlock_count=_bounded(raw.get("unlock_count", 0), 0, UNLOCK_COUNT_CAP, 0),
             list_sort=_validated_list_sort(raw.get("list_sort")),
             language=_validated_language(raw.get("language")),
+            developer_ssh_keys=validated_id_list(raw.get("developer_ssh_keys")),
+            developer_saved_env=_validated_small_dict(raw.get("developer_saved_env")),
+            developer_saved_git=_validated_small_dict(raw.get("developer_saved_git")),
+            developer_cli_items=validated_id_list(raw.get("developer_cli_items")),
+            agent_items=validated_id_list(raw.get("agent_items")),
+            agent_exposure_dismissed=validated_id_list(raw.get("agent_exposure_dismissed")),
+            developer_last_scan=validated_last_scan(raw.get("developer_last_scan")),
+            unlock_keyfile_paths=validated_keyfile_paths(raw.get("unlock_keyfile_paths")),
         )
         version = raw.get("version", 1)
         # v7 turned website icons back off by default; v6 files stored "on"
@@ -152,6 +208,10 @@ class AppSettings:
         snoozed = raw.get("update_reminder_snoozed_until", "")
         args["update_reminder_snoozed_until"] = (
             snoozed if isinstance(snoozed, str) and _is_iso_date(snoozed) else ""
+        )
+        store_snoozed = raw.get("store_move_snoozed_until", "")
+        args["store_move_snoozed_until"] = (
+            store_snoozed if isinstance(store_snoozed, str) and _is_iso_date(store_snoozed) else ""
         )
         try:
             args["appearance"] = _validated_appearance(raw.get("appearance", defaults.appearance))
@@ -177,6 +237,7 @@ class AppSettings:
         payload["scheduled_backup_weekday"] = _bounded(self.scheduled_backup_weekday, 0, 6, 0)
         payload["scheduled_backup_keep"] = _validated_keep(self.scheduled_backup_keep)
         payload["backup_mirror_dir"] = _validated_mirror_dir(self.backup_mirror_dir)
+        payload["restore_test_weekly"] = self.restore_test_weekly is not False
         payload["sync_lan_endpoint"] = _validated_lan_endpoint(self.sync_lan_endpoint)
         payload["sync_lan_endpoint_confirmed"] = _validated_lan_endpoint(self.sync_lan_endpoint_confirmed)
         payload["quick_access_hotkey"] = normalize_hotkey(self.quick_access_hotkey)
@@ -184,6 +245,14 @@ class AppSettings:
         payload["list_sort"] = _validated_list_sort(self.list_sort)
         payload["language"] = _validated_language(self.language)
         payload["generator_preferences"] = normalize_generator_options(self.generator_preferences).as_dict()
+        payload["developer_ssh_keys"] = validated_id_list(self.developer_ssh_keys)
+        payload["developer_saved_env"] = _validated_small_dict(self.developer_saved_env)
+        payload["developer_saved_git"] = _validated_small_dict(self.developer_saved_git)
+        payload["developer_cli_items"] = validated_id_list(self.developer_cli_items)
+        payload["agent_items"] = validated_id_list(self.agent_items)
+        payload["agent_exposure_dismissed"] = validated_id_list(self.agent_exposure_dismissed)
+        payload["developer_last_scan"] = validated_last_scan(self.developer_last_scan)
+        payload["unlock_keyfile_paths"] = validated_keyfile_paths(self.unlock_keyfile_paths)
         atomic_write_json(path or settings_path(), payload)
 
 def _validated_lan_endpoint(value: Any) -> str:
@@ -194,6 +263,64 @@ def _validated_lan_endpoint(value: Any) -> str:
 
     normalized, _error = validate_lan_endpoint(value)
     return normalized or ""
+
+
+MAX_ID_LIST = 1000
+MAX_SMALL_DICT_BYTES = 16 * 1024
+
+
+def validated_id_list(value: Any) -> list[str]:
+    """A per-device allow-list of item ids: unique short strings without control characters."""
+    if not isinstance(value, list):
+        return []
+    result: list[str] = []
+    for item in value:
+        if (isinstance(item, str) and 0 < len(item) <= 128 and item.isprintable() and item not in result
+                and len(result) < MAX_ID_LIST):
+            result.append(item)
+    return result
+
+
+MAX_KEYFILE_PATH = 4096
+
+
+def validated_keyfile_paths(value: Any) -> dict[str, str]:
+    """vault_id -> remembered key-file path ("" = don't remember): short printable ids, bounded paths."""
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, str] = {}
+    for vault_id, path in value.items():
+        if len(result) >= MAX_ID_LIST:
+            break
+        if (isinstance(vault_id, str) and 0 < len(vault_id) <= 128 and vault_id.isprintable()
+                and isinstance(path, str) and len(path) <= MAX_KEYFILE_PATH and path.isprintable()):
+            result[vault_id] = path
+    return result
+
+
+def validated_last_scan(value: Any) -> dict[str, Any]:
+    """``{"count": n, "at": unix seconds}`` with non-negative whole numbers, else empty (no scan yet)."""
+    if not isinstance(value, dict):
+        return {}
+    count, at = value.get("count"), value.get("at")
+    if any(isinstance(n, bool) or not isinstance(n, int) for n in (count, at)):
+        return {}
+    if not 0 <= count <= 10**6 or not 0 <= at <= 10**11:
+        return {}
+    return {"count": count, "at": at}
+
+
+def _validated_small_dict(value: Any) -> dict[str, Any]:
+    """A small JSON object with text keys (values the developer setup replaced), else empty."""
+    import json
+
+    if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
+        return {}
+    try:
+        text = json.dumps(value)
+    except (TypeError, ValueError, RecursionError):
+        return {}
+    return json.loads(text) if len(text.encode("utf-8")) <= MAX_SMALL_DICT_BYTES else {}
 
 
 def settings_path() -> Path:

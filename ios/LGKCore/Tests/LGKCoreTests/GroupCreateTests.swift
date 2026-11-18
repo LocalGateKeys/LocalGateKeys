@@ -202,7 +202,9 @@ final class GroupCreateTests: XCTestCase {
         XCTAssertFalse(folder.exists(FolderLayout.deviceFile(p.deviceID)!))
         XCTAssertFalse(folder.exists(FolderLayout.signatureFile(p.deviceID)!))
         let phoneRun = fsPhone.runOnce(store: phone, random: DetRand("p3"), clock: FixedClock(now: Self.now + 40))
-        XCTAssertEqual(phoneRun.issues.map(\.kind), ["rejoin-required"])  // not listed at the new epoch
+        // Not listed at the new epoch; the Mac's signed removal notice verifies (signer: the Mac).
+        XCTAssertEqual(phoneRun.issues.map(\.kind), ["rejoin-required", "removal-notice"])
+        XCTAssertEqual(phoneRun.issues.last?.detail, m2.deviceID)
     }
 
     func testAddFolderToWiFiGroup() throws {
@@ -362,6 +364,9 @@ final class GroupCreateTests: XCTestCase {
             _ = try fsMac.rotate(store: mac, newPassword: Self.newPassword, remove: [b], keep: nil, random: DetRand("rot"),
                                  clock: FixedClock(now: Self.now + 5), derive: Self.cheapKDF)
             XCTAssertEqual(mac.snapshot.sync!.unackedMembers, [])
+            // B, chosen for removal, gets a signed notice; C, dropped only for being unconfirmed, gets none.
+            XCTAssertTrue(folder.exists(RemovalNotice.path(b)!))
+            XCTAssertFalse(folder.exists(RemovalNotice.path(c.deviceID)!))
             return (try Keyring.parse(try folder.read(FolderLayout.keyringPath, limit: 1 << 20)), mac.snapshot.sync!.deviceID, b, c.deviceID)
         }
         let (unconfirmed, mac, _, c) = try scenario(confirmC: false)

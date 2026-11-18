@@ -29,7 +29,12 @@ final class SecretClipboard: SecretCopying {
 
     var expiry: Int64 { settings.clipboardExpiry.rawValue }
 
-    func copy(_ text: String) {
+    func copy(_ text: String) { write(text, expiry: expiry) }
+
+    /// Copy once (feature pack §4.1): cleared after at most `seconds`, or the user's shorter setting.
+    func copy(_ text: String, clearAfterAtMost seconds: Int64) { write(text, expiry: min(expiry, max(1, seconds))) }
+
+    private func write(_ text: String, expiry: Int64) {
         pasteboard.setItems([[UTType.utf8PlainText.identifier: text]], options: [
             .localOnly: true,
             .expirationDate: Date(timeIntervalSince1970: TimeInterval(clock.now + expiry)),

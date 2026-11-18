@@ -49,10 +49,14 @@ def test_native_host_imports_stay_inside_the_bundle() -> None:
             continue
         seen.add(module)
         path = ROOT / "src" / Path(*module.split(".")).with_suffix(".py")
+        if not path.exists():  # a package (localvault.cli: the `lgk`/`mcp` subcommands)
+            path = ROOT / "src" / Path(*module.split(".")) / "__init__.py"
+        package = module if path.name == "__init__.py" else module.rsplit(".", 1)[0]
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and node.level == 1 and node.module:
-                queue.append(f"localvault.{node.module}")
+            if isinstance(node, ast.ImportFrom) and node.level >= 1 and node.module:
+                base = package.split(".")[: len(package.split(".")) - (node.level - 1)]
+                queue.append(".".join([*base, node.module]))
     assert seen <= bundled, sorted(seen - bundled)
 
 
@@ -64,14 +68,7 @@ def test_native_entry_self_check_rejects_trimmed_modules() -> None:
         assert f'"{name}"' in trimmed
 
 
-def test_installer_replaces_both_runtimes_and_ships_notices() -> None:
-    iss = read("build-personal/LocalGateKeys-Personal.iss")
-    install_delete = iss.split("[InstallDelete]", 1)[1].split("\n[", 1)[0]
-    assert 'Type: filesandordirs; Name: "{app}\\_internal"' in install_delete
-    assert 'Type: filesandordirs; Name: "{app}\\NativeHost\\_internal"' in install_delete
-    assert 'Source: "..\\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"' in iss
-    build = read("scripts/build_personal_installer.ps1")
-    assert "'Source: \"..\\THIRD-PARTY-NOTICES.txt\"'" in build
+def test_msix_ships_notices() -> None:
     msix = read("scripts/build_msix_package.ps1")
     assert 'Join-Path $Layout "THIRD-PARTY-NOTICES.txt"' in msix
 

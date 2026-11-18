@@ -14,9 +14,9 @@ def check(*, require_camera: bool = False, require_license_keys: bool = False) -
         if not licensing.LICENSE_KEYS:
             raise RuntimeError("LICENSE_KEYS is empty: generate the licence key (scripts/issue_license.py keygen) before a release build")
     modules = (
-        "argon2.low_level", "cryptography.hazmat.primitives.ciphers.aead",
-        "localvault.auth_task", "localvault.hello_unlock",
-        "localvault.windows_hello", "localvault.agent", "localvault.native_host",
+        "argon2.low_level", "bcrypt", "cryptography.hazmat.primitives.ciphers.aead",
+        "localvault.auth_task", "localvault.hello_unlock", "localvault.fido_unlock",
+        "localvault.windows_hello", "localvault.security_key", "localvault.agent", "localvault.native_host",
         "localvault.web.main", "localvault.api.bridge",
     )
     for name in modules:

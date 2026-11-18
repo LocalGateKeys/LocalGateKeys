@@ -121,6 +121,41 @@ class EditorDraftTest {
         assertEquals(EditorDraft.Status.NEW_ITEM, draft().status(listOf(item)))
     }
 
+    @Test fun save_later_writes_off_the_caller_and_load_sees_it() {
+        assertTrue(store().saveLater(draft()))
+        assertEquals("a reopened editor reads the newest draft", draft(), store().load())
+        assertFalse("locked: nothing is written", store(ByteArray(32)).saveLater(draft()))
+    }
+
+    @Test fun save_later_takes_the_key_before_a_lock_zeroes_it() {
+        val live = key.copyOf()
+        assertTrue(store(live).saveLater(draft()))
+        live.fill(0) // the process ON_STOP lock right after the activity's ON_STOP
+        assertEquals(draft(), store().load())
+    }
+
+    @Test fun delete_after_save_later_leaves_no_draft() {
+        repeat(20) {
+            store().saveLater(draft())
+            store().delete()
+            assertFalse(file.exists())
+        }
+    }
+
+    @Test fun a_restored_editor_resumes_only_its_own_draft() {
+        val item = VaultItem.of("0c000000-0000-4000-8000-000000000001", validCard)!!
+        val m = EditorModel(CountingStore(), item, EditorKind.CARD, { false }, clock, CountingRandomForDraft(), EnglishTxt())
+        m.set("title", "Typed before dark mode")
+        val forItem = m.draft(NOW)
+        assertTrue(forItem.resumes(null, item))
+        val changed = VaultItem.of(item.id, app.localgatekeys.core.json.JsonValue.Obj(validCard.fields + ("title" to app.localgatekeys.core.json.JsonValue.Str("Synced"))))!!
+        assertFalse("the item changed meanwhile: offered instead", forItem.resumes(null, changed))
+        assertFalse(forItem.resumes(EditorKind.CARD, null))
+        assertTrue(draft().resumes(EditorKind.WEB, null))
+        assertFalse("a new item of another kind", draft().resumes(EditorKind.NOTE, null))
+        assertFalse(draft().resumes(null, item))
+    }
+
     @Test fun restored_values_open_in_the_editor() {
         val m = EditorModel(CountingStore(), null, EditorKind.WEB, { false }, clock, CountingRandomForDraft(), EnglishTxt(), initialValues = draft().values)
         assertEquals(secret, m.value("password"))

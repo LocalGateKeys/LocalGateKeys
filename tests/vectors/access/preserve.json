@@ -1,0 +1,72 @@
+{
+  "cases": [
+    {
+      "expected_normal_form": {
+        "created_at": 1789999900,
+        "id": "10000000-0000-4000-8000-000000000801",
+        "kind": "web",
+        "label": "Bänk ✓",
+        "password": "p@ss",
+        "policy": {
+          "fill": "click",
+          "require_master_password": false,
+          "save_prompts": true
+        },
+        "scope": {
+          "access": {
+            "biometric_only": "Ünïcødé ✓ 日本",
+            "copy": "once",
+            "expires": "2027-03-31",
+            "nested": {
+              "a": null,
+              "z": [
+                1,
+                2
+              ]
+            }
+          },
+          "ai_agents": true,
+          "origin": "https://bank.example"
+        },
+        "tags": [
+          "Bank"
+        ],
+        "updated_at": 1790000000,
+        "username": "zoë"
+      },
+      "input_entry": {
+        "created_at": 1789999900,
+        "id": "10000000-0000-4000-8000-000000000801",
+        "kind": "web",
+        "label": "Bänk ✓",
+        "password": "p@ss",
+        "scope": {
+          "access": {
+            "biometric_only": "Ünïcødé ✓ 日本",
+            "copy": "once",
+            "expires": "2027-03-31",
+            "nested": {
+              "a": null,
+              "z": [
+                1,
+                2
+              ]
+            }
+          },
+          "ai_agents": true,
+          "browser_approvals": {
+            "x": 1
+          },
+          "origin": "https://bank.example"
+        },
+        "site_icon": "iVBORw0KGgo=",
+        "tags": [
+          "Bank"
+        ],
+        "updated_at": 1790000000,
+        "username": "zoë"
+      },
+      "name": "scope.access with an unknown key and non-ASCII text survives the sync normaliser"
+    }
+  ]
+}

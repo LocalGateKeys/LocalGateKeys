@@ -66,14 +66,20 @@ def page_call_allowed(func_name: Any, page_calls: frozenset[str]) -> bool:
     return func_name in page_calls and "." not in func_name and not func_name.startswith("_")
 
 
-def guard_js_bridge_call(original: Any, page_calls: Any) -> Any:
-    """Wrap pywebview's js_bridge_call so a name outside the allowlist is dropped before it is resolved."""
+def guard_js_bridge_call(original: Any, page_calls: Any, prepare: Any = None) -> Any:
+    """Wrap pywebview's js_bridge_call so a name outside the allowlist is dropped before it is resolved.
+
+    ``prepare(func_name, param)`` (``api.bridge.hold_page_secrets``) runs on an allowed call's arguments
+    before pywebview sees them.
+    """
     allowed = frozenset(page_calls)
 
     def js_bridge_call(window: Any, func_name: Any, param: Any, value_id: Any) -> None:
         if not page_call_allowed(func_name, allowed):
             _log.warning("Refused a page call to an unknown name: %r", str(func_name)[:80])
             return None
+        if prepare is not None:
+            param = prepare(func_name, param)
         return original(window, func_name, param, value_id)
 
     js_bridge_call.lgk_original = original  # type: ignore[attr-defined]
@@ -88,9 +94,12 @@ def install_call_guard(page_calls: Any) -> None:
     """
     import webview.util as util  # type: ignore[import-not-found]
 
+    from ..api.bridge import hold_page_secrets
+
     current = util.js_bridge_call
     original = getattr(current, "lgk_original", current)
-    guarded = guard_js_bridge_call(original, page_calls)
+    # Password arguments become one-time holders, so no dispatch frame keeps the str during the key derivation.
+    guarded = guard_js_bridge_call(original, page_calls, hold_page_secrets)
     util.js_bridge_call = guarded
     for name, module in list(sys.modules.items()):
         if name.startswith("webview.platforms") and module is not None:
@@ -365,16 +374,42 @@ class WindowOps:
         self._window.destroy()
 
 
+def initial_save_directory() -> Path | None:
+    """Where Save As starts: the LOCALGATEKEYS_DATA_DIR folder when one is set, else ``None``.
+
+    Without it Windows opens the folder used last (the real backup folder), so a test run pointed at a
+    test data folder would offer to export into the real one. ``None`` keeps the Windows default.
+    """
+    from ..config import _data_root
+
+    root, override = _data_root()
+    return root if override and root.is_dir() else None
+
+
 class FileDialogs:
     """Native open/save dialogs through pywebview (called from bridge worker threads)."""
 
     def __init__(self, window: Any) -> None:
         self._window = window
 
+    def _surface(self) -> None:
+        """Show the window before a dialog: a dialog owned by a window hidden in the tray (start with Windows
+        uses --background) or minimized stays invisible, and the call waits for it forever."""
+        window = self._window
+        try:
+            window.restore()
+        except Exception:  # noqa: BLE001, S110 - not minimized
+            pass
+        try:
+            window.show()
+        except Exception:  # noqa: BLE001, S110 - the dialog still opens
+            pass
+
     def open_file(self, title: str, file_types: tuple[str, ...] | None = None) -> Path | None:
         import webview  # type: ignore[import-not-found]
 
         extra = {"file_types": file_types} if file_types else {}
+        self._surface()
         result = self._window.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=False, **extra)
         if not result:
             return None
@@ -383,6 +418,7 @@ class FileDialogs:
     def choose_folder(self, title: str) -> Path | None:
         import webview  # type: ignore[import-not-found]
 
+        self._surface()
         result = self._window.create_file_dialog(webview.FileDialog.FOLDER)
         if not result:
             return None
@@ -391,7 +427,9 @@ class FileDialogs:
     def save_file(self, title: str, name: str) -> Path | None:
         import webview  # type: ignore[import-not-found]
 
-        result = self._window.create_file_dialog(webview.FileDialog.SAVE, save_filename=name)
+        self._surface()
+        extra = {"directory": str(folder)} if (folder := initial_save_directory()) else {}
+        result = self._window.create_file_dialog(webview.FileDialog.SAVE, save_filename=name, **extra)
         if not result:
             return None
         return Path(result[0] if isinstance(result, (list, tuple)) else result)
@@ -447,3 +485,78 @@ class PopupWindow:
 
     def hide(self) -> None:
         self._window.hide()
+
+
+def centered_in(area: tuple[int, int, int, int], width: int, height: int) -> tuple[int, int]:
+    """Top-left corner that centres a window in a work area (left, top, right, bottom), a little above middle."""
+    left, top, right, bottom = area
+    x = left + max(0, (right - left - width) // 2)
+    y = top + max(0, (bottom - top - height) // 3)
+    return x, y
+
+
+def foreground_hwnd() -> int:
+    if os.name != "nt":
+        return 0
+    return int(ctypes.windll.user32.GetForegroundWindow() or 0)
+
+
+def foreground_work_area(hwnd: int) -> tuple[int, int, int, int] | None:
+    """The work area (without the taskbar) of the monitor showing a window, in physical pixels."""
+    if os.name != "nt":
+        return None
+    from ctypes import wintypes
+
+    class MONITORINFO(ctypes.Structure):
+        _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),
+                    ("dwFlags", wintypes.DWORD)]
+
+    user32 = ctypes.windll.user32
+    user32.MonitorFromWindow.restype = wintypes.HANDLE
+    user32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
+    user32.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.POINTER(MONITORINFO)]
+    monitor = user32.MonitorFromWindow(hwnd, 2)  # MONITOR_DEFAULTTONEAREST
+    info = MONITORINFO()
+    info.cbSize = ctypes.sizeof(MONITORINFO)
+    if not monitor or not user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+        return None
+    work = info.rcWork
+    return work.left, work.top, work.right, work.bottom
+
+
+class PaletteWindow(PopupWindow):
+    """The quick-search palette the quick-access shortcut opens, centred on the monitor in front."""
+
+    target_hwnd: int = 0  # the window in front when the palette opened: the only one Enter fills
+
+    def show_centered(self) -> bool:
+        if self.disabled:
+            return False
+        window = self._window
+        try:
+            # Read before showing: the palette becomes the foreground window.
+            self.target_hwnd = foreground_hwnd()
+            area = foreground_work_area(self.target_hwnd)
+        except Exception:  # noqa: BLE001 - the palette still opens where it was
+            area = None
+        if self.hide_from_capture:
+            apply_capture_protection(window, True)  # before the first frame is drawn
+        window.show()
+        if self.hide_from_capture:
+            apply_capture_protection(window, True)
+
+        def run() -> None:
+            form = window.native
+            if area is not None:
+                import System.Drawing  # type: ignore[import-not-found]
+
+                x, y = centered_in(area, int(form.Width), int(form.Height))
+                form.Location = System.Drawing.Point(x, y)
+            form.TopMost = True
+            form.Activate()
+
+        try:
+            _on_ui_thread(window, run)
+        except Exception:  # noqa: BLE001, S110 - placement and focus are a courtesy
+            pass
+        return True

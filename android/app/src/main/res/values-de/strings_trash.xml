@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Zuletzt gelöscht</string>
+    <string name="trash_empty">„Zuletzt gelöscht“ ist leer.</string>
+    <string name="trash_save_failed">„Zuletzt gelöscht“ konnte auf diesem Telefon nicht gespeichert werden.</string>
+    <string name="trash_reset">„Zuletzt gelöscht“ auf diesem Telefon konnte nicht gelesen werden und wurde zurückgesetzt.</string>
+    <string name="trash_moved">Nach „Zuletzt gelöscht“ verschoben</string>
+    <string name="trash_item_restored">Eintrag wiederhergestellt</string>
+    <string name="trash_restore_needs_pro">Auf Pro upgraden, um mehr Einträge wiederherzustellen</string>
+    <string name="trash_gone">Es ist nicht mehr in „Zuletzt gelöscht“.</string>
+    <string name="trash_cannot_restore">Dieser Eintrag kann nicht wiederhergestellt werden.</string>
+    <string name="trash_vault_unreadable">Der Tresor konnte nicht gelesen werden.</string>
+    <string name="trash_same_id">Ein Eintrag mit derselben ID existiert bereits.</string>
+    <string name="trash_restore_save_failed">Der Eintrag konnte auf diesem Gerät nicht gespeichert werden.</string>
+    <string name="trash_delete_forever">Endgültig löschen</string>
+    <string name="trash_keep_for">Gelöschte Einträge aufbewahren für</string>
+    <string name="trash_empty_all">„Zuletzt gelöscht“ leeren</string>
+    <string name="trash_footer">Gelöschte Einträge bleiben auf diesem Telefon verschlüsselt und werden nach dieser Zeit endgültig entfernt. Sie zählen nicht zu den Einträgen des kostenlosen Tarifs. Ältere Backups können sie noch enthalten.</string>
+    <string name="trash_empty_all_title">„Zuletzt gelöscht“ leeren?</string>
+    <string name="trash_empty_all_message">Jeder Eintrag hier wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="trash_delete_forever_title">Endgültig löschen?</string>
+    <string name="trash_delete_forever_message">„%1$s“ wird endgültig gelöscht. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="trash_removed_soon">bald entfernt</string>
+    <string name="trash_undo">Rückgängig</string>
+    <string name="trash_undo_hint">Stellt den gelöschten Eintrag wieder her</string>
+    <string name="trash_undo_announcement">%1$s. Rückgängig ist möglich.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">noch %1$d Tag</item>
+        <item quantity="other">noch %1$d Tage</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
+</resources>

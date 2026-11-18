@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>LocalGateKeys</title>
+<!-- Safari toolbar popup (Mac and iPhone). It never lists or fills logins and never sees a password:
+     filling stays with Safari AutoFill. Script: popup-safari.js (no inline script, see the manifest CSP). -->
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #FAFAFC; --ink: #1D1D1F; --muted: #6E6E73; --faint: #8E8E93; --line: #E5E5EA;
+    --card: #EEF3FD; --card-ink: #3A3A3C; --acc: #1F6FE5; --acc-hover: #1A5FCC; --acc-ink: #FFFFFF;
+    --on: #34C759; --off: #D1D1D6; --knob: #FFFFFF; --warn: #B3261E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1E1E20; --ink: #F5F5F7; --muted: #A1A1A6; --faint: #8E8E93; --line: #3A3A3C;
+      --card: #1B2A44; --card-ink: #D8DDE6; --acc: #2F7BF0; --acc-hover: #4A8DF5; --acc-ink: #FFFFFF;
+      --on: #30D158; --off: #48484A; --knob: #FFFFFF; --warn: #FF8A80;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { width: 320px; padding: 14px; font: 13px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+  /* iPhone and iPad: Safari shows the popup as a sheet as wide as the screen. */
+  html.ios body { width: auto; min-width: 280px; max-width: 520px; margin: 0 auto; padding: 16px; font-size: 15px; }
+  .head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .head img { width: 32px; height: 32px; border-radius: 8px; flex: none; }
+  .head b { display: block; font-size: 14px; font-weight: 600; }
+  html.ios .head b { font-size: 16px; }
+  .host { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
+  html.ios .host { font-size: 13px; max-width: none; }
+  .host.note { white-space: normal; }
+  .card { background: var(--card); border-radius: 9px; padding: 10px 12px; margin-bottom: 10px; }
+  .card b { display: block; margin-bottom: 3px; font-weight: 600; }
+  .card span { color: var(--card-ink); font-size: 12px; line-height: 1.45; }
+  html.ios .card span { font-size: 14px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .row small { color: var(--muted); font-size: 12px; flex: none; }
+  .switch { position: relative; flex: none; width: 34px; height: 20px; margin: 0; appearance: none; -webkit-appearance: none; border-radius: 10px; background: var(--off); cursor: pointer; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--knob); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s; }
+  .switch:checked { background: var(--on); }
+  .switch:checked::after { transform: translateX(14px); }
+  .switch:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .switch:disabled { opacity: .5; cursor: default; }
+  label.row { cursor: pointer; }
+  .open { display: block; width: 100%; margin-top: 8px; height: 30px; border: 0; border-radius: 7px; background: var(--acc); color: var(--acc-ink); font: inherit; font-weight: 500; cursor: pointer; }
+  .open:hover { background: var(--acc-hover); }
+  .open:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  .open:disabled { opacity: .6; cursor: default; }
+  .loading { margin: 0; padding: 9px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+  .error { margin: 8px 0 0; color: var(--warn); font-size: 12px; }
+  .foot { margin-top: 10px; color: var(--faint); font-size: 11px; line-height: 1.4; }
+  html.ios .foot { font-size: 12px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <img src="icon48.png" alt="">
+    <div><b data-i18n="ext_name">LocalGateKeys</b><span class="host" id="host"></span></div>
+  </div>
+  <div class="card">
+    <b data-i18n="safari_popup_fill_title"></b>
+    <span data-i18n="safari_popup_fill_body"></span>
+  </div>
+  <p class="loading" id="loading" role="status" data-i18n="safari_popup_loading"></p>
+  <label class="row" id="offer-row" hidden>
+    <span data-i18n="safari_popup_offer_save"></span>
+    <input type="checkbox" role="switch" class="switch" id="offer-save">
+  </label>
+  <div class="row" id="waiting-row" hidden>
+    <span id="waiting"></span>
+    <small data-i18n="safari_popup_waiting_when"></small>
+  </div>
+  <button type="button" class="open" id="open-app" data-i18n="safari_popup_open_app" hidden></button>
+  <p class="error" id="error" role="status" hidden></p>
+  <div class="foot" data-i18n="safari_popup_footer"></div>
+  <script src="api.js"></script>
+  <script src="popup-safari.js"></script>
+</body>
+</html>

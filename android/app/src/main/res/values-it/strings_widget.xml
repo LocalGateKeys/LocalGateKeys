@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">Codici fissati</string>
+    <string name="widget_codes_description">I tuoi codici a due fattori fissati.</string>
+    <string name="widget_codes_locked">Sblocca per vedere i codici</string>
+    <string name="widget_codes_empty">Fissa un codice in LocalGateKeys</string>
+    <string name="detail_pin_code">Mostra nel widget</string>
+    <string name="detail_pin_code_note">Il widget della schermata Home mostra questo codice finché LocalGateKeys è sbloccato, fino al blocco automatico.</string>
+    <string name="detail_pin_full">Puoi fissare fino a %1$d codici.</string>
+    <string name="widget_codes_locked_immediately">Imposta il blocco automatico su 1 minuto o più per vedere i codici qui</string>
+    <string name="detail_pin_code_note_immediately">Il blocco automatico è impostato su Subito: LocalGateKeys si blocca quando lo lasci e il widget non può mostrare questo codice. Impostalo su 1 minuto o più nelle Impostazioni per vederlo nella schermata Home.</string>
+    <string name="tile_codes_name">Copia codice</string>
+    <string name="tile_codes_empty">Nessun codice fissato</string>
+    <string name="tile_codes_locked">Sblocca per copiare</string>
+    <string name="tile_codes_locked_subtitle">Bloccato</string>
+    <string name="tile_codes_tap_to_copy">Tocca per copiare</string>
+    <string name="tile_codes_copied">Copiato</string>
+    <string name="tile_codes_no_code">Nessun codice</string>
+</resources>

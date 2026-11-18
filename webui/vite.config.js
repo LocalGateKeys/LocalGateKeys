@@ -14,8 +14,9 @@ export default defineConfig({
     emptyOutDir: true,
     modulePreload: { polyfill: false },
     assetsInlineLimit: 0,
-    // Two pages: the main window and the small popup a fill uses (unlock, choose an account).
-    rollupOptions: { input: { main: 'index.html', popup: 'popup.html' } },
+    // Three pages: the main window, the small popup a fill uses (unlock, choose an account) and the
+    // quick-search palette the quick-access shortcut opens.
+    rollupOptions: { input: { main: 'index.html', popup: 'popup.html', palette: 'palette.html' } },
   },
   test: {
     environment: 'jsdom',

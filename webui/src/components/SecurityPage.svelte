@@ -4,8 +4,10 @@
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
+  import NetworkActivityPanel from './NetworkActivityPanel.svelte';
+  import PowerUserPanel from './PowerUserPanel.svelte';
 
-  let { onclose, onroute } = $props();
+  let { onclose, onroute, active = true } = $props();
   let data = $state(null);
 
   async function load() {
@@ -33,6 +35,8 @@
   <header>
     <h2>{t('securityPage.title')}</h2>
     <Button label={t('securityPage.checkAll')} onclick={() => onroute('health', { scan_all: true })} />
+    <Button label={t('nav.tool.activity')} onclick={() => onroute('activity')} />
+    <Button label={t('hygiene.title')} onclick={() => onroute('hygiene')} />
     <Button label={t('securityPage.emergencyLock')} variant="danger" onclick={emergency} />
     <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
@@ -67,6 +71,8 @@
           {/each}
         </div>
       {/each}
+      <PowerUserPanel />
+      <NetworkActivityPanel {onroute} {active} />
       <p class="foot">{data.footnote}</p>
     </div>
   {/if}
@@ -77,7 +83,7 @@
     position: absolute; inset: 10px; z-index: 30; border-radius: 18px; padding: 16px 18px;
     display: flex; flex-direction: column; background: color-mix(in srgb, var(--wash-base-opaque) 90%, transparent);
   }
-  header { display: flex; align-items: center; gap: 8px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   h2 { margin: 0; flex: 1; font: 600 18px var(--font-display); }
   .close { background: none; border: none; color: var(--text-muted); cursor: pointer; }
   .body { overflow-y: auto; flex: 1; min-height: 0; padding-top: 10px; }

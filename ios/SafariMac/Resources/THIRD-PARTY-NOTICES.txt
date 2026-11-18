@@ -1,0 +1,13 @@
+LocalGateKeys browser extension: third-party notices
+
+Public Suffix List (MPL-2.0)
+----------------------------
+psl-min.json holds the rules of the Public Suffix List by the Mozilla Foundation and its
+contributors (https://publicsuffix.org), reduced to the form lookalike.js reads.
+
+Source: https://publicsuffix.org/list/public_suffix_list.dat (the version is named in the
+"version" field of psl-min.json). psl-min.json is itself the Source Code Form of this file;
+the full list it was reduced from is published at the source address above.
+
+This file is subject to the terms of the Mozilla Public License, v. 2.0. You can obtain a
+copy of the licence at https://mozilla.org/MPL/2.0/.

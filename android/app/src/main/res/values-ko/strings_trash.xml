@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">최근 삭제된 항목</string>
+    <string name="trash_empty">최근 삭제된 항목이 없습니다.</string>
+    <string name="trash_save_failed">이 휴대폰에 최근 삭제됨을 저장할 수 없었습니다.</string>
+    <string name="trash_reset">이 휴대폰의 최근 삭제됨을 읽을 수 없어 초기화되었습니다.</string>
+    <string name="trash_moved">최근 삭제됨으로 이동했습니다</string>
+    <string name="trash_item_restored">항목을 복원했습니다</string>
+    <string name="trash_restore_needs_pro">더 많은 항목을 복원하려면 Pro로 업그레이드하세요</string>
+    <string name="trash_gone">더 이상 최근 삭제됨에 없습니다.</string>
+    <string name="trash_cannot_restore">이 항목은 복원할 수 없습니다.</string>
+    <string name="trash_vault_unreadable">보관함을 읽을 수 없었습니다.</string>
+    <string name="trash_same_id">같은 ID의 항목이 이미 있습니다.</string>
+    <string name="trash_restore_save_failed">이 기기에 항목을 저장할 수 없었습니다.</string>
+    <string name="trash_delete_forever">영구 삭제</string>
+    <string name="trash_keep_for">삭제된 항목 보관 기간</string>
+    <string name="trash_empty_all">최근 삭제됨 비우기</string>
+    <string name="trash_footer">삭제된 항목은 이 휴대폰에 암호화된 상태로 남아 있다가 이 기간이 지나면 완전히 제거됩니다. 무료 플랜의 항목 수에는 포함되지 않습니다. 이전 백업에는 여전히 포함되어 있을 수 있습니다.</string>
+    <string name="trash_empty_all_title">최근 삭제됨을 비울까요?</string>
+    <string name="trash_empty_all_message">여기 있는 모든 항목이 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="trash_delete_forever_title">영구 삭제할까요?</string>
+    <string name="trash_delete_forever_message">‘%1$s’은(는) 영구 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</string>
+    <string name="trash_removed_soon">곧 제거됨</string>
+    <string name="trash_undo">실행 취소</string>
+    <string name="trash_undo_hint">삭제된 항목을 복원합니다</string>
+    <string name="trash_undo_announcement">%1$s. 실행 취소할 수 있습니다.</string>
+    <plurals name="trash_days_left">
+        <item quantity="other">%1$d일 남음</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="other">%1$d일</item>
+    </plurals>
+</resources>

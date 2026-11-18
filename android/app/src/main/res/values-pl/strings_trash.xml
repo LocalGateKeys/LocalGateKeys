@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Ostatnio usunięte</string>
+    <string name="trash_empty">Ostatnio usunięte jest puste.</string>
+    <string name="trash_save_failed">Nie udało się zapisać Ostatnio usuniętych na tym telefonie.</string>
+    <string name="trash_reset">Nie udało się odczytać Ostatnio usuniętych na tym telefonie, więc zostały zresetowane.</string>
+    <string name="trash_moved">Przeniesiono do Ostatnio usuniętych</string>
+    <string name="trash_item_restored">Element przywrócono</string>
+    <string name="trash_restore_needs_pro">Przejdź na Pro, aby przywrócić więcej elementów</string>
+    <string name="trash_gone">Nie ma go już w Ostatnio usuniętych.</string>
+    <string name="trash_cannot_restore">Tego wpisu nie można przywrócić.</string>
+    <string name="trash_vault_unreadable">Nie udało się odczytać sejfu.</string>
+    <string name="trash_same_id">Element o tym samym ID już istnieje.</string>
+    <string name="trash_restore_save_failed">Nie udało się zapisać elementu na tym urządzeniu.</string>
+    <string name="trash_delete_forever">Usuń na zawsze</string>
+    <string name="trash_keep_for">Przechowuj usunięte elementy przez</string>
+    <string name="trash_empty_all">Opróżnij Ostatnio usunięte</string>
+    <string name="trash_footer">Usunięte elementy pozostają zaszyfrowane na tym telefonie i po tym czasie są usuwane na stałe. Nie liczą się do elementów planu darmowego. Starsze kopie zapasowe mogą je nadal zawierać.</string>
+    <string name="trash_empty_all_title">Opróżnić Ostatnio usunięte?</string>
+    <string name="trash_empty_all_message">Każdy element tutaj zostanie usunięty na zawsze. Tego nie można cofnąć.</string>
+    <string name="trash_delete_forever_title">Usunąć na zawsze?</string>
+    <string name="trash_delete_forever_message">„%1$s” zostanie usunięte na zawsze. Tego nie można cofnąć.</string>
+    <string name="trash_removed_soon">wkrótce usunięte</string>
+    <string name="trash_undo">Cofnij</string>
+    <string name="trash_undo_hint">Przywraca usunięty element</string>
+    <string name="trash_undo_announcement">%1$s. Można cofnąć.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">Pozostał %1$d dzień</item>
+        <item quantity="few">Pozostały %1$d dni</item>
+        <item quantity="many">Pozostało %1$d dni</item>
+        <item quantity="other">Pozostało %1$d dnia</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d dzień</item>
+        <item quantity="few">%1$d dni</item>
+        <item quantity="many">%1$d dni</item>
+        <item quantity="other">%1$d dnia</item>
+    </plurals>
+</resources>

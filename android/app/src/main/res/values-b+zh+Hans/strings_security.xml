@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">安全</string>
+    <string name="security_cat_breached">已泄露</string>
+    <string name="security_cat_reused">重复使用</string>
+    <string name="security_cat_weak">弱</string>
+    <string name="security_cat_old">旧</string>
+    <string name="security_cat_no_2fa">可使用 2FA</string>
+    <string name="security_expl_breached">这些密码出现在已知的数据泄露中。请先更改它们。</string>
+    <string name="security_expl_reused">这些密码被多个登录使用。如果其中一个网站泄露，其他网站也会暴露。</string>
+    <string name="security_expl_weak">这些密码太短或容易被猜到。</string>
+    <string name="security_expl_old">这些密码超过一年没有更改。仅凭使用时间长并不是更改它们的理由。</string>
+    <string name="security_expl_no_2fa">此网站提供两步验证码，但此登录没有设置。</string>
+    <string name="security_blocked_offline">严格离线模式已开启，因此泄露检查被阻止。请在“设置 › 泄露检查”中关闭。</string>
+    <string name="security_blocked_disabled">泄露检查已关闭。请在“设置 › 泄露检查”中开启。</string>
+    <string name="security_status_cancelled">泄露检查已取消。</string>
+    <string name="security_status_checking">正在检查密码……</string>
+    <string name="security_status_none_found">未发现已泄露的密码。</string>
+    <string name="security_status_found">发现 %1$d 个已泄露的密码。</string>
+    <string name="security_status_some_failed">有些密码无法检查。请稍后再试。</string>
+    <string name="security_band_none">还没有登录</string>
+    <string name="security_band_good">良好</string>
+    <string name="security_band_fair">一般</string>
+    <string name="security_band_poor">较差</string>
+    <string name="security_empty_hint">添加登录后即可查看密码的健康状况。</string>
+    <string name="security_score_description">安全评分 %1$d（满分 100）</string>
+    <string name="security_no_score">暂无安全评分</string>
+    <string name="security_checks_header">检查</string>
+    <string name="security_breach_header">泄露检查</string>
+    <string name="security_breach_start">检查是否有已泄露的密码</string>
+    <string name="security_cancel">取消</string>
+    <string name="security_checking">正在检查…</string>
+    <string name="security_show_dismissed">再次显示已忽略的项目</string>
+    <string name="security_confirm_title">用 Have I Been Pwned 检查每个密码？</string>
+    <string name="security_confirm_action">检查</string>
+    <string name="security_consent">泄露检查只会通过 HTTPS 并带填充，向 Have I Been Pwned 发送每个密码 SHA-1 哈希值的前 5 个字符，而且仅在您发起检查时才发送。不会发送任何密码、完整哈希值、用户名或网站。该服务会看到您的 IP 地址。</string>
+    <string name="security_nothing_to_fix">这里没有需要修复的内容。</string>
+    <string name="security_dismiss">关闭</string>
+    <string name="security_change_password">更改密码</string>
+    <string name="security_dismiss_item">对此项目忽略</string>
+    <string name="security_row_description">%1$s，%2$d 个项目</string>
+    <string name="security_checks_footer">本地检查仅供参考，不作保证。除非你启动泄露检查，否则不会有任何内容离开这部手机。</string>
+    <string name="security_issue_footer">%1$s 使用登录项的菜单可更改其密码，或在此处将其忽略。</string>
+    <string name="security_row_menu">%1$s 的更多操作</string>
+    <string name="security_untitled">未命名登录</string>
+</resources>

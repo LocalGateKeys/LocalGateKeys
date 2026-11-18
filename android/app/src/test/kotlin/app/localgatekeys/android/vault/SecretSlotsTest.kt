@@ -235,6 +235,67 @@ class SecretSlotsTest {
         assertNull(s.pairedPeer()!!.endpoint)
     }
 
+    // --- the sealed-hello pin (LAN_SYNC_V3.md 2.5)
+
+    private fun entry(s: SecretSlots): Map<String, JsonValue> = CanonicalJson.parse(s.read(Slot.PAIRED_PEER)!!).obj().fields
+
+    @Test fun the_sealed_hello_pin_is_stored_once_and_survives_a_restart() {
+        val s = slots()
+        s.setPairedPeer(peer())
+        assertFalse(s.pairedPeerSealed("dev-1"))
+        assertNull(entry(s)["hello"])
+        assertTrue(s.markPairedPeerSealed("dev-1"))
+        assertEquals(JsonValue.Int(3), entry(s)["hello"])
+        val raw = file().readBytes()
+        assertTrue(s.markPairedPeerSealed("dev-1"))
+        assertArrayEquals("a pinned peer is not written again", raw, file().readBytes())
+        // Read back from the file by a new instance (a restart), and the peer itself still reads the same.
+        val again = slots()
+        assertTrue(again.pairedPeerSealed("dev-1"))
+        assertEquals(peer(), again.pairedPeer())
+        assertFalse(again.pairedPeerSealed("dev-2"))
+        assertFalse("only the paired peer is pinned", again.markPairedPeerSealed("dev-2"))
+    }
+
+    @Test fun the_pin_and_unknown_fields_are_kept_when_the_peer_is_rewritten_and_dropped_with_it() {
+        val s = slots()
+        val withExtra = CanonicalJson.encode(
+            JsonValue.Obj(
+                mapOf(
+                    "device_id" to JsonValue.Str("dev-1"), "group_id" to JsonValue.Str("grp-1"),
+                    "signing_public" to JsonValue.Str(Base64Std.encode(ByteArray(32) { 1 })),
+                    "exchange_public" to JsonValue.Str(Base64Std.encode(ByteArray(32) { 2 })),
+                    "endpoint" to JsonValue.Null, "hello" to JsonValue.Int(3), "future" to JsonValue.Str("kept"),
+                ),
+            ),
+            Dialect.UTF8,
+        )
+        s.write(Slot.PAIRED_PEER, withExtra)
+        assertTrue(s.pairedPeerSealed("dev-1"))
+        // The address moved (discovery): the same peer is rewritten and keeps the pin and the field it does not know.
+        s.setPairedPeer(peer())
+        assertEquals(JsonValue.Int(3), entry(s)["hello"])
+        assertEquals(JsonValue.Str("kept"), entry(s)["future"])
+        assertEquals(peer(), slots().pairedPeer())
+        assertTrue(slots().pairedPeerSealed("dev-1"))
+        // A new pairing (fresh) replaces the entry: no pin comes with it unless that pairing pins.
+        s.setPairedPeer(peer(), fresh = true)
+        assertNull(entry(s)["hello"]); assertNull(entry(s)["future"])
+        assertFalse(s.pairedPeerSealed("dev-1"))
+        s.setPairedPeer(peer(), sealed = true, fresh = true)
+        assertEquals(JsonValue.Int(3), entry(s)["hello"])
+        // Another device in the slot: the old pin does not carry over.
+        s.setPairedPeer(PinnedPeer("dev-2", "grp-1", ByteArray(32) { 1 }, ByteArray(32) { 2 }, null))
+        assertNull(entry(s)["hello"])
+        assertFalse(s.pairedPeerSealed("dev-2"))
+        // Removed only with the peer: deleting the slot clears the in-memory pin too.
+        s.setPairedPeer(peer(), sealed = true, fresh = true)
+        assertTrue(s.pairedPeerSealed("dev-1"))
+        s.delete(Slot.PAIRED_PEER)
+        assertFalse(s.pairedPeerSealed("dev-1"))
+        assertNull(s.pairedPeer())
+    }
+
     @Test fun paired_peer_with_a_non_lan_endpoint_is_refused() {
         val s = slots()
         fun withEndpoint(host: String, port: JsonValue): ByteArray = CanonicalJson.encode(

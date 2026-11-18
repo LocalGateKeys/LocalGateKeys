@@ -74,7 +74,8 @@ BOOLEAN_KEYS = ('fill_and_sign_in', 'lock_on_session_lock', 'lock_on_sleep',
                 'browser_enabled', 'desktop_overlay_enabled', 'start_with_windows',
                 'minimize_to_tray', 'breach_check_enabled', 'strict_offline_mode',
                 'hello_auto_start', 'totp_confirm', 'trash_auto_purge', 'passkeys_enabled',
-                'document_open_enabled', 'hide_from_capture')
+                'document_open_enabled', 'hide_from_capture', 'erase_on_sync_removal',
+                'quick_access_palette', 'windows_passkey_provider', 'restore_test_weekly')
 INTEGER_KEYS = ('auto_lock_seconds', 'max_session_seconds', 'clipboard_clear_seconds',
                 'trash_retention_days', 'automatic_backup_count',
                 'scheduled_backup_weekday', 'scheduled_backup_keep')
@@ -82,7 +83,8 @@ INTEGER_KEYS = ('auto_lock_seconds', 'max_session_seconds', 'clipboard_clear_sec
 
 # Each language under its own name, so it can be found whatever language is showing.
 LANGUAGE_NAMES = {'en': 'English', 'es': 'Español', 'it': 'Italiano', 'pl': 'Polski', 'zh-Hans': '简体中文',
-                  'ja': '日本語', 'de': 'Deutsch', 'pt-BR': 'Português (Brasil)', 'ko': '한국어', 'nl': 'Nederlands'}
+                  'ja': '日本語', 'de': 'Deutsch', 'pt-BR': 'Português (Brasil)', 'ko': '한국어', 'nl': 'Nederlands',
+                  'fr': 'Français'}
 
 
 def language_labels() -> dict[str, str]:

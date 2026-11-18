@@ -55,6 +55,10 @@ class UnlockMethods:
     hello_enrolled: bool = False
     face_enrolled: bool | None = False
     recovery_phrase: bool | None = None
+    # Security key (FIDO2) unlock: offered only where the Windows WebAuthn API is new enough.
+    security_key_available: bool = False
+    security_key_enrolled: bool = False
+    security_key_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -99,7 +103,7 @@ def lock_summary(settings: Any) -> str:
     return " · ".join(parts)
 
 
-def issues_for(health: dict, breached_ids: set[str] | None) -> tuple[Issue, ...]:
+def issues_for(health: dict, breached_ids: set[str] | None, plain_secrets: int = 0) -> tuple[Issue, ...]:
     labels = {str(row.get("id")): str(row.get("label") or "") for row in health.get("rows", ())}
     vault_ids = set(labels)
     out: list[Issue] = []
@@ -128,6 +132,19 @@ def issues_for(health: dict, breached_ids: set[str] | None) -> tuple[Issue, ...]
     if old:
         out.append(Issue("old", len(old), t("security.issue.old.title"),
                          t("security.issue.old.desc"), "neutral", _review(len(old), "old")))
+    http = [str(i) for i in health.get("http_ids", ())]
+    if http:
+        out.append(Issue("http", len(http), t("security.issue.http.title"), t("security.issue.http.desc"), "accent",
+                         _review(len(http), "http", t("security.issue.http.action"))))
+    passkey = [str(i) for i in health.get("passkey_ids", ())]
+    if passkey:
+        out.append(Issue("passkey", len(passkey), t("security.issue.passkey.title"),
+                         t("security.issue.passkey.desc"), "accent",
+                         _review(len(passkey), "passkey", t("security.issue.passkey.action"))))
+    if plain_secrets > 0:  # from the last scan on the Developer page; milder than the rest and not in the score
+        out.append(Issue("plain_secrets", plain_secrets, t("security.issue.plainSecrets.title"),
+                         t("security.issue.plainSecrets.desc"), "neutral",
+                         Action(t("security.issue.plainSecrets.action"), "developer_clicked")))
     return tuple(out)
 
 
@@ -148,6 +165,12 @@ def unlock_panel(methods: UnlockMethods, settings: Any) -> Panel:
             t("security.unlock.hello.title"), t("security.unlock.hello.on") if methods.hello_enrolled else t("security.notSetUp"),
             Action(t("security.btn.manage") if methods.hello_enrolled else t("security.btn.setUp"), "hello_settings_clicked",
                    primary=not methods.hello_enrolled)))
+    if methods.security_key_available:
+        rows.append(PanelRow(
+            t("security.unlock.securityKey.title"),
+            t("security.on") if methods.security_key_enrolled else t("security.notSetUp"),
+            Action(t("security.btn.manage") if methods.security_key_enrolled else t("security.btn.setUp"),
+                   "hello_settings_clicked")))
     face = methods.face_enrolled
     rows.append(PanelRow(
         t("security.unlock.camera.title"), t("security.unavailable") if face is None else (t("security.on") if face else t("security.notSetUp")),
@@ -213,8 +236,24 @@ def privacy_panel(settings: Any) -> Panel:
     ))
 
 
+def _with_access_log(panel: Panel, verified: bool | None) -> Panel:
+    if verified is None:
+        return panel
+    return Panel(panel.title, (*panel.rows, access_log_row(verified)))
+
+
+def access_log_row(verified: bool) -> PanelRow:
+    """The hash-chained access log check: verified, or altered outside the app."""
+    if verified:
+        return PanelRow(t("security.accessLog.verified"), t("security.accessLog.verifiedDesc"),
+                        Action(t("security.accessLog.open"), "developer_clicked"))
+    return PanelRow(t("security.accessLog.altered"), t("security.accessLog.alteredDesc"),
+                    Action(t("security.accessLog.open"), "developer_clicked"), "warning")
+
+
 def security_center(health: dict | None, breached_ids: set[str] | None, methods: UnlockMethods,
-                    backup: BackupStatus, settings: Any, *, now: float | None = None) -> SecurityCenter:
+                    backup: BackupStatus, settings: Any, *, now: float | None = None,
+                    plain_secrets: int = 0, access_log_ok: bool | None = None) -> SecurityCenter:
     """Everything the Security center page shows, from already-computed, secret-free inputs."""
 
     now = time.time() if now is None else now
@@ -222,13 +261,13 @@ def security_center(health: dict | None, breached_ids: set[str] | None, methods:
     vault_ids = {str(row.get("id")) for row in health.get("rows", ())}
     breached = None if breached_ids is None else {str(i) for i in breached_ids} & vault_ids
     overview = health_overview(health, breached)
-    issues = issues_for(health, breached)
+    issues = issues_for(health, breached, plain_secrets)
     return SecurityCenter(
         score=overview.score,
         label=overview.label,
         headline=headline_for(overview.score, overview.label, issues),
         issues=issues,
         panels=(unlock_panel(methods, settings), backup_panel(backup, now), moving_panel(),
-                privacy_panel(settings)),
+                _with_access_log(privacy_panel(settings), access_log_ok)),
         footnote=t("security.footnote"),
     )

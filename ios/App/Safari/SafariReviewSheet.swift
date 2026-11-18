@@ -54,6 +54,9 @@ struct SafariReviewSheet: View {
                 Text(OriginLabel.friendly(item.origin)).font(.body.weight(.semibold)).foregroundStyle(Palette.text)
                 Text(item.username).font(.subheadline).foregroundStyle(Palette.secondaryText).lineLimit(1)
                 Text(Self.detail(item)).font(.footnote).foregroundStyle(Palette.secondaryText).lineLimit(2)
+                if let warning = item.warning {
+                    Label(warning, systemImage: "exclamationmark.triangle.fill").font(.footnote).foregroundStyle(Palette.danger)
+                }
             }
         }
     }

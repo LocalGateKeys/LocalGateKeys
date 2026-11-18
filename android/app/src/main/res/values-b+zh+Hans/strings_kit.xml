@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">应急包</string>
+    <string name="kit_intro">请将此页离线保存，并与手机分开存放。它说明忘记应用密码时如何重新进入 LocalGateKeys。</string>
+    <string name="kit_device">手机</string>
+    <string name="kit_date">日期</string>
+    <string name="kit_version">LocalGateKeys 版本</string>
+    <string name="kit_app_password">应用密码（请手写，或与此页分开保管）：</string>
+    <string name="kit_phrase_heading">恢复短语（%1$d 个单词，按顺序）</string>
+    <string name="kit_steps_heading">如何重新进入</string>
+    <string name="kit_step1">在 LocalGateKeys 锁定屏幕上，点按“%1$s”。</string>
+    <string name="kit_step2">按顺序输入上面的 %1$d 个单词。</string>
+    <string name="kit_step3">选择新的应用密码。你的密码不会改变。</string>
+    <string name="kit_step4">如果手机丢失或保管库不见了，请在新手机上安装 LocalGateKeys，然后恢复最新的备份文件，或从电脑或其他手机同步。</string>
+    <string name="kit_warning">请像对待保管库一样对待此页。带有恢复短语的 PDF 与保管库本身一样敏感：请将纸张锁好，用完后删除已保存的 PDF。</string>
+    <string name="kit_print_with_phrase">打印带此短语的应急包</string>
+    <string name="kit_print_blank">打印应急包（短语框留空）</string>
+</resources>

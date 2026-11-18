@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">Termin przypomnienia</string>
+    <string name="reminder_named_body">Termin: %1$s</string>
+    <string name="reminder_save_failed">Nie udało się zapisać przypomnienia na tym telefonie.</string>
+    <string name="reminder_channel_name">Przypomnienia</string>
+    <string name="reminder_section">Przypomnienie</string>
+    <string name="reminder_due">Termin</string>
+    <string name="reminder_remind_me">Przypomnij mi</string>
+    <string name="reminder_change">Zmień przypomnienie</string>
+    <string name="reminder_remove">Usuń przypomnienie</string>
+    <string name="reminder_add">Dodaj przypomnienie</string>
+    <string name="reminder_suggest_button">Przypomnij mi przed wygaśnięciem</string>
+    <string name="reminder_card_expires">Ta karta wygasa: %1$s.</string>
+    <string name="reminder_due_date">Termin</string>
+    <string name="reminder_on_the_day">W dniu terminu</string>
+    <string name="reminder_upcoming">Nadchodzące</string>
+    <string name="reminder_nothing_upcoming">Nic nie wypada w ciągu najbliższych 30 dni.</string>
+    <string name="reminder_overdue_due">Po terminie · termin: %1$s</string>
+    <string name="reminder_due_on">Termin: %1$s</string>
+    <string name="reminder_snooze">Odłóż</string>
+    <string name="reminder_snooze_day">Odłóż o jeden dzień</string>
+    <string name="reminder_notifications_off">Powiadomienia są wyłączone dla LocalGateKeys. Przypomnienia nadal są tutaj widoczne.</string>
+    <string name="reminder_settings_title">Przypomnienia</string>
+    <string name="reminder_show_names">Pokazuj nazwy elementów w powiadomieniach</string>
+    <string name="reminder_settings_footer">Dodaj przypomnienie z karty, dokumentu lub subskrypcji. Wyłączone: powiadomienia mówią tylko „Termin przypomnienia”, więc nic o elemencie nie pojawia się na ekranie blokady. Włączone: nazwa elementu może pojawić się także na ekranie blokady, zależnie od ustawienia powiadomień na ekranie blokady w telefonie.</string>
+    <string name="reminder_editor_footer">Powiadomienie przychodzi o 9:00 w danym dniu. Mówi tylko „Termin przypomnienia”, chyba że Ustawienia › Przypomnienia pokazują nazwy elementów. Przypomnienia zostają na tym telefonie i nigdy się nie synchronizują.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d dzień wcześniej</item>
+        <item quantity="few">%1$d dni wcześniej</item>
+        <item quantity="many">%1$d dni wcześniej</item>
+        <item quantity="other">%1$d dnia wcześniej</item>
+    </plurals>
+</resources>

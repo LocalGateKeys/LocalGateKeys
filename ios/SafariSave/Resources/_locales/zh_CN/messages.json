@@ -135,13 +135,17 @@
     "message": "已保存。下次打开 LocalGateKeys 时它就会出现。"
   },
   "bg_timeout": {
-    "message": "LocalGateKeys 桥接没有响应。请关闭任何过时的桌面提示，然后再试一次。"
+    "message": "LocalGateKeys 中的批准已超时。请关闭所有打开的 LocalGateKeys 提示后重试。"
   },
   "content_autosignin_skipped": {
     "message": "已填充。由于此表单不受支持或不明确，已跳过自动登录。请手动登录。"
   },
   "content_cancel": {
     "message": "取消"
+  },
+  "panel_fill_login": {
+    "message": "填充",
+    "description": "Button on the right of a login row in the in-page picker; fills that login."
   },
   "content_card": {
     "message": "卡片"
@@ -234,6 +238,12 @@
   },
   "content_err_not_found": {
     "message": "此网站没有已保存的登录。"
+  },
+  "content_err_entry_required": {
+    "message": "请选择要使用此密码的已保存登录。没有用户名的密码绝不会保存为新的登录。"
+  },
+  "content_err_entry_not_for_site": {
+    "message": "该登录未为此网站保存，因此其密码未被更改。"
   },
   "content_err_session_changed": {
     "message": "保管库或配置文件已更改。请再次点击该图标。"
@@ -363,6 +373,9 @@
   "content_signin_question": {
     "message": "您刚刚登录了吗？"
   },
+  "content_frame_blocked": {
+    "message": "此页面阻止了 LocalGateKeys 面板，因此未填写任何内容。请改用浏览器工具栏中的 LocalGateKeys 按钮。"
+  },
   "content_tampered": {
     "message": "此页面隐藏、移动或遮盖了 LocalGateKeys 按钮，因此该次点击已被忽略。"
   },
@@ -454,7 +467,7 @@
     "message": "使用适用于 Windows 的 LocalGateKeys 密码管理器填充并保存登录。该扩展只与您自己电脑上的应用通信。"
   },
   "ext_description_ios": {
-    "message": "提示将您在 Safari 中登录所用的登录保存到此 iPhone 上的 LocalGateKeys。"
+    "message": "提示将您在 Safari 中登录所用的登录保存到此设备 上的 LocalGateKeys。"
   },
   "ext_description_macos": {
     "message": "提示将您在 Safari 中登录所用的登录保存到此 Mac 上的 LocalGateKeys。"
@@ -491,9 +504,6 @@
   },
   "popup_auto_update_failed": {
     "message": "无法更新此网站的自动保存。请重试。"
-  },
-  "popup_checking_connection": {
-    "message": "正在检查连接…"
   },
   "popup_checking_connection_desc": {
     "message": "正在联系 LocalGateKeys，不会解锁您的保管库。"
@@ -554,9 +564,6 @@
       }
     }
   },
-  "popup_current_site": {
-    "message": "当前网站"
-  },
   "popup_diag_agent_offline": {
     "message": "请打开 LocalGateKeys，修复浏览器连接，然后再试一次。"
   },
@@ -597,7 +604,7 @@
     "message": "未找到当前的登录字段。请输入登录信息后再试。"
   },
   "popup_fill_card": {
-    "message": "填充卡片…"
+    "message": "填充卡片"
   },
   "popup_fill_card_desc": {
     "message": "选择一张卡片，勾选字段，在应用中确认"
@@ -629,26 +636,8 @@
   "popup_generate_password_desc": {
     "message": "为注册创建密码"
   },
-  "popup_guidance_checking": {
-    "message": "正在检查 LocalGateKeys，之后才会启用此页面的操作。"
-  },
-  "popup_guidance_connected": {
-    "message": "仅检查此网站的来源。在您选择操作之前不会填充任何内容。"
-  },
-  "popup_guidance_locked": {
-    "message": "选择一个操作以请求解锁；不会自动填充任何内容。"
-  },
-  "popup_guidance_offline": {
-    "message": "请重新连接 LocalGateKeys 以使用此网站的操作。"
-  },
-  "popup_guidance_setup": {
-    "message": "请先完成 LocalGateKeys 设置，再使用此网站的操作。"
-  },
   "popup_integration_disabled": {
     "message": "浏览器集成已暂停。请在 LocalGateKeys 设置中重新启用。"
-  },
-  "popup_local_vault": {
-    "message": "本地保管库"
   },
   "popup_locked_desc": {
     "message": "选择一个操作以继续；桌面应用会在解锁之前询问。"
@@ -660,9 +649,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_manual_by_design": {
-    "message": "设计上需手动操作"
   },
   "popup_need_login_page": {
     "message": "请先打开带有登录表单的 http 或 https 页面。"
@@ -676,9 +662,6 @@
   "popup_page_unreachable": {
     "message": "无法访问此页面。请重新加载页面后再试。"
   },
-  "popup_quick_actions": {
-    "message": "快捷操作"
-  },
   "popup_ready_version": {
     "message": "LocalGateKeys 已就绪$VERSION$。在您选择操作之前不会解锁任何内容。",
     "placeholders": {
@@ -686,9 +669,6 @@
         "content": "$1"
       }
     }
-  },
-  "popup_refresh_connection": {
-    "message": "刷新连接状态"
   },
   "popup_refreshed_locked": {
     "message": "连接已刷新。只有在您选择操作之后才会解锁。"
@@ -700,16 +680,13 @@
     "message": "连接已刷新。请先完成 LocalGateKeys 设置，然后刷新。"
   },
   "popup_save_login": {
-    "message": "保存登录"
+    "message": "保存此登录信息"
   },
   "popup_save_login_desc": {
     "message": "保存这些登录字段"
   },
   "popup_setup_desc": {
     "message": "LocalGateKeys 未报告已就绪的浏览器配置文件。请完成设置，然后刷新。"
-  },
-  "popup_site_hint": {
-    "message": "操作仅限于此页面，并需要您来选择。"
   },
   "popup_started": {
     "message": "$ACTION$已在此页面上开始。",
@@ -719,9 +696,6 @@
       }
     }
   },
-  "popup_state_connected": {
-    "message": "已连接"
-  },
   "popup_state_locked": {
     "message": "已锁定"
   },
@@ -730,12 +704,6 @@
   },
   "popup_state_setup": {
     "message": "需要设置"
-  },
-  "popup_tagline": {
-    "message": "您的密钥，由您掌控。"
-  },
-  "popup_this_page": {
-    "message": "此页面"
   },
   "popup_unlock_on_action": {
     "message": "只有在您选择字段操作之后才会请求解锁。"
@@ -750,5 +718,295 @@
   },
   "popup_wait_checking": {
     "message": "仍在检查 LocalGateKeys。请等待连接状态，然后再试一次。"
+  },
+  "content_generate_password": {
+    "message": "生成密码"
+  },
+  "content_generate_title": {
+    "message": "生成强密码"
+  },
+  "content_generate_body": {
+    "message": "用强密码填写此表单中的新密码字段。"
+  },
+  "gen_title": {
+    "message": "密码生成器"
+  },
+  "gen_mode_password": {
+    "message": "密码"
+  },
+  "gen_mode_passphrase": {
+    "message": "密码短语"
+  },
+  "gen_new": {
+    "message": "重新生成"
+  },
+  "gen_length": {
+    "message": "长度"
+  },
+  "gen_avoid_ambiguous": {
+    "message": "避免相似字符 (l, 1, O, 0)"
+  },
+  "gen_words": {
+    "message": "单词数"
+  },
+  "gen_separator": {
+    "message": "分隔符"
+  },
+  "gen_sep_space": {
+    "message": "空格"
+  },
+  "gen_sep_none": {
+    "message": "无"
+  },
+  "gen_capitalize": {
+    "message": "首字母大写"
+  },
+  "gen_add_number": {
+    "message": "添加数字"
+  },
+  "gen_copy": {
+    "message": "复制"
+  },
+  "gen_fill": {
+    "message": "填入页面"
+  },
+  "gen_copy_failed": {
+    "message": "无法复制。请选中文本后复制。"
+  },
+  "gen_pick_group": {
+    "message": "请至少选择一种字符类型。"
+  },
+  "site_verified": {
+    "message": "已验证的网站"
+  },
+  "site_related": {
+    "message": "相关网站"
+  },
+  "site_lookalike": {
+    "message": "仿冒网站"
+  },
+  "site_new": {
+    "message": "新网站"
+  },
+  "content_guard_title": {
+    "message": "这是正确的网站吗？"
+  },
+  "content_guard_body": {
+    "message": "$HOST$ 看起来像保存了你登录信息的 $SAVED$，但它是另一个网站。只有在确定时才继续。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_guard_body_mixed": {
+    "message": "$HOST$ 混用了不同字母表的字母，这是常见的网络钓鱼手法。只有在确定时才继续。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_continue": {
+    "message": "在 $HOST$ 上继续",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_guard_go_back": {
+    "message": "返回"
+  },
+  "content_same_account_title": {
+    "message": "这是与 $SAVED$ 相同的账户吗？",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_same_account_body": {
+    "message": "$HOST$ 与保存了你登录信息的 $SAVED$ 名称相同，但后缀不同。只有在是同一家公司时才继续。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      },
+      "saved": {
+        "content": "$2"
+      }
+    }
+  },
+  "content_same_account_yes": {
+    "message": "同一账户"
+  },
+  "content_new_site_title": {
+    "message": "此用户名的新网站"
+  },
+  "content_new_site_body": {
+    "message": "你为另一个网站保存了此用户名，从未为 $HOST$ 保存过。如果你没想到此页面会要求输入密码，请检查网址。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_chip_unlocked": {
+    "message": "已解锁"
+  },
+  "popup_chip_checking": {
+    "message": "正在检查"
+  },
+  "popup_logins_heading": {
+    "message": "此网站的登录信息"
+  },
+  "popup_fill_button": {
+    "message": "填充"
+  },
+  "popup_logins_note": {
+    "message": "此网站已保存的登录信息会在页面上打开，绝不会显示在此弹出窗口中。按 Enter 键填充。"
+  },
+  "popup_unlock_button": {
+    "message": "在桌面应用中解锁"
+  },
+  "popup_unlock_explain": {
+    "message": "解锁之前，不会填充或显示任何内容。"
+  },
+  "popup_check_again": {
+    "message": "重新检查"
+  },
+  "popup_auto_label": {
+    "message": "在此网站上询问是否保存登录信息"
+  },
+  "cmd_fill_login": {
+    "message": "填写此页面的登录信息"
+  },
+  "content_use_toolbar": {
+    "message": "请改用浏览器工具栏中的 LocalGateKeys 按钮。"
+  },
+  "content_username_label": {
+    "message": "用户名"
+  },
+  "content_update_which": {
+    "message": "要更新哪个已保存的登录？"
+  },
+  "content_update_pw_title": {
+    "message": "更新已保存的密码？"
+  },
+  "content_update_pw_one": {
+    "message": "此表单设置了新密码，但没有用户名字段。你将在桌面应用中确认此更改。"
+  },
+  "content_update_pw_many": {
+    "message": "此表单设置了新密码，但没有用户名字段。请选择它所属的登录，或选择“以后再说”。"
+  },
+  "content_update_pw_none": {
+    "message": "LocalGateKeys 目前没有可为此网站更新的已保存登录信息。未做任何更改。"
+  },
+  "content_update_pw_for": {
+    "message": "更新 $NAME$ 的密码",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "content_update_pw_action": {
+    "message": "更新"
+  },
+  "content_passkey_title": {
+    "message": "此网站支持通行密钥"
+  },
+  "content_passkey_body": {
+    "message": "你可以在此网站的账户设置中添加通行密钥。LocalGateKeys 也会保留你的密码；除非你在网站上操作，否则不会创建任何内容。"
+  },
+  "content_passkey_never": {
+    "message": "此网站不再询问"
+  },
+  "popup_site_logins_note": {
+    "message": "选择一个登录以在页面上填写。此处从不显示密码。"
+  },
+  "popup_site_logins_empty": {
+    "message": "此网站尚无已保存的登录。"
+  },
+  "popup_popup_only_label": {
+    "message": "在此网站上始终使用此弹出窗口"
+  },
+  "popup_popup_only_on_hint": {
+    "message": "开启：此网站的页面上不显示 LocalGateKeys 图标或菜单；请从这里填写"
+  },
+  "popup_popup_only_off_hint": {
+    "message": "关闭：图标和菜单会显示在此网站的登录字段旁"
+  },
+  "popup_why_no_icon": {
+    "message": "为什么页面上没有图标？"
+  },
+  "popup_why_no_icon_text": {
+    "message": "当登录表单位于其他网站的框架中、会把密码发送到其他网站、被隐藏，或此网站已关闭图标时，LocalGateKeys 不显示图标。在此网站自己的表单上，仍可通过此弹出窗口填写。"
+  },
+  "popup_frame_origin": {
+    "message": "此页面包含来自 $ORIGIN$ 的登录框架。LocalGateKeys 不会从这里填写其他网站的框架。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_clears": {
+    "message": "已复制。如果此弹出窗口保持打开，剪贴板将在 $SECONDS$ 秒后清除。",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_clipboard_cleared": {
+    "message": "剪贴板已清除。"
+  },
+  "safari_popup_fill_title": {
+    "message": "填充此登录"
+  },
+  "safari_popup_fill_body": {
+    "message": "点按电子邮件或密码输入框，然后在 Safari 显示的列表中选择 LocalGateKeys 中的登录信息。"
+  },
+  "safari_popup_offer_save": {
+    "message": "在此网站上提供保存登录信息"
+  },
+  "safari_popup_waiting_one": {
+    "message": "1 个登录信息等待审核"
+  },
+  "safari_popup_waiting_many": {
+    "message": "$COUNT$ 个登录信息等待审核",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "safari_popup_waiting_when": {
+    "message": "下次解锁时"
+  },
+  "safari_popup_open_app": {
+    "message": "打开 LocalGateKeys"
+  },
+  "safari_popup_open_failed": {
+    "message": "无法打开 LocalGateKeys。请从“应用程序”文件夹打开它。"
+  },
+  "safari_popup_footer": {
+    "message": "你的密码留在 App 中。此按钮永远看不到它们。"
+  },
+  "safari_popup_no_site": {
+    "message": "此标签页中没有网站"
+  },
+  "safari_popup_not_allowed": {
+    "message": "LocalGateKeys 尚未获准在此网站上使用。请在 Safari 的扩展设置中允许它。"
+  },
+  "safari_popup_offer_save_full": {
+    "message": "已在 2,000 个网站上关闭保存提示，这是 LocalGateKeys 能记录的上限。请先在不再使用的网站上重新开启。"
+  },
+  "safari_popup_loading": {
+    "message": "正在载入…"
   }
 }

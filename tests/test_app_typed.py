@@ -202,3 +202,123 @@ def test_item_limit_calls_upgrade(env):
     with pytest.raises(ApiError) as full:
         _new(service, "note", "x", {"body": "y"})
     assert full.value.code == "item_limit" and port.upgrades == [0]
+
+
+def _wifi(service, security, **extra):
+    return _new(service, "wifi", "Home", {"ssid": "my;net", "security": security, **extra}, {"password": "wifi-pass-123"})
+
+
+def test_wifi_qr_returns_png(env):
+    import base64
+
+    service, _controller, port = env
+    ref = _wifi(service, "wpa2")
+    port.passwords = [MASTER]
+    result = service.wifi_qr(ref)
+    assert result["ssid"] == "my;net"
+    assert result["png_data_url"].startswith("data:image/png;base64,")
+    assert base64.b64decode(result["png_data_url"].split(",", 1)[1]).startswith(b"\x89PNG")
+    assert "wifi-pass-123" not in json.dumps(result)
+
+
+def test_wifi_qr_enterprise_not_supported(env):
+    service, _controller, port = env
+    ref = _wifi(service, "wpa2-enterprise")
+    with pytest.raises(ApiError) as err:
+        service.wifi_qr(ref)
+    assert err.value.code == "not_supported"
+    assert port.asked == []  # nothing released, so no prompt
+
+
+def test_wifi_qr_respects_strict_reveal(env):
+    service, _controller, port = env
+    ref = _wifi(service, "wpa2")
+    with pytest.raises(ApiError):  # no master password given: the same gate as revealing the password
+        service.wifi_qr(ref)
+    assert port.asked[-1] == "Confirm to reveal password"
+    note = _new(service, "note", "n", {"body": "x"})
+    with pytest.raises(ApiError):
+        service.wifi_qr(note)
+
+
+def test_wifi_qr_defaults_to_wpa2_when_security_missing(env):
+    service, _controller, port = env
+    ref = _new(service, "wifi", "Home", {"ssid": "home"}, {"password": "wifi-pass-123"})
+    with pytest.raises(ApiError):  # still behind the reveal gate
+        service.wifi_qr(ref)
+    port.passwords = [MASTER]
+    assert service.wifi_qr(ref)["png_data_url"].startswith("data:image/png;base64,")
+
+
+def _jwt(exp=None):
+    import base64
+
+    def part(obj):
+        return base64.urlsafe_b64encode(json.dumps(obj).encode()).rstrip(b"=").decode()
+    claims = {"iss": "https://idp.example", "sub": "svc-1", "aud": ["a", "b"], "iat": 1_700_000_000}
+    if exp is not None:
+        claims["exp"] = exp
+    return f"{part({'alg': 'HS256', 'typ': 'JWT'})}.{part(claims)}.c2ln"
+
+
+def test_typed_detail_token_only_after_reveal(env):
+    service, _controller, port = env
+    token = _jwt(exp=1_800_000_000)
+    ref = _new(service, "api_key", "API", {"service": "svc"}, {"key": token, "secret": "plain-secret"})
+    assert token not in json.dumps(service.detail(ref)) and "token" not in service.detail(ref)
+    with pytest.raises(ApiError):
+        service.reveal(ref, "key")
+    assert port.asked[-1] == "Confirm to reveal key"
+    port.passwords = [MASTER]
+    revealed = service.reveal(ref, "key")
+    assert revealed["value"] == token
+    block = revealed["token"]
+    assert (block["alg"], block["typ"], block["iss"], block["sub"], block["aud"]) == (
+        "HS256", "JWT", "https://idp.example", "svc-1", ["a", "b"])
+    assert block["expired"] is False and block["set_expiry_date"] != "" and len(block["exp"]) == 16
+    # A value that is not a JWT, and a copy, carry no token.
+    port.passwords = [MASTER]
+    assert "token" not in service.reveal(ref, "secret")
+    assert "token" not in service.copy(ref, "key")
+
+
+def test_token_ignored_for_other_kinds(env):
+    service, _controller, port = env
+    ref = _new(service, "license", "L", {"product": "p"}, {"license_value": _jwt(exp=1_800_000_000)})
+    port.passwords = [MASTER]
+    assert "token" not in service.reveal(ref, "license_value")
+
+
+def test_set_expiry_from_token(env):
+    service, controller, port = env
+    ref = _new(service, "api_key", "API", {"service": "svc"}, {"key": _jwt(exp=4_000_000_000)})
+    port.passwords = [MASTER]
+    date = service.reveal(ref, "key")["token"]["set_expiry_date"]
+    assert len(date) == 10 and date[:4] in ("2095", "2096")
+    edit = service.open_edit(ref)
+    service.save(ref, "api_key", {"title": "API", "tags": [], "favorite": False,
+                                  "values": {**edit["values"], "expires": date}, "protected": {}, "clear": [],
+                                  "revision": edit["revision"]})
+    item = controller.session.item_service.get_item(ref["id"], include_protected=True)
+    assert item["payload"]["expires"] == date and item["payload"]["key"].count(".") == 2
+    # Once the item has an expiry the action is no longer offered.
+    port.passwords = [MASTER]
+    assert service.reveal(ref, "key")["token"]["set_expiry_date"] == ""
+
+
+def test_reveal_survives_dates_the_platform_cannot_format(env, monkeypatch):
+    service, _controller, port = env
+    token = _jwt(exp=1_800_000_000)
+    ref = _new(service, "api_key", "API", {"service": "svc"}, {"key": token})
+    port.passwords = [MASTER]
+
+    class Broken:
+        @staticmethod
+        def fromtimestamp(_stamp):
+            raise OSError("year out of range")
+
+    monkeypatch.setattr("localvault.app.typed.datetime", Broken)
+    result = service.reveal(ref, "key")
+    assert result["value"] == token
+    assert result["token"]["exp"] == "" and result["token"]["set_expiry_date"] == ""
+

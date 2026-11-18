@@ -63,12 +63,27 @@ enum MacSyncEnvironment {
         },
         release: isRelease)
 
-    /// The sync slots' vault, or nil when this build cannot keep them safely.
-    static let syncKeychain: (any KeychainVault)? = makeSyncKeychain(plan: plan)
+    /// The sync slots' vault for the active profile (`ProfileScope`), or nil when this build cannot keep them safely.
+    static var syncKeychain: (any KeychainVault)? { vaults().sync }
 
     /// The vault `MacVault` uses: the sync vault when there is one, else the shared group (no sync slots are
     /// ever written then: the coordinator refuses every action).
-    static let keychain: any KeychainVault = syncKeychain ?? SystemKeychainVault()
+    static var keychain: any KeychainVault { vaults().main }
+
+    /// Built once per profile (the migration from the shared group runs then); Keychain accounts carry the
+    /// profile's prefix (none for the default profile).
+    private static var cached: (id: String, sync: (any KeychainVault)?, main: any KeychainVault)?
+
+    private static func vaults() -> (sync: (any KeychainVault)?, main: any KeychainVault) {
+        let id = ProfileScope.currentID
+        if let cached, cached.id == id { return (cached.sync, cached.main) }
+        let prefix = ProfileScope.keychainPrefix
+        let sync = makeSyncKeychain(plan: plan, shared: SystemKeychainVault(accountPrefix: prefix),
+                                    appOnly: { SystemKeychainVault(accessGroup: $0, accountPrefix: prefix) })
+        let main = sync ?? SystemKeychainVault(accountPrefix: prefix)
+        cached = (id, sync, main)
+        return (sync, main)
+    }
 
     /// This Mac's name for the keyring and paired devices: the host name, sanitised to at most 40 characters
     /// and 64 UTF-8 bytes; "Mac" when there is none.
@@ -85,12 +100,26 @@ enum MacSyncEnvironment {
     static func makeCoordinator(lock: MacLockModel, keychain: (any KeychainVault)? = MacSyncEnvironment.syncKeychain,
                                 hostName: String? = Host.current().localizedName) -> SyncCoordinator? {
         guard lock.state == .unlocked, let store = lock.store as? PublishingItemStore else { return nil }
-        var deps = SyncDependencies.live(keychain: keychain ?? RefusingKeychainVault())
-        if keychain == nil { deps.unavailableText = unavailableText }
+        // Sub-plan 08: the duress password's second vault never syncs. Its coordinator is inert, over a Keychain that
+        // exists only in memory (none of the real vault's sync keys, peers or folders are read), with no watch file,
+        // no attachment blobs and no removal notice.
+        let second = lock.isSecondSession
+        var deps = SyncDependencies.live(keychain: second ? InMemoryKeychainVault() : (keychain ?? RefusingKeychainVault()))
+        if keychain == nil, !second { deps.unavailableText = unavailableText }
         deps.autoFill = NoAutoFillRefresh()
         deps.deviceName = deviceName(hostName: hostName)
         deps.editDebounceNanos = MacSyncScheduler.editDelayNanos   // Windows: 10 s after the last edit
-        return SyncCoordinator(store: SyncSourceStore(base: store, local: lock), deps: deps, background: PlatformBackgroundTasks.make())
+        deps.watchFile = second ? nil : SyncDependencies.watchFileURL(in: lock.vaultDirectory)   // next to this Mac's vault
+        if second { deps.inert = true; deps.attachmentBlobs = nil }
+        let coordinator = SyncCoordinator(store: SyncSourceStore(base: store, local: lock), deps: deps,
+                                          background: PlatformBackgroundTasks.make())
+        // A verified removal notice: the removal guard erases (setting on), after this run has finished.
+        if !second { coordinator.onRemovalNotice = { MacAppEnvironment.removalGuard?.removedBySync() } }
+        // Shared collections (sub-plan 07): Recently deleted is the lock model's, and `SyncSourceStore` already moves
+        // every live item a commit takes out there. Pro comes from the scheduler (`MacSyncScheduler.unlocked`).
+        coordinator.shareTrash = lock
+        coordinator.storeMovesDeletesToTrash = true
+        return coordinator
     }
 
     /// The hello counter source of the coordinator's Wi-Fi client; the host must use this same one, so the

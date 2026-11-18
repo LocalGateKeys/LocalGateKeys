@@ -136,10 +136,11 @@ def test_generator_reproduces_committed_files_byte_for_byte(tmp_path, monkeypatc
     # from_ios/ and from_android/ are written by the phone cores (LGK_WRITE_FROM_IOS=1 swift test,
     # LGK_WRITE_FROM_ANDROID=1 gradlew :lgk-core:test), not by this generator; mac/ has its own generator
     # (scripts/gen_mac_sync_vectors.py) and checks (tests/test_sync_from_mac.py); attachments/ likewise
-    # (scripts/make_attachment_sync_vectors.py, tests/test_attachment_sync_vectors.py).
+    # (scripts/make_attachment_sync_vectors.py, tests/test_attachment_sync_vectors.py), and removal/
+    # (scripts/gen_removal_vectors.py, tests/test_removal_vectors.py).
     committed = sorted(
         rel for rel in (p.relative_to(VECTORS).as_posix() for p in VECTORS.rglob("*") if p.is_file())
-        if not rel.startswith(("from_ios/", "from_android/", "mac/", "attachments/"))
+        if not rel.startswith(("from_ios/", "from_android/", "mac/", "attachments/", "removal/"))
     )
     assert fresh == committed
     for rel in committed:
@@ -1230,3 +1231,59 @@ def test_witness_cases_match_the_decoder_and_the_rule():
         assert sorted(res.capable) == case["expected"]["capable"], case["name"]
         kinds |= {i.kind for i in res.issues}
     assert kinds == {"peer-vault-rollback", "vault-rollback"}
+
+
+# --- LAN protocol version 3 (docs/formats/LAN_SYNC_V3.md) -------------------------------------
+
+
+def test_lan_v3_sealed_hellos_open_only_for_the_intended_responder() -> None:
+    from localvault.sync import transport as tr
+
+    doc = _json("lan/v3/session.json")
+    assert doc["version_refusal"] == tr.version_refusal().decode("ascii")
+    for session in doc["sessions"]:
+        initiator = _identity(session["initiator_device"])
+        responder = _identity(session["responder_device"])
+        sealed = session["sealed_hello"]
+        first = sealed["initiator_frame"].encode("ascii")
+        if session["name"] == "a-initiates":
+            assert (VECTORS / "lan/v3/sealed_hello_initiator.bin").read_bytes() == len(first).to_bytes(4, "big") + first
+        hello = tr.create_session_hello(
+            initiator, doc["group_id"], bytes.fromhex(session["session_id"]),
+            counter=session["hello"]["initiator"]["counter"], version=3,
+            _nonce=bytes.fromhex(session["hello"]["initiator"]["nonce_hex"]),
+            _ephemeral=bytes.fromhex(session["hello"]["initiator"]["ephemeral_private_hex"]))
+        resealed, ctx = tr.seal_initiator_hello(hello, responder.exchange_public_key,
+                                                _ephemeral=bytes.fromhex(sealed["ephemeral_private_hex"]))
+        assert resealed == first and ctx.key("initiator").hex() == sealed["key_initiator_hex"]
+        opened, rctx = tr.open_initiator_hello(json.loads(first), responder)
+        assert opened.to_bytes().decode("ascii") == session["hello"]["initiator"]["text"]
+        answer = sealed["responder_frame"].encode("ascii")
+        assert tr.open_responder_hello(answer, ctx).to_bytes().decode("ascii") == session["hello"]["responder"]["text"]
+        for outsider in ("A", "B", "C"):
+            if outsider != session["responder_device"]:
+                with pytest.raises(AuthenticationError):
+                    tr.open_initiator_hello(json.loads(first), _identity(outsider))
+        hello.ephemeral_secret.wipe()
+        rctx.wipe()
+
+
+def test_lan_v3_enrollment_reveal_and_code() -> None:
+    from localvault.sync import pairing as pr
+
+    doc = _json("lan/v3/enroll.json")
+    offer = PairingOffer.from_bundle_dict(parse_qr_payload((VECTORS / "lan/v3/qr_payload.txt").read_text("ascii")))
+    assert offer.version == 2 and offer.commit.hex() == doc["commit_hex"]
+    frame = (VECTORS / "lan/v3/enroll_reveal.bin").read_bytes()
+    reveal = pr.open_enrollment_reveal(offer, frame)
+    assert reveal.hex() == doc["reveal_hex"]
+    transcript = doc["request"]["transcript"].encode("ascii")
+    assert pr.verification_code(transcript, reveal) == doc["verification_code"]["code"]
+    invitee = _identity("B")
+    endpoint = (doc["request"]["invitee_endpoint"]["host"], doc["request"]["invitee_endpoint"]["port"])
+    reply = (VECTORS / "lan/v3/enroll_reply.bin").read_bytes()
+    with pytest.raises(PairingError):
+        open_enrollment_reply(offer, invitee, reply, endpoint=endpoint, name=doc["request"]["name"])
+    group_id, epoch, key = open_enrollment_reply(offer, invitee, reply, endpoint=endpoint,
+                                                 name=doc["request"]["name"], reveal=reveal)
+    assert (group_id, epoch, key.hex()) == (doc["reply"]["group_id"], doc["reply"]["epoch"], doc["reply"]["key_hex"])

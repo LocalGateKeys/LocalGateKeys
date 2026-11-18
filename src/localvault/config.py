@@ -377,14 +377,19 @@ def replace_with_retry(source: Path, target: Path) -> None:
 
 def atomic_write_json(path: Path, value: Any) -> None:
     """Owner-only unique temporary file; failed writes never replace the target."""
+    payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    atomic_write_bytes(path, payload.encode("utf-8"))
+
+
+def atomic_write_bytes(path: Path, data: bytes) -> None:
+    """Owner-only unique temporary file; failed writes never replace the target."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     fd, name = tempfile.mkstemp(prefix=".lgk-", suffix=".tmp", dir=path.parent)
     temp = Path(name)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
-            handle.write(payload)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
         _restrict_path(temp)

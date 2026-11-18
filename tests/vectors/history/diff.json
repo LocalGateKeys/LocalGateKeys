@@ -1,0 +1,461 @@
+{
+  "cases": [
+    {
+      "after": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "new-pass-2",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "Work",
+          "Bank"
+        ],
+        "updated_at": 1790000000,
+        "username": "alice@example.com"
+      },
+      "before": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "Work"
+        ],
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": [
+        {
+          "after": "[protected]",
+          "before": "[protected]",
+          "field": "password",
+          "secret": true
+        },
+        {
+          "after": [
+            "Work",
+            "Bank"
+          ],
+          "before": [
+            "Work"
+          ],
+          "field": "tags",
+          "secret": false
+        }
+      ],
+      "kind": "web",
+      "name": "login password and tag change, password masked",
+      "reveal": false
+    },
+    {
+      "after": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "new-pass-2",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "Work",
+          "Bank"
+        ],
+        "updated_at": 1790000000,
+        "username": "alice@example.com"
+      },
+      "before": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "tags": [
+          "Work"
+        ],
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": [
+        {
+          "after": "new-pass-2",
+          "before": "correct-horse-1",
+          "field": "password",
+          "secret": true
+        },
+        {
+          "after": [
+            "Work",
+            "Bank"
+          ],
+          "before": [
+            "Work"
+          ],
+          "field": "tags",
+          "secret": false
+        }
+      ],
+      "kind": "web",
+      "name": "same change revealed",
+      "reveal": true
+    },
+    {
+      "after": {
+        "collection_ids": [],
+        "created_at": 1789999000,
+        "favorite": false,
+        "id": "10000000-0000-4000-8000-000000000200",
+        "kind": "card",
+        "payload": {
+          "billing_address_id": "",
+          "brand": "mastercard",
+          "cardholder": "A Person",
+          "cvv": "123",
+          "expiry": "12/27",
+          "last4": "4444",
+          "notes": "",
+          "number": "5555555555554444",
+          "pin": "",
+          "template_id": ""
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Visa",
+        "updated_at": 1789999500
+      },
+      "before": {
+        "collection_ids": [],
+        "created_at": 1789999000,
+        "favorite": false,
+        "id": "10000000-0000-4000-8000-000000000200",
+        "kind": "card",
+        "payload": {
+          "billing_address_id": "",
+          "brand": "visa",
+          "cardholder": "A Person",
+          "cvv": "123",
+          "expiry": "12/27",
+          "last4": "1111",
+          "notes": "",
+          "number": "4111111111111111",
+          "pin": "",
+          "template_id": ""
+        },
+        "revision": 3,
+        "tags": [],
+        "title": "Visa",
+        "updated_at": 1789999500
+      },
+      "expected": [
+        {
+          "after": "mastercard",
+          "before": "visa",
+          "field": "payload.brand",
+          "secret": false
+        },
+        {
+          "after": "4444",
+          "before": "1111",
+          "field": "payload.last4",
+          "secret": false
+        },
+        {
+          "after": "[protected]",
+          "before": "[protected]",
+          "field": "payload.number",
+          "secret": true
+        }
+      ],
+      "kind": "card",
+      "name": "card number masked, last4 shown",
+      "reveal": false
+    },
+    {
+      "after": {
+        "created_at": 1789999000,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "PIN",
+            "value": "1234"
+          },
+          {
+            "hidden": false,
+            "name": "Branch",
+            "value": "Main"
+          }
+        ],
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "before": {
+        "created_at": 1789999000,
+        "custom_fields": [
+          {
+            "hidden": true,
+            "name": "PIN",
+            "value": "1234"
+          }
+        ],
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": [
+        {
+          "after": [
+            {
+              "hidden": true,
+              "name": "PIN",
+              "value": "1234"
+            },
+            {
+              "hidden": false,
+              "name": "Branch",
+              "value": "Main"
+            }
+          ],
+          "before": [
+            {
+              "hidden": true,
+              "name": "PIN",
+              "value": "1234"
+            }
+          ],
+          "field": "custom_fields",
+          "secret": true
+        }
+      ],
+      "kind": "web",
+      "name": "a list (custom_fields) is one field",
+      "reveal": true
+    },
+    {
+      "after": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "password_history": [
+          {
+            "changed_at": 1790000000,
+            "password": "old"
+          }
+        ],
+        "policy": {
+          "fill": "click",
+          "sign_in": "never"
+        },
+        "revision": 2,
+        "scope": {
+          "browser_approvals": {
+            "x": 2
+          },
+          "origin": "https://example.com"
+        },
+        "site_icon": "BBBB",
+        "updated_at": 1790000000,
+        "username": "alice@example.com"
+      },
+      "before": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "password_history": [],
+        "policy": {
+          "fill": "click",
+          "sign_in": "inherit"
+        },
+        "revision": 1,
+        "scope": {
+          "browser_approvals": {
+            "x": 1
+          },
+          "origin": "https://example.com"
+        },
+        "site_icon": "AAAA",
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": [],
+      "kind": "web",
+      "name": "ignored paths only: no difference",
+      "reveal": false
+    },
+    {
+      "after": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "notes": "call first",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "before": {
+        "created_at": 1789999000,
+        "favorite": true,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": [
+        {
+          "after": null,
+          "before": true,
+          "field": "favorite",
+          "secret": false
+        },
+        {
+          "after": "[protected]",
+          "before": null,
+          "field": "notes",
+          "secret": true
+        }
+      ],
+      "kind": "web",
+      "name": "field added and removed: the missing side is null (also when secret)",
+      "reveal": false
+    },
+    {
+      "after": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "Zed": 5,
+          "origin": "https://example.com",
+          "zeta": 4,
+          "école": 3,
+          "ﬀ": 2,
+          "𝒜": 1
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "before": {
+        "created_at": 1789999000,
+        "id": "10000000-0000-4000-8000-000000000100",
+        "kind": "web",
+        "label": "Example",
+        "password": "correct-horse-1",
+        "scope": {
+          "origin": "https://example.com"
+        },
+        "updated_at": 1789999500,
+        "username": "alice@example.com"
+      },
+      "expected": [
+        {
+          "after": 5,
+          "before": null,
+          "field": "scope.Zed",
+          "secret": false
+        },
+        {
+          "after": 4,
+          "before": null,
+          "field": "scope.zeta",
+          "secret": false
+        },
+        {
+          "after": 3,
+          "before": null,
+          "field": "scope.école",
+          "secret": false
+        },
+        {
+          "after": 2,
+          "before": null,
+          "field": "scope.ﬀ",
+          "secret": false
+        },
+        {
+          "after": 1,
+          "before": null,
+          "field": "scope.𝒜",
+          "secret": false
+        }
+      ],
+      "kind": "web",
+      "name": "non-ASCII paths sort by code point (not UTF-16 units)",
+      "reveal": false
+    },
+    {
+      "after": {
+        "id": "10000000-0000-4000-8000-000000000300",
+        "kind": "identity",
+        "payload": {
+          "first_name": "Anna",
+          "template_id": "b"
+        },
+        "title": "Me"
+      },
+      "before": {
+        "id": "10000000-0000-4000-8000-000000000300",
+        "kind": "identity",
+        "payload": {
+          "first_name": "Ann",
+          "template_id": "a"
+        },
+        "title": "Me"
+      },
+      "expected": [
+        {
+          "after": "[protected]",
+          "before": "[protected]",
+          "field": "payload.first_name",
+          "secret": true
+        },
+        {
+          "after": "b",
+          "before": "a",
+          "field": "payload.template_id",
+          "secret": false
+        }
+      ],
+      "kind": "identity",
+      "name": "identity: every payload field is secret except template_id",
+      "reveal": false
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">緊急キット</string>
+    <string name="kit_intro">このページはオフラインで、スマートフォンとは別の場所に保管してください。アプリのパスワードを忘れたときに LocalGateKeys に戻る手順が書かれています。</string>
+    <string name="kit_device">スマートフォン</string>
+    <string name="kit_date">日付</string>
+    <string name="kit_version">LocalGateKeys のバージョン</string>
+    <string name="kit_app_password">アプリのパスワード（手書きするか、このページとは別に保管してください）：</string>
+    <string name="kit_phrase_heading">リカバリーフレーズ（%1$d 語、順番どおり）</string>
+    <string name="kit_steps_heading">再びログインする手順</string>
+    <string name="kit_step1">LocalGateKeys のロック画面で「%1$s」をタップします。</string>
+    <string name="kit_step2">上の %1$d 語を順番どおりに入力します。</string>
+    <string name="kit_step3">新しいアプリのパスワードを決めます。保存したパスワードは変わりません。</string>
+    <string name="kit_step4">スマートフォンを紛失した場合や保管庫がなくなった場合は、新しいスマートフォンに LocalGateKeys をインストールし、最新のバックアップファイルを復元するか、パソコンや別のスマートフォンから同期してください。</string>
+    <string name="kit_warning">このページは保管庫と同じように扱ってください。リカバリーフレーズ入りで保存した PDF は保管庫そのものと同じくらい重要です。紙は施錠して保管し、保存した PDF は使い終えたら削除してください。</string>
+    <string name="kit_print_with_phrase">このフレーズ入りで緊急キットを印刷</string>
+    <string name="kit_print_blank">緊急キットを印刷（フレーズ欄は空白）</string>
+</resources>

@@ -156,11 +156,11 @@ def test_success_resets_the_wrong_count(env):
 
 
 def test_free_plan_lines_mention_held_back_items(env):
-    env.dialogs.path = _make_backup(env.tmp, 6, "big.lgkm")
+    env.dialogs.path = _make_backup(env.tmp, 9, "big.lgkm")
     chosen = env.service.choose()
     preview = env.service.preview(chosen["handle"], BACKUP_PW)
-    assert preview["lines"][0] == "4 new items"
-    assert "2 items held back by the free plan's 4-item limit" in preview["lines"]
+    assert preview["lines"][0] == "7 new items"
+    assert "2 items held back by the free plan's 7-item limit" in preview["lines"]
 
 
 def test_not_a_backup_file_is_refused_at_choose(env):
@@ -304,23 +304,23 @@ def test_restored_licence_is_adopted_and_asks_to_restore_again(env, monkeypatch)
     service = PhoneBackupService(env.controller, object(), env.dialogs, on_licence=lambda: calls.append(1))
     devices = json.loads((SYNC_VECTORS / "identities.json").read_text(encoding="utf-8"))["devices"]
     licence = ItemState(state["state_id"], {devices["A"]["device_id"]: 1}, False, None, state["wrapper"])
-    env.dialogs.path = _make_backup(env.tmp, 6, "pro.lgkm", extra=[licence])
+    env.dialogs.path = _make_backup(env.tmp, 9, "pro.lgkm", extra=[licence])
     assert licensing.status().state == "free"
     chosen = service.choose()
     preview = service.preview(chosen["handle"], BACKUP_PW)
-    assert "2 items held back by the free plan's 4-item limit" in preview["lines"]
+    assert "2 items held back by the free plan's 7-item limit" in preview["lines"]
     done = service.commit(preview["token"], chosen["handle"])
     assert done["status"] == ("Phone backup restored. Your Pro licence was restored. "
                               "Restore again to bring back the 2 held-back items.")
     assert licensing.status().state == "pro" and calls == [1]
     session = env.controller.session
-    assert session.item_limit is None and session.live_item_count() == 4
+    assert session.item_limit is None and session.live_item_count() == 7
     assert state["state_id"] in session._require_typed_catalog()["sync_licenses"]
     chosen = service.choose()
     again = service.preview(chosen["handle"], BACKUP_PW)
     assert again["lines"][0] == "2 new items"
     service.commit(again["token"], chosen["handle"])
-    assert session.live_item_count() == 6
+    assert session.live_item_count() == 9
 
 
 def test_oversized_file_at_preview_is_refused(env, monkeypatch):
@@ -349,7 +349,7 @@ def test_published_vector_backup_restores_end_to_end(env, monkeypatch):
     assert len(live) == 8  # logins, notes, a bookmark, a desktop login and two conflict copies
     assert all(record["id"] == item_id for item_id, record in live.items())  # the stored form
 
-    env.controller.session.item_limit = None  # a Pro vault: no 4-item cap, two-factor keys kept
+    env.controller.session.item_limit = None  # a Pro vault: no 7-item cap, two-factor keys kept
     env.controller.session.pro_features = None
     env.dialogs.path = str(BACKUP_VECTORS / "backup.lgkm")
     chosen = env.service.choose()

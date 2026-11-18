@@ -73,7 +73,7 @@ def test_backup_header_records_vault_default_kdf_and_accepts_bounded_overrides(t
     default = read_json(_export(tmp_path))
     assert default["version"] == 2
     assert {key: default["kdf"][key] for key in ("name", "time_cost", "memory_cost_kib", "parallelism")} == {
-        "name": "argon2id", "time_cost": 3, "memory_cost_kib": 65536, "parallelism": 4}
+        "name": "argon2id", "time_cost": 3, "memory_cost_kib": 262144, "parallelism": 4}
 
     fast = _export(tmp_path, kdf_overrides=FAST_KDF)
     header = read_json(fast)
@@ -139,3 +139,20 @@ def test_legacy_v1_backup_envelope_still_restores(tmp_path: Path) -> None:
     assert restore_encrypted_backup(legacy, vault_file=tmp_path / "legacy-vault.json", settings_file=None,
                                     backup_password=PASSWORD) == "Legacy"
     assert read_json(tmp_path / "legacy-vault.json")["cipher"]["ciphertext"] == "legacy"
+
+
+def test_encrypted_export_leaves_out_every_device_only_setting(tmp_path: Path) -> None:
+    from localvault.backup import DEVICE_ONLY_SETTINGS
+    vault = tmp_path / "vault.json"
+    settings = tmp_path / "settings.json"
+    backup = tmp_path / "profile.lgk"
+    atomic_write_json(vault, {"cipher": {"ciphertext": "secret"}})
+    atomic_write_json(settings, {"version": 2, "auto_lock_seconds": 300, **{k: "x" for k in DEVICE_ONLY_SETTINGS}})
+    export_encrypted_backup(backup, vault_file=vault, settings_file=settings, profile_name="Alice",
+                            backup_password="correct horse battery staple")
+    settings.unlink()
+    restore_encrypted_backup(backup, vault_file=tmp_path / "v2.json", settings_file=settings,
+                             backup_password="correct horse battery staple")
+    restored = read_json(settings)
+    assert restored["auto_lock_seconds"] == 300
+    assert not set(DEVICE_ONLY_SETTINGS) & set(restored)

@@ -87,7 +87,7 @@ struct GeneratorHeroCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text(model.options.mode == .password ? String(localized: "Password") : String(localized: "Passphrase"))
+                Text(Self.title(model.options.mode))
                     .font(.subheadline).foregroundStyle(Palette.secondaryText)
                 Spacer()
                 Text(model.copied ? String(localized: "Copied") : String(localized: "Tap to copy"))
@@ -116,6 +116,14 @@ struct GeneratorHeroCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { model.copy() }
+    }
+
+    static func title(_ mode: GeneratorOptions.Mode) -> String {
+        switch mode {
+        case .password: String(localized: "Password")
+        case .passphrase: String(localized: "Passphrase")
+        case .answer: String(localized: "Answer")
+        }
     }
 
     /// glowOrange reads well on the dark surface only; on the white surface it is under 2:1, so light mode
@@ -170,7 +178,7 @@ struct StrengthMeter: View {
 
 // MARK: mode
 
-/// Password | Passphrase as a glass capsule; the selected side gets the accent pill (as the tab bar does).
+/// Password | Passphrase | Answer as a glass capsule; the selected side gets the accent pill (as the tab bar does).
 struct GlassModePicker: View {
     @Binding var mode: GeneratorOptions.Mode
     @SwiftUI.Namespace private var pill
@@ -179,6 +187,7 @@ struct GlassModePicker: View {
         HStack(spacing: 4) {
             segment(.password, String(localized: "Password"))
             segment(.passphrase, String(localized: "Passphrase"))
+            segment(.answer, String(localized: "Answer"))
         }
         .padding(4)
         .frame(minHeight: 48)
@@ -210,6 +219,9 @@ struct GlassModePicker: View {
 
 /// The options for the current mode, as rows with SF Symbols on a solid card.
 struct GeneratorOptionsCard: View {
+    /// Icon tiles grow with Dynamic Type (review 2026-11-15, UX 3).
+    @ScaledMetric(relativeTo: .body) var iconSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .body) var tileSize: CGFloat = 30
     @Binding var options: GeneratorOptions
 
     static let sliderLengthRange = 8...64
@@ -229,8 +241,10 @@ struct GeneratorOptionsCard: View {
                 toggle(String(localized: "Symbols"), "asterisk", $options.symbols)
                 divider
                 toggle(String(localized: "Avoid look-alike characters"), "eye.slash", $options.avoidAmbiguous)
+            } else if options.mode == .answer {
+                wordsRow($options.answerWords, in: PasswordGenerator.answerWordsRange)
             } else {
-                wordsRow
+                wordsRow($options.words, in: PasswordGenerator.wordsRange)
                 divider
                 separatorRow
                 divider
@@ -247,9 +261,9 @@ struct GeneratorOptionsCard: View {
 
     private func icon(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 15, weight: .semibold))
+            .font(.system(size: iconSize, weight: .semibold))
             .foregroundStyle(Palette.accentText)
-            .frame(width: 30, height: 30)
+            .frame(width: tileSize, height: tileSize)
             .background(Palette.innerTile, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .accessibilityHidden(true)
     }
@@ -284,20 +298,20 @@ struct GeneratorOptionsCard: View {
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
-    private var wordsRow: some View {
+    private func wordsRow(_ words: Binding<Int>, in range: ClosedRange<Int>) -> some View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
                 icon("text.word.spacing")
                 Text("Words").foregroundStyle(Palette.text)
                 Spacer()
-                Text("\(options.words)")
+                Text("\(words.wrappedValue)")
                     .font(.body.monospacedDigit().weight(.semibold)).foregroundStyle(Palette.text)
             }
-            Slider(value: Self.sliderBinding($options.words, in: PasswordGenerator.wordsRange),
-                   in: Double(PasswordGenerator.wordsRange.lowerBound)...Double(PasswordGenerator.wordsRange.upperBound), step: 1)
+            Slider(value: Self.sliderBinding(words, in: range),
+                   in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
                 .tint(Palette.accent)
                 .accessibilityLabel("Words")
-                .accessibilityValue("\(options.words) words")
+                .accessibilityValue("\(words.wrappedValue) words")
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }

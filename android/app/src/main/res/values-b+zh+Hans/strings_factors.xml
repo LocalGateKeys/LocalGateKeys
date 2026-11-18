@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">此保管库还需要其密钥文件。</string>
+    <string name="factors_required_yubikey">此保管库还需要其 YubiKey。</string>
+    <string name="factors_required_both">此保管库还需要其密钥文件和 YubiKey。</string>
+    <string name="factors_keyfile_mismatch">这不是此保管库使用的密钥文件。</string>
+    <string name="factors_yubikey_mismatch">这不是此保管库使用的 YubiKey。</string>
+    <string name="factors_keyfile_invalid">此文件不能用作密钥文件。</string>
+    <string name="factors_yubikey_bad_answer">YubiKey 未正确响应。请检查插槽 %1$d 是否设置为 HMAC-SHA1 质询-响应。</string>
+    <string name="factors_yubikey_removed">请再次触摸 YubiKey。</string>
+    <string name="factors_yubikey_timeout">未检测到触摸。YubiKey 闪烁时请触摸它。</string>
+    <string name="factors_yubikey_slot_not_configured">此 YubiKey 的插槽 %1$d 未设置为质询-响应。请在 Yubico Authenticator 中选择 Slots，然后将插槽 %1$d 设置为 Challenge-response (HMAC-SHA1)。</string>
+    <string name="factors_keyfile_unreadable">无法读取密钥文件 %1$s。请重新选择。</string>
+    <string name="factors_keyfile_too_large">该文件太大，不能作为密钥文件。</string>
+    <string name="factors_removed_by_phrase">已移除密钥文件 / YubiKey；请重新添加。</string>
+    <string name="factors_prompt_no_keyfile">未选择密钥文件</string>
+    <string name="factors_prompt_keyfile">密钥文件：%1$s</string>
+    <string name="factors_prompt_choose">选择密钥文件…</string>
+    <string name="factors_touch_title">请触摸 YubiKey</string>
+    <string name="factors_section">密钥文件和 YubiKey</string>
+    <string name="factors_keyfile">密钥文件</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">已设置密钥文件</string>
+    <string name="factors_keyfile_none">无密钥文件</string>
+    <string name="factors_yubikey_set">已设置 YubiKey（插槽 %1$d）</string>
+    <string name="factors_yubikey_none">无 YubiKey</string>
+    <string name="factors_add_keyfile">添加密钥文件…</string>
+    <string name="factors_create_keyfile">创建密钥文件…</string>
+    <string name="factors_add_yubikey">添加 YubiKey</string>
+    <string name="factors_slot">插槽</string>
+    <string name="factors_remove_keyfile">移除密钥文件</string>
+    <string name="factors_remove_yubikey">移除 YubiKey</string>
+    <string name="factors_remove_confirm">此后，解锁保管库不再需要此因素。</string>
+    <string name="factors_keyfile_added">已添加密钥文件 %1$s。</string>
+    <string name="factors_keyfile_created">已创建并添加密钥文件 %1$s。请将副本保存在安全的地方。</string>
+    <string name="factors_yubikey_added">已添加 YubiKey（插槽 %1$d）。</string>
+    <string name="factors_keyfile_removed">已移除密钥文件。</string>
+    <string name="factors_yubikey_removed_done">已移除 YubiKey。</string>
+    <string name="factors_yubikey_setup">LocalGateKeys 从不编程你的 YubiKey。请在 Yubico Authenticator 中设置：Slots、Challenge-response、HMAC-SHA1、插槽 2（或插槽 1）。备份 YubiKey 需要相同的密钥。</string>
+    <string name="factors_always_ask">始终要求密钥文件 / YubiKey</string>
+    <string name="factors_always_ask_needs_factor">请先添加密钥文件或 YubiKey。</string>
+    <string name="factors_shortcuts_off">请先关闭“始终要求密钥文件 / YubiKey”。</string>
+    <string name="factors_failed">无法更改密钥文件或 YubiKey。</string>
+    <string name="factors_yubikey_no_transport">请打开 NFC 以将 YubiKey 靠近手机，或插入 YubiKey。</string>
+    <string name="factors_prompt_remember">在此手机上记住此密钥文件</string>
+    <string name="factors_prompt_yubikey">请将 YubiKey 靠近手机背面，或插入后触摸它（插槽 %1$d）。</string>
+    <string name="factors_sheet_title">打开 LocalGateKeys 以解锁</string>
+    <string name="factors_sheet_text">应用密码需要其密钥文件或 YubiKey，只有应用可以请求它们。</string>
+    <string name="factors_sheet_open">打开 LocalGateKeys</string>
+    <string name="factors_needs_app_password">打开应用密码后即可添加密钥文件或 YubiKey</string>
+    <string name="factors_footer">之后除应用密码外还需要密钥文件或 YubiKey。恢复短语仍可在没有它们的情况下解锁。</string>
+    <string name="factors_always_ask_note">设有密钥文件或 YubiKey 时关闭指纹或面部解锁。</string>
+    <string name="factors_remember">在此手机上记住密钥文件的位置</string>
+    <string name="factors_password_text">请输入应用密码。已设置的密钥文件或 YubiKey 也会被要求。</string>
+    <string name="factors_add_confirm">从现在起，解锁需要应用密码和此要素。恢复短语仍可在没有它的情况下解锁。</string>
+</resources>

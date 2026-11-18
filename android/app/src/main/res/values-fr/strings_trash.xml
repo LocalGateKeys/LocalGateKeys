@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Recently deleted and Undo (UX workstream 3, Android parity Task 3). -->
+<resources>
+    <string name="trash_title">Supprimés récemment</string>
+    <string name="trash_empty">« Supprimés récemment » est vide.</string>
+    <string name="trash_save_failed">« Supprimés récemment » n’a pas pu être enregistré sur ce téléphone.</string>
+    <string name="trash_reset">« Supprimés récemment » sur ce téléphone n’a pas pu être lu et a été réinitialisé.</string>
+    <string name="trash_moved">Déplacé dans « Supprimés récemment »</string>
+    <string name="trash_item_restored">Élément restauré</string>
+    <string name="trash_restore_needs_pro">Passez à Pro pour restaurer d’autres éléments</string>
+    <string name="trash_gone">Il ne figure plus dans « Supprimés récemment ».</string>
+    <string name="trash_cannot_restore">Cette entrée ne peut pas être restaurée.</string>
+    <string name="trash_vault_unreadable">Le coffre-fort n’a pas pu être lu.</string>
+    <string name="trash_same_id">Un élément avec le même identifiant existe déjà.</string>
+    <string name="trash_restore_save_failed">L’élément n’a pas pu être enregistré sur cet appareil.</string>
+    <string name="trash_delete_forever">Supprimer définitivement</string>
+    <string name="trash_keep_for">Conserver les éléments supprimés pendant</string>
+    <string name="trash_empty_all">Vider « Supprimés récemment »</string>
+    <string name="trash_footer">Les éléments supprimés restent chiffrés sur ce téléphone et sont effacés définitivement après ce délai. Ils ne comptent pas dans les éléments de l’offre gratuite. D’anciennes sauvegardes peuvent encore les contenir.</string>
+    <string name="trash_empty_all_title">Vider « Supprimés récemment » ?</string>
+    <string name="trash_empty_all_message">Tous les éléments ici sont supprimés définitivement. Cette action est irréversible.</string>
+    <string name="trash_delete_forever_title">Supprimer définitivement ?</string>
+    <string name="trash_delete_forever_message">« %1$s » est supprimé définitivement. Cette action est irréversible.</string>
+    <string name="trash_removed_soon">bientôt supprimé</string>
+    <string name="trash_undo">Annuler</string>
+    <string name="trash_undo_hint">Restaure l’élément supprimé</string>
+    <string name="trash_undo_announcement">%1$s. Vous pouvez annuler.</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d jour restant</item>
+        <item quantity="many">%1$d jours restants</item>
+        <item quantity="other">%1$d jours restants</item>
+    </plurals>
+    <plurals name="trash_days">
+        <item quantity="one">%1$d jour</item>
+        <item quantity="many">%1$d jours</item>
+        <item quantity="other">%1$d jours</item>
+    </plurals>
+</resources>

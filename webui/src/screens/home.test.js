@@ -7,6 +7,7 @@ import LoginEditor from '../components/LoginEditor.svelte';
 import Generator from '../components/Generator.svelte';
 import Palette from '../components/Palette.svelte';
 import NewItem from '../components/NewItem.svelte';
+import Overview from '../components/Overview.svelte';
 import Label from '../test/Label.svelte';
 import { ALPHA, NOTE, UNLOCKED, emit, fakeApi } from '../test/fakeApi.js';
 
@@ -22,6 +23,27 @@ describe('Home list and sidebar', () => {
     expect(screen.getByRole('option', { name: /Router/ })).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: /Favorites/ }));
     await waitFor(() => expect(api.items_list).toHaveBeenLastCalledWith('favorite', null, ''));
+  });
+
+  it('closes the password generator when another sidebar entry is clicked', async () => {
+    const nav = await api.nav_get();
+    nav.groups[2].entries.push({ label: 'Password generator', icon: 'nav.generator', token: null, count: null, action: 'password_generator_clicked' });
+    api.nav_get.mockResolvedValue(nav);
+    render(Home, { vault: UNLOCKED });
+    await screen.findByRole('option', { name: /Alpha/ });
+    const open = async () => {
+      await fireEvent.click(await screen.findByRole('button', { name: /Password generator/ }));
+      expect(await screen.findByRole('dialog', { name: /generator/i })).toBeInTheDocument();
+    };
+    await open();
+    await fireEvent.click(screen.getByRole('button', { name: /Trash/ }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /generator/i })).toBeNull());
+    await open();
+    await fireEvent.click(screen.getByRole('button', { name: /Favorites/ }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /generator/i })).toBeNull());
+    await open();
+    await fireEvent.click(screen.getByRole('button', { name: /Settings/ }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /generator/i })).toBeNull());
   });
 
   it('shows chips only when their count is above zero', async () => {
@@ -114,6 +136,17 @@ describe('Home list and sidebar', () => {
     expect(screen.queryByRole('combobox', { name: 'Sort by' })).not.toBeInTheDocument();
   });
 
+  it('shows the sort choices with the current one selected, even when no options are sent', async () => {
+    api.items_list.mockResolvedValue({ ok: true, items: [ALPHA], count: 1, chips: { attention: 0, no2fa: 0, expiring: 0 },
+      context: { title: 'All items', text: '' }, empty: null,
+      sort: { option: 'modified_desc', favorites_first: true, options: [] } });
+    render(Home, { vault: UNLOCKED });
+    const select = await screen.findByRole('combobox', { name: 'Sort by' });
+    await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(4));
+    expect(select.value).toBe('modified_desc');
+    expect(within(select).getByRole('option', { name: 'Date modified' }).selected).toBe(true);
+  });
+
   it('reloads the list on items.changed', async () => {
     render(Home, { vault: UNLOCKED });
     await screen.findByRole('option', { name: /Alpha/ });
@@ -162,7 +195,8 @@ describe('DetailPane', () => {
   it('a secure note stays masked until revealed', async () => {
     const api = fakeApi({ typed_detail: vi.fn().mockResolvedValue({ ok: true, kind: 'note', title: 'Router', subtitle: 'Secure note',
       fields: [{ name: 'body', label: 'Note body', value: null, protected: true, present: true }], tags: [], favorite: false }),
-      typed_reveal: vi.fn().mockResolvedValue({ ok: true, value: 'line one' + String.fromCharCode(10) + 'line two', mask_after: 30 }) });
+      typed_reveal: vi.fn().mockResolvedValue({ ok: true, value: 'line one' + String.fromCharCode(10) + 'line two', mask_after: 30 }),
+      notes_formatting_get: vi.fn().mockResolvedValue({ ok: true, enabled: false }) });
     const selected = { source: 'typed', id: 'n1', kind: 'note' };
     render(DetailPane, { selected });
     expect(await screen.findByText('••••••••••••')).toBeInTheDocument();
@@ -176,6 +210,68 @@ describe('DetailPane', () => {
       has_password: true, has_totp: true, strict: true, notes: null, tags: [], target: '', origin: null, favorite: false, actions: ['edit'] }) });
     render(DetailPane, { selected: ALPHA.ref });
     expect(await screen.findByText('Hidden · click to show')).toBeInTheDocument();
+  });
+});
+
+describe('Wi-Fi QR', () => {
+  const wifi = (security) => ({ ok: true, kind: 'wifi', title: 'Home', subtitle: 'Wi-Fi network', tags: [], favorite: false,
+    fields: [{ name: 'security', label: 'Security', value: security, protected: false, present: true }] });
+  const selected = { source: 'typed', id: 'w1', kind: 'wifi' };
+
+  it('shows the QR in a dialog with the hint and drops it on close', async () => {
+    const api = fakeApi({ typed_detail: vi.fn().mockResolvedValue(wifi('wpa2')),
+      typed_wifi_qr: vi.fn().mockResolvedValue({ ok: true, png_data_url: 'data:image/png;base64,AAAA', ssid: 'HomeNet' }) });
+    render(DetailPane, { selected });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Show QR' }));
+    await waitFor(() => expect(api.typed_wifi_qr).toHaveBeenCalledWith(selected));
+    expect(await screen.findByRole('dialog', { name: 'HomeNet' })).toBeInTheDocument();
+    expect(screen.getByText(/image contains the Wi-Fi password/)).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('img[src^="data:image/png"]')).toBeNull();
+  });
+
+  it('enterprise networks get a note instead of the button', async () => {
+    fakeApi({ typed_detail: vi.fn().mockResolvedValue(wifi('wpa2-enterprise')) });
+    render(DetailPane, { selected });
+    expect(await screen.findByText(/Enterprise networks can't be shared/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show QR' })).toBeNull();
+  });
+});
+
+describe('JWT token on API-key items', () => {
+  const selected = { source: 'typed', id: 'k1', kind: 'api_key' };
+  const detail = { ok: true, kind: 'api_key', title: 'API', subtitle: 'API key', tags: [], favorite: false, revision: 2,
+    fields: [{ name: 'key', label: 'Key', value: null, protected: true, present: true }] };
+  const token = { alg: 'HS256', typ: 'JWT', iss: 'https://idp.example', sub: 'svc', aud: ['a'], iat: '2023-11-14 22:13',
+    nbf: '', exp: '2027-01-15 08:00', expired: true, set_expiry_date: '2027-01-15' };
+
+  it('shows the decoded token only after reveal and hides it again', async () => {
+    fakeApi({ typed_detail: vi.fn().mockResolvedValue(detail),
+      typed_reveal: vi.fn().mockResolvedValue({ ok: true, value: 'a.b.c', mask_after: 30, token }) });
+    render(DetailPane, { selected });
+    await screen.findByText('Key');
+    expect(screen.queryByText('Signature not checked')).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: "Reveal key" }));
+    expect(await screen.findByText('Signature not checked')).toBeInTheDocument();
+    expect(screen.getByText('HS256 · JWT')).toBeInTheDocument();
+    expect(screen.getByText('Expired')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: "Hide key" }));
+    expect(screen.queryByText('Signature not checked')).toBeNull();
+  });
+
+  it('Set expiry from token saves the date through typed_save', async () => {
+    const api = fakeApi({ typed_detail: vi.fn().mockResolvedValue(detail),
+      typed_open: vi.fn().mockResolvedValue({ ok: true, kind: 'api_key', title: 'API', tags: ['x'], favorite: false,
+        collection_ids: [], revision: 2, values: { service: 'svc' }, protected_present: { key: true } }),
+      typed_reveal: vi.fn().mockResolvedValue({ ok: true, value: 'a.b.c', mask_after: 30, token }) });
+    render(DetailPane, { selected });
+    await fireEvent.click(await screen.findByRole('button', { name: "Reveal key" }));
+    await fireEvent.click(await screen.findByRole('button', { name: 'Set expiry from token' }));
+    await waitFor(() => expect(api.typed_save).toHaveBeenCalledWith(selected, 'api_key', {
+      title: 'API', tags: ['x'], favorite: false, values: { service: 'svc', expires: '2027-01-15' },
+      protected: {}, clear: [], revision: 2 }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Set expiry from token' })).toBeNull());
   });
 });
 
@@ -259,11 +355,46 @@ describe('Generator, palette and new item', () => {
     await waitFor(() => expect(api.palette_run).toHaveBeenCalledWith('lock-now'));
   });
 
+  it('palette names the open vault', async () => {
+    const api = fakeApi();
+    api.palette_query.mockResolvedValue({ ok: true, rows: [], vault: 'Work' });
+    render(Palette, { onclose: vi.fn(), onopen: vi.fn(), onnavigate: vi.fn() });
+    expect(await screen.findByText('Vault: Work')).toBeInTheDocument();
+  });
+
+  it('change password: the new password is copied only after the click', async () => {
+    const api = fakeApi();
+    const view = { ok: true, draft_id: 'd1', kind: 'web', is_new: false, label: 'Alpha', label_hint: '', urls: [{ url: 'https://alpha.test', match: 'exact_origin' }],
+      username: 'ann', password_set: false, favorite: false, tags: [], notes: '', totp_configured: false, policy: {}, errors: [], strength: null, dirty: false };
+    api.login_open.mockResolvedValue(view);
+    api.login_regenerate.mockResolvedValue({ ...view, password_set: true, dirty: true });
+
+    render(LoginEditor, { ref: ALPHA.ref, newPassword: true, onclose: vi.fn() });
+    const copy = await screen.findByRole('button', { name: 'Copy new password' });
+    expect(api.login_copy_password).not.toHaveBeenCalled();
+    await fireEvent.click(copy);
+    await waitFor(() => expect(api.login_copy_password).toHaveBeenCalledWith('d1'));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Copy new password' })).not.toBeInTheDocument());
+  });
+
   it('new item: website login opens the editor; other kinds say later', async () => {
     const onchoose = vi.fn();
     render(NewItem, { onchoose, onclose: vi.fn() });
     await fireEvent.click(screen.getByRole('button', { name: /Website login/ }));
     expect(onchoose).toHaveBeenCalledWith('web');
+  });
+});
+
+describe('Generator answer tab', () => {
+  it('switches to Answer and steps the word count between 2 and 6', async () => {
+    const api = fakeApi({ generator_get: vi.fn().mockResolvedValue({ ok: true, options: { mode: 'password', answer_words: 2 } }),
+      generator_generate: vi.fn().mockImplementation(async (o) => ({ ok: true, value: 'correct horse', health: 'h', options: { ...o } })) });
+    render(Generator, { onclose: () => {} });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Answer' }));
+    await waitFor(() => expect(api.generator_generate).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'answer' })));
+    expect(await screen.findByRole('button', { name: 'Fewer words' })).toBeDisabled();
+    await fireEvent.click(screen.getByRole('button', { name: 'More words' }));
+    await waitFor(() => expect(api.generator_generate).toHaveBeenLastCalledWith(expect.objectContaining({ answer_words: 3 })));
   });
 });
 
@@ -302,6 +433,35 @@ describe('Rating prompt', () => {
   });
 });
 
+describe('Moved to the Microsoft Store notice', () => {
+  const notice = { ok: true, due: true, title: 'LocalGateKeys has moved to the Microsoft Store', text: 'Your vault stays where it is.' };
+
+  it('comes first after unlock and opens the Store on request', async () => {
+    const api = fakeApi({ store_move_notice: vi.fn().mockResolvedValue(notice),
+      store_move_answer: vi.fn().mockResolvedValue({ ok: true }),
+      updates_reminder: vi.fn(), rating_prompt: vi.fn() });
+    render(Home, { vault: UNLOCKED });
+    expect(await screen.findByText('Your vault stays where it is.')).toBeInTheDocument();
+    expect(api.updates_reminder).not.toHaveBeenCalled();
+    expect(api.rating_prompt).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Open Microsoft Store' }));
+    await waitFor(() => expect(api.store_move_answer).toHaveBeenCalledWith(true));
+  });
+
+  it('Later sends false; builds without the notice fall through to the update reminder', async () => {
+    let api = fakeApi({ store_move_notice: vi.fn().mockResolvedValue(notice), store_move_answer: vi.fn().mockResolvedValue({ ok: true }) });
+    const first = render(Home, { vault: UNLOCKED });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Later' }));
+    await waitFor(() => expect(api.store_move_answer).toHaveBeenCalledWith(false));
+    first.unmount();
+    api = fakeApi({ store_move_notice: vi.fn().mockResolvedValue({ ok: true, due: false }),
+      updates_reminder: vi.fn().mockResolvedValue({ ok: true, due: true, title: 'Check for updates?', text: 'Old.' }) });
+    render(Home, { vault: UNLOCKED });
+    await screen.findByRole('button', { name: 'Check now' });
+    expect(api.updates_reminder).toHaveBeenCalled();
+  });
+});
+
 describe('CodesCard', () => {
   const code = (id, title, extra) => ({ ref: { source: 'credential', id, kind: 'web' }, title, username: 'ann',
     origin: null, icon: null, ...extra });
@@ -337,6 +497,34 @@ describe('CodesCard', () => {
   });
 });
 
+describe('CodesCard collapse', () => {
+  const codes = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ ref: { source: 'credential', id: `c${n}`, kind: 'web' }, title: `Site ${n}`,
+    username: 'ann', origin: null, icon: null, code: `00${n} 000`, remaining: 20, period: 30 }));
+
+  it('collapses to the header row, renders no codes, and remembers the choice', async () => {
+    const api = fakeApi({ codes_list: vi.fn().mockResolvedValue({ ok: true, codes, collapsed: false }) });
+    const { container } = render(CodesCard);
+    expect(await screen.findByText('001 000')).toBeInTheDocument();
+    const toggle = screen.getByRole('button', { name: 'Collapse one-time codes' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await fireEvent.click(toggle);
+    expect(api.codes_collapsed_set).toHaveBeenCalledWith(true);
+    expect(screen.getByRole('button', { name: 'Expand one-time codes' })).toHaveAttribute('aria-expanded', 'false');
+    expect(container.textContent).not.toMatch(/00\d 000/);
+    expect(screen.queryByRole('button', { name: /Show all/ })).toBeNull();
+    expect(screen.getByRole('region', { name: 'One-time codes' })).toHaveTextContent('One-time codes · 7');
+  });
+
+  it('starts collapsed when the saved choice says so', async () => {
+    fakeApi({ codes_list: vi.fn().mockResolvedValue({ ok: true, codes, collapsed: true }) });
+    const { container } = render(CodesCard);
+    expect(await screen.findByRole('button', { name: 'Expand one-time codes' })).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/00\d 000/);
+    await fireEvent.click(screen.getByRole('button', { name: 'Expand one-time codes' }));
+    expect(screen.getByText('004 000')).toBeInTheDocument();
+  });
+});
+
 describe('Live language switch', () => {
   it('re-renders a translated label when language_changed fires', async () => {
     const api = fakeApi({ i18n_bundle: vi.fn().mockResolvedValue({ ok: true, lang: 'de', messages: { 'settings.language.label': 'Sprache' } }) });
@@ -345,5 +533,57 @@ describe('Live language switch', () => {
     emit('language_changed', { lang: 'de' });
     await waitFor(() => expect(screen.getByTestId('label')).toHaveTextContent('Sprache'));
     expect(api.i18n_bundle).toHaveBeenCalled();
+  });
+});
+
+describe('Home refresh (section 1)', () => {
+  it('search says "Search your vault"', async () => {
+    fakeApi();
+    render(Home, { vault: UNLOCKED });
+    expect(await screen.findByPlaceholderText('Search your vault')).toBeInTheDocument();
+  });
+
+  it('overview has three boxes and no Generator; Coming up opens Reminders', async () => {
+    fakeApi();
+    const onreminders = vi.fn();
+    render(Overview, { overview: { health: { score: 50, label: 'Fair', weak: 1, reused: 0, no_2fa: 1 },
+      reminders: [{ date: '1 Dec', label: 'Passport renewal', meta: 'in 12 days', overdue: false }],
+      backup: { last_at: null, warning: '', stale: true } }, onreminders });
+    expect(screen.getByText('Password health')).toBeInTheDocument();
+    expect(screen.getByText('Backup & recovery')).toBeInTheDocument();
+    expect(screen.queryByText('Generator')).toBeNull();
+    expect(screen.queryByText('Open the password generator')).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: /Coming up/ }));
+    expect(onreminders).toHaveBeenCalled();
+  });
+
+  it('the selected login row offers Copy user and Copy password', async () => {
+    const api = fakeApi();
+    render(Home, { vault: UNLOCKED });
+    const row = await screen.findByRole('option', { name: /Alpha/ });
+    expect(within(row).queryByRole('button', { name: 'Copy user' })).toBeNull();
+    await fireEvent.click(row);
+    await fireEvent.click(await within(row).findByRole('button', { name: 'Copy user' }));
+    expect(api.item_copy).toHaveBeenCalledWith(ALPHA.ref, 'username');
+    await fireEvent.click(within(row).getByRole('button', { name: 'Copy password' }));
+    expect(api.item_copy).toHaveBeenCalledWith(ALPHA.ref, 'password');
+  });
+
+  it('detail pane: one Open website, a Copy per field, Share and Move to trash under More', async () => {
+    const api = fakeApi();
+    const onshare = vi.fn();
+    render(DetailPane, { selected: ALPHA.ref, onedit: vi.fn(), onshare });
+    await screen.findByText('123 456');
+    expect(screen.getAllByRole('button', { name: 'Open website' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Copy username' })).toHaveTextContent('Copy');
+    expect(screen.getByRole('button', { name: 'Copy 2FA code' })).toHaveTextContent('Copy');
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Move to trash' })).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    await fireEvent.click(screen.getByRole('menuitem', { name: 'Share' }));
+    expect(onshare).toHaveBeenCalledWith(ALPHA.ref);
+    await fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
+    await fireEvent.click(screen.getByRole('menuitem', { name: 'Move to trash' }));
+    await waitFor(() => expect(api.item_trash).toHaveBeenCalledWith(ALPHA.ref));
   });
 });

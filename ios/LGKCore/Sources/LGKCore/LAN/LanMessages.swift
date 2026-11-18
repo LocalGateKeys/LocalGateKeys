@@ -18,6 +18,10 @@ public enum LanMessage: Equatable, Sendable {
     case blobGet(blob: String, seq: Int64)
     /// One chunk of a blob: `data` is standard base64 of bytes `[seq*512 KiB, ...)`.
     case blob(blob: String, seq: Int64, total: Int64, size: Int64, data: String)
+    /// Personal collections (sub-plan 07): what the sender reads (`LanFeatures`), after a view exchange.
+    case features([String])
+    /// Emergency access (sub-plan 08): `{"type":"heir-hello"}`, asked and answered by devices that read the plan.
+    case heirHello
 }
 
 public enum LanMessages {
@@ -47,6 +51,8 @@ public enum LanMessages {
         "witness": ["type", "group_id", "epoch", "view"],
         "blob-get": ["type", "blob", "seq"],
         "blob": ["type", "blob", "seq", "total", "size", "data"],
+        "features": ["type", "features"],
+        "heir-hello": ["type"],
     ]
 
     /// Canonical ASCII JSON of the message.
@@ -64,6 +70,8 @@ public enum LanMessages {
         case let .blob(b, s, total, size, d):
             o = ["type": .string("blob"), "blob": .string(b), "seq": .int(s), "total": .int(total), "size": .int(size),
                  "data": .string(d)]
+        case let .features(list): o = ["type": .string("features"), "features": .array(list.map { .string($0) })]
+        case .heirHello: o = ["type": .string("heir-hello")]
         }
         return try CanonicalJSON.encode(.object(o), dialect: .ascii)
     }
@@ -90,6 +98,8 @@ public enum LanMessages {
             return .witness(groupID: group, epoch: epoch, view: view)
         }
         if type == "blob-get" || type == "blob" { return try parseBlob(type, o) }
+        if type == "features" { return .features(try LanFeatures.names(o["features"])) }
+        if type == "heir-hello" { return .heirHello }
         guard case .string(let transfer)? = o["transfer"], transfer.utf8.count == 32,
               transfer.utf8.allSatisfy({ ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x61 && $0 <= 0x66) }),
               let seq = int(o["seq"], 0, maxChunks - 1) else { throw LanSyncError("bad-message") }

@@ -12,9 +12,11 @@ import time
 from datetime import date
 from typing import Any
 
-from ..access_policy import normalized_policy
+from ..access_policy import enforced_policy
+from ..travel import hidden_id_set, visible_collections
 from ..api.result import ApiError
 from ..origin import host_of
+from .. import site_features
 from ..i18n import t
 from ..password_tools import vault_health
 from ..shell.nav import build_nav, recent_ids
@@ -92,7 +94,9 @@ class HomeService:
         session = self._session()
         if session is None:
             return {"rows": [], "profile": profile}
-        found = session.item_service.search_metadata(query, kinds=self.QUICK_KINDS.get(kind) if kind else None)
+        hidden = hidden_id_set(session)
+        found = [s for s in session.item_service.search_metadata(query, kinds=self.QUICK_KINDS.get(kind) if kind else None)
+                 if str(s.id) not in hidden]
         rows = []
         for summary in sorted(found, key=lambda s: (not s.favorite, s.title.casefold())):
             item_kind = str(summary.kind)
@@ -109,7 +113,8 @@ class HomeService:
 
     def _summaries(self, session: Any) -> list[Any]:
         try:
-            return list(session.item_service.all_metadata_summaries())
+            hidden = hidden_id_set(session)
+            return [s for s in session.item_service.all_metadata_summaries() if str(s.id) not in hidden]
         except (AttributeError, ValueError):
             return list(session.summaries())
 
@@ -123,8 +128,19 @@ class HomeService:
         if signature == self._health_signature:
             return
         entries = session.all_entries()
+        # Travel-hidden logins stay out of the counts and the score (contract 2.3), as on the Health page.
+        hidden = hidden_id_set(session)
+        if hidden:
+            kept = []
+            for entry in entries:
+                if str(entry.get("id")) in hidden:
+                    entry.clear()
+                else:
+                    kept.append(entry)
+            entries = kept
         try:
-            result = vault_health(entries)
+            result = vault_health(entries, features=site_features.load(),
+                                  passkey_domains=site_features.passkey_domains(session))
         finally:
             for entry in entries:
                 entry.clear()
@@ -149,7 +165,8 @@ class HomeService:
     @staticmethod
     def _collections_and_views(session: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         try:
-            collections = list(session.collections.list())
+            # Travel mode hides its collections themselves too: sidebar and filter list (contract 2.3).
+            collections = visible_collections(session, session.collections.list())
         except Exception:  # noqa: BLE001
             collections = []
         try:
@@ -299,7 +316,7 @@ class HomeService:
         """
         session = self._session()
         if session is None:
-            return {"codes": []}
+            return {"codes": [], "collapsed": self._codes_collapsed()}
         icons = self._captured_icons(session)
         codes: list[dict[str, Any]] = []
         for summary in self._summaries(session):
@@ -312,7 +329,7 @@ class HomeService:
                 totp = detail.get("totp")
                 if not (isinstance(totp, dict) and totp.get("secret")):
                     continue
-                strict = bool(normalized_policy(detail.get("policy")).get("require_master_password"))
+                strict = bool(enforced_policy(detail).get("require_master_password"))
                 config = None if strict else dict(totp)
             finally:
                 detail.clear()
@@ -327,7 +344,24 @@ class HomeService:
                     entry["error"] = exc.message
             codes.append(entry)
         codes.sort(key=lambda c: (c["title"].casefold(), c["username"].casefold()))
-        return {"codes": codes}
+        return {"codes": codes, "collapsed": self._codes_collapsed()}
+
+    def _codes_collapsed(self) -> bool:
+        settings = getattr(self._controller, "settings", None)
+        return getattr(settings, "codes_collapsed", False) is True
+
+    def set_codes_collapsed(self, collapsed: Any) -> dict[str, Any]:
+        """Remember whether the Home codes section is collapsed (this device only)."""
+        if not isinstance(collapsed, bool):
+            raise ApiError("invalid", t("home.error.codesCollapsed"))
+        settings = getattr(self._controller, "settings", None)
+        if settings is not None:
+            settings.codes_collapsed = collapsed
+            try:
+                settings.save()
+            except OSError:
+                pass  # the choice still applies until the app closes
+        return {"collapsed": collapsed}
 
     def _row(self, summary: Any, target: str, icons: dict[str, str]) -> dict[str, Any]:
         kind = str(summary.kind)
@@ -361,7 +395,8 @@ class HomeService:
     @staticmethod
     def _projections(session: Any) -> dict[str, dict[str, Any]]:
         try:
-            return {str(item["id"]): item for item in session.item_service.list_items()}
+            hidden = hidden_id_set(session)
+            return {str(item["id"]): item for item in session.item_service.list_items() if str(item["id"]) not in hidden}
         except Exception:  # noqa: BLE001
             return {}
 
@@ -415,7 +450,9 @@ class HomeService:
         health = self._health
         titles = {str(s.id): _summary_title(s) for s in summaries}
         try:
-            rows = {str(r.get("id")): r for r in [*session.reminders.overdue(), *session.reminders.upcoming(days=90)]}
+            hidden = hidden_id_set(session)
+            rows = {str(r.get("id")): r for r in [*session.reminders.overdue(), *session.reminders.upcoming(days=90)]
+                    if str(r.get("item_id")) not in hidden}
         except Exception:  # noqa: BLE001
             rows = {}
         reminder_rows = [{"due_date": r.get("due_date"), "label": r.get("label") or titles.get(str(r.get("item_id")), "")}

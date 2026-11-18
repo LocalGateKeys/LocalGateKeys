@@ -10,7 +10,13 @@ import app.localgatekeys.core.json.Dialect
 import app.localgatekeys.core.json.JsonException
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Identifier
+import app.localgatekeys.core.recovery.Heir
+import app.localgatekeys.core.recovery.HeirException
 import app.localgatekeys.core.sync.AttachmentRef
+import app.localgatekeys.core.sync.CollectionCatalog
+import app.localgatekeys.core.sync.CollectionShares
+import app.localgatekeys.core.sync.CollectionStates
+import app.localgatekeys.core.sync.CollectionSync
 
 /**
  * Per-id sync metadata (desktop `payload["sync_meta"]["items"][id]`): what this device last published.
@@ -89,10 +95,22 @@ data class SyncMeta(
         const val COUNTER_OVERFLOW = "version counter overflow"
 
         /** `bump(vv, device)`, or null when this device's counter would overflow (desktop `_bumped`). */
-        private fun bumped(vv: Map<String, Long>, device: String): Map<String, Long>? =
+        internal fun bumped(vv: Map<String, Long>, device: String): Map<String, Long>? =
             if ((vv[device] ?: 0L) >= VersionVector.MAX_COUNTER) null else VersionVector.bump(vv, device)
 
-        private fun nsName(wrapper: JsonValue): String? = ((wrapper as? JsonValue.Obj)?.fields?.get("ns") as? JsonValue.Str)?.v
+        internal fun nsName(wrapper: JsonValue): String? = ((wrapper as? JsonValue.Obj)?.fields?.get("ns") as? JsonValue.Str)?.v
+
+        private fun recordOf(wrapper: JsonValue?): JsonValue? = (wrapper as? JsonValue.Obj)?.fields?.get("record")
+
+        /** A stored plan wrapper is published only when it is exactly the synced wrapper of a valid plan. */
+        private fun heirReadable(wrapper: JsonValue): Boolean = try {
+            val synced = Heir.syncedRecord(recordOf(wrapper))
+            digest(Wrapper.make(Namespace.HEIR, synced)) == digest(wrapper)
+        } catch (e: HeirException) {
+            false
+        } catch (e: JsonException) {
+            false
+        }
 
         // MARK: local view
 
@@ -102,20 +120,39 @@ data class SyncMeta(
          * A record whose digest differs from its meta (or that has none) is a local edit: its vector is
          * bumped once for [device]. An id in meta that is no longer stored becomes a tombstone at [now]
          * with a bumped vector; licence ids never do (a licence no longer stored just goes quiet).
+         *
+         * Collection states ([CollectionStates.isReserved]) are left out of the loop above. Without [collections] they are
+         * never published or tombstoned, their meta untouched (desktop `local_view(collections=False)`, what every peer
+         * that does not read them gets). With it (every peer of the run reads them) they are added by
+         * [CollectionSync.addStates]; [shares] names the links this device speaks for. Item states are the same either way.
          */
-        fun localView(records: Map<String, JsonValue>, meta: Map<String, SyncMeta>, device: String, now: Long): LocalViewResult {
+        fun localView(
+            records: Map<String, JsonValue>,
+            meta: Map<String, SyncMeta>,
+            device: String,
+            now: Long,
+            collections: Boolean = false,
+            shares: CollectionShares = CollectionShares.NONE,
+        ): LocalViewResult {
             checkCall(device, now)
-            val metaOut = LinkedHashMap(prune(meta, now))
+            val work = LinkedHashMap(prune(meta, now))
+            var metaOut: Map<String, SyncMeta> = work
             val states = LinkedHashMap<String, ItemState>()
             val skipped = LinkedHashMap<String, String>()
             try {
                 for ((id, wrapper) in records) {
+                    if (CollectionStates.isReserved(id, wrapper)) continue
                     val isLicense = nsName(wrapper) == Namespace.LICENSE.wire
-                    if (!Identifier.isValid(id) || Wrapper.isLicenseId(id) != isLicense) {
+                    val isHeir = nsName(wrapper) == Namespace.HEIR.wire
+                    if (!Identifier.isValid(id) || Wrapper.isLicenseId(id) != isLicense || Wrapper.isHeirId(id) != isHeir) {
                         skipped[id] = "invalid-id"
                         continue
                     }
-                    var m = metaOut[id]
+                    if (isHeir && !heirReadable(wrapper)) {
+                        skipped[id] = "The emergency access plan is damaged" // never published, nor deleted elsewhere
+                        continue
+                    }
+                    var m = work[id]
                     val d = try {
                         digest(wrapper)
                     } catch (e: JsonException) {
@@ -130,20 +167,23 @@ data class SyncMeta(
                             continue
                         }
                         m = live(wrapper, vv)
-                        metaOut[id] = m
+                        work[id] = m
                     }
                     states[id] = ItemState(id, m.vv, false, null, wrapper)
                 }
-                for ((id, m) in metaOut.entries.toList()) {
+                for ((id, m) in work.entries.toList()) {
                     if (records.containsKey(id)) continue
-                    if (Wrapper.isLicenseId(id) || !Identifier.isValid(id)) continue
+                    if (Wrapper.isLicenseId(id) || !Identifier.isValid(id) || CollectionStates.isStateId(id)) continue
                     var t = m
                     if (!m.deleted) {
                         // The delete cannot be recorded without an overflow: publish nothing for it.
                         t = tomb(bumped(m.vv, device) ?: continue, now)
-                        metaOut[id] = t
+                        work[id] = t
                     }
                     states[id] = ItemState(id, t.vv, true, t.deletedAt, null)
+                }
+                if (collections) {
+                    metaOut = CollectionSync.addStates(records, skipped, work, states, device, now, shares)
                 }
             } catch (e: EngineException) {
                 throw RecordException(null, null, "Vault content cannot be synced: ${e.message}")
@@ -173,24 +213,50 @@ data class SyncMeta(
          * and dropped without a word when this build knows no licence keys or as a conflict copy.
          * Throws [RecordException] `vault-changed` when a record changed since its meta was written, and
          * `bad-remote` / `update-needed` naming the first remote state that cannot be stored.
+         *
+         * Personal collections (sub-plan 07 Task 5j): collection states (and the engine's conflict copies of them) are
+         * never stored as records. With [collections] they are applied by [CollectionSync.Applier] (catalog rows before the
+         * items, memberships and links after) and are not counted as conflicts; without, they are dropped without a word.
+         * A removed item's membership record goes with it (the app's Recently deleted row keeps its collections).
+         * [shares] `readOnly`, in every run: a remote edit or delete of an item in a collection this device holds
+         * read-only is refused and this device's version is republished above it (desktop `_Applier.protected`).
          */
         fun applyRemote(
-            outcome: MergeOutcome,
+            full: MergeOutcome,
             records: Map<String, JsonValue>,
             meta: Map<String, SyncMeta>,
             device: String,
             now: Long,
             licenseKeys: Map<String, ByteArray>,
             documents: ((AttachmentRef) -> Boolean)? = null,
+            collections: Boolean = false,
+            shares: CollectionShares = CollectionShares.NONE,
         ): ApplyResult {
             checkCall(device, now)
-            val all = outcome.upserts + outcome.deletes + outcome.copies
+            val all = full.upserts + full.deletes + full.copies
             val ids = all.map { it.itemId }
             if (ids.toSet().size != ids.size) throw RecordException(null, null, "Merge outcome names a record more than once")
-            if ((outcome.upserts + outcome.copies).any { it.deleted } || !outcome.deletes.all { it.deleted }) {
+            if ((full.upserts + full.copies).any { it.deleted } || !full.deletes.all { it.deleted }) {
                 throw RecordException(null, null, "Merge outcome is malformed")
             }
             val cutoff = now - TOMBSTONE_MAX_AGE_DAYS * 86400
+            // Collection states are taken out first: they never go through the record paths below.
+            val isCol: (ItemState) -> Boolean = CollectionSync::isCollectionState
+            val colUpserts = if (collections) full.upserts.filter(isCol) else emptyList()
+            val colDeletes = ArrayList<Pair<ItemState, Long>>()
+            if (collections) {
+                for (s in full.deletes) {
+                    if (!CollectionStates.isStateId(s.itemId)) continue
+                    val at = minOf(s.deletedAt ?: now, now)
+                    if (at >= cutoff) colDeletes.add(s to at)
+                }
+            }
+            val colCopies = if (collections) full.copies.filter(isCol) else emptyList()
+            val conflicts = full.conflicts.count { !isCol(it.second) }
+            val outcome = MergeOutcome(
+                full.upserts.filter { !isCol(it) }, full.deletes.filter { !CollectionStates.isStateId(it.itemId) },
+                full.conflicts, full.copies.filter { !isCol(it) },
+            )
             var deletes = ArrayList<Pair<ItemState, Long>>()
             for (s in outcome.deletes) {
                 val at = minOf(s.deletedAt ?: now, now)
@@ -204,8 +270,11 @@ data class SyncMeta(
                 for (s in outcome.upserts) if (Wrapper.isLicenseId(s.itemId)) stale.add(s.itemId)
             }
             for (s in outcome.copies) if (s.item?.let { nsName(it) } == Namespace.LICENSE.wire) stale.add(s.itemId)
+            // A conflict copy of the emergency access plan is never stored; its refused ids join the local plan.
+            val heirCopies = outcome.copies.filter { s -> s.item?.let { nsName(it) } == Namespace.HEIR.wire }
+            stale.addAll(heirCopies.map { it.itemId })
             deletes = ArrayList(deletes.filter { it.first.itemId !in stale })
-            val liveIds = ids.filter { it !in stale }
+            val liveIds = (outcome.upserts + outcome.deletes + outcome.copies).map { it.itemId }.filter { it !in stale }
 
             val recs = LinkedHashMap(records)
             val metaOut = LinkedHashMap(meta)
@@ -217,16 +286,51 @@ data class SyncMeta(
                 val fresh = if (m == null || m.deleted) current == null else current != null && digest(current) == m.digest
                 if (!fresh) throw RecordException("vault-changed", id, "The vault changed since the sync view was taken; sync again")
             }
+            val col = CollectionSync.Applier(recs, metaOut, device, now, shares)
+            // A stored catalog row or membership this device cannot read is left alone (like an unreadable item).
+            val colSkipped = HashSet<String>()
+            for (s in colUpserts + colDeletes.map { it.first }) {
+                if (!CollectionStates.isStateId(s.itemId)) continue
+                if (col.unreadable(s.itemId)) colSkipped.add(s.itemId) else col.checkFresh(s.itemId)
+            }
             var applied = 0
             var deleted = 0
             val received = ArrayList<JsonValue>()
+            fun isCatalog(s: ItemState): Boolean = s.itemId.startsWith(CollectionStates.CATALOG_PREFIX)
+            // Catalog rows first: memberships below may name a new collection.
+            for ((s, at) in colDeletes) {
+                if (!isCatalog(s) || s.itemId in colSkipped) continue
+                if (blame(s.itemId) { col.catalogDelete(s, at) }) applied++
+            }
+            for (s in colUpserts) {
+                if (!isCatalog(s) || s.itemId in colSkipped) continue
+                if (blame(s.itemId) { col.catalogUpsert(s, CollectionStates.unwrap(s, isCopy = false)) }) applied++
+            }
+            val readOnly = shares.readOnly
+
+            /** A live item in a collection this device holds read-only: another of this person's devices cannot change it. */
+            fun isProtected(id: String): Boolean {
+                if (readOnly.isEmpty()) return false
+                val w = recs[id] ?: return false
+                if (CollectionStates.isReserved(id, w)) return false
+                return CollectionCatalog.memberships(id, recs).any { it in readOnly }
+            }
             for ((s, at) in deletes) {
                 if (Wrapper.isLicenseId(s.itemId)) {
                     // A licence is republished above the tombstone; an overflowing bump refuses only this state.
                     metaOut[s.itemId] = blame(s.itemId) { live(published.getValue(s.itemId), VersionVector.bump(s.vv, device)) }
                     continue
                 }
-                if (recs.remove(s.itemId) != null) deleted++
+                val mine = recs[s.itemId]
+                if (mine != null && isProtected(s.itemId)) {
+                    // In a read-only share on this device: only the owner removes it (through the share).
+                    metaOut[s.itemId] = blame(s.itemId) { live(mine, VersionVector.bump(s.vv, device)) }
+                    continue
+                }
+                if (recs.remove(s.itemId) != null) {
+                    deleted++
+                    recs.remove(CollectionStates.MEMBERSHIP_PREFIX + s.itemId) // the trash row keeps its collections
+                }
                 metaOut[s.itemId] = tomb(s.vv, at)
             }
             for (s in outcome.upserts) {
@@ -253,10 +357,34 @@ data class SyncMeta(
                         received.add(record)
                         return@blame
                     }
+                    if (ns == Namespace.HEIR) {
+                        // The same plan merges with this phone's (denies union, stale either side's); a merged result
+                        // that differs from the remote is a local edit, so it travels back.
+                        val current = recs[s.itemId]
+                        if (current != null && nsName(current) != Namespace.HEIR.wire) {
+                            throw RecordException(null, null, "Record id is used by a different kind of record")
+                        }
+                        val stored = try {
+                            Wrapper.make(Namespace.HEIR, Heir.mergeSynced(recordOf(current), record))
+                        } catch (e: HeirException) {
+                            throw RecordException("bad-remote", s.itemId, "The emergency access plan cannot be merged")
+                        }
+                        if ((current?.let { digest(it) }) != digest(stored)) applied++
+                        recs[s.itemId] = stored
+                        val vv = if (digest(stored) == digest(s.item!!)) s.vv else bumped(s.vv, device)
+                        metaOut[s.itemId] = live(stored, vv ?: throw RecordException(null, null, COUNTER_OVERFLOW))
+                        return@blame
+                    }
                     // The state was checked against Wrapper's rules, so its item is the wrapper itself:
                     // store it verbatim so it is republished byte for byte.
                     val stored = s.item!!
                     val current = recs[s.itemId]
+                    if (current != null && isProtected(s.itemId) && digest(current) != digest(stored)) {
+                        // Read-only share: another of this person's devices cannot change it here; this device's copy
+                        // (the owner's version) is republished above it.
+                        metaOut[s.itemId] = live(current, VersionVector.bump(s.vv, device))
+                        return@blame
+                    }
                     if (current != null && nsName(current) != ns.wire) {
                         throw RecordException(null, null, "Record id is used by a different kind of record")
                     }
@@ -282,8 +410,54 @@ data class SyncMeta(
                     metaOut[s.itemId] = live(stored, s.vv)
                 }
             }
-            if (recs.size > MAX_RECORDS) throw RecordException(null, null, "The vault would hold more records than sync supports")
-            return ApplyResult(recs, metaOut, applied, deleted, outcome.conflicts.size, received)
+            for (s in heirCopies) {
+                blame(s.itemId) {
+                    val (_, record) = Wrapper.unwrap(s, true, licenseKeys, documents)
+                    val local = recs[Heir.STATE_ID]
+                    val localRecord = recordOf(local)
+                    val samePlan = (localRecord as? JsonValue.Obj)?.fields?.get("plan_id") == (record as JsonValue.Obj).fields["plan_id"]
+                    if (local != null && nsName(local) == Namespace.HEIR.wire && samePlan) {
+                        try {
+                            // The next local view publishes the union as an edit.
+                            recs[Heir.STATE_ID] = Wrapper.make(Namespace.HEIR, Heir.mergeSynced(localRecord, record))
+                        } catch (e: HeirException) {
+                            // a copy that re-keys the plan is ignored: the local plan stays as it is
+                        }
+                    }
+                }
+            }
+            if (collections) {
+                for ((s, at) in colDeletes) {
+                    if (s.itemId in colSkipped) continue
+                    if (s.itemId.startsWith(CollectionStates.MEMBERSHIP_PREFIX)) {
+                        if (blame(s.itemId) { col.membershipDelete(s, at) }) applied++
+                    } else if (s.itemId.startsWith(CollectionStates.LINK_PREFIX)) {
+                        if (blame(s.itemId) { col.linkDelete(s, at) }) applied++
+                    }
+                }
+                for (s in colUpserts) {
+                    if (!CollectionStates.isStateId(s.itemId) || isCatalog(s) || s.itemId in colSkipped) continue
+                    val changed = blame(s.itemId) {
+                        val record = CollectionStates.unwrap(s, isCopy = false)
+                        if (record["kind"] == JsonValue.Str("membership")) col.membershipUpsert(s, record) else col.linkUpsert(s, record)
+                    }
+                    if (changed) applied++
+                }
+                for (s in colCopies) {
+                    // Two devices changed one membership at once: this device keeps both (a union), never a copy. A losing
+                    // catalog row or link is dropped (the winner was applied).
+                    val changed = blame(s.itemId) {
+                        val record = CollectionStates.unwrap(s, isCopy = true)
+                        record["kind"] == JsonValue.Str("membership") && col.membershipUpsert(s, record, union = true)
+                    }
+                    if (changed) applied++
+                }
+            }
+            // The cap counts items and entries; collection states never push past it (they wait, `Applier.room`).
+            if (recs.count { !CollectionStates.isReserved(it.key, it.value) } > MAX_RECORDS) {
+                throw RecordException(null, null, "The vault would hold more records than sync supports")
+            }
+            return ApplyResult(recs, metaOut, applied, deleted, conflicts, received)
         }
     }
 }

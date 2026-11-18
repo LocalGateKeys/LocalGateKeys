@@ -6,8 +6,13 @@ import app.localgatekeys.core.records.Origin
 
 /** What a fill or save request is for: a website in a trusted browser, or an app. */
 sealed interface FillTarget {
-    /** [origin] is canonical (`https://host[:port]`, or plain http on loopback only). */
-    data class Web(val origin: String, val browser: String) : FillTarget
+    /**
+     * [origin] is canonical (`https://host[:port]`, or plain http on loopback only). [schemeKnown] is false when the
+     * browser named the host but not the scheme (a bare host, as compatibility mode reads it from the address bar):
+     * [origin] then assumes https for display and lookalike checks only, nothing is offered by itself, and a login
+     * picked from the search list is filled only after the person confirms (it could be a plain-http page).
+     */
+    data class Web(val origin: String, val browser: String, val schemeKnown: Boolean = true) : FillTarget
 
     /**
      * [cert] is the hex SHA-256 of the app's current signing certificate ("" when it could not be read). Pairings
@@ -50,14 +55,15 @@ sealed interface FillTarget {
                 // A browser's own screens (no page) fill nothing; other apps fill as apps.
                 return if (packageName in BROWSERS) null else App(packageName, certSha256.firstOrNull()?.let { Hex.lower(it) } ?: "")
             }
-            val scheme = (webScheme ?: "https").lowercase()
-            if (scheme != "https" && scheme != "http") return null
+            // No scheme fails closed: never taken as https (see [Web.schemeKnown]).
+            val scheme = webScheme?.lowercase()
+            if (scheme != null && scheme != "https" && scheme != "http") return null
             val origin = try {
-                Origin.canonicalize("$scheme://${webDomain.trim()}")
+                Origin.canonicalize("${scheme ?: "https"}://${webDomain.trim()}")
             } catch (e: Exception) {
                 return null
             }
-            return Web(origin, packageName)
+            return Web(origin, packageName, schemeKnown = scheme != null)
         }
     }
 }

@@ -25,6 +25,7 @@ from argon2.low_level import Type, hash_secret_raw
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+from .agent_gate import agent_scope_stripped
 from .vault import DEFAULT_KDF, MAX_KDF_MEMORY_KIB, MIN_KDF_MEMORY_KIB, free_item_slots
 from .i18n import t
 
@@ -296,9 +297,12 @@ def _sanitize_credential(entry: Mapping[str, Any]) -> dict[str, Any]:
     # Imported credentials may fill only after the recipient's local review.
     policy = {"fill": policy.get("fill", "click"),
               "sign_in": "never",
-              "require_master_password": policy.get("require_master_password", False),
+              # Any present value other than false is strict (A-L1), written as a bool.
+              "require_master_password": policy.get("require_master_password", False) is not False,
               "save_prompts": policy.get("save_prompts", True)}
     result["policy"] = policy
+    # "AI agents may use this login" is the owner's choice in one vault: a transferred login arrives with it off.
+    agent_scope_stripped(result.get("scope"))
     if kind == "desktop":
         scope = result.get("scope")
         if not isinstance(scope, dict):

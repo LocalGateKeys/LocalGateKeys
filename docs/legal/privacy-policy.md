@@ -13,7 +13,7 @@ This policy explains what personal data {{COMPANY_NAME}}, {{COMPANY_ADDRESS}} ("
 ## 1. Summary
 
 - **The apps collect nothing from your vault.** The LocalGateKeys apps, browser extension and local browser helper do not send us your vault, usage data, crash reports or analytics. There is no account. The only exception is a Pro purchase made in the App Store or Google Play: the app sends the store's purchase record to our licence server (section 7).
-- **The website sets no cookies** and uses no analytics, trackers, third-party scripts or third-party fonts.
+- **The website uses cookieless Cloudflare Web Analytics** to count page visits. It loads no advertising or tracking scripts and sets no cookies (the checkout page is the one exception, see section 4).
 - **Payments are handled by {{MERCHANT_OF_RECORD}}**, our merchant of record. We never see your card details.
 - **Our servers only see ordinary connection data** when the app checks for updates or downloads the licence revocation list, and you can turn both off with Strict offline mode.
 
@@ -72,7 +72,7 @@ Legal basis (where the GDPR applies): our legitimate interest in delivering upda
 
 ## 4. This website
 
-The website is a set of static pages hosted on Cloudflare Pages. It sets no cookies and uses no analytics, advertising, tracking pixels, social media plugins, third-party scripts or externally hosted fonts.
+The website is a set of static pages hosted on Cloudflare Pages. To count page visits it uses Cloudflare Web Analytics, a small Cloudflare script that reports the page address, referrer, browser type, approximate country and page load timing. It sets no cookies, uses no browser storage and does not track you across sites, and we see only aggregate counts. The site loads no advertising or other tracking scripts. Where applicable, our legal basis is our legitimate interests in understanding site use and improving the website (Article 6(1)(f) GDPR); you may object as described in section 9, or block the script with a content blocker. Cloudflare also processes your IP address and request details to deliver the pages and protect the site; we do not receive or keep these logs.
 
 The one exception is the checkout page (`/buy`). It loads {{MERCHANT_OF_RECORD}}'s checkout script and payment form from {{MERCHANT_OF_RECORD}}'s servers, so that you can pay. {{MERCHANT_OF_RECORD}} processes what you enter there, and may use cookies or similar technology needed for the payment and to prevent fraud, under its own privacy policy: {{MERCHANT_PRIVACY_URL}}. The page also creates a random code in your browser that links your payment to your licence page (section 5.4). It is kept only in that browser tab and sent only to {{MERCHANT_OF_RECORD}} and our licence service.
 

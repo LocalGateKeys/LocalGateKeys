@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import AuthenticationServices
 import AppSharedMac
+import LGKCore
 
 /// What a macOS credential request names, read on the delivering thread (`ASCredentialRequest` is not
 /// Sendable) before the hop to the main actor.
@@ -146,6 +147,11 @@ final class MacAutoFillModel {
     }
 
     var touchIDAvailable: Bool { opener.touchIDAvailable }
+    /// The vault also needs a key file or YubiKey: no master password field here (only the app can ask for them).
+    var needsFactors: Bool { opener.needsFactors }
+    static var factorsNeedApp: String {
+        String(localized: "autofill.factorsNeedApp", defaultValue: "Open LocalGateKeys to unlock this vault (it needs a key file or YubiKey).")
+    }
     var isOneTimeCode: Bool {
         switch request {
         case .oneTimeCodeList, .oneTimeCode: return true
@@ -339,35 +345,42 @@ final class MacAutoFillModel {
         let s = try store.load()
         guard screen == .unlock else { return }
         snapshot = s; self.store = store; unlockedWithPassword = password; message = nil
-        let strictIDs = Set(AutoFillMatcher.logins(s).filter { Self.isStrict($0.record) }.map(\.login.id))
+        // Feature pack §2 and §4: travel-hidden items and logins whose rules refuse autofill on this Mac are never
+        // offered; the master password is asked again for logins with `require_master_password` or an expired rule.
+        let travel = travelMode(store)
+        TravelModeBox.shared.current = travel
+        let omitted = AutoFillGate.omitted(s, travel: travel, today: today(), device: .computer)
+        let strictIDs = Set(AutoFillMatcher.logins(s).filter { Self.isStrict($0.record, today: today()) }.map(\.login.id))
         func row(_ l: AutoFillLogin) -> MacAutoFillRow { MacAutoFillRow(login: l, strict: strictIDs.contains(l.id)) }
+        let offered: (AutoFillLogin) -> Bool = { !omitted.contains($0.id) }
         switch request {
         case .list(let urls), .oneTimeCodeList(let urls):
             let codes = isOneTimeCode
-            let keep: (AutoFillLogin) -> Bool = { !codes || $0.totp != nil }
+            let keep: (AutoFillLogin) -> Bool = { (!codes || $0.totp != nil) && offered($0) }
             matches = matcher.matches(s, urls: urls).filter(keep).map(row)
             all = AutoFillMatcher.logins(s).map(\.login).filter(keep)
                 .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }.map(row)
             screen = .list
         case .password(let id), .oneTimeCode(let id):
-            guard let l = matcher.login(id: id, in: s), !isOneTimeCode || l.totp != nil else {
+            guard let l = matcher.login(id: id, in: s), !isOneTimeCode || l.totp != nil, offered(l) else {
                 return finish(.credentialIdentityNotFound)
             }
             screen = .list
             select(row(l))
         case .passkeyList(let urls, let rpID, let allowed, _):
-            passkeys = PasskeyVault.candidates(s, rpID: rpID, allowed: allowed)
-            matches = matcher.matches(s, urls: urls).map(row)
-            all = AutoFillMatcher.logins(s).map(\.login)
+            passkeys = PasskeyVault.candidates(s, rpID: rpID, allowed: allowed).filter { !omitted.contains($0.itemID) }
+            matches = matcher.matches(s, urls: urls).filter(offered).map(row)
+            all = AutoFillMatcher.logins(s).map(\.login).filter(offered)
                 .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }.map(row)
             screen = .list
         case .passkey(let id, let rpID, let hash):
             screen = .list
+            guard !omitted.contains(id) else { return finish(.credentialIdentityNotFound) }
             sign(recordID: id, rpID: rpID, clientDataHash: hash)
         case .passkeyRegistration(let r):
             screen = .createPasskey(rpID: PasskeyRecord.normaliseRPID(r.rpID), userName: r.userName)
         case .textToInsert:
-            textFields = TextInsertionCatalog.fields(s)
+            textFields = TextInsertionCatalog.fields(s).filter { !omitted.contains($0.recordID) }
             screen = .list
         default:
             finish(.failed)
@@ -378,6 +391,16 @@ final class MacAutoFillModel {
         guard case .object(let policy)? = record["policy"], case .bool(true)? = policy["require_master_password"] else { return false }
         return true
     }
+
+    /// Strict on this Mac today: `require_master_password`, an expired access rule or one from a newer version
+    /// (feature pack §4.2, `reauth`).
+    static func isStrict(_ record: [String: JSONValue], today: String) -> Bool {
+        isStrict(record) || AccessRules.effective(record, device: .computer, today: today).reauth
+    }
+
+    /// The vault's travel mode on this Mac (off when the Mac-local data is missing, everything hidden when it exists but
+    /// can't be read: scan 2026-11-15 S-L4). Tests replace it.
+    @ObservationIgnored var travelMode: (LocalStore) -> TravelMode = { MacLocalDataFile.travel(for: $0) }
 
     private func sign(recordID: String, rpID: String, clientDataHash: Data) {
         guard let s = snapshot else { return finish(.failed) }
@@ -427,6 +450,9 @@ final class MacAutoFillModel {
         case MacVaultError.wrongPassword(nil): message = String(localized: "Wrong master password.")
         case MacVaultError.busy: break
         case MacVaultError.noVault: finish(.failed)
+        // A key file / YubiKey vault (MasterKeyFile v2): the extension cannot supply them. (No YubiKey exchange runs
+        // in the extension, so no YubiKey error can reach here.)
+        case is FactorError: message = Self.factorsNeedApp
         default: message = String(localized: "The vault could not be opened.")
         }
     }

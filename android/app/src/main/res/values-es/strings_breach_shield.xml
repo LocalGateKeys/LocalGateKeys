@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Sitio verificado</string>
+    <string name="autofill_site_related">Sitio relacionado</string>
+    <string name="autofill_site_lookalike">Sitio de imitación</string>
+    <string name="autofill_site_new">Sitio nuevo</string>
+    <string name="autofill_guard_title">¿Es este el sitio correcto?</string>
+    <string name="autofill_guard_body">%1$s se parece a %2$s, donde está guardado tu inicio de sesión, pero es otro sitio. Continúa solo si estás seguro.</string>
+    <string name="autofill_guard_body_mixed">%1$s mezcla letras de distintos alfabetos, un truco habitual de phishing. Continúa solo si estás seguro.</string>
+    <string name="autofill_guard_continue">Continuar en %1$s</string>
+    <string name="autofill_guard_go_back">Volver</string>
+    <string name="autofill_same_account_title">¿Es la misma cuenta que en %1$s?</string>
+    <string name="autofill_same_account_body">%1$s tiene el mismo nombre que %2$s, donde está guardado tu inicio de sesión, pero otra terminación. Continúa solo si es la misma empresa.</string>
+    <string name="autofill_same_account_yes">Misma cuenta</string>
+    <string name="autofill_pick_other_site_body">Este inicio de sesión está guardado para %2$s, no para %1$s. Rellénalo en %1$s solo si estás seguro de que es el sitio correcto.</string>
+    <string name="autofill_pick_no_site_body">Este inicio de sesión no tiene ningún sitio web guardado. Rellénalo en %1$s solo si estás seguro de que es el sitio correcto.</string>
+    <string name="autofill_pick_scheme_unknown_body">El navegador no indicó si %1$s es una página segura (https). Rellénalo solo si estás seguro.</string>
+</resources>

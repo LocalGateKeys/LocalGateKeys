@@ -1,0 +1,103 @@
+{
+  "aad_prefix": "localgatekeys|backup-recipient|v1|",
+  "core": {
+    "cipher": {
+      "name": "aes-256-gcm",
+      "nonce_bytes": 12,
+      "tag_bytes": 16
+    },
+    "entry_count": 5,
+    "format": "localgatekeys-full-backup",
+    "version": 3
+  },
+  "dk": "90c6624a07ccdfda188473d417c5f739cc3e2dfe635a0460755b515206f0aa03",
+  "epk": "03516f93875f2040e758c6d968e76ccd009fb5cd1b9d318efb15a9146dc6d41e",
+  "esk": "e880a86bc5c053f02bd6470083b5f9bbdce1c30e81be9f702837bc10ce942b51",
+  "esk_random": "ed80a86bc5c053f02bd6470083b5f9bbdce1c30e81be9f702837bc10ce942b11",
+  "info": "localgatekeys|backup-wrap|v1",
+  "kek": "16530abb0d1ce3578f7f13790ee9feae99ffc16f42f0257b0a9c98c1c712eefb",
+  "kek_salt": "03516f93875f2040e758c6d968e76ccd009fb5cd1b9d318efb15a9146dc6d41e22d271775f2ff453424a43fd168a333f7685883c030fe16ff3718dfa008e2c6d",
+  "key_case": "composed",
+  "nonce": "000000000000000000000000",
+  "note": "TEST ONLY: every password, phrase and key here is published.",
+  "password": "fixture café password 2026",
+  "pk": "22d271775f2ff453424a43fd168a333f7685883c030fe16ff3718dfa008e2c6d",
+  "recipient_body": {
+    "ephemeral_public_key": "A1Fvk4dfIEDnWMbZaOdszQCftc0bnTGO+xWpFG3G1B4=",
+    "kdf": {
+      "memory_cost_kib": 8192,
+      "name": "argon2id",
+      "parallelism": 1,
+      "salt": "YJn8P7Dx5Py3xX3+xj+TQQ==",
+      "time_cost": 1
+    },
+    "key_id": "7678d5726806d21391294214bb01eb01",
+    "key_set_at": 1793001000,
+    "scheme": "x25519-hkdf-sha256-aes-256-gcm-v1"
+  },
+  "sk": "b8194b01c4c5fb11ebede59242a121662e2e774e4bc91a62f2ec3b55550d7458",
+  "ss": "7700a86d8515365a64effece7c416540e5f188c317c7656f1eb395ba4a54e67a",
+  "unwrap_rejected": [
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "epk all zero (low order)"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "epk low order (order 8)"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "wrapped tampered"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "wrapped 47 bytes"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "aad tampered (key_set_at + 1)"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "aad tampered (entry_count + 1)"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "other private key"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "wrong password (key id check, no GCM attempt)"
+    },
+    {
+      "error": "Wrong backup password or modified full backup",
+      "name": "right password, other key id"
+    }
+  ],
+  "wrap_aad": "6c6f63616c676174656b6579737c6261636b75702d726563697069656e747c76317c7b22686561646572223a7b22636970686572223a7b226e616d65223a226165732d3235362d67636d222c226e6f6e63655f6279746573223a31322c227461675f6279746573223a31367d2c22656e7472795f636f756e74223a352c22666f726d6174223a226c6f63616c676174656b6579732d66756c6c2d6261636b7570222c2276657273696f6e223a337d2c22726563697069656e74223a7b22657068656d6572616c5f7075626c69635f6b6579223a22413146766b3464664945446e574d625a614f64737a514366746330626e54474f2b785770464733473142343d222c226b6466223a7b226d656d6f72795f636f73745f6b6962223a383139322c226e616d65223a226172676f6e326964222c22706172616c6c656c69736d223a312c2273616c74223a22594a6e3850374478355079337858332b786a2b5451513d3d222c2274696d655f636f7374223a317d2c226b65795f6964223a223736373864353732363830366432313339313239343231346262303165623031222c226b65795f7365745f6174223a313739333030313030302c22736368656d65223a227832353531392d686b64662d7368613235362d6165732d3235362d67636d2d7631227d7d",
+  "wrap_to_low_order_pk": [
+    {
+      "error": "The backup public key is not usable",
+      "pk": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "error": "The backup public key is not usable",
+      "pk": "0100000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "error": "The backup public key is not usable",
+      "pk": "e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800"
+    },
+    {
+      "error": "The backup public key is not usable",
+      "pk": "5f9c95bca3508c24b1d0b1559c83ef5b04445cc4581c8e86d8224eddd09f1157"
+    },
+    {
+      "error": "The backup public key is not usable",
+      "pk": "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+    }
+  ],
+  "wrapped": "8b4dc7e1d1e0101990e4dfa23b1d86ab69c565c147b1e40ab1c15ae7b1e3510f0f6900b335c24c39024faf7421b88d1c",
+  "wrapped_b64": "i03H4dHgEBmQ5N+iOx2Gq2nFZcFHseQKscFa57HjUQ8PaQCzNcJMOQJPr3QhuI0c"
+}

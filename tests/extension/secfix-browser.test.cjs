@@ -257,7 +257,7 @@ function bridge(isActive) {
   window.location = { origin: "https://login.example.test" };
   const sent = [];
   const chrome = { runtime: { sendMessage: msg => { sent.push(plain(msg)); return Promise.resolve({ ok: true }); } } };
-  const context = vm.createContext({ window, location: window.location, chrome, Promise, Map, Object, JSON, String, CustomEvent,
+  const context = vm.createContext({ window, self: { origin: window.location.origin }, location: window.location, chrome, Promise, Map, Object, JSON, String, CustomEvent, Uint8Array, crypto: globalThis.crypto,
     navigator: isActive === undefined ? {} : { userActivation: { isActive } } });
   context.globalThis = context;
   vm.runInContext(read("api.js"), context);

@@ -178,7 +178,7 @@ def test_not_joined_offers_create_and_join():
 
 def test_joined_folder_actions():
     view = ui.sync_view(_status(), _group(), lan_endpoint="", now=NOW)
-    assert view.folder.actions == frozenset({"sync-now", "change-password", "remove-device", "leave"})
+    assert view.folder.actions == frozenset({"sync-now", "change-password", "remove-device", "lost-device", "leave"})
     assert view.folder.state == "on"
 
 
@@ -266,11 +266,25 @@ def test_wifi_off_and_ready_states():
 
 def test_wifi_remove_needs_a_peer():
     on = ui.sync_view(_status(lan_on=True), _group(), lan_endpoint="192.168.1.5:47821", now=NOW)
-    assert "remove-device" not in on.wifi.actions and "show-qr" in on.wifi.actions
+    assert "remove-device" not in on.wifi.actions and "lost-device" not in on.wifi.actions and "show-qr" in on.wifi.actions
     group = _group(peers=(ui.PeerSnapshot("dev-p", None),))
     with_peer = ui.sync_view(_status(lan_on=True), group, lan_endpoint="192.168.1.5:47821", now=NOW)
-    assert "remove-device" in with_peer.wifi.actions
+    assert {"remove-device", "lost-device"} <= with_peer.wifi.actions
     assert with_peer.wifi.members[0].detail  # "connects to this PC"
+
+
+def test_wifi_peer_shows_the_name_it_paired_with():
+    group = _group(peers=(ui.PeerSnapshot("dev-p", None, "Pixel 8"), ui.PeerSnapshot("dev-q", None)))
+    view = ui.sync_view(_status(lan_on=True), group, lan_endpoint="192.168.1.5:47821", now=NOW)
+    assert [m.name for m in view.wifi.members] == [f"Pixel 8 · {ui.short_id('dev-p')}", ui.short_id("dev-q")]
+    assert view.own_id == f"This device: This PC · {ui.short_id(group.device_id)}"
+    unnamed = _group(members=(_member("dev-self", None, is_self=True), _member("dev-b", "Laptop")))
+    view = ui.sync_view(_status(lan_on=True), unnamed, lan_endpoint="", now=NOW)
+    assert view.own_id == f"This device: {ui.short_id('dev-self')}"  # own name not known: id only
+    named = _group(members=(_member("dev-self", "Desk PC", is_self=True), _member("dev-b", "Laptop")))
+    view = ui.sync_view(_status(lan_on=True), named, lan_endpoint="", now=NOW)
+    assert view.own_id == f"This device: Desk PC · {ui.short_id('dev-self')}"
+    assert ui.sync_view(_status(), None, lan_endpoint="", now=NOW).own_id == ""
 
 
 def test_unavailable_service_disables_everything():
@@ -549,6 +563,20 @@ def test_clipboard_is_cleared_only_if_it_still_holds_the_code():
 
 
 # --- adding a cloud folder to a Wi-Fi group -----------------------------------------------------------
+
+
+def test_use_folder_job_on_an_empty_folder_says_where_to_add_one(monkeypatch):
+    from localvault.sync import folder_transport as ft
+
+    def refuse(*args, **kwargs):
+        raise ft.FolderSyncError("no-group", "no sync group in this folder")
+
+    monkeypatch.setattr(ft, "attach_folder", refuse)
+    with pytest.raises(ft.FolderSyncError) as caught:
+        ui.attach_folder_job("C:/Cloud", "pw", "Windows PC", "install-a")("s", "l", _Gate())
+    assert caught.value.reason == "no-group-paired"
+    assert ui.error_text(caught.value) == ui.t("sync.noSyncGroupPaired")
+    assert "Add a cloud folder to this group" in ui.error_text(caught.value)
 
 
 def test_add_and_use_folder_jobs_release_the_ui_and_do_not_run(tmp_path, monkeypatch):

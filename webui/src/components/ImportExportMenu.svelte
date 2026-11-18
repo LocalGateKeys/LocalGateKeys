@@ -1,5 +1,5 @@
 <script>
-  /** The sidebar's Import & export entry: import, export, transfer and incoming shared items.
+  /** The sidebar's Import & export entry: import, export, transfer, incoming shared items and Scan QR code.
    * Restore phone backup stays hidden until a phone app writes backups (phoneBackup). */
   import { t } from '../lib/i18n.svelte.js';
 
@@ -10,6 +10,7 @@
     { route: 'transfer', label: 'importExportMenu.transferLabel', detail: 'importExportMenu.transferDetail' },
     { route: 'incoming', label: 'importExportMenu.incomingLabel', detail: 'importExportMenu.incomingDetail' },
     { route: 'phone-backup', label: 'importExportMenu.phoneLabel', detail: 'importExportMenu.phoneDetail' },
+    { route: 'scan-qr', label: 'nav.tool.scan_qr', detail: 'importExportMenu.scanDetail' },
   ];
   const CHOICES = $derived(ALL_CHOICES.filter((c) => phoneBackup || c.route !== 'phone-backup'));
 </script>

@@ -31,10 +31,16 @@ struct SecurityCheckView: View {
             } header: {
                 Text("Checks")
             } footer: {
-                Text("Local checks are guidance, not a guarantee. Nothing leaves this iPhone unless you start a breach check.")
+                Text(DeviceText.isPad ? String(localized: "ipad.security.footer", defaultValue: "Local checks are guidance, not a guarantee. Nothing leaves this iPad unless you start a breach check.")
+                     : String(localized: "Local checks are guidance, not a guarantee. Nothing leaves this iPhone unless you start a breach check."))
             }
             .listRowBackground(Palette.groupSurface)
             breachSection
+            // Feature pack §3: the clean-up sweep (no network).
+            Section {
+                NavigationLink("Clean-up") { HygieneView(store: store, pro: pro, onChange: changed) }
+            }
+            .listRowBackground(Palette.groupSurface)
             if let reminders { UpcomingRemindersSection(reminders: reminders) }
         }
         .scrollContentBackground(.hidden)
@@ -144,12 +150,12 @@ struct SecurityIssueList: View {
                     NavigationLink(value: item) { VaultRow(item: item) }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("Dismiss") { model.dismiss(category, id: item.id) }.tint(Palette.secondaryText)
-                            if category != .noTwoFactor {
+                            if category.offersChangePassword {
                                 Button("Change password") { changePassword(item) }.tint(Palette.accent)
                             }
                         }
                         .contextMenu {
-                            if category != .noTwoFactor {
+                            if category.offersChangePassword {
                                 Button { changePassword(item) } label: { Label("Change password", systemImage: "key") }
                             }
                             Button { model.dismiss(category, id: item.id) } label: {

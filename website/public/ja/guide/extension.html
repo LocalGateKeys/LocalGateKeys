@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys ブラウザ拡張機能ガイド</title>
+  <meta name="description" content="Edge、Chrome、Firefox 用 LocalGateKeys 拡張機能のインストール、アプリとの接続、ログイン情報の入力と保存の方法。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ja/guide/extension">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/extension">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/extension">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/extension">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/extension">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/extension">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/extension">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/extension">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/extension">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/extension">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/extension">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/extension">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/extension">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys ブラウザ拡張機能ガイド">
+  <meta property="og:description" content="Edge、Chrome、Firefox 用 LocalGateKeys 拡張機能のインストール、アプリとの接続、ログイン情報の入力と保存の方法。">
+  <meta property="og:url" content="https://localgatekeys.app/ja/guide/extension">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys のロゴ: Windows・Mac・iPhone 用のパスワード管理アプリ。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys ブラウザ拡張機能ガイド">
+  <meta name="twitter:description" content="Edge、Chrome、Firefox 用 LocalGateKeys 拡張機能のインストール、アプリとの接続、ログイン情報の入力と保存の方法。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">コンテンツへスキップ</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../ja/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="メイン">
+        <ul class="nav">
+          <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/help">ガイド</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../../ja/download">ダウンロード</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>メニュー</summary>
+        <nav aria-label="メイン">
+          <ul class="nav nav-stack">
+            <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/help">ガイド</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../../ja/download">ダウンロード</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>言語</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/extension" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/extension" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/extension" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/extension" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/extension" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/extension" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../../de/guide/extension" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/extension" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/extension" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/extension" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/extension" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Edge、Chrome、Firefox 用のブラウザ拡張機能</h1>
+  <p class="lead">このデバイスのすべての画面と機能を手順ごとに説明します。各見出しは共有できるリンクです。</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="プラットフォーム">
+    <ul><li><a class="help-tab" href="../../ja/guide/windows">Windows</a></li><li><a class="help-tab" href="../../ja/guide/mac">Mac</a></li><li><a class="help-tab" href="../../ja/guide/iphone">iPhone と iPad</a></li><li><a class="help-tab" href="../../ja/guide/android">Android</a></li><li><a class="help-tab" href="../../ja/guide/extension" aria-current="page">ブラウザ拡張機能</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>どのデバイスでも知っておきたいこと</h2>
+    <ul>
+      <li><strong>保管庫はあなたのデバイスにとどまります。</strong>アカウントはなく、パスワードを保存する LocalGateKeys のサーバーもありません。</li>
+      <li><strong>マスターパスワードやアプリのパスワードは誰にもリセットできません。</strong>リカバリーフレーズを設定し、紙に書いて保管してください。</li>
+      <li><strong>Free</strong> は最大 7 件まで保存できます。<strong>Pro</strong>(US$29.99、買い切り)では項目数が無制限になり、2 要素コード、ファイル、同期が使えます。既存の項目の編集、削除、入力がブロックされることはありません。</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="extension" aria-labelledby="extension-title">
+    <h2 class="panel-title" id="extension-title">拡張機能のトピック</h2>
+    <p class="panel-lead">Web サイトでサインイン情報を入力・保存します。同じ PC 上の LocalGateKeys アプリとだけ通信するので、先に Windows アプリをインストールしてください。Safari をお使いですか？ここでダウンロードするものはありません。Mac と iPhone のアプリが自動入力で Safari に入力し、Safari 機能拡張も含まれています。<a href="../../ja/guide/mac#mac-autofill">Mac の自動入力と Safari</a> または <a href="../../ja/guide/iphone#ios-autofill">iPhone の場合</a>をご覧ください。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="拡張機能のトピック">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">このタブの内容</summary>
+          <ol>
+            <li><a href="#ext-install">インストールと接続</a></li>
+            <li><a href="#ext-popup">拡張機能のウィンドウ</a></li>
+            <li><a href="#ext-fill">ログインを入力する</a></li>
+            <li><a href="#ext-save">ログインを保存する</a></li>
+            <li><a href="#ext-2fa">2FA コードを入力する</a></li>
+            <li><a href="#ext-cards">カードと ID</a></li>
+            <li><a href="#ext-generate">新しいパスワード</a></li>
+            <li><a href="#ext-passkeys">パスキー</a></li>
+            <li><a href="#ext-trouble">トラブルシューティング</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ext-install">
+          <h3><a href="#ext-install">インストールと接続</a></h3>
+          <ol>
+            <li><a href="../../ja/guide/windows">Windows アプリ</a>をインストールして設定します。</li>
+            <li>拡張機能を追加します:<strong>Edge</strong> は <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Edge アドオン</a>から(<strong>インストール</strong>を選択)。<strong>Chrome</strong> は <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Chrome ウェブストア</a>から(<strong>Chrome に追加</strong>を選択)。<strong>Firefox</strong> は <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Firefox Add-ons</a>から(<strong>Firefox へ追加</strong>を選択)。</li>
+            <li>ツールバーのパズルピースのアイコンをクリックし、<strong>LocalGateKeys</strong> をピン留めします。</li>
+            <li>LocalGateKeys のアイコンをクリックします。接続カードに<strong>接続済み</strong>または<strong>ロック中</strong>と表示されれば OK です。</li>
+          </ol>
+          <p>ペアリングは不要です。拡張機能がアプリを自動で見つけます。アプリのセットアップガイドには、確認用の<strong>接続をテスト</strong>の手順があります。</p>
+        </article>
+
+        <article class="topic" id="ext-popup">
+          <h3><a href="#ext-popup">拡張機能のウィンドウ</a></h3>
+          <dl class="defs">
+            <dt>接続</dt><dd><strong>接続済み</strong>(準備完了)、<strong>ロック中</strong>(操作を選ぶとアプリがロック解除を求めます)、<strong>セットアップが必要</strong>、<strong>オフライン</strong>。<strong>↻</strong> で何もロック解除せずに状態を更新します。</dd>
+            <dt>現在のサイト</dt><dd>開いているサイトです。このサイト用に保存されたログインだけが提案されます。</dd>
+            <dt>クイック操作</dt><dd><strong>ログインを入力</strong>、<strong>ID を入力</strong>、<strong>カードを入力…</strong>、<strong>ログインを保存</strong>、<strong>パスワードを生成</strong>。</dd>
+            <dt>保存の確認</dt><dd>このサイトで保存の確認を表示するかどうかを切り替えるスイッチです。</dd>
+          </dl>
+          <p class="tip"><strong>設計上、勝手に入力されることはありません。</strong>入力は必ずクリックから始まり、拡張機能がマスターパスワードを求めることもありません。ロック解除は常に LocalGateKeys のウィンドウで行います。</p>
+        </article>
+
+        <article class="topic" id="ext-fill">
+          <h3><a href="#ext-fill">ログインを入力する</a></h3>
+          <ol>
+            <li>サイトのサインインページを開きます。</li>
+            <li>ユーザー名またはパスワード欄の中の LocalGateKeys アイコン(<em>LocalGateKeys で入力</em>)をクリックするか、拡張機能を開いて<strong>ログインを入力</strong>を選びます。</li>
+            <li>そのサイトに複数のアカウントがある場合は、<strong>アカウントを選択</strong>で 1 つ選びます。</li>
+            <li>保管庫がロックされている場合は、表示される LocalGateKeys のウィンドウでロックを解除します。</li>
+          </ol>
+          <p>ログインで<strong>入力後にサインイン</strong>がオンなら、フォームが自動で送信されます。特殊なフォームでは<em>自動サインインをスキップしました</em>と表示されるので、サイトのサインインボタンをクリックしてください。</p>
+        </article>
+
+        <article class="topic" id="ext-save">
+          <h3><a href="#ext-save">新しいログインや変更したログインを保存する</a></h3>
+          <ol>
+            <li>いつもどおり Web サイトにサインインします。</li>
+            <li>拡張機能が<em>このログインを保存しますか?</em>と確認します(変更されたパスワードの更新を提案することもあります)。</li>
+            <li><strong>保管庫に保存</strong>を選び、LocalGateKeys のウィンドウで確定します。<strong>今はしない</strong>や<strong>このサイトでは保存しない</strong>も選べます。</li>
+          </ol>
+          <p>手動で保存するには、フォームに入力してから拡張機能のウィンドウで<strong>ログインを保存</strong>を選びます。サイトの確認を再びオンにするには、拡張機能のウィンドウのスイッチを使います。</p>
+        </article>
+
+        <article class="topic" id="ext-2fa">
+          <h3><a href="#ext-2fa">2FA コードを入力する</a></h3>
+          <p>サイトが 6 桁のコードを求めたら、コード欄の LocalGateKeys アイコン(<em>LocalGateKeys で 2FA コードを入力</em>)をクリックします。ページに渡るのは現在のコードだけで、セットアップキーは渡りません。コードの期限が迫っている場合、拡張機能は新しいコードを少し待ちます。</p>
+          <p>ログインには、アプリで 2FA セットアップキーが保存されている必要があります(<a href="../../ja/guide/windows#win-2fa">2 要素コード</a>を参照)。設定 › ロック › <strong>2FA コードを渡す前に確認</strong>がオンの場合は、毎回アプリで確定します。</p>
+        </article>
+
+        <article class="topic" id="ext-cards">
+          <h3><a href="#ext-cards">カードと ID</a></h3>
+          <ol>
+            <li>購入手続きや住所のフォームで、フィールド内のアイコンをクリックするか、<strong>カードを入力…</strong> / <strong>ID を入力</strong>を選びます。</li>
+            <li>カードまたは ID を選びます。</li>
+            <li>入力するフィールドにチェックを入れます。セキュリティコード(CVV)は既定でオフです。必要なときだけチェックしてください。</li>
+            <li><strong>確認して承認</strong>を選び、LocalGateKeys のウィンドウで承認します。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ext-generate">
+          <h3><a href="#ext-generate">登録ページでパスワードを作成する</a></h3>
+          <p>登録フォームやパスワード変更フォームで<strong>パスワードを生成</strong>を選びます。新しいパスワードが新しいパスワード欄に入ります。ページを離れる前に、保存の確認または<strong>ログインを保存</strong>で<strong>保存してください</strong>。</p>
+        </article>
+
+        <article class="topic" id="ext-passkeys">
+          <h3><a href="#ext-passkeys">パスキー</a></h3>
+          <p>サイトがパスキーの作成や使用を提案したとき、LocalGateKeys が処理してパスキーを保管庫に保存できます。アプリの 設定 › 自動入力 › <strong>パスキーに LocalGateKeys を提案</strong>でオン/オフを切り替えます。対応できない場合は、ブラウザのパスキー画面に切り替わります。</p>
+        </article>
+
+        <article class="topic" id="ext-trouble">
+          <h3><a href="#ext-trouble">トラブルシューティング</a></h3>
+          <table>
+            <thead><tr><th scope="col">表示</th><th scope="col">対処</th></tr></thead>
+            <tbody>
+              <tr><td><strong>オフライン</strong> / アプリに接続できない</td><td>LocalGateKeys を開きます。<strong>デバイスと接続</strong>で<strong>ブリッジを修復</strong>を選び、ブラウザを再起動します。</td></tr>
+              <tr><td><strong>セットアップが必要</strong></td><td>アプリでプロファイルの選択を完了してから ↻ を押します。</td></tr>
+              <tr><td>ブラウザ連携が一時停止中</td><td>アプリの 設定 › 自動入力 で、ブラウザの自動入力を再びオンにします。</td></tr>
+              <tr><td>バージョンが一致しない</td><td>拡張機能とアプリの両方を更新し、両方を再起動します。</td></tr>
+              <tr><td>ブリッジの応答に時間がかかりすぎた</td><td>開いている LocalGateKeys の確認画面を閉じて、もう一度試します。</td></tr>
+              <tr><td>このサイトに保存されたログインがない</td><td>ログインの Web サイトがこのサイトと一致している必要があります。アプリで編集してください。</td></tr>
+              <tr><td>このログインでは入力が無効</td><td>アプリでログインを編集 › 自動入力ルール › 入力。</td></tr>
+              <tr><td>このページでは使用できない</td><td>拡張機能はブラウザのページ(設定、新しいタブ)では動作しません。通常の http/https ページを開いてください。</td></tr>
+            </tbody>
+          </table>
+          <p>それでも解決しない場合は、デバイスと接続 › <strong>レポートをエクスポート</strong>して <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a> にメールで送ってください。パスワードは含まれません。</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../ja/help">ユーザーガイド全体を 1 ページで見る</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>保管庫をご自身のデバイスに置いたままにする、Windows、Mac、iPhone向けのパスワードマネージャーです。</p>
+        <p class="quiet">本サイトはCookieを使わないCloudflare Web Analyticsでページの閲覧数を計測しています。広告トラッカーは使用せず、Cookieも設定しません。</p>
+      </div>
+      <nav aria-label="製品">
+        <h2>製品</h2>
+        <ul>
+          <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/download">ダウンロード</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/switch/">乗り換え</a></li>
+          <li><a href="../../buy">Proを購入</a></li>
+          <li><a href="../../ja/licence">Proライセンス</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">ライセンスを再取得</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="ヘルプ">
+        <h2>ヘルプ</h2>
+        <ul>
+          <li><a href="../../ja/help">ユーザーガイド</a></li>
+          <li><a href="../../ja/support">サポートとFAQ</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">脆弱性の報告</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法的情報">
+        <h2>法的情報</h2>
+        <p class="quiet">これらの文書は英語で提供されており、適用され拘束力を持つのは英語版です。</p>
+        <ul>
+          <li><a href="../../legal/eula">ライセンス契約</a></li>
+          <li><a href="../../legal/privacy">プライバシーポリシー</a></li>
+          <li><a href="../../legal/terms-of-sale">販売条件</a></li>
+          <li><a href="../../legal/refunds">返金ポリシー</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas。お問い合わせ: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windowsは Microsoft グループ企業の商標です。Chromeは Google LLC の商標です。Apple、iPhone、Apple Watch、Face ID、Touch ID、Safariは、米国およびその他の国で登録されたApple Inc.の商標です。</p>
+      <nav class="lang-switch" aria-label="言語"><ul><li><a href="../../guide/extension" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/extension" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/extension" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/extension" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/extension" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/extension" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../../de/guide/extension" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/extension" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/extension" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/extension" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/extension" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

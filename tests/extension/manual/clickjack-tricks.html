@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LocalGateKeys manual test: clickjacking tricks</title>
+<!--
+  Manual test page for the click-safe inline menu (2026-11-15 feature idea 2).
+  Serve it over http(s) from a test origin (for example `npx http-server tests/extension/manual -p 8080`
+  and open http://localhost:8080/clickjack-tricks.html), save a throwaway login for that origin, then:
+    1. Click the LocalGateKeys icon in the username field so the account menu opens.
+    2. Press one trick button (keyboard: Tab to it and press Enter, so the menu is not clicked by accident).
+    3. Try to click a row in the menu.
+  Expected: a click never fills through a menu that is hidden, faded, covered, restyled or just moved.
+  - "Opacity 0.01" (fades the top layer too) and "Restyle injected hosts": nothing is filled; the menu
+    closes or is replaced by a neutral notice that says to use the LocalGateKeys button in the toolbar.
+  - "Transparent overlay", "Opaque decoy", "Transform" and "Filter" on <html>: the menu sits in the top
+    layer, so it stays fully visible above them and a click on it fills normally (that is not a lure).
+    Check in the screenshot that the menu really is drawn on top and unfaded.
+  - "Move under cursor": the menu stays where it opened (it does not follow the form); if a later build
+    re-anchors it, a click within half a second of a move must be ignored.
+  Live result 2026-11-15: see docs/reports/2026-11-15-verify-extension-live.md.
+  Also check: popup switch "Always use this popup on this site" removes the icons here.
+  These checks make lured clicks much harder; they are not a guarantee.
+-->
+<style>
+  body { font: 15px system-ui, sans-serif; margin: 40px; }
+  form { display: grid; gap: 10px; width: 320px; padding: 16px; border: 1px solid #ccc; border-radius: 8px; }
+  .tricks { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; }
+  #overlay { position: fixed; inset: 0; background: rgba(255,255,255,.02); pointer-events: none; z-index: 2147483647; display: none; }
+  #decoy { position: fixed; left: 40px; top: 300px; width: 320px; height: 120px; background: #ffe; border: 2px dashed #c90; display: none;
+    z-index: 2147483647; font-size: 20px; text-align: center; line-height: 120px; }
+</style>
+</head>
+<body>
+<h1>Clickjacking tricks</h1>
+<form id="login" action="/session" method="post" onsubmit="event.preventDefault()">
+  <input id="user" name="username" autocomplete="username" placeholder="Username">
+  <input id="pw" name="password" type="password" autocomplete="current-password" placeholder="Password">
+  <button type="submit">Sign in</button>
+</form>
+<div class="tricks">
+  <button id="t-opacity" type="button">Opacity 0.01 on &lt;html&gt;</button>
+  <button id="t-overlay" type="button">Transparent overlay (pointer-events: none)</button>
+  <button id="t-decoy" type="button">Opaque decoy over the menu</button>
+  <button id="t-transform" type="button">Transform on &lt;html&gt;</button>
+  <button id="t-filter" type="button">Filter on &lt;html&gt;</button>
+  <button id="t-move" type="button">Move under cursor</button>
+  <button id="t-host" type="button">Restyle injected hosts (opacity / clip-path)</button>
+  <button id="t-reset" type="button">Reset</button>
+</div>
+<p id="log"></p>
+<div id="overlay"></div>
+<div id="decoy">Click here to win!</div>
+<script>
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const log = text => { $("log").textContent = text; };
+  const root = document.documentElement.style;
+  $("t-opacity").onclick = () => { root.opacity = "0.01"; log("html opacity 0.01"); };
+  $("t-overlay").onclick = () => { $("overlay").style.display = "block"; log("overlay on"); };
+  $("t-decoy").onclick = () => { $("decoy").style.display = "block"; log("decoy on (the menu should be in the top layer above it, or refuse)"); };
+  $("t-transform").onclick = () => { root.transform = "translateX(1px) scale(1.001)"; log("html transform"); };
+  $("t-filter").onclick = () => { root.filter = "opacity(0.02)"; log("html filter"); };
+  // Moves the login form so the anchored menu jumps under the pointer just before a click.
+  $("t-move").onclick = () => {
+    const form = $("login");
+    form.style.position = "relative";
+    document.addEventListener("mousemove", e => {
+      form.style.left = `${Math.max(0, e.clientX - 60)}px`;
+      form.style.top = `${Math.max(0, e.clientY - 80)}px`;
+    });
+    log("form follows the pointer");
+  };
+  // Tries to fade and clip every element the extension appended to <html>.
+  $("t-host").onclick = () => {
+    for (const el of document.documentElement.children) {
+      if (el === document.head || el === document.body) continue;
+      el.style.setProperty("opacity", "0.02", "important");
+      el.style.setProperty("clip-path", "inset(0 0 50% 0)", "important");
+    }
+    log("injected hosts restyled");
+  };
+  $("t-reset").onclick = () => location.reload();
+</script>
+</body>
+</html>

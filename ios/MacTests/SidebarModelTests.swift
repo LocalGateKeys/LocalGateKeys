@@ -18,6 +18,20 @@ final class SidebarModelTests: XCTestCase {
         XCTAssertNil(model.count(for: .tool(.settings)))
     }
 
+    /// UX refresh 2026-11-12: five Tools rows; the pages they fold in still highlight their row.
+    func testSidebarToolsAndHomes() {
+        XCTAssertEqual(Tool.sidebarTools, [.securityCentre, .generator, .sync, .importExport, .trash])
+        XCTAssertEqual(Tool.activity.sidebarRow, .securityCentre)
+        XCTAssertEqual(Tool.devices.sidebarRow, .sync)
+        XCTAssertNil(Tool.reminders.sidebarRow)
+        XCTAssertNil(Tool.licence.sidebarRow)
+        XCTAssertNil(Tool.recoveryCentre.sidebarRow)
+        XCTAssertEqual(Tool.trash.sidebarRow, .trash)
+        XCTAssertEqual(SettingsTab.tab(for: .unlocking), .security)
+        XCTAssertEqual(SettingsTab.tab(for: .plan), .plan)
+        XCTAssertEqual(SettingsTab.allCases.count, 7)
+    }
+
     func testFavouritesAndRecentCounts() {
         let model = SidebarModel(items: [item("a", "web", favourite: true), item("b", "web"), item("c", "note", favourite: true)])
         XCTAssertEqual(model.count(for: .favourites), 2)

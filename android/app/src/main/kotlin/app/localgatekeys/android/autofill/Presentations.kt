@@ -23,6 +23,8 @@ object Presentations {
         RemoteViews(context.packageName, R.layout.autofill_item).apply {
             setTextViewText(R.id.autofill_title, title)
             setTextViewText(R.id.autofill_subtitle, subtitle ?: "")
+            // One line when there is no username: the title centres beside the mark.
+            setViewVisibility(R.id.autofill_subtitle, if (subtitle.isNullOrEmpty()) android.view.View.GONE else android.view.View.VISIBLE)
         }
 
     @SuppressLint("RestrictedApi")

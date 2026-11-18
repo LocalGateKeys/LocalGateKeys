@@ -40,6 +40,17 @@ class ProfileError(Exception):
     pass
 
 
+class VaultLimitReached(ProfileError):
+    """The free plan holds one vault; the UI shows the upgrade sheet (sub-plan 12, Task 3)."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__("The free plan holds one vault. Upgrade to Pro for more vaults.")
+        self.limit = limit
+
+
+ITEM_COUNT_FILE = "item-count.json"
+
+
 CAMERA_UNLOCK_BLOCKS_DELETE = (
     "Camera verification is set up for this profile. Open the profile and remove camera verification "
     "first (Unlocking; this re-encrypts the vault under a new key and replaces any recovery phrase), "
@@ -139,10 +150,13 @@ class ProfileManager:
             return None
         return next((item for item in self.list_profiles() if item.id == wanted), None)
 
-    def create_profile(self, name: str, color: str | None = None) -> ProfileRecord:
+    def create_profile(self, name: str, color: str | None = None, *, vault_limit: int | None = None) -> ProfileRecord:
+        """``vault_limit`` (``licensing.vault_limit()``): refuse a new vault at or above it; existing ones stay."""
         name = _validate_profile_name(name)
         raw = self._read_index()
         profiles = raw["profiles"]
+        if vault_limit is not None and sum(isinstance(item, dict) for item in profiles) >= vault_limit:
+            raise VaultLimitReached(vault_limit)
         if any(str(item.get("name", "")).casefold() == name.casefold() for item in profiles if isinstance(item, dict)):
             raise ProfileError("A profile with that name already exists")
         now = int(time.time())
@@ -401,6 +415,36 @@ class ProfileManager:
             raw["active_profile_id"] = replacement
         self._write_index(raw)
 
+    def forget_erased_profile(self, profile_id: str) -> None:
+        """Drop the row of a profile whose folder ``device_erase`` removed (it may be the only one).
+
+        Another profile becomes active; without one, none is (the app then offers to set up a new vault).
+        """
+        raw = self._read_index()
+        rows = [item for item in raw["profiles"] if isinstance(item, dict) and str(item.get("id")) != profile_id]
+        raw["profiles"] = rows
+        if raw.get("active_profile_id") == profile_id:
+            raw["active_profile_id"] = str(rows[0]["id"]) if rows else None
+        self._write_index(raw)
+
+    def record_item_count(self, profile_id: str, count: int) -> None:
+        """Remember a vault's live item count (non-secret) so the free limit counts across all vaults."""
+        atomic_write_json(self.profile_dir(profile_id) / ITEM_COUNT_FILE, {"items": max(0, int(count))})
+
+    def items_in_other_vaults(self, profile_id: str) -> int:
+        """Sum of the last recorded item counts of every other listed vault (0 for one never unlocked)."""
+        total = 0
+        for record in self.list_profiles():
+            if record.id == profile_id:
+                continue
+            path = self.root / "Profiles" / record.id / ITEM_COUNT_FILE
+            try:
+                value = read_json(path).get("items", 0)
+                total += max(0, int(value))
+            except (OSError, ValueError, AttributeError, TypeError, json.JSONDecodeError):
+                continue
+        return total
+
     def profile_dir(self, profile_id: str | None = None) -> Path:
         pid = profile_id or self.ensure_profile().id
         path = self.root / "Profiles" / pid
@@ -558,7 +602,7 @@ def _normalize_profile_photo(source: bytes | bytearray | memoryview | str | Path
         raise ProfileError("Photo editing is unavailable because image support is not installed")
     data = _photo_source_bytes(source)
     try:
-        with Image.open(io.BytesIO(data)) as opened:
+        with Image.open(io.BytesIO(data), formats=("PNG", "JPEG")) as opened:
             if opened.format not in {"PNG", "JPEG"}:
                 raise ProfileError("Profile photo must be a PNG or JPEG image")
             if int(getattr(opened, "n_frames", 1)) != 1:

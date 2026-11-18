@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">Codes épinglés</string>
+    <string name="widget_codes_description">Vos codes à deux facteurs épinglés.</string>
+    <string name="widget_codes_locked">Déverrouillez pour voir les codes</string>
+    <string name="widget_codes_empty">Épinglez un code dans LocalGateKeys</string>
+    <string name="detail_pin_code">Afficher dans le widget</string>
+    <string name="detail_pin_code_note">Le widget de l’écran d’accueil affiche ce code tant que LocalGateKeys est déverrouillé, jusqu’au verrouillage automatique.</string>
+    <string name="detail_pin_full">Vous pouvez épingler jusqu’à %1$d codes.</string>
+    <string name="widget_codes_locked_immediately">Réglez le verrouillage automatique sur 1 minute ou plus pour voir les codes ici</string>
+    <string name="detail_pin_code_note_immediately">Le verrouillage automatique est réglé sur Immédiatement : LocalGateKeys se verrouille quand vous le quittez et le widget ne peut pas afficher ce code. Réglez-le sur 1 minute ou plus dans les Réglages pour le voir sur l’écran d’accueil.</string>
+    <string name="tile_codes_name">Copier le code</string>
+    <string name="tile_codes_empty">Aucun code épinglé</string>
+    <string name="tile_codes_locked">Déverrouillez pour copier</string>
+    <string name="tile_codes_locked_subtitle">Verrouillé</string>
+    <string name="tile_codes_tap_to_copy">Touchez pour copier</string>
+    <string name="tile_codes_copied">Copié</string>
+    <string name="tile_codes_no_code">Aucun code</string>
+</resources>

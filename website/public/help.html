@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>User guide | LocalGateKeys</title>
-  <meta name="description" content="How every feature of LocalGateKeys works on Windows, the browser extension, iPhone, Mac, Apple Watch and Android, with step-by-step instructions.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys user guide: Windows, Mac, iPhone, browser</title>
+  <meta name="description" content="Step-by-step help for every LocalGateKeys feature on Windows, Mac, iPhone, Apple Watch and in the browser extension: setup, autofill, sync and backups.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/help">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/help">
@@ -20,32 +19,64 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/help">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/help">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/help">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/help">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/help">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys user guide: Windows, Mac, iPhone, browser">
+  <meta property="og:description" content="Step-by-step help for every LocalGateKeys feature on Windows, Mac, iPhone, Apple Watch and in the browser extension: setup, autofill, sync and backups.">
+  <meta property="og:url" content="https://localgatekeys.app/help">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The LocalGateKeys logo: a password manager for Windows, Mac and iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys user guide: Windows, Mac, iPhone, browser">
+  <meta name="twitter:description" content="Step-by-step help for every LocalGateKeys feature on Windows, Mac, iPhone, Apple Watch and in the browser extension: setup, autofill, sync and backups.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="brand/icon-256.png">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="page">
+<body class="help-page">
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="index.html">
-        <img src="brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="./">
+        <img src="brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Main">
+      <nav class="nav-wide" aria-label="Main">
         <ul class="nav">
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="get-started.html">Get started</a></li>
-          <li><a href="help.html" aria-current="page">Guide</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="support.html">Support</a></li>
-          <li><a href="buy.html">Buy Pro</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help" aria-current="page">Guide</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Main">
+          <ul class="nav nav-stack">
+            <li><a href="features">Features</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="help" aria-current="page">Guide</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="support">Support</a></li>
+          <li><a class="nav-cta" href="download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Language</span></summary>
+        <ul class="lang-menu-list"><li><a href="help" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/help" hreflang="es" lang="es">Español</a></li><li><a href="it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/help" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/help" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/help" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -53,11 +84,15 @@
 <div class="wrap page-head">
   <h1>User guide</h1>
   <p class="lead">Step-by-step help for every screen and feature. Pick your device, then jump to a topic. Every heading is a link you can share.</p>
+  <nav class="guide-links" aria-labelledby="guide-links-title">
+    <p id="guide-links-title">Guide for each device</p>
+    <ul><li><a class="guide-link" href="guide/windows">Windows</a></li><li><a class="guide-link" href="guide/mac">Mac</a></li><li><a class="guide-link" href="guide/iphone">iPhone and iPad</a></li><li><a class="guide-link" href="guide/android">Android</a></li><li><a class="guide-link" href="guide/extension">Browser extension</a></li></ul>
+  </nav>
 </div>
 
 <div class="wrap page-body help">
 
-  <nav class="help-tabs" aria-label="Platforms">
+  <nav class="help-tabs glass" aria-label="Platforms">
     <a class="help-tab" href="#windows" data-tab="windows">Windows</a>
     <a class="help-tab" href="#extension" data-tab="extension">Browser extension</a>
     <a class="help-tab" href="#iphone" data-tab="iphone">iPhone</a>
@@ -66,44 +101,49 @@
     <a class="help-tab" href="#android" data-tab="android">Android</a>
   </nav>
 
-  <aside class="help-basics">
+  <aside class="help-basics glass">
     <h2>Good to know on every device</h2>
     <ul>
       <li><strong>Your vault stays on your devices.</strong> There is no account and no LocalGateKeys server holding your passwords.</li>
       <li><strong>Nobody can reset your master password or app password.</strong> Set up a recovery phrase and keep it on paper.</li>
-      <li><strong>Free</strong> holds up to 4 items. <strong>Pro</strong> (US$4.99, paid once) adds unlimited items, two-factor codes, files and sync. Editing, deleting and filling items you already have are never blocked.</li>
+      <li><strong>Free</strong> holds up to 7 items. <strong>Pro</strong> (US$29.99, paid once) adds unlimited items, two-factor codes, files and sync. Editing, deleting and filling items you already have are never blocked.</li>
     </ul>
   </aside>
 
   <!-- ============================== WINDOWS ============================== -->
   <section class="help-panel" id="windows" aria-labelledby="windows-title">
     <h2 class="panel-title" id="windows-title">LocalGateKeys for Windows</h2>
-    <p class="panel-lead">Windows 10 and 11, 64-bit. Install it from the Microsoft Store or the <a href="download.html">download page</a>.</p>
+    <p class="panel-lead">Windows 10 (version 2004 or later) and Windows 11, 64-bit. Install it from the Microsoft Store or the <a href="download">download page</a>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Windows topics">
-        <p class="help-toc-title">On this tab</p>
-        <ol>
-          <li><a href="#win-setup">First start and profiles</a></li>
-          <li><a href="#win-unlock">Unlocking and locking</a></li>
-          <li><a href="#win-screen">The main window</a></li>
-          <li><a href="#win-items">Adding and editing items</a></li>
-          <li><a href="#win-trash">Deleting, trash and undo</a></li>
-          <li><a href="#win-search">Search, palette, Quick access</a></li>
-          <li><a href="#win-generator">Password generator</a></li>
-          <li><a href="#win-security">Security center</a></li>
-          <li><a href="#win-2fa">Two-factor codes and QR</a></li>
-          <li><a href="#win-import">Import</a></li>
-          <li><a href="#win-export">Export and transfer</a></li>
-          <li><a href="#win-backups">Backups and restore</a></li>
-          <li><a href="#win-sync">Sync</a></li>
-          <li><a href="#win-share">Sharing an item</a></li>
-          <li><a href="#win-apps">Filling Windows apps</a></li>
-          <li><a href="#win-settings">Settings</a></li>
-          <li><a href="#win-pro">Pro licence</a></li>
-          <li><a href="#win-updates">Updates</a></li>
-          <li><a href="#win-keys">Keyboard shortcuts</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#win-setup">First start and profiles</a></li>
+            <li><a href="#win-unlock">Unlocking and locking</a></li>
+            <li><a href="#win-screen">The main window</a></li>
+            <li><a href="#win-items">Adding and editing items</a></li>
+            <li><a href="#win-trash">Deleting, trash and undo</a></li>
+            <li><a href="#win-search">Search, palette, Quick access</a></li>
+            <li><a href="#win-generator">Password generator</a></li>
+            <li><a href="#win-security">Security center</a></li>
+            <li><a href="#win-2fa">Two-factor codes and QR</a></li>
+            <li><a href="#win-import">Import</a></li>
+            <li><a href="#win-export">Export and transfer</a></li>
+            <li><a href="#win-backups">Backups and restore</a></li>
+            <li><a href="#win-sync">Sync</a></li>
+            <li><a href="#win-share">Sharing an item</a></li>
+            <li><a href="#win-apps">Filling Windows apps</a></li>
+            <li><a href="#win-shared">Shared collections</a></li>
+            <li><a href="#win-safety">Emergency access and duress password</a></li>
+            <li><a href="#win-dev">Developer tools and AI agents</a></li>
+            <li><a href="#win-settings">Settings</a></li>
+            <li><a href="#win-pro">Pro licence</a></li>
+            <li><a href="#win-updates">Updates</a></li>
+            <li><a href="#win-keys">Keyboard shortcuts</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -130,7 +170,7 @@
           <h4>Ways to unlock</h4>
           <ul>
             <li><strong>Master password</strong>, then <strong>Unlock</strong>. Always works.</li>
-            <li><strong>Unlock with Windows Hello</strong>: fingerprint, face or PIN. Set it up in Settings › Unlocking › Windows Hello › <strong>Set up</strong>. Turn on <strong>Start Windows Hello automatically</strong> to get the prompt as soon as the window opens.</li>
+            <li><strong>Unlock with Windows Hello</strong>: fingerprint, face or PIN. Set it up in Settings › Unlocking › Windows Hello › <strong>Set up</strong>. <strong>Start Windows Hello automatically</strong> (on by default) shows the prompt as soon as the window opens.</li>
             <li><strong>Use camera instead</strong>: face matching with an ordinary webcam, done on the PC. It is less secure than Windows Hello. Set it up with <strong>Set up camera verification</strong>.</li>
           </ul>
           <h4>Forgot your master password?</h4>
@@ -141,7 +181,7 @@
           </ol>
           <p class="note"><strong>Afterwards</strong> set up Windows Hello and camera verification again. The recovery phrase keeps working.</p>
           <h4>Change the master password</h4>
-          <p>Settings › Unlocking › Master password › <strong>Change…</strong>. Enter the current one and the new one twice. Backups you already made keep the password they were made with.</p>
+          <p>Settings › Unlocking › Master password › <strong>Change…</strong>. Enter the current one and the new one twice. To keep your recovery phrase working, also enter its 24 words; otherwise create a new phrase afterwards. Backups you already made keep the password they were made with.</p>
           <h4>Locking</h4>
           <ul>
             <li><strong>Lock</strong> button in the top bar, or <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
@@ -156,7 +196,7 @@
               </ul>
             </li>
           </ul>
-          <p>The tray icon menu has <strong>Unlock vault</strong>, <strong>Lock vault</strong>, <strong>Quick access</strong> and <strong>Exit</strong>.</p>
+          <p>The tray icon menu has <strong>Open LocalGateKeys</strong>, <strong>Unlock vault</strong>, <strong>Lock vault</strong>, <strong>Lock &amp; switch person</strong>, <strong>Quick access</strong>, <strong>Check for updates</strong>, switches for <strong>Browser integration</strong> and <strong>Desktop fill icons</strong>, and <strong>Exit</strong>.</p>
         </article>
 
         <article class="topic" id="win-screen">
@@ -165,7 +205,7 @@
             <dt>Sidebar · Vault</dt><dd><strong>All items</strong>, <strong>Favorites</strong>, <strong>Recently used</strong>.</dd>
             <dt>Sidebar · Types</dt><dd>One entry per kind you have, such as Logins, Cards, Identities, Secure notes, Documents, Wi-Fi or Passkeys.</dd>
             <dt>Sidebar · Collections &amp; views</dt><dd>Your collections and pinned views.</dd>
-            <dt>Sidebar · Tools</dt><dd>Security center, Reminders, Sync, Devices &amp; connections, Licence, Import &amp; export, Scan QR code, Activity, Trash. <strong>Settings</strong> is at the bottom.</dd>
+            <dt>Sidebar · Tools</dt><dd>Security center, Generator, Sync &amp; devices, Devices &amp; connections, Import &amp; export, Trash. <strong>Settings</strong> is at the bottom. Reminders open from the <em>Coming up</em> card on Home, Activity from the Security center, Scan QR code with <kbd>Ctrl</kbd>+<kbd>K</kbd>, and Licence from Settings › Plan &amp; sync. <kbd>Ctrl</kbd>+<kbd>K</kbd> reaches every page.</dd>
             <dt>Top bar</dt><dd>Search box, <strong>New item</strong>, <strong>Lock</strong>, and <strong>Ctrl K</strong> for the command palette.</dd>
             <dt>Home</dt><dd>Cards for Password health, Backup &amp; recovery, Coming up and Generator, plus <strong>One-time codes</strong> (click a code to copy it).</dd>
           </dl>
@@ -174,7 +214,7 @@
             <li>Filter chips: <strong>All</strong>, <strong>Needs attention</strong>, <strong>No 2FA</strong>, <strong>Expiring</strong>.</li>
             <li><strong>Sort</strong>: Title A–Z, Title Z–A, Date modified, Date created.</li>
             <li>Flags on a row show a password that is Breached, Weak or Reused.</li>
-            <li>Right-click a row (or <kbd>Shift</kbd>+<kbd>F10</kbd>) for Copy password, Copy username, Copy 2FA code, Open website, Favorites, Share… and Move to trash….</li>
+            <li>Right-click a row (or <kbd>Shift</kbd>+<kbd>F10</kbd>) for Edit, Copy username, Copy password, Copy 2FA code, Open website, Share…, Add to favorites and Move to trash….</li>
           </ul>
           <h4>The detail pane</h4>
           <p>Shows the fields of the selected item. Passwords stay hidden until you click them. Buttons copy the username, password or 2FA code, open the website, <strong>Edit</strong>, <strong>Share</strong> or <strong>Move to trash</strong>. Documents add <strong>Open file</strong>, <strong>Safe preview</strong>, <strong>Save a copy…</strong> and <strong>Replace file…</strong>.</p>
@@ -187,8 +227,8 @@
             <li>Pick a kind (click it, press its number, or start typing its name):
               <ul>
                 <li><em>Sign-ins</em>: Website login, Desktop app login, Passkey</li>
-                <li><em>Personal</em>: Payment card, Bank account, Identity, Secure note, Document, Wi-Fi network</li>
-                <li><em>Things you own</em>: License, Purchase, Warranty, Subscription, Bookmark</li>
+                <li><em>Money</em>: Payment card, Bank account · <em>Personal</em>: Identity, Secure note, Document</li>
+                <li><em>Tech</em>: SSH key, API key, Wi-Fi network, Bookmark · <em>Things you own</em>: License, Subscription, Warranty, Purchase</li>
               </ul>
             </li>
             <li>Fill in the fields and choose <strong>Save</strong>. If you leave with unsaved changes you are asked <em>Discard your changes?</em></li>
@@ -196,18 +236,18 @@
           <h4>Logins in detail</h4>
           <ul>
             <li><strong>Title</strong>, <strong>Website</strong>, <strong>Username</strong>, <strong>Password</strong> and <strong>Notes</strong>.</li>
-            <li><strong>Change</strong> next to the password makes a new one with the generator. Change it on the website too, then save.</li>
+            <li><strong>Change</strong> next to the password lets you type a new one, or choose <strong>Passphrase</strong>, <strong>Random</strong> or <strong>PIN</strong> to make one. Change it on the website too, then save.</li>
             <li><strong>Two-factor</strong>: paste the site's setup key here (Pro). See <a href="#win-2fa">Two-factor codes</a>.</li>
             <li><strong>Custom fields</strong>: <strong>Add field</strong> for anything else. Mark a field Hidden to treat it like a password.</li>
-            <li><strong>Password history</strong>: old passwords are kept, encrypted, for a year. <strong>Copy previous password</strong> or <strong>Restore this password</strong>.</li>
+            <li><strong>Password history</strong>: up to 5 old passwords are kept, encrypted, for a year. <strong>Copy previous password</strong> or <strong>Restore this password</strong>.</li>
             <li><strong>Recovery codes</strong>: one per line. <strong>Copy and use next code</strong> copies one and removes it from the list.</li>
-            <li><strong>Autofill rules</strong>: Filling (Default, On click, Never), Sign in after filling, Always ask for the master password, and Offer to save changes from the browser.</li>
+            <li><strong>Autofill rules</strong>: Filling (On click or Off), Sign in after filling (Default, Never or Always), Always ask for the master password, and Offer to save changes from the browser.</li>
           </ul>
           <h4>Other kinds</h4>
           <p>Each kind has its own fields. Dates are written as YYYY-MM-DD. Every item can be a <strong>Favorite</strong> and carry <strong>Tags</strong> (separate them with commas). Documents use <strong>Choose file and save</strong> (Pro).</p>
           <h4>Collections and reminders</h4>
           <ul>
-            <li>Collections group items your way: <strong>Add collection</strong>, <strong>Rename</strong>, <strong>Archive</strong>. They stay on this PC and do not sync.</li>
+            <li>Collections group items your way: <strong>Add collection</strong>, <strong>Rename</strong>, <strong>Archive</strong>. They sync with your other devices, and you can share one with other people (see <a href="#win-shared">Shared collections</a>).</li>
             <li><strong>Reminders</strong> lists items that expire soon or are overdue, with <strong>Complete</strong> and <strong>Snooze 1 day</strong>.</li>
             <li><strong>Activity</strong> shows a history of what happened in the vault.</li>
           </ul>
@@ -228,15 +268,15 @@
           <ul>
             <li><strong>Search</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>, type, and press <kbd>Enter</kbd> to open the top result or <kbd>↓</kbd> to move into the list.</li>
             <li><strong>Command palette</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd> finds items and actions. Start with <code>&gt;</code> for actions only (Back up now, Generate password, Lock now, Sync status…), <code>#</code> for tags and <code>@</code> for collections.</li>
-            <li><strong>Quick access</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> anywhere in Windows opens a small search window for logins, notes and bookmarks. Change the shortcut in Settings › Autofill › Quick access.</li>
+            <li><strong>Quick access</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> anywhere in Windows opens LocalGateKeys on the Quick access page, to find a login, note or bookmark. Change the shortcut in Settings › Autofill › Quick access.</li>
           </ul>
         </article>
 
         <article class="topic" id="win-generator">
           <h3><a href="#win-generator">Password generator</a></h3>
-          <p>Open it from the <strong>Generator</strong> card on Home, from <strong>Change</strong> in a login, or with Ctrl+K › Generate password.</p>
+          <p>Open it from the <strong>Generator</strong> card on Home or with Ctrl+K › Generate password.</p>
           <ul>
-            <li><strong>Random</strong>: choose the length and whether to use capitals and symbols.</li>
+            <li><strong>Random</strong>: choose the length and which characters to use: A–Z, a–z, 0–9 and symbols.</li>
             <li><strong>Passphrase</strong>: choose the number of words. Easier to type, just as strong when long enough.</li>
             <li><strong>Generate again</strong> for a new one, <strong>Copy</strong> to copy it.</li>
           </ul>
@@ -247,9 +287,10 @@
           <p>Tools › <strong>Security center</strong> lists what to fix first: weak, reused, old and breached passwords, and logins that could have 2FA.</p>
           <ul>
             <li><strong>Check all for breaches</strong> compares your passwords with the Have I Been Pwned list. Only the first 5 characters of a hash leave your PC, never the password.</li>
-            <li>Breach checks are off until you switch on Settings › Privacy › <strong>Breach checks</strong>. <strong>Strict offline mode</strong> blocks them, website icons and every other network request.</li>
+            <li>Breach checks need two changes in Settings › Privacy: turn off <strong>Strict offline mode</strong> (on by default) and turn on <strong>Breach checks</strong>. Strict offline mode blocks breach checks, website icons and every other network request.</li>
             <li>On <strong>Password health</strong> use <strong>Open entry</strong> or <strong>Change password</strong> to fix an item.</li>
           </ul>
+          <p><strong>Network activity</strong>, at the bottom of the Security center, lists each time LocalGateKeys went online and why: update checks, breach checks, website icons and sync with your own devices.</p>
         </article>
 
         <article class="topic" id="win-2fa">
@@ -257,7 +298,7 @@
           <p>LocalGateKeys can show the 6-digit codes a site asks for after the password, so you don't need a separate authenticator app.</p>
           <ol>
             <li>On the website, turn on two-factor / authenticator-app sign-in so it shows a QR code.</li>
-            <li>In LocalGateKeys choose Tools › <strong>Scan QR code</strong>. Bring the picture in one of three ways:
+            <li>In LocalGateKeys choose Ctrl+K › <strong>Scan QR code</strong>. Bring the picture in one of three ways:
               <ul>
                 <li><strong>Paste screenshot</strong>: press <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, select the QR code, then <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
                 <li><strong>Choose image…</strong> (PNG, JPEG, BMP) or drag the image in.</li>
@@ -291,7 +332,7 @@
             <thead><tr><th scope="col">From</th><th scope="col">File</th></tr></thead>
             <tbody>
               <tr><td>1Password 8</td><td>.1pux or CSV</td></tr>
-              <tr><td>Bitwarden</td><td>JSON, also password-protected</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (also password-protected) or CSV</td></tr>
               <tr><td>LastPass</td><td>CSV</td></tr>
               <tr><td>Dashlane</td><td>zip or CSV</td></tr>
               <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (opened directly), XML or CSV</td></tr>
@@ -301,7 +342,7 @@
               <tr><td>Anything else</td><td>CSV, with column choice</td></tr>
             </tbody>
           </table>
-          <p class="note">Not imported: trash, password history, passkeys and attachments. <code>http://</code> sites are saved as https. Entries with no website or password become secure notes. On Free, the 4-item limit applies.</p>
+          <p class="note">Not imported: trash, password history, passkeys and attachments. <code>http://</code> sites are saved as https. Entries with no website or password become secure notes. On Free, the 7-item limit applies. Credential Exchange (CXF) files (<code>.json</code> or <code>.cxf</code>) from other password managers are recognised too, and bring passkeys along.</p>
         </article>
 
         <article class="topic" id="win-export">
@@ -310,6 +351,7 @@
           <ul>
             <li><strong>KeePass KDBX 4</strong>: encrypted with a password you choose (12+ characters). The safe choice.</li>
             <li>Bitwarden-compatible CSV, Bitwarden JSON, KeePass 2 XML: <em>unencrypted</em>. Delete them after use.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: the logins, notes and passkeys you pick, for another password manager. <em>Unencrypted</em>; passkey private keys are included only if you agree.</li>
             <li>Tick <strong>Include one-time password (2FA) secrets</strong> to take your 2FA codes along.</li>
           </ul>
           <p><strong>Encrypted transfer…</strong> moves chosen items (by favourites, kinds, tags) to another profile or PC in a password-protected package. On the other side choose <strong>Import a package</strong>, <strong>Inspect</strong>, <strong>Preview</strong>, then import.</p>
@@ -323,6 +365,7 @@
             <li><strong>Scheduled backups</strong>: Daily or Weekly, with <strong>Time of day</strong> and <strong>Day of the week</strong>.</li>
             <li><strong>Cloud copy</strong> › <strong>Choose…</strong> a folder, such as a USB drive or a second disk, for a second copy.</li>
             <li><strong>Old scheduled backups</strong>: keep only the latest, or the latest and previous.</li>
+            <li><strong>Weekly restore test</strong>: each week LocalGateKeys proves that a scheduled backup restores. Nothing is stored. <strong>Automatic backups to keep</strong> sets how many automatic backups are kept.</li>
           </ol>
           <p class="note">Backups run only while the vault is unlocked. One missed while the app was closed runs at the next unlock.</p>
           <h4>Backup &amp; restore page</h4>
@@ -335,7 +378,7 @@
             <li><strong>Recovery phrase</strong> (Set up / Replace…) and <strong>Write recovery kit</strong>, a printable sheet.</li>
           </ul>
           <h4>Restoring a phone backup</h4>
-          <p>Import &amp; export › <strong>Restore phone backup…</strong>, choose the <code>.lgkm</code> file from the iPhone or Android app, enter its password, <strong>Preview</strong>, then <strong>Restore</strong>. Items are added to your vault; nothing is wiped.</p>
+          <p>Import &amp; export › <strong>Restore phone backup…</strong>, choose the <code>.lgkm</code> file from the iPhone app, enter its password, <strong>Preview</strong>, then <strong>Restore</strong>. Items are added to your vault; nothing is wiped.</p>
         </article>
 
         <article class="topic" id="win-sync">
@@ -343,7 +386,7 @@
           <p>Sync runs only while unlocked: when you unlock, every 5 minutes, and a few seconds after a change. Two ways, and you can use both:</p>
           <h4>Wi-Fi (phone or another PC on the same network)</h4>
           <ol>
-            <li>Tools › Sync › <strong>Turn on Wi-Fi sync…</strong>. Keep the suggested address and port (47821), and choose <strong>Allow through Windows Firewall</strong> if asked.</li>
+            <li>Sync &amp; devices › <strong>Turn on Wi-Fi sync…</strong>. Keep the suggested address and port (47821), and choose <strong>Allow through Windows Firewall</strong> if asked.</li>
             <li>Choose <strong>Show QR code…</strong>. The code works once, for 120 seconds.</li>
             <li>Scan it with the phone app's Sync tab. For another PC, choose <strong>Copy code text</strong> and use <strong>Join by QR text…</strong> there.</li>
             <li>Both devices show a 6-digit code. Choose <strong>Accept</strong> only if they match, otherwise <strong>Decline</strong>.</li>
@@ -364,7 +407,7 @@
             <li><strong>Leave sync…</strong> keeps your items and forgets the group. <strong>Reset sync on this PC…</strong> also forgets its keys (asks twice).</li>
             <li>If an item changed on two devices at once, the extra copy gets <em>(sync conflict)</em> in its title.</li>
           </ul>
-          <p class="note">Each PC needs its own Pro licence; a Pro phone purchase can unlock a PC (see <a href="#win-pro">Pro licence</a>). Collections do not sync. Up to 16 devices per group.</p>
+          <p class="note">Every device in the group needs Pro. A free PC paired with an iPhone that has Pro takes the licence over sync and becomes Pro (see <a href="#win-pro">Pro licence</a>). Up to 16 devices per group.</p>
         </article>
 
         <article class="topic" id="win-share">
@@ -382,24 +425,48 @@
           <p>LocalGateKeys can fill sign-in windows of ordinary Windows programs, not just websites.</p>
           <ol>
             <li>Open the program's sign-in window.</li>
-            <li>Create a <strong>Desktop app login</strong> and choose <strong>App binding…</strong> › <strong>Inspect the app…</strong>.</li>
+            <li>Press <kbd>Ctrl</kbd>+<kbd>N</kbd>, choose <strong>Desktop app login</strong>, then <strong>Inspect the app…</strong>.</li>
             <li><strong>Map login fields</strong>: point at the username and password boxes. Optionally <strong>Map sign-in button…</strong>.</li>
-            <li><strong>Save binding</strong>.</li>
+            <li><strong>Save login</strong>.</li>
             <li>Next time, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> in that program or click the fill button next to its password box.</li>
           </ol>
-          <p>If the program changes after an update, choose <strong>Refresh binding</strong>. LocalGateKeys reads only the window layout, never what you type.</p>
+          <p>If the program changes after an update, open the login and choose <strong>App binding…</strong> › <strong>Refresh binding…</strong>. LocalGateKeys reads only the window layout, never what you type.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Shared collections</a> <span class="badge-pro">Pro</span></h3>
+          <p>Share one collection with family or a team through a folder you all can reach, such as a shared OneDrive folder. Open the collection, choose <strong>Share collection</strong>, pick the folder, choose whether members can edit or only view, and set a share password.</p>
+          <p>The others choose <strong>Join a shared collection</strong>, pick the folder and type the share password; you then choose <strong>Let them in</strong>. Only that collection goes through the folder: your other items stay private. You can remove a person, <strong>Stop sharing</strong> or leave at any time.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Emergency access and duress password</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Emergency access</strong> (Pro): on the Backup &amp; restore page choose <strong>Set up emergency access</strong>. Your recovery phrase is split into shards for people you trust; you choose how many shards are needed and a waiting period. Give each holder their sheet or shard file.</li>
+            <li>When enough holders ask for access through the shared folder, your devices show the request and you can <strong>Deny</strong> it until the waiting period ends. A holder chooses <strong>I was given access</strong>, adds the shards and chooses <strong>Ask for access</strong>; once access is granted, the vault opens as a new profile.</li>
+            <li><strong>Estate pack</strong>, on the same page, creates a note for your heirs (where the will is, accounts to close, devices and who holds a shard), then the <strong>Emergency kit</strong> to print.</li>
+            <li><strong>Duress password</strong> (Pro): Settings › Unlocking › <strong>Duress password</strong> › <strong>Set up</strong>. It is a second master password for when someone forces you to unlock. It opens a separate vault with only the items you choose, and your real vault then refuses its master password for the hours you set. It is on Windows, Mac, iPhone and Android.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Developer tools and AI agents</a></h3>
+          <p>Settings › <strong>Developer</strong> offers SSH keys from your vault to ssh and Git on this PC, for sign-in and commit signing. Every signature asks for your approval. <strong>Generate</strong> creates a new Ed25519 key in the vault.</p>
+          <p><strong>Allow AI agents to use LocalGateKeys</strong> lets agents such as Claude Code connect over MCP. You approve each sign-in or read once; the agent never sees a password, and every request is logged. In the Microsoft Store version, add it with <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
         </article>
 
         <article class="topic" id="win-settings">
           <h3><a href="#win-settings">Settings</a></h3>
           <p>Use the <strong>Search settings</strong> box at the top (<kbd>Ctrl</kbd>+<kbd>F</kbd>) to find any option. Changes save at once.</p>
           <dl class="defs">
-            <dt>Unlocking</dt><dd>Windows Hello, camera check, master password, recovery phrase.</dd>
+            <dt>Unlocking</dt><dd>Windows Hello, security key, camera check, key file, YubiKey, master password, recovery phrase.</dd>
             <dt>Locking</dt><dd>Auto-lock timings and triggers (see <a href="#win-unlock">Unlocking and locking</a>).</dd>
-            <dt>Autofill</dt><dd>Browser autofill, <strong>Offer LocalGateKeys for passkeys</strong>, desktop app autofill, sign in after filling, Quick access shortcut.</dd>
-            <dt>Privacy</dt><dd><strong>Clear clipboard after</strong> (5 seconds to 5 minutes), breach checks, strict offline mode, trash timing, opening documents in other apps.</dd>
+            <dt>Autofill</dt><dd>Browser autofill, <strong>Offer LocalGateKeys for passkeys</strong>, desktop app autofill, sign in after filling, Quick access shortcut. <strong>Use LocalGateKeys for Windows passkeys</strong> offers your passkeys in every app and browser on Windows 11, with your approval each time.</dd>
+            <dt>Privacy</dt><dd><strong>Clear clipboard after</strong> (5 seconds to 5 minutes), breach checks, strict offline mode, hide from screenshots and screen sharing, trash timing, opening documents in other apps.</dd>
             <dt>Backups</dt><dd>See <a href="#win-backups">Backups and restore</a>.</dd>
-            <dt>Appearance &amp; app</dt><dd><strong>Theme</strong> System, Light or Dark; <strong>Start with Windows</strong> (starts locked); <strong>Keep running in the tray</strong>; Updates.</dd>
+            <dt>Appearance &amp; app</dt><dd><strong>Theme</strong> System, Light or Dark; <strong>Language</strong>; <strong>Start with Windows</strong> (starts locked); <strong>Keep running in the tray</strong>; Updates.</dd>
+            <dt>Plan &amp; sync</dt><dd>Your licence, device sync, and <strong>Erase this device if it is removed from sync</strong>.</dd>
+            <dt>Developer</dt><dd>SSH agent and Git signing, and AI agents (see <a href="#win-dev">Developer tools and AI agents</a>).</dd>
             <dt>Help &amp; diagnostics</dt><dd>Keyboard shortcuts, Show setup again, Devices &amp; connections, Error log, legal pages.</dd>
           </dl>
         </article>
@@ -407,15 +474,15 @@
         <article class="topic" id="win-pro">
           <h3><a href="#win-pro">Pro licence</a></h3>
           <ol>
-            <li>Buy Pro on the <a href="pricing.html">pricing page</a>. Your key (starting <code>LGK1-</code>) arrives by email.</li>
-            <li>Open Tools › <strong>Licence</strong>, paste the key and choose <strong>Install</strong>, or <strong>Open file…</strong> for a <code>.lgklicense</code> file.</li>
+            <li>Buy Pro on the <a href="pricing">pricing page</a>. Your key (starting <code>LGK1-</code>) arrives by email.</li>
+            <li>Open Settings › Plan &amp; sync › <strong>Licence</strong>, paste the key and choose <strong>Install</strong>, or <strong>Open file…</strong> for a <code>.lgklicense</code> file.</li>
           </ol>
-          <p>Bought Pro in the iPhone or Android app? In the phone's Settings choose <strong>Copy key</strong> and install it on the PC the same way. The Licence page shows how many of the 4 free items you use. More in <a href="licence.html">Your Pro licence</a>.</p>
+          <p>Bought Pro in the iPhone app? Pair the PC with the iPhone (see <a href="#win-sync">Sync</a>) and a free PC becomes Pro over sync. Or, in the iPhone's Settings, choose <strong>Copy key</strong> and install it on the PC the same way. The Licence page shows how many of the 7 free items you use. More in <a href="licence">Your Pro licence</a>.</p>
         </article>
 
         <article class="topic" id="win-updates">
           <h3><a href="#win-updates">Updates</a></h3>
-          <p>The Microsoft Store version updates itself. For the installer version, choose <strong>Check for updates</strong> (Settings, the tray menu or Ctrl+K). If a newer version exists, <strong>Open release page</strong> takes you to the download. The app never downloads or runs anything by itself.</p>
+          <p>LocalGateKeys from the Microsoft Store updates itself through the Store. Still using the old installer version? Its last update is 0.4.12: uninstall it in Windows Settings › Apps › Installed apps, then install LocalGateKeys from the Microsoft Store. Your vault stays where it is and opens with the same master password.</p>
         </article>
 
         <article class="topic" id="win-keys">
@@ -428,7 +495,7 @@
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>New item</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Lock</td></tr>
               <tr><th scope="row"><kbd>Esc</kbd></th><td>Back</td></tr>
-              <tr><th scope="row"><kbd>Enter</kbd> / <kbd>F2</kbd></th><td>Open the selected item</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>Open the selected item</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Copy password (asks first)</td></tr>
               <tr><th scope="row"><kbd>Delete</kbd></th><td>Move to trash</td></tr>
               <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>Item menu</td></tr>
@@ -445,23 +512,25 @@
 
   <!-- ============================== EXTENSION ============================== -->
   <section class="help-panel" id="extension" aria-labelledby="extension-title">
-    <h2 class="panel-title" id="extension-title">Browser extension for Edge and Chrome</h2>
-    <p class="panel-lead">Fills and saves sign-ins on websites. It talks only to the LocalGateKeys app on the same PC, so install the Windows app first.</p>
+    <h2 class="panel-title" id="extension-title">Browser extension for Edge, Chrome and Firefox</h2>
+    <p class="panel-lead">Fills and saves sign-ins on websites. It talks only to the LocalGateKeys app on the same PC, so install the Windows app first. Using Safari? Nothing to download here: the Mac and iPhone apps fill in Safari through AutoFill and include a Safari extension. See <a href="#mac-autofill">AutoFill and Safari on the Mac</a> or <a href="#ios-autofill">on the iPhone</a>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Extension topics">
-        <p class="help-toc-title">On this tab</p>
-        <ol>
-          <li><a href="#ext-install">Install and connect</a></li>
-          <li><a href="#ext-popup">The extension window</a></li>
-          <li><a href="#ext-fill">Filling a login</a></li>
-          <li><a href="#ext-save">Saving a login</a></li>
-          <li><a href="#ext-2fa">Filling 2FA codes</a></li>
-          <li><a href="#ext-cards">Cards and identities</a></li>
-          <li><a href="#ext-generate">New passwords</a></li>
-          <li><a href="#ext-passkeys">Passkeys</a></li>
-          <li><a href="#ext-trouble">Troubleshooting</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#ext-install">Install and connect</a></li>
+            <li><a href="#ext-popup">The extension window</a></li>
+            <li><a href="#ext-fill">Filling a login</a></li>
+            <li><a href="#ext-save">Saving a login</a></li>
+            <li><a href="#ext-2fa">Filling 2FA codes</a></li>
+            <li><a href="#ext-cards">Cards and identities</a></li>
+            <li><a href="#ext-generate">New passwords</a></li>
+            <li><a href="#ext-passkeys">Passkeys</a></li>
+            <li><a href="#ext-trouble">Troubleshooting</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -470,7 +539,7 @@
           <h3><a href="#ext-install">Install and connect</a></h3>
           <ol>
             <li>Install and set up the <a href="#windows">Windows app</a>.</li>
-            <li>Add the extension: <strong>Edge</strong> from <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Edge Add-ons</a> (choose <strong>Get</strong>). The Chrome Web Store listing is coming soon.</li>
+            <li>Add the extension: <strong>Edge</strong> from <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Edge Add-ons</a> (choose <strong>Get</strong>). <strong>Chrome</strong> from the <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Chrome Web Store</a> (choose <strong>Add to Chrome</strong>). <strong>Firefox</strong> from <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Firefox Add-ons</a> (choose <strong>Add to Firefox</strong>).</li>
             <li>Click the puzzle-piece icon in the toolbar and pin <strong>LocalGateKeys</strong>.</li>
             <li>Click the LocalGateKeys icon. The connection card should say <strong>Connected</strong> or <strong>Locked</strong>.</li>
           </ol>
@@ -560,28 +629,31 @@
   <!-- ============================== IPHONE ============================== -->
   <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
     <h2 class="panel-title" id="iphone-title">LocalGateKeys for iPhone</h2>
-    <p class="panel-lead">Get it on the <a href="https://apps.apple.com/app/id6825488435">App Store</a>. The app has four tabs: <strong>Vault</strong>, <strong>Sync</strong>, <strong>Security</strong> and <strong>Settings</strong>.</p>
+    <p class="panel-lead">Get it on the <a href="https://apps.apple.com/app/id6825488435">App Store</a> (iOS 17 or later). The app has four tabs: <strong>Vault</strong>, <strong>Sync</strong>, <strong>Security</strong> and <strong>Settings</strong>.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="iPhone topics">
-        <p class="help-toc-title">On this tab</p>
-        <ol>
-          <li><a href="#ios-setup">First start and unlocking</a></li>
-          <li><a href="#ios-apppw">App password and recovery</a></li>
-          <li><a href="#ios-items">Items: add, edit, delete</a></li>
-          <li><a href="#ios-search">Search and actions</a></li>
-          <li><a href="#ios-generator">Password generator</a></li>
-          <li><a href="#ios-2fa">Two-factor codes</a></li>
-          <li><a href="#ios-autofill">AutoFill in apps and Safari</a></li>
-          <li><a href="#ios-passkeys">Passkeys</a></li>
-          <li><a href="#ios-safari">Saving from Safari</a></li>
-          <li><a href="#ios-security">Security tab</a></li>
-          <li><a href="#ios-import">Import and export</a></li>
-          <li><a href="#ios-sync">Sync</a></li>
-          <li><a href="#ios-share">Sharing an item</a></li>
-          <li><a href="#ios-settings">Settings</a></li>
-          <li><a href="#ios-pro">Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#ios-setup">First start and unlocking</a></li>
+            <li><a href="#ios-apppw">App password and recovery</a></li>
+            <li><a href="#ios-items">Items: add, edit, delete</a></li>
+            <li><a href="#ios-search">Search and actions</a></li>
+            <li><a href="#ios-generator">Password generator</a></li>
+            <li><a href="#ios-2fa">Two-factor codes</a></li>
+            <li><a href="#ios-autofill">AutoFill in apps and Safari</a></li>
+            <li><a href="#ios-passkeys">Passkeys</a></li>
+            <li><a href="#ios-safari">Saving from Safari</a></li>
+            <li><a href="#ios-security">Security tab</a></li>
+            <li><a href="#ios-import">Import and export</a></li>
+            <li><a href="#ios-sync">Sync</a></li>
+            <li><a href="#ios-share">Sharing an item</a></li>
+            <li><a href="#ios-settings">Settings</a></li>
+            <li><a href="#ios-more">Duress password and more</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -601,9 +673,8 @@
           <p>An optional extra password that, instead of your iPhone passcode, opens LocalGateKeys. Useful if others know your passcode.</p>
           <ol>
             <li>Settings › App password › turn on <strong>Use an app password</strong>.</li>
-            <li>Choose a strong password.</li>
+            <li>Choose a strong password (at least 12 characters), and keep <strong>Unlock with Face ID</strong> on if you want it as a shortcut.</li>
             <li>Write down the 24-word <strong>recovery phrase</strong>, tap <strong>I wrote them down</strong>, and type the three words it asks for.</li>
-            <li>Optionally keep <strong>Unlock with Face ID</strong> as a shortcut.</li>
           </ol>
           <p><strong>Forgot it?</strong> Tap <strong>Forgot app password?</strong> on the unlock screen, type the 24 words, and choose a new app password.</p>
           <p class="note">If you add a new face or fingerprint to the iPhone, the Face ID shortcut turns off for safety: type the app password once and turn it back on.</p>
@@ -616,9 +687,9 @@
             <li>Fill in the fields and tap <strong>Save</strong>. Leave halfway and the app offers to <strong>Continue</strong> your unsaved item later.</li>
           </ol>
           <ul>
-            <li>Open an item to <strong>Copy username</strong>, <strong>Copy password</strong>, <strong>Copy 2FA code</strong>, <strong>Open website</strong>, mark it <strong>Favorite</strong> or <strong>Share</strong> it. Copied text is cleared from the clipboard after a while and never goes to your other Apple devices.</li>
+            <li>Touch and hold an item in the vault to <strong>Copy username</strong>, <strong>Copy password</strong>, <strong>Copy 2FA code</strong>, <strong>Open website</strong> or mark it <strong>Favorite</strong>. Open it to copy any field, star it or <strong>Share</strong> it. Copied text is cleared from the clipboard after a while and never goes to your other Apple devices.</li>
             <li><strong>Password history</strong> on a login keeps old passwords: copy or restore one (asks for Face ID).</li>
-            <li>Cards, passports, licences and subscriptions can get a <strong>reminder</strong> before they expire.</li>
+            <li>Any item except a login (a card, subscription, warranty, licence…) can get a <strong>reminder</strong> before it is due; a card suggests its expiry date.</li>
             <li><strong>Attach a file</strong> (Pro, up to 25 MB, stored encrypted) from <strong>+</strong>.</li>
             <li><strong>Delete</strong>: the item goes to <em>Recently deleted</em>, with <strong>Undo</strong> for a few seconds. Settings › Data › <strong>Recently deleted</strong> lets you <strong>Restore</strong> or <strong>Delete forever</strong>.</li>
             <li><strong>Sort</strong> by name or date, favourites first, or grouped by type.</li>
@@ -627,12 +698,12 @@
 
         <article class="topic" id="ios-search">
           <h3><a href="#ios-search">Search and quick actions</a></h3>
-          <p>Pull down the vault or tap <strong>Search</strong> and type. Type <code>&gt;</code> first to see <strong>Actions</strong>: New item, Generate password, Scan QR code, Lock now, Sync now, Security check, Recently deleted, Import &amp; Export and more.</p>
+          <p>Tap the search button (the magnifying glass) at the top of the vault and type; pulling the vault down syncs. Type <code>&gt;</code> first to see <strong>Actions</strong>: New item, Generate password, Scan QR code, Lock now, Sync now, Security check, Recently deleted, Import &amp; Export and more.</p>
         </article>
 
         <article class="topic" id="ios-generator">
           <h3><a href="#ios-generator">Password generator</a></h3>
-          <p>From <code>&gt;</code> Generate password, or while editing a login's password. Choose a password with a <strong>Length</strong>, or a passphrase with a number of <strong>Words</strong> and a <strong>Separator</strong>. <strong>Generate again</strong>, then <strong>Use</strong>. It remembers the options you used last; <strong>Reset to defaults</strong> brings them back.</p>
+          <p>From <code>&gt;</code> Generate password, or while editing a login's password. Choose a password with a <strong>Length</strong>, or a passphrase with a number of <strong>Words</strong> and a <strong>Separator</strong>. Tap the refresh button to generate again, then <strong>Use</strong>. It remembers the options you used last; Settings › Password generator › <strong>Reset to defaults</strong> brings the defaults back.</p>
         </article>
 
         <article class="topic" id="ios-2fa">
@@ -656,15 +727,15 @@
           <p>Options in Settings › AutoFill:</p>
           <ul>
             <li><strong>Show logins in the QuickType bar</strong>: suggestions above the keyboard.</li>
-            <li><strong>Copy 2FA code when filling</strong>: so you can paste the code on the next screen. It clears after 60 seconds.</li>
+            <li><strong>Copy 2FA code when filling</strong>: so you can paste the code on the next screen. It clears after the <strong>Clear clipboard after</strong> time (60 seconds by default).</li>
             <li><strong>Offer LocalGateKeys for passkeys</strong>.</li>
           </ul>
-          <p>Cards and contact details fill the same way. A login saved for an <code>https</code> site isn't offered on a plain <code>http</code> page.</p>
+          <p>On iOS 18 and later, cards and contact details fill too: tap a text field, choose <strong>AutoFill › Passwords</strong> and pick the field. A login saved for an <code>https</code> site isn't offered on a plain <code>http</code> page.</p>
         </article>
 
         <article class="topic" id="ios-passkeys">
           <h3><a href="#ios-passkeys">Passkeys</a></h3>
-          <p>With AutoFill on, when a website offers to create a passkey, choose LocalGateKeys. The passkey is saved in your vault and syncs to your PC or Mac. Signing in to a computer by scanning its QR code with the iPhone works too. A passkey's detail page shows the site and account; the key itself is never shown. You can rename or delete it.</p>
+          <p>With AutoFill on, when a website offers to create a passkey, choose LocalGateKeys. The passkey is saved in your vault and syncs to your PC. Signing in to a computer by scanning its QR code with the iPhone works too. A passkey's detail page shows the site and account; the key itself is never shown. You can rename or delete it.</p>
         </article>
 
         <article class="topic" id="ios-safari">
@@ -679,7 +750,7 @@
 
         <article class="topic" id="ios-security">
           <h3><a href="#ios-security">Security tab</a></h3>
-          <p>A score and lists of logins that are <strong>Breached</strong>, <strong>Reused</strong>, <strong>Weak</strong>, <strong>Old</strong>, or could use 2FA. Swipe left on a login for <strong>Change password</strong> or <strong>Dismiss</strong>. Breach checks are off until you turn on Settings › <strong>Allow breach checks</strong>.</p>
+          <p>A score and lists of logins that are <strong>Breached</strong>, <strong>Reused</strong>, <strong>Weak</strong>, <strong>Old</strong>, or could use 2FA. Swipe left on a login for <strong>Change password</strong> or <strong>Dismiss</strong>. Breach checks are off until you turn off Settings › <strong>Strict offline mode</strong> (on by default) and turn on <strong>Allow breach checks</strong>.</p>
         </article>
 
         <article class="topic" id="ios-import">
@@ -690,19 +761,20 @@
             <li>Pick <strong>LocalGateKeys</strong>. Logins, 2FA codes and passkeys come across. Doing it again adds nothing twice.</li>
           </ol>
           <h4>From a file</h4>
-          <p>Settings › Import &amp; Export › <strong>Import from a file</strong>: Apple Passwords CSV, Bitwarden <code>.json</code> (also password-protected), 1Password <code>.1pux</code>, or any other CSV. You review every item before tapping <strong>Import</strong>. Delete the export file afterwards.</p>
+          <p>Settings › Import &amp; Export › <strong>Import from a file</strong>: exports from Apple Passwords, Safari, Chrome, Edge, Brave, Firefox, Bitwarden (also password-protected), 1Password (<code>.1pux</code>), LastPass, KeePass (<code>.kdbx</code>), Proton Pass, Dashlane, or any CSV. You review every item before tapping <strong>Import</strong>. Delete the export file afterwards.</p>
           <h4>Backup and export</h4>
           <ul>
-            <li><strong>Export encrypted backup</strong>: a <code>.lgkm</code> file with a password of 12+ characters. Restore it on Windows, Mac or another phone.</li>
+            <li><strong>Export encrypted backup</strong>: a <code>.lgkm</code> file with a password of 12+ characters. Restore it on Windows.</li>
             <li><strong>Export as CSV</strong>: unencrypted, for moving to another app. You're asked to confirm.</li>
+            <li><strong>Export to a CXF file…</strong> writes the logins, notes and passkeys you pick to a Credential Exchange file that other password managers can import. The file is not encrypted.</li>
           </ul>
         </article>
 
         <article class="topic" id="ios-sync">
-          <h3><a href="#ios-sync">Sync with your PC or Mac</a> <span class="badge-pro">Pro</span></h3>
+          <h3><a href="#ios-sync">Sync with your PC</a> <span class="badge-pro">Pro</span></h3>
           <h4>Over Wi-Fi</h4>
           <ol>
-            <li>On the PC or Mac, open Sync and choose <strong>Show QR code</strong>.</li>
+            <li>On the PC, open Sync &amp; devices and choose <strong>Show QR code</strong>.</li>
             <li>On the iPhone, open the <strong>Sync</strong> tab and tap <strong>Scan QR code</strong> within 120 seconds. (Allow Local Network access the first time.) No camera? Tap <strong>Paste code text</strong> and paste the text from <strong>Copy code text</strong> on the computer.</li>
             <li>Check that both screens show the same code, then choose <strong>Accept</strong> on the computer.</li>
           </ol>
@@ -728,17 +800,26 @@
           <h3><a href="#ios-settings">Settings</a></h3>
           <dl class="defs">
             <dt>Security</dt><dd><strong>Auto-lock after leaving the app</strong>, <strong>Lock when idle</strong>, <strong>Hide passwords until tapped</strong>, <strong>Clear clipboard after</strong>, <strong>Lock now</strong>.</dd>
-            <dt>Privacy</dt><dd><strong>Strict offline mode</strong>, website icons, item names in notifications, <strong>Forget Apple Watch codes on lock</strong>, breach checks.</dd>
+            <dt>Privacy</dt><dd><strong>Strict offline mode</strong>, website icons, item names in notifications, breach checks.</dd>
             <dt>Appearance</dt><dd>System, Light or Dark.</dd>
             <dt>Data</dt><dd>Recently deleted, how long to keep deleted items, Import &amp; Export.</dd>
             <dt>Erase</dt><dd><strong>Erase this iPhone's vault</strong> deletes the vault on this iPhone only (asks twice). Your PC and sync folder are not changed.</dd>
           </dl>
         </article>
 
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">Duress password and more</a></h3>
+          <ul>
+            <li><strong>Duress password</strong> (Pro): a second app password for when someone forces you to unlock. It opens a separate vault with only the items you choose, and your vault then refuses its app password for the hours you set. Turn on the app password first, then set it up under <strong>Duress password</strong> in Settings.</li>
+            <li><strong>Host Wi-Fi sync on this phone</strong> (Pro), on the Sync tab, lets your other devices pair with the iPhone itself, so no PC is needed.</li>
+            <li>An emergency access plan made on your PC reaches the iPhone by sync, so you can deny or grant requests here too. <strong>Create estate pack note</strong> adds the note for your heirs.</li>
+          </ul>
+        </article>
+
         <article class="topic" id="ios-pro">
           <h3><a href="#ios-pro">Pro</a></h3>
-          <p>Settings › Pro › <strong>Buy Pro</strong>: one payment, no subscription, no account. It also unlocks the Mac app. On a new iPhone, use <strong>Restore purchases</strong> with the same Apple Account.</p>
-          <p>To unlock Windows too, choose <strong>Copy key</strong> under <em>Also unlocks Windows</em> and install that key on the PC (Tools › Licence).</p>
+          <p>Settings › Pro › <strong>Upgrade</strong>, then buy: one payment, no subscription, no account. On a new iPhone, use <strong>Restore purchases</strong> with the same Apple Account.</p>
+          <p>Your purchase also unlocks Windows. Pair your PC with the iPhone on the <strong>Sync</strong> tab, and a free PC takes the licence over sync and becomes Pro. Or choose <strong>Copy key</strong> and install that key on the PC (Settings › Plan &amp; sync › Licence).</p>
         </article>
 
       </div>
@@ -748,25 +829,29 @@
   <!-- ============================== MAC ============================== -->
   <section class="help-panel" id="mac" aria-labelledby="mac-title">
     <h2 class="panel-title" id="mac-title">LocalGateKeys for Mac</h2>
-    <p class="panel-lead">The sidebar holds <strong>Vault</strong>, <strong>Security centre</strong>, <strong>Recovery centre</strong>, <strong>Import &amp; export</strong>, <strong>Sync</strong>, <strong>Devices &amp; connections</strong> and <strong>Settings</strong>.</p>
+
+    <p class="panel-lead">The sidebar lists your items (<strong>All items</strong>, <strong>Favourites</strong>, <strong>Recently used</strong>, each kind and your collections) and the tools <strong>Security centre</strong>, <strong>Generator</strong>, <strong>Sync &amp; devices</strong>, <strong>Import &amp; export</strong> and <strong>Trash</strong>, with <strong>Settings</strong> at the bottom. The <strong>Recovery centre</strong> opens from Settings › Backups, and <strong>Devices &amp; connections</strong> from Sync &amp; devices.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Mac topics">
-        <p class="help-toc-title">On this tab</p>
-        <ol>
-          <li><a href="#mac-setup">Create the vault</a></li>
-          <li><a href="#mac-unlock">Unlocking and locking</a></li>
-          <li><a href="#mac-items">Items</a></li>
-          <li><a href="#mac-2fa">Two-factor codes</a></li>
-          <li><a href="#mac-security">Security centre</a></li>
-          <li><a href="#mac-autofill">AutoFill and Safari</a></li>
-          <li><a href="#mac-import">Import and export</a></li>
-          <li><a href="#mac-backups">Backups</a></li>
-          <li><a href="#mac-sync">Sync</a></li>
-          <li><a href="#mac-share">Sharing</a></li>
-          <li><a href="#mac-pro">Pro</a></li>
-          <li><a href="#mac-keys">Keyboard shortcuts</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#mac-setup">Create the vault</a></li>
+            <li><a href="#mac-unlock">Unlocking and locking</a></li>
+            <li><a href="#mac-items">Items</a></li>
+            <li><a href="#mac-2fa">Two-factor codes</a></li>
+            <li><a href="#mac-security">Security centre</a></li>
+            <li><a href="#mac-autofill">AutoFill and Safari</a></li>
+            <li><a href="#mac-import">Import and export</a></li>
+            <li><a href="#mac-backups">Backups</a></li>
+            <li><a href="#mac-sync">Sync</a></li>
+            <li><a href="#mac-share">Sharing</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">Settings</a></li>
+            <li><a href="#mac-keys">Keyboard shortcuts</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -782,10 +867,10 @@
         <article class="topic" id="mac-unlock">
           <h3><a href="#mac-unlock">Unlocking and locking</a></h3>
           <ul>
-            <li><strong>Touch ID</strong>: Settings › Unlocking › <strong>Unlock with Touch ID</strong>. If you change fingerprints, use the master password once.</li>
+            <li><strong>Touch ID</strong>: Settings › Security › Unlocking › <strong>Touch ID</strong>. If you change fingerprints, use the master password once.</li>
             <li><strong>Change master password</strong>: Settings › Unlocking. Your items stay as they are.</li>
             <li><strong>Recovery phrase</strong>: set it up in the <strong>Recovery centre</strong> and confirm three words. If you forget the master password, choose <strong>Forgot your master password?</strong> › <strong>Recover with your recovery phrase</strong> on the lock screen.</li>
-            <li><strong>Lock</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Settings › Locking sets idle lock, lock with the screen, on sleep, and a maximum session time.</li>
+            <li><strong>Lock</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Settings › Locking sets idle lock, lock with the screen, on sleep, and a maximum session time. You can also choose what counts as activity for idle lock.</li>
           </ul>
         </article>
 
@@ -794,8 +879,8 @@
           <ul>
             <li><strong>New Item</strong> (<kbd>⌘</kbd><kbd>N</kbd>) offers the same kinds as the iPhone, plus <strong>Attach a file…</strong> (Pro).</li>
             <li>Copy with <kbd>⌘</kbd><kbd>C</kbd> (password), <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> (username), <kbd>⌘</kbd><kbd>T</kbd> (2FA code).</li>
-            <li><strong>Add field</strong> for custom fields, <strong>Tags</strong>, and <strong>Collections</strong> (they stay on this Mac).</li>
-            <li><kbd>⌫</kbd> moves an item to Recently deleted. Use <strong>Restore selected</strong> or <strong>Empty trash</strong> there.</li>
+            <li><strong>Add field</strong> for custom fields, <strong>Tags</strong>, and <strong>Collections</strong> (they sync with your other devices).</li>
+            <li><kbd>⌫</kbd> moves an item to Recently deleted. Open <strong>Trash</strong> in the sidebar and use <strong>Restore selected</strong> or <strong>Empty trash</strong>.</li>
             <li>Attached files open with Quick Look after Touch ID or the master password.</li>
             <li><strong>Generator</strong>: random password (choose character sets, avoid look-alikes) or passphrase (capitalise, add a number, separator).</li>
           </ul>
@@ -803,7 +888,7 @@
 
         <article class="topic" id="mac-2fa">
           <h3><a href="#mac-2fa">Two-factor codes</a> <span class="badge-pro">Pro</span></h3>
-          <p>Choose <strong>Scan QR code…</strong>, then <strong>Choose image…</strong>, paste a screenshot with <kbd>⌘</kbd><kbd>V</kbd> (take one with <kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>), or drag an image in. Codes fill in Safari through AutoFill.</p>
+          <p>Choose <strong>Scan QR code…</strong>, then <strong>Choose image…</strong>, paste a screenshot with <kbd>⌘</kbd><kbd>V</kbd> (copy one with <kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>), or drag an image in. Codes fill in Safari through AutoFill.</p>
         </article>
 
         <article class="topic" id="mac-security">
@@ -818,7 +903,10 @@
             <li><strong>Open AutoFill settings</strong> and turn on LocalGateKeys under System Settings › AutoFill &amp; Passwords.</li>
             <li><strong>Open Safari settings</strong> and turn on the LocalGateKeys extension under Safari › Settings › Extensions.</li>
           </ol>
-          <p>Passwords, passkeys and 2FA codes then fill in Safari and apps. New sign-ins in Safari are offered for saving; review them at the next unlock. Other browsers aren't supported on the Mac yet.</p>
+          <p>To fill a sign-in in Safari, click the username or password box. Safari lists your LocalGateKeys logins below it: choose one and confirm with Touch ID or your master password. Passkeys and 2FA codes are offered the same way, and AutoFill works in other Mac apps too.</p>
+          <p>The Safari extension offers to save a new sign-in after you log in. Review what it caught the next time you unlock LocalGateKeys. Other browsers aren't supported on the Mac yet.</p>
+          <p>No logins listed? Open <strong>Devices &amp; connections</strong> and check that AutoFill is on. On the same System Settings page you can turn off Passwords, so only LocalGateKeys offers logins.</p>
+          <p>If LocalGateKeys quits when you open <strong>Devices &amp; connections</strong>, update it from the Mac App Store.</p>
         </article>
 
         <article class="topic" id="mac-import">
@@ -837,15 +925,15 @@
           <ul>
             <li><strong>Full backup</strong>: <strong>Create…</strong> a <code>.lgk</code> file, or <strong>Restore…</strong> one (it replaces the vault). Works between Mac and Windows. A safety copy is kept, so <strong>Put back…</strong> undoes a restore.</li>
             <li><strong>Scheduled backups</strong>: how often, weekday, time, how many to keep, folder and mirror folder, and a backup password (12+ characters).</li>
-            <li><strong>Recovery kit…</strong>: a printable sheet with your recovery details.</li>
+            <li><strong>Recovery kit…</strong>: a file that describes your last backup, to keep with it. <strong>Print emergency kit…</strong> prints a page that says where your vault and backups are and how to restore them.</li>
           </ul>
         </article>
 
         <article class="topic" id="mac-sync">
           <h3><a href="#mac-sync">Sync</a> <span class="badge-pro">Pro</span></h3>
           <ul>
-            <li><strong>Host Wi-Fi sync</strong>: show the pairing QR code. When a device joins, check its code and choose <strong>Accept</strong> or <strong>Decline</strong>. If you don't recognise it afterwards, choose <strong>Undo</strong>.</li>
-            <li><strong>Join a Windows PC</strong>: use the code text from the PC's <strong>Copy code text</strong>.</li>
+            <li><strong>Wi-Fi (this network)</strong>: <strong>Turn on Wi-Fi sync</strong>, then <strong>Show QR code…</strong>. When a device joins, check its code and choose <strong>Accept</strong> or <strong>Decline</strong>. If you don't recognise it afterwards, choose <strong>Undo</strong>.</li>
+            <li><strong>Join with a code</strong>: on the other device choose <strong>Show QR code</strong>, then <strong>Copy code text</strong>, and paste the text here.</li>
             <li><strong>Cloud folder</strong>: join or create a group in a folder such as Dropbox or iCloud Drive, with the sync password. OneDrive and Google Drive are unavailable for now, until an issue with Apple is resolved.</li>
             <li><strong>Leave sync…</strong> / <strong>Reset sync on this Mac…</strong>.</li>
           </ul>
@@ -853,12 +941,18 @@
 
         <article class="topic" id="mac-share">
           <h3><a href="#mac-share">Sharing</a></h3>
-          <p>Select an item and choose <strong>Share…</strong>. To receive, choose File › <strong>Receive a Shared Item…</strong>, open or drop the file (or paste the QR text) and type the six words. Passkeys and items with an attached file cannot be shared.</p>
+          <p>Select an item and choose <strong>Share…</strong>. To receive, choose Edit › <strong>Receive a Shared Item…</strong> (or find it with <kbd>⌘</kbd><kbd>K</kbd>), open or drop the file (or paste the QR text) and type the six words. Passkeys and items with an attached file cannot be shared.</p>
         </article>
 
         <article class="topic" id="mac-pro">
           <h3><a href="#mac-pro">Pro</a></h3>
           <p>Buy Pro in Settings › Plan. One purchase covers both the iPhone and Mac apps; use <strong>Restore purchases</strong> on the other device. A free Mac synced with a Pro iPhone shows <em>Pro from your synced devices</em>.</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">Settings</a></h3>
+          <p>Settings is the same in the main window and with <kbd>⌘</kbd><kbd>,</kbd>, and the Tools stay visible at the bottom of the sidebar. Settings › Backups holds the backup schedule, the <strong>Weekly restore test</strong> and how many automatic backups to keep; Recovery centre, Licence and Show setup again open from either window. Other settings: what counts as activity for auto-lock, asking before copying a 2FA code, opening documents stored in the vault in other apps, your own Quick access shortcut, and Help links.</p>
+          <p><strong>Duress password</strong> (Pro), in Settings › Duress password: a second master password for when someone forces you to unlock. It opens a separate vault with only the items you choose, and your vault then refuses its master password for the hours you set.</p>
         </article>
 
         <article class="topic" id="mac-keys">
@@ -884,17 +978,18 @@
   <!-- ============================== WATCH ============================== -->
   <section class="help-panel" id="watch" aria-labelledby="watch-title">
     <h2 class="panel-title" id="watch-title">LocalGateKeys for Apple Watch</h2>
-    <p class="panel-lead">Shows your two-factor codes on your wrist. It comes with the iPhone app. It holds codes only: no passwords, no editing. <span class="badge-pro">Pro</span></p>
-    <p class="callout-soon"><strong>Coming in iPhone app 1.1.</strong> The watch app and the <em>Show on Apple Watch</em> button arrive with version 1.1, which is in App Review. Check your version in iPhone Settings › About.</p>
+    <p class="panel-lead">Shows your two-factor codes on your wrist. It comes with the iPhone app and needs watchOS 10 or later. It holds codes only: no passwords, no editing. <span class="badge-pro">Pro</span></p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Apple Watch topics">
-        <p class="help-toc-title">On this tab</p>
-        <ol>
-          <li><a href="#watch-add">Put a code on the watch</a></li>
-          <li><a href="#watch-use">Using the codes</a></li>
-          <li><a href="#watch-remove">Removing codes</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#watch-add">Put a code on the watch</a></li>
+            <li><a href="#watch-use">Using the codes</a></li>
+            <li><a href="#watch-remove">Removing codes</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -915,7 +1010,7 @@
         </article>
         <article class="topic" id="watch-remove">
           <h3><a href="#watch-remove">Removing codes</a></h3>
-          <p>On the iPhone, open the login and tap <strong>Remove from Apple Watch</strong>. To clear all watch codes whenever the iPhone app locks, turn on iPhone Settings › <strong>Forget Apple Watch codes on lock</strong>.</p>
+          <p>On the iPhone, open the login and tap <strong>Remove from Apple Watch</strong>. To clear all watch codes whenever the iPhone app locks, turn on <strong>Forget Apple Watch codes on lock</strong> in LocalGateKeys › Settings › AutoFill.</p>
         </article>
       </div>
     </div>
@@ -925,43 +1020,45 @@
   <section class="help-panel" id="android" aria-labelledby="android-title">
     <h2 class="panel-title" id="android-title">LocalGateKeys for Android</h2>
     <p class="callout-soon"><strong>Coming soon.</strong> The Android app is not on Google Play yet. This guide shows how it will work.</p>
-    <p class="panel-lead">The app has three tabs: <strong>Vault</strong>, <strong>Search</strong> and <strong>Sync</strong>. Settings opens from your initials in the corner.</p>
+    <p class="panel-lead">The app has four tabs: <strong>Vault</strong>, <strong>Sync</strong>, <strong>Security</strong> and <strong>Settings</strong>. Search is the magnifier at the top of the Vault tab.</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Android topics">
-        <p class="help-toc-title">On this tab</p>
-        <ol>
-          <li><a href="#and-setup">First start and unlocking</a></li>
-          <li><a href="#and-apppw">App password and recovery</a></li>
-          <li><a href="#and-items">Items</a></li>
-          <li><a href="#and-search">Search and actions</a></li>
-          <li><a href="#and-generator">Password generator</a></li>
-          <li><a href="#and-2fa">Two-factor codes</a></li>
-          <li><a href="#and-autofill">Autofill</a></li>
-          <li><a href="#and-passkeys">Passkeys</a></li>
-          <li><a href="#and-import">Import</a></li>
-          <li><a href="#and-backups">Backups</a></li>
-          <li><a href="#and-sync">Sync</a></li>
-          <li><a href="#and-share">Sharing</a></li>
-          <li><a href="#and-settings">Settings and Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#and-setup">First start and unlocking</a></li>
+            <li><a href="#and-apppw">App password and recovery</a></li>
+            <li><a href="#and-items">Items</a></li>
+            <li><a href="#and-search">Search and actions</a></li>
+            <li><a href="#and-generator">Password generator</a></li>
+            <li><a href="#and-2fa">Two-factor codes</a></li>
+            <li><a href="#and-autofill">Autofill</a></li>
+            <li><a href="#and-passkeys">Passkeys</a></li>
+            <li><a href="#and-import">Import</a></li>
+            <li><a href="#and-backups">Backups</a></li>
+            <li><a href="#and-sync">Sync</a></li>
+            <li><a href="#and-share">Sharing</a></li>
+            <li><a href="#and-settings">Settings and Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
 
         <article class="topic" id="and-setup">
           <h3><a href="#and-setup">First start and unlocking</a></h3>
-          <p>Your vault opens with your phone's fingerprint, face or screen lock. (The phone needs a screen lock.) A short setup follows: unlock with fingerprint, <strong>Open Autofill settings</strong>, <strong>Import…</strong> and an optional app password. Skip any step; the <em>Finish setting up</em> card brings you back.</p>
-          <p>Settings › Security sets <strong>Auto-lock after leaving the app</strong> (Immediately to 1 hour, or Never) and has <strong>Lock now</strong>. The app is hidden in the recent-apps view.</p>
+          <p>Your vault opens with your phone's fingerprint, face or screen lock. (The phone needs a screen lock.) A short setup follows: unlock with fingerprint, <strong>Import…</strong>, an optional app password and <strong>Open Autofill settings</strong>. Skip any step; the <em>Finish setting up</em> card brings you back.</p>
+          <p>Settings › Lock &amp; security sets <strong>Auto-lock after leaving the app</strong> (Immediately to 1 hour) and <strong>Lock when idle</strong> (1 to 30 minutes, or Never), and has <strong>Lock now</strong>. The app is hidden in the recent-apps view.</p>
         </article>
 
         <article class="topic" id="and-apppw">
           <h3><a href="#and-apppw">App password and recovery phrase</a></h3>
           <ol>
-            <li>Settings › <strong>Turn on app password</strong> and choose one. From then on it, not the screen lock, opens LocalGateKeys.</li>
-            <li>Write down the 24-word recovery phrase, tap <strong>I wrote them down</strong>, and type the words it asks for.</li>
+            <li>Settings › Lock &amp; security › turn on <strong>Use an app password</strong>, choose one and tap <strong>Continue</strong>. From then on it, not the screen lock, opens LocalGateKeys.</li>
+            <li>Write down the 24-word recovery phrase, tap <strong>I wrote them down</strong>, type the words it asks for and tap <strong>Turn on app password</strong>.</li>
           </ol>
-          <p>Forgot it? Tap <strong>Forgot app password?</strong>, type the 24 words, and choose a new one. <strong>Change</strong> and <strong>Turn off</strong> are in Settings.</p>
+          <p>Forgot it? Tap <strong>Forgot app password?</strong>, type the 24 words, and choose a new one. <strong>Change app password</strong>, and the <strong>Use an app password</strong> switch to turn it off, are in Settings › Lock &amp; security.</p>
           <p class="note">After restoring a phone from a Google backup, the vault can't be opened (its key isn't backed up). Choose <strong>Start fresh</strong>, then sync with your PC to get everything back.</p>
         </article>
 
@@ -978,7 +1075,7 @@
 
         <article class="topic" id="and-search">
           <h3><a href="#and-search">Search and actions</a></h3>
-          <p>On the Search tab type a name, or start with <code>&gt;</code> for actions such as Export backup, Generate password, Import passwords, Lock, Receive shared item, Scan QR code to pair and Sync now.</p>
+          <p>Tap the magnifier on the Vault tab and type a name, or start with <code>&gt;</code> for actions such as Export backup, Generate password, Import passwords, Lock, Receive shared item, Scan QR code to pair and Sync now.</p>
         </article>
 
         <article class="topic" id="and-generator">
@@ -1002,12 +1099,12 @@
 
         <article class="topic" id="and-passkeys">
           <h3><a href="#and-passkeys">Passkeys</a></h3>
-          <p>Turn on Settings › <strong>Offer LocalGateKeys for passkeys</strong>. When a site or app offers a passkey, choose LocalGateKeys; sign in later with <strong>Use your passkey</strong>.</p>
+          <p>Turn on Settings › Autofill › <strong>Offer LocalGateKeys for passkeys</strong>. When a site or app offers a passkey, choose LocalGateKeys; sign in later with <strong>Use your passkey</strong>.</p>
         </article>
 
         <article class="topic" id="and-import">
           <h3><a href="#and-import">Import</a></h3>
-          <p><strong>Import from another app</strong> ›<strong>Choose export file</strong>: Chrome, Edge, Brave, Firefox, Apple Passwords, Bitwarden <code>.json</code> (also password-protected), 1Password <code>.1pux</code>, or any CSV. Review everything, then import. Delete the export file afterwards.</p>
+          <p>Settings › Sync &amp; data › <strong>Import from a file</strong> › <strong>Choose export file</strong>: Chrome, Edge, Brave, Firefox, Apple Passwords, Bitwarden <code>.json</code> (also password-protected), 1Password <code>.1pux</code>, or any CSV. Review everything, then import. Delete the export file afterwards.</p>
         </article>
 
         <article class="topic" id="and-backups">
@@ -1028,15 +1125,17 @@
 
         <article class="topic" id="and-share">
           <h3><a href="#and-share">Sharing</a></h3>
-          <p>Open an item › <strong>Share this item</strong> › <strong>Send as a file…</strong> or <strong>Show as a QR code</strong>, and tell the six words separately. To receive: <strong>Receive a shared item</strong>, enter the six words, then <strong>Add to vault</strong>. The share opens once within 24 hours; three wrong codes delete it. Passkeys and files cannot be shared.</p>
+          <p>Open an item, tap Share, then <strong>Send as a file…</strong> or <strong>Show as a QR code</strong>, and tell the six words separately. To receive: Settings › Sync &amp; data › <strong>Receive a shared item</strong>, enter the six words, tap <strong>Open</strong>, then <strong>Add to vault</strong>. The share opens once within 24 hours; three wrong codes delete it. Passkeys and files cannot be shared.</p>
         </article>
 
         <article class="topic" id="and-settings">
           <h3><a href="#and-settings">Settings and Pro</a></h3>
           <ul>
             <li><strong>Appearance</strong>: System, Light or Dark, and your initials.</li>
-            <li><strong>Security</strong>: hide passwords until tapped, clear clipboard after, <strong>Erase this phone's vault</strong> (this phone only).</li>
-            <li><strong>Pro</strong>: <strong>Buy</strong> once through Google Play, <strong>Restore purchases</strong> on another phone with the same Google account, and <strong>Copy key</strong> to unlock Windows too.</li>
+            <li><strong>Lock &amp; security</strong> has <strong>Clear clipboard after</strong>, <strong>Privacy</strong> has <strong>Hide passwords until tapped</strong>, and <strong>Sync &amp; data</strong> has <strong>Erase this phone's vault</strong> (this phone only). Android lets the app check the clipboard only while it is open, so a copy made from the Quick Settings tile or just before you switch apps is cleared the next time you open LocalGateKeys.</li>
+            <li><strong>Pro</strong> (top of Settings): <strong>Upgrade</strong> and buy once through Google Play, <strong>Restore purchases</strong> on another phone with the same Google account, and <strong>Copy key</strong> to unlock Windows too.</li>
+            <li><strong>Duress password</strong> (Pro): a second app password for when someone forces you to unlock. It opens a separate vault with only the items you choose, and your vault then refuses its app password for the hours you set. Turn on the app password first, then set it up under <strong>Duress password</strong> in Settings.</li>
+            <li><strong>Export to a CXF file…</strong> writes the logins, notes and passkeys you pick to a Credential Exchange file that other password managers can import. The file is not encrypted.</li>
           </ul>
         </article>
 
@@ -1044,49 +1143,54 @@
     </div>
   </section>
 
-  <p class="help-more">Can't find something? See <a href="support.html">Support and FAQ</a> or email <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>.</p>
+  <p class="help-more">Can't find something? See <a href="support">Support and FAQ</a> or email <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>.</p>
 </div>
+<script src="guide.js"></script>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>A password manager for Windows that keeps your vault on your own devices.</p>
-        <p class="quiet">This site sets no cookies, runs no analytics and loads nothing from other companies.</p>
+        <p class="footer-brand"><img src="brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>A password manager for Windows, Mac and iPhone that keeps your vault on your own devices.</p>
+        <p class="quiet">This website uses Cloudflare Web Analytics, which is cookieless, to count page visits. It uses no advertising trackers and sets no cookies.</p>
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
         <ul>
-          <li><a href="features.html">Features</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="download.html">Download</a></li>
-          <li><a href="licence.html">Your Pro licence</a></li>
+          <li><a href="features">Features</a></li>
+          <li><a href="pricing">Pricing</a></li>
+          <li><a href="download">Download</a></li>
+          <li><a href="get-started">Get started</a></li>
+          <li><a href="switch/">Switch</a></li>
+          <li><a href="buy">Buy Pro</a></li>
+          <li><a href="licence">Your Pro licence</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recover your licence</a></li>
         </ul>
       </nav>
       <nav aria-label="Help">
         <h2>Help</h2>
         <ul>
-          <li><a href="help.html">User guide</a></li>
-          <li><a href="support.html">Support and FAQ</a></li>
-          <li><a href="security.html">Security</a></li>
-          <li><a href="legal/vulnerability-disclosure.html">Report a vulnerability</a></li>
+          <li><a href="help">User guide</a></li>
+          <li><a href="support">Support and FAQ</a></li>
+          <li><a href="security">Security</a></li>
+          <li><a href="legal/vulnerability-disclosure">Report a vulnerability</a></li>
         </ul>
       </nav>
       <nav aria-label="Legal">
         <h2>Legal</h2>
         <ul>
-          <li><a href="legal/eula.html">Licence agreement</a></li>
-          <li><a href="legal/privacy.html">Privacy policy</a></li>
-          <li><a href="legal/terms-of-sale.html">Terms of sale</a></li>
-          <li><a href="legal/refunds.html">Refund policy</a></li>
+          <li><a href="legal/eula">Licence agreement</a></li>
+          <li><a href="legal/privacy">Privacy policy</a></li>
+          <li><a href="legal/terms-of-sale">Terms of sale</a></li>
+          <li><a href="legal/refunds">Refund policy</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Language"><a href="help.html" hreflang="en" lang="en" aria-current="true">English</a> · <a href="es/help.html" hreflang="es" lang="es">Español</a> · <a href="it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="pl/help.html" hreflang="pl" lang="pl">Polski</a> · <a href="zh-hans/help.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="ja/help.html" hreflang="ja" lang="ja">日本語</a> · <a href="de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="ko/help.html" hreflang="ko" lang="ko">한국어</a> · <a href="nl/help.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID and Safari are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <nav class="lang-switch" aria-label="Language"><ul><li><a href="help" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="es/help" hreflang="es" lang="es">Español</a></li><li><a href="it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="pl/help" hreflang="pl" lang="pl">Polski</a></li><li><a href="zh-hans/help" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="fr/help" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

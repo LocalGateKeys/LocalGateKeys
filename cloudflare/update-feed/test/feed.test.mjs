@@ -168,3 +168,38 @@ test("releases older than MIN_RELEASE are no longer offered; newer and equal one
   const loose = await worker.fetch(new Request(`https://updates.example/${INSTALLER}`), { RELEASES: fakeR2(objects), MIN_RELEASE: "0.4" });
   assert.equal(loose.status, 200);
 });
+
+test("nothing newer than LAST_INSTALLER_RELEASE is offered, and refusals point to the Microsoft Store", async () => {
+  const final = "releases/0.4.12/LocalGateKeys-Setup-Personal.exe";
+  const later = "releases/0.4.13/LocalGateKeys-Setup-Personal.exe";
+  const objects = { [INSTALLER]: BYTES, [final]: BYTES, [later]: BYTES, "stable.json": new TextEncoder().encode('{"a":1}') };
+  const e = { RELEASES: fakeR2(objects), MIN_RELEASE: "0.4.12", LAST_INSTALLER_RELEASE: "0.4.12" };
+  assert.equal((await fetchFeed(e, `/${final}`)).status, 200);
+  const newer = await fetchFeed(e, `/${later}`);
+  assert.equal(newer.status, 410);
+  assert.match(await newer.text(), /Microsoft Store: https:\/\/apps\.microsoft\.com\/detail\/9PNWCNLQ6597/);
+  const older = await fetchFeed(e, `/${INSTALLER}`);
+  assert.equal(older.status, 410);
+  assert.match(await older.text(), /Microsoft Store/);
+  assert.ok(!e.RELEASES.calls.some(([, key]) => key === later || key === INSTALLER), "refused releases never reach R2");
+  // The feed itself (frozen at the last installer release) is still served.
+  assert.equal((await fetchFeed(e, "/stable.json")).status, 200);
+  // A malformed ceiling is ignored rather than blocking every download.
+  const loose = await fetchFeed({ RELEASES: fakeR2(objects), LAST_INSTALLER_RELEASE: "0.4" }, `/${later}`);
+  assert.equal(loose.status, 200);
+});
+
+test("the feed answers If-None-Match with 304 (W1)", async () => {
+  const e = env();
+  const hit = await fetchFeed(e, "/stable.json", { headers: { "If-None-Match": ETAG } });
+  assert.equal(hit.status, 304);
+  assert.equal(hit.headers.get("ETag"), ETAG);
+  assert.equal((await fetchFeed(e, "/stable.json", { headers: { "If-None-Match": '"old"' } })).status, 200);
+});
+
+test("an oversized feed is 503 with Retry-After, not 500 (W2)", async () => {
+  const e = { RELEASES: fakeR2({ "stable.json": new Uint8Array(70 * 1024) }) };
+  const r = await fetchFeed(e, "/stable.json");
+  assert.equal(r.status, 503);
+  assert.ok(r.headers.get("Retry-After"));
+});

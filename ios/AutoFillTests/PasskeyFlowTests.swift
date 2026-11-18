@@ -192,6 +192,18 @@ final class PasskeyFlowTests: XCTestCase {
     }
 
     /// Two live items: room for a new one on the free plan.
+    /// The passkey fixture topped up with notes to the free item limit.
+    func full() -> StoreSnapshot {
+        var s = Fixture.snapshotWithPasskeys(.generate())
+        var n = 0
+        while ItemLimit.liveCount(s) < ItemLimit.freeItems {
+            n += 1
+            s.records["fill\(n)"] = Wrapper.make(ns: .item, record: .object([
+                "id": .string("fill\(n)"), "kind": .string("note"), "updated_at": .int(1)]))
+        }
+        return s
+    }
+
     func small() -> StoreSnapshot {
         StoreSnapshot(records: ["w1": Fixture.web("w1", user: "alice", password: "pw", origin: "https://example.com")], revision: 3)
     }
@@ -271,7 +283,7 @@ final class PasskeyFlowTests: XCTestCase {
     }
 
     func test_registration_blocked_over_limit_writes_nothing() async throws {
-        let full = Fixture.snapshotWithPasskeys(.generate())   // 6 live items
+        let full = full()
         XCTAssertGreaterThanOrEqual(ItemLimit.liveCount(full), ItemLimit.freeItems)
         let ids = RecordingRefresher()
         let (f, _, _, store) = make(full, identities: ids)
@@ -286,12 +298,12 @@ final class PasskeyFlowTests: XCTestCase {
     }
 
     func test_registration_allowed_with_pro_or_license() async throws {
-        let (f, _, _, store) = make(Fixture.snapshotWithPasskeys(.generate()), entitled: true)
+        let (f, _, _, store) = make(full(), entitled: true)
         _ = try await register(f)
         XCTAssertEqual(store.commits, 1)
 
         let v = try LicenseFixture.load()
-        var s = Fixture.snapshotWithPasskeys(.generate()); s.records[v.id] = v.wrapper
+        var s = full(); s.records[v.id] = v.wrapper
         let (g, _, _, licensed) = make(s, licenseKeys: v.keys)
         _ = try await register(g)
         XCTAssertEqual(licensed.commits, 1)
@@ -393,20 +405,20 @@ final class PasskeyFlowTests: XCTestCase {
         XCTAssertEqual(store.commits, 1); XCTAssertEqual(e.calls, 0)
         // Over the limit with a synced licence: still no StoreKit.
         let v = try LicenseFixture.load()
-        var s = Fixture.snapshotWithPasskeys(.generate()); s.records[v.id] = v.wrapper
+        var s = full(); s.records[v.id] = v.wrapper
         let e2 = FakeEntitlement(false)
         let (g, _, _, licensed) = make(s, licenseKeys: v.keys, entitlement: e2)
         _ = try await register(g)
         XCTAssertEqual(licensed.commits, 1); XCTAssertEqual(e2.calls, 0)
         // Over the limit, no licence: asked exactly once.
         let e3 = FakeEntitlement(true)
-        let (h, _, _, entitled) = make(Fixture.snapshotWithPasskeys(.generate()), entitlement: e3)
+        let (h, _, _, entitled) = make(full(), entitlement: e3)
         _ = try await register(h)
         XCTAssertEqual(entitled.commits, 1); XCTAssertEqual(e3.calls, 1)
     }
 
     func test_over_limit_hint_refuses_before_face_id() async throws {
-        let full = Fixture.snapshotWithPasskeys(.generate())
+        let full = full()
         let settings = freshSettings(); settings.planFullRevision = 42
         let (f, auth, opener, store) = make(full, settings: settings, committedRevision: 42)
         do { _ = try await register(f); XCTFail() } catch { XCTAssertEqual(error as? PasskeyFlow.Failure, .needsPro) }

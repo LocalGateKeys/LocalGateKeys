@@ -115,6 +115,42 @@ final class FakeLan: LanTransporting, @unchecked Sendable {
 
     var waiting: Int { lock.withLock { waiters.count } }
     func release() { let w = lock.withLock { defer { waiters = []; gated = false }; return waiters }; w.forEach { $0.resume() } }
+
+    /// The peer's `features` answer (sub-plan 07): true reads collections, false older, nil no answer (the default).
+    var features: Bool?
+    private(set) var featureAsks = 0
+    func exchangeFeatures(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey) async throws -> Bool? {
+        lock.withLock { featureAsks += 1; return features }
+    }
+}
+
+/// A Wi-Fi host merging as `LanResponder` does: it keeps the merge before it replies, so with `dropReply` the
+/// initiator's states are stored here while the initiator sees the connection drop (review H-1).
+final class HostSim: @unchecked Sendable {
+    private let lock = NSLock()
+    private var snap = StoreSnapshot()
+    private var drop = false
+    let device: String, peer: String, now: Int64
+    init(device: String, peer: String, now: Int64) { self.device = device; self.peer = peer; self.now = now }
+    var records: [String: JSONValue] { lock.withLock { snap.records } }
+    var dropReply: Bool {
+        get { lock.withLock { drop } }
+        set { lock.withLock { drop = newValue } }
+    }
+    func serve(_ states: [ItemState]) throws -> [ItemState] {
+        let (own, dropped): ([ItemState]?, Bool) = lock.withLock {
+            let run = SyncRunner.run(store: snap, views: [PeerView(deviceID: peer, states: states)], device: device, now: now)
+            if run.ownStates != nil {
+                snap.records = run.records ?? snap.records
+                snap.meta = run.meta ?? snap.meta
+                snap.revision += 1
+            }
+            return (run.ownStates, drop)
+        }
+        guard let own else { throw LanSyncError("local-data") }
+        if dropped { throw LanSocketError("peer closed the connection") }
+        return own
+    }
 }
 
 final class CountingAutoFill: AutoFillIdentityRefreshing, @unchecked Sendable {
@@ -153,7 +189,14 @@ final class LockedStore: ItemStore, @unchecked Sendable {
     func commit(_ change: StoreChange) throws {
         try lock.withLock {
             guard change.baseRevision == snap.revision else { throw LocalStoreError.stale(expected: change.baseRevision, actual: snap.revision) }
-            snap = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: snap.revision + 1)
+            // The share groups are kept unless a commit sets them, as `LocalStore` does (sub-plan 07).
+            let shares: JSONValue?
+            switch change.shares {
+            case .keep: shares = snap.shares
+            case .set(let value): shares = value
+            }
+            snap = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: snap.revision + 1,
+                                 shares: shares, keptIdentity: change.keptIdentity(after: snap.keptIdentity))
             n += 1
         }
     }
@@ -257,8 +300,13 @@ final class SyncCoordinatorTests: XCTestCase {
         if let identity { d.newIdentity = { _ in identity } }
         d.deviceName = Self.vectorDeviceName
         d.sleep = sleeper.fn
+        d.autoSync = { [auto] in auto.on }
         return d
     }
+
+    /// The "Sync automatically" setting the coordinators under test read.
+    final class AutoSyncFlag: @unchecked Sendable { var on = true }
+    let auto = AutoSyncFlag()
 
     /// The name B announces in the vector enrollment: `lan/enroll_reply_no_endpoint.bin` is bound to it,
     /// so a QR join with any other name fails to open the reply (scripts/make_sync_vectors.py).
@@ -351,6 +399,25 @@ final class SyncCoordinatorTests: XCTestCase {
         let junk = await c.findAgain("not a code")
         XCTAssertFalse(junk)
         XCTAssertEqual(c.actionError, SyncWording.findAgainText(.notAPairingCode))
+    }
+
+    /// The paired host may be another phone in Wi-Fi host mode (checked 2026-11-16 with two iPhones): the Find again
+    /// card does not call it a PC.
+    func test_host_not_found_wording_does_not_assume_a_pc() {
+        XCTAssertFalse(SyncWording.hostNotFoundTitle.contains("PC"))
+        XCTAssertFalse(SyncWording.findAgainHint.contains("PC"))
+        XCTAssertEqual(SyncWording.hostNotFoundTitle, "Can't find the paired device on this network.")
+    }
+
+    /// A refused folder or pairing action must not stay next to "Last synced" once the user taps Sync now.
+    func test_sync_now_clears_the_message_of_an_earlier_action() async throws {
+        let store = LockedStore()
+        let c = SyncCoordinator(store: store, deps: deps(identity: try SyncVectors.identity("B")))
+        await c.joinByQR("not a code")
+        XCTAssertNotNil(c.actionError)
+        await c.syncNow()
+        XCTAssertNil(c.actionError)
+        XCTAssertNil(c.actionInfo)
     }
 
     func test_qr_refusals_use_desktop_wording_and_leave_store_untouched() async throws {
@@ -536,7 +603,60 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertNil(c.actionError)
     }
 
+    /// Paired over Wi-Fi, then a folder with no group is picked: the copy must not say "Create one".
+    func test_attach_to_an_empty_folder_says_where_to_add_one() async throws {
+        let x = try SyncVectors.json("expected.json")
+        let existing = SyncVectors.obj(x["existing_group"])
+        let gid = SyncVectors.str(existing["group_id"])
+        let key = SyncVectors.hex(SyncVectors.str(SyncVectors.obj(SyncVectors.obj(existing["epochs"])["1"])["group_key_hex"]))
+        let me = try DeviceIdentity.generate(random: FixedRandom())
+        let install = try keychain.installID(random: FixedRandom())
+        let store = LockedStore(StoreSnapshot(sync: SyncGroupState(groupID: gid, epoch: 1, key: key, identity: me,
+                                                                    installID: install, hasFolder: false)))
+        let c = SyncCoordinator(store: store, deps: deps())
+        let ok = await c.joinFolder(bookmark: [7], password: "anything")
+        XCTAssertFalse(ok)
+        XCTAssertEqual(c.actionError, SyncWording.errorText(reason: "no-group-paired"))
+        XCTAssertEqual(c.actionError, "This folder has no sync group. Choose the folder another device in this group already uses. If the group has no cloud folder yet, choose Add a cloud folder to this group.")
+        XCTAssertFalse(c.membership.hasFolder)
+    }
+
+    /// Add a cloud folder to this group: the phone's Wi-Fi group gets the picked (empty) folder, same group and identity.
+    func test_add_folder_gives_the_wifi_group_a_folder() async throws {
+        let x = try SyncVectors.json("expected.json")
+        let existing = SyncVectors.obj(x["existing_group"])
+        let gid = SyncVectors.str(existing["group_id"])
+        let key = SyncVectors.hex(SyncVectors.str(SyncVectors.obj(SyncVectors.obj(existing["epochs"])["1"])["group_key_hex"]))
+        let me = try DeviceIdentity.generate(random: FixedRandom())
+        let install = try keychain.installID(random: FixedRandom())
+        let store = LockedStore(StoreSnapshot(sync: SyncGroupState(groupID: gid, epoch: 1, key: key, identity: me,
+                                                                    installID: install, hasFolder: false)))
+        let c = SyncCoordinator(store: store, deps: deps())
+        let ok = await c.createFolder(bookmark: [7], password: "correct horse battery staple 42!", add: true)
+        XCTAssertTrue(ok, c.actionError ?? "")
+        let state = try XCTUnwrap(try store.load().sync)
+        XCTAssertTrue(state.hasFolder)
+        XCTAssertEqual(state.groupID, gid); XCTAssertEqual(state.epoch, 1); XCTAssertEqual(state.identity, me)
+        XCTAssertNotNil(folder.files["LocalGateKeys Sync/keyring.lgkkeys"])
+        XCTAssertTrue(c.membership.hasFolder)
+    }
+
+    func test_peer_address_shows_the_port_as_plain_digits() {
+        XCTAssertEqual(SyncWording.peerAddress(host: "192.168.1.20", port: 47821), "192.168.1.20 port 47821")
+    }
+
+    func test_new_key_text_names_the_devices_that_pair_again() {
+        let alone = SyncWording.newKeyFolderText(peers: [])
+        XCTAssertTrue(alone.hasPrefix("A Wi-Fi device was removed from this group"), alone)
+        XCTAssertTrue(alone.hasSuffix("Continue?"), alone)
+        XCTAssertFalse(alone.contains("pair each of them again"), alone)
+        let withPeers = SyncWording.newKeyFolderText(peers: ["Laptop", "Tablet"])
+        XCTAssertTrue(withPeers.contains("over Wi-Fi: Laptop, Tablet. Afterwards pair each of them again"), withPeers)
+        XCTAssertTrue(withPeers.contains("Until then they don't sync with this device."), withPeers)
+    }
+
     func test_attach_after_qr_keeps_the_pairing() async throws {
+
         // QR-joined to the existing-group vector group (A created it; the phone holds the epoch-1 key).
         let x = try SyncVectors.json("expected.json")
         let existing = SyncVectors.obj(x["existing_group"])
@@ -608,6 +728,17 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertEqual(views.map(\.resetOffered), [true, false, false])
     }
 
+    /// A verified removal notice (setting off): an error shown before every other issue, no Reset, this device's words.
+    func test_removal_notice_is_an_error_shown_first_without_reset() {
+        XCTAssertEqual(SyncWording.removalNoticeKind, RemovalNotice.issueKind)
+        let views = SyncWording.views([SyncIssue("busy"), SyncIssue("tampered"), SyncIssue(RemovalNotice.issueKind, "mac-device")])
+        XCTAssertEqual(views.map(\.kind), [RemovalNotice.issueKind, "tampered", "busy"])
+        XCTAssertEqual(views.first?.severity, .error)
+        XCTAssertEqual(views.first?.resetOffered, false)
+        XCTAssertEqual(views.first?.text, "Another of your devices removed this iPhone from sync. “Erase this device if it is removed from sync” is off, so the vault stays on this iPhone. Leave sync, or join the folder again.")
+        XCTAssertEqual(SyncWording.desktopText(SyncIssue(RemovalNotice.issueKind)), "Another of your devices removed this PC from sync. “Erase this device if it is removed from sync” is off, so the vault stays on this PC. Leave sync, or join the folder again.")
+    }
+
     func test_no_concurrent_syncs() async throws {
         let store = LockedStore()
         let c = try await qrJoined(store)
@@ -628,6 +759,25 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertEqual(lan.exchanges, base + 2)
         XCTAssertEqual(lan.maxConcurrent, 1)
         XCTAssertEqual(c.phase, .idle)
+    }
+
+    func test_sync_automatically_off_holds_back_the_unlock_the_return_and_edits_but_not_the_person() async throws {
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        let base = lan.exchanges
+        auto.on = false
+        await c.sync(.appOpen)
+        await c.sync(.foreground)
+        c.noteLocalEdit()
+        for _ in 0..<200 { await Task.yield() }
+        XCTAssertEqual(lan.exchanges, base, "nothing runs by itself")
+        await c.syncNow()
+        XCTAssertEqual(lan.exchanges, base + 1)
+        await c.sync(.pullToRefresh)
+        XCTAssertEqual(lan.exchanges, base + 2)
+        auto.on = true   // read at each trigger: no new unlock needed
+        await c.sync(.foreground)
+        XCTAssertEqual(lan.exchanges, base + 3)
     }
 
     func test_edits_trigger_one_debounced_sync() async throws {
@@ -655,8 +805,11 @@ final class SyncCoordinatorTests: XCTestCase {
                                LanTransportError.authentication("bad hello")] {
             lan.exchange = { _ in throw failure }
             await c.sync(.manual)
-            XCTAssertEqual(store.snapshot, before)
-            XCTAssertEqual(store.commits, commits)
+            // Review H-1: only the vectors that were sent are saved (once, before the first exchange); nothing else.
+            XCTAssertEqual(store.snapshot.records, before.records)
+            XCTAssertEqual(store.snapshot.sync, before.sync)
+            XCTAssertNotNil(store.snapshot.meta[id])
+            XCTAssertEqual(store.commits, commits + 1)
             XCTAssertFalse(c.issues.isEmpty)
         }
         // A folder group whose bookmark is gone: reported, store untouched.
@@ -667,6 +820,54 @@ final class SyncCoordinatorTests: XCTestCase {
         await c.sync(.manual)
         XCTAssertTrue(c.issues.contains { $0.kind == "folder-missing" })
         XCTAssertEqual(store.snapshot, folderBefore)
+    }
+
+    // MARK: review H-1 (vectors sent are saved before the exchange)
+
+    func setLocal(_ store: LockedStore, _ id: String, _ wrapper: JSONValue?) throws {
+        var s = store.snapshot
+        s.records[id] = wrapper
+        try store.commit(StoreChange(baseRevision: s.revision, records: s.records, meta: s.meta, sync: s.sync))
+    }
+
+    /// Edit, a Wi-Fi run whose reply is lost after the host kept the edit, then `next` locally (nil: delete) and a
+    /// good run. Returns the host and the phone store.
+    func interruptedThen(_ next: JSONValue?) async throws -> (host: HostSim, store: LockedStore, id: String) {
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        let host = HostSim(device: try SyncVectors.identity("A").deviceID, peer: try SyncVectors.identity("B").deviceID,
+                           now: clock.now)
+        lan.exchange = { [host] states in try host.serve(states) }
+        let (id, first) = noteRecord(21, title: "First")
+        try setLocal(store, id, first)
+        await c.sync(.manual)
+        XCTAssertEqual(host.records[id], first)
+        let (_, second) = noteRecord(21, title: "Second")
+        try setLocal(store, id, second)
+        host.dropReply = true
+        await c.sync(.manual)
+        XCTAssertEqual(host.records[id], second, "the host kept the edit")
+        XCTAssertFalse(c.issues.isEmpty, "the phone saw the run fail")
+        host.dropReply = false
+        try setLocal(store, id, next)
+        await c.sync(.manual)
+        return (host, store, id)
+    }
+
+    func test_a_delete_after_an_interrupted_exchange_stays_deleted() async throws {
+        let (host, store, id) = try await interruptedThen(nil)
+        XCTAssertNil(host.records[id], "the host applied the delete")
+        XCTAssertNil(store.snapshot.records[id], "the item did not come back on the phone")
+        XCTAssertEqual(store.snapshot.meta[id]?.deleted, true)
+    }
+
+    func test_an_edit_after_an_interrupted_exchange_makes_no_conflict_copy() async throws {
+        let (_, third) = noteRecord(21, title: "Third")
+        let (host, store, id) = try await interruptedThen(third)
+        XCTAssertEqual(host.records[id], third)
+        XCTAssertEqual(store.snapshot.records[id], third)
+        XCTAssertEqual(host.records.count, 1, "no sync conflict copy on the host")
+        XCTAssertEqual(store.snapshot.records.count, host.records.count, "no sync conflict copy on the phone")
     }
 
     func test_lan_refuses_a_non_lan_peer_address() async throws {
@@ -971,5 +1172,663 @@ final class PairedConnectorTests: XCTestCase {
         XCTAssertEqual(reply, Array("reply".utf8))
         XCTAssertEqual(dialer.sentFrames, [try LanTransport.encodeFrame(Enrollment.requestMagic + [1, 2])])
         XCTAssertEqual(dialer.waited, [true])
+    }
+}
+
+// MARK: collections and shared collections (sub-plan 07 Task 5g)
+
+/// Pro on a test device, flipped by the test.
+@MainActor
+final class ProSwitch {
+    var on = true
+}
+
+/// Logs the order of the personal Wi-Fi exchange and the share folder opens.
+final class RunOrder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var log: [String] = []
+    var events: [String] { lock.withLock { log } }
+    func add(_ event: String) { lock.withLock { log.append(event) } }
+    func clear() { lock.withLock { log = [] } }
+}
+
+/// `FakeFolders` that logs every open as "share" (the personal group of these tests is Wi-Fi only).
+final class OrderedFolders: FolderOpening, @unchecked Sendable {
+    let base: FakeFolders
+    let order: RunOrder
+    init(_ base: FakeFolders, _ order: RunOrder) { self.base = base; self.order = order }
+    func bookmark(for url: URL) throws -> [UInt8] { try base.bookmark(for: url) }
+    func open(bookmark: [UInt8]) throws -> (folder: any FolderAccess, refreshed: [UInt8]?) {
+        order.add("share")
+        return try base.open(bookmark: bookmark)
+    }
+}
+
+/// Opens `personal` for the bookmark "bm" (the personal sync folder) and `shared` for every other bookmark.
+final class RoutedFolders: FolderOpening, @unchecked Sendable {
+    let personal: MemoryFolder
+    let shared: MemoryFolder
+    init(personal: MemoryFolder, shared: MemoryFolder) { self.personal = personal; self.shared = shared }
+    func bookmark(for url: URL) throws -> [UInt8] { Array(url.path.utf8) }
+    func open(bookmark: [UInt8]) throws -> (folder: any FolderAccess, refreshed: [UInt8]?) {
+        (bookmark == Array("bm".utf8) ? personal : shared, nil)
+    }
+}
+
+/// One person's device in a share test: its own vault, Keychain, Recently deleted and coordinator, over `folder`.
+@MainActor
+final class ShareDevice {
+    let store: LockedStore
+    let keychain: InMemoryKeychainVault
+    let local: InMemoryPhoneLocal
+    let pro: ProSwitch
+    let coordinator: SyncCoordinator
+
+    init(folder: MemoryFolder, clock: TestClock, folders: (any FolderOpening)? = nil) {
+        let store = LockedStore(), keychain = InMemoryKeychainVault(), local = InMemoryPhoneLocal(), pro = ProSwitch()
+        var d = SyncDependencies(keychain: keychain, folders: folders ?? FakeFolders(folder), lan: FakeLan(), autoFill: CountingAutoFill(),
+                                 random: FixedRandom(), clock: clock, licenseKeys: [:])
+        d.sleep = { _ in }
+        let coordinator = SyncCoordinator(store: store, deps: d, background: FakeBackgroundTasks())
+        coordinator.shareTrash = local
+        coordinator.isPro = { [pro] in pro.on }
+        self.store = store; self.keychain = keychain; self.local = local; self.pro = pro; self.coordinator = coordinator
+    }
+
+    var shares: [String: ShareRecord] { (try? ShareGroups.records(in: store.snapshot)) ?? [:] }
+}
+
+extension SyncCoordinatorTests {
+    static let sharePassword = SyncVectors.password
+    static let newSharePassword = "another very long passphrase 42?"
+
+    /// A "Family" collection holding one note, in `store`: (collection id, item id).
+    func sharedNote(_ store: LockedStore, _ n: Int = 7) throws -> (cid: String, itemID: String) {
+        let made = try CollectionCatalog.create(name: "Family", in: store.snapshot, now: clock.now)
+        try store.commit(made.change)
+        let (id, wrapper) = noteRecord(n, title: "Wi-Fi")
+        var s = store.snapshot
+        var records = s.records
+        records[id] = wrapper
+        try store.commit(StoreChange(baseRevision: s.revision, records: records, meta: s.meta, sync: s.sync))
+        s = store.snapshot
+        let change = try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: id, kind: "note", to: [made.id], in: s))
+        try store.commit(change)
+        return (made.id, id)
+    }
+
+    func test_the_personal_folder_run_writes_its_collections_capability() async throws {
+        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try SyncVectors.data("keyring_v1_epoch1.json")
+        for who in ["A", "B", "C"] {
+            let id = try SyncVectors.identity(who).deviceID
+            folder.files["LocalGateKeys Sync/devices/\(id).lgksync"] = try SyncVectors.data("devices/\(who).lgksync")
+        }
+        clock.now = 1_790_000_000 + 1000
+        let store = LockedStore()
+        let c = SyncCoordinator(store: store, deps: deps())
+        let ok = await c.joinFolder(bookmark: Array("bm".utf8), password: SyncVectors.password)
+        XCTAssertTrue(ok, c.actionError ?? "")
+        let me = try XCTUnwrap(store.snapshot.sync).deviceID
+        await c.sync(.appOpen)
+        // This device's signed `.lgkcol` (and its signature): the other members learn it reads collections.
+        let cap = folder.files.keys.filter { $0.hasSuffix("/\(me).lgkcol") || $0.hasSuffix("/\(me).lgkcol.lgksig") }
+        XCTAssertEqual(cap.count, 2, "\(folder.files.keys.sorted())")
+        XCTAssertNil(store.snapshot.shares)
+    }
+
+    func test_wifi_asks_features_once_then_sends_collection_states() async throws {
+        lan.features = true
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        let pc = try XCTUnwrap(try keychain.pairedPeer()).deviceID
+        // The first exchange sent no collection state, then asked and recorded the answer.
+        XCTAssertEqual(lan.featureAsks, 1)
+        XCTAssertEqual(store.snapshot.sync?.collectionPeers, [pc])
+        let made = try CollectionCatalog.create(name: "Family", in: store.snapshot, now: clock.now)
+        try store.commit(made.change)
+        await c.sync(.manual)
+        XCTAssertEqual(lan.featureAsks, 1, "a listed peer is not asked again")
+        XCTAssertTrue(lan.sent.last?.contains { $0.itemID == CollectionStates.catalogPrefix + made.id } ?? false)
+    }
+
+    func test_share_runs_come_after_the_personal_run_and_a_free_device_only_checks_the_keyring() async throws {
+        let order = RunOrder()
+        lan.exchange = { _ in order.add("personal"); return [] }
+        try inviterAnswers()
+        var d = deps(identity: try SyncVectors.identity("B"))
+        d.folders = OrderedFolders(folders, order)
+        let store = LockedStore()
+        let local = InMemoryPhoneLocal()
+        let pro = ProSwitch()
+        let c = SyncCoordinator(store: store, deps: d, background: FakeBackgroundTasks())
+        c.shareTrash = local
+        c.isPro = { [pro] in pro.on }
+        let joined = await c.joinByQR(try SyncVectors.qrText())
+        XCTAssertTrue(joined, c.actionError ?? "")
+        let (cid, itemID) = try sharedNote(store)
+
+        let group = await c.createShare(collectionID: cid, bookmark: [9], password: Self.sharePassword,
+                                        deviceName: "Phone", membersCanEdit: true)
+        let gid = try XCTUnwrap(group?.groupID, c.shareActionReason ?? "")
+        XCTAssertEqual(c.shareIssues[gid], [])
+        let own = try XCTUnwrap(try ShareGroups.records(in: store.snapshot)[gid]).state.deviceID
+        XCTAssertNotNil(folder.files["LocalGateKeys Sync/devices/\(own).lgksync"], "the share run wrote its view")
+        XCTAssertNotNil(store.snapshot.records[itemID])
+
+        order.clear()
+        await c.sync(.manual)
+        XCTAssertEqual(order.events, ["personal", "share"])
+        XCTAssertEqual(c.shareIssues[gid], [])
+
+        // Free: the share run does its keyring step only (it would repair a damaged keyring; final review A2), so the
+        // folder is read but, with a current keyring, not changed and no view is written; the status says why.
+        // Personal sync goes on.
+        pro.on = false
+        let before = folder.files
+        order.clear()
+        await c.sync(.manual)
+        XCTAssertEqual(order.events, ["personal", "share"])
+        XCTAssertEqual(folder.files, before)
+        XCTAssertEqual(c.shareIssues[gid], [SyncIssue("pro-required", gid)])
+        let status = try XCTUnwrap(c.shareStatus(groupID: gid))
+        XCTAssertEqual(status.severity, .warning)
+        XCTAssertEqual(status.text, SyncWording.shareCopy(SyncIssue("pro-required")))
+        // Nor can it share another collection (refused before any key derivation or folder access).
+        let other = try CollectionCatalog.create(name: "Work", in: store.snapshot, now: clock.now)
+        try store.commit(other.change)
+        order.clear()
+        let refused = await c.createShare(collectionID: other.id, bookmark: [8], password: Self.sharePassword,
+                                          deviceName: "Phone", membersCanEdit: false)
+        XCTAssertNil(refused)
+        XCTAssertEqual(c.shareActionReason, "pro-required")
+        XCTAssertFalse(order.events.contains("share"))
+        XCTAssertEqual(try ShareGroups.records(in: store.snapshot).count, 1)
+    }
+
+    func test_a_refused_join_leaves_no_share_record() async throws {
+        let shared = MemoryFolder()
+        let owner = ShareDevice(folder: shared, clock: clock)
+        let (cid, _) = try sharedNote(owner.store)
+        let group = await owner.coordinator.createShare(collectionID: cid, bookmark: [1], password: Self.sharePassword,
+                                                        deviceName: "Owner", membersCanEdit: true)
+        XCTAssertNotNil(group, owner.coordinator.shareActionReason ?? "")
+        // The folder already holds a share: sharing another collection there is refused and changes nothing.
+        let more = try CollectionCatalog.create(name: "More", in: owner.store.snapshot, now: clock.now)
+        try owner.store.commit(more.change)
+        let ring = shared.files[FolderLayout.keyringPath]
+        let again = await owner.coordinator.createShare(collectionID: more.id, bookmark: [1], password: Self.sharePassword,
+                                                        deviceName: "Owner", membersCanEdit: true)
+        XCTAssertNil(again)
+        XCTAssertEqual(owner.coordinator.shareActionReason, "folder-in-use")
+        XCTAssertEqual(owner.shares.count, 1)
+        XCTAssertEqual(shared.files[FolderLayout.keyringPath], ring)
+
+        let member = ShareDevice(folder: shared, clock: clock)
+        let commits = member.store.commits
+        let wrong = await member.coordinator.joinShare(bookmark: [2], password: "not the share password at all 9",
+                                                       deviceName: "Member")
+        XCTAssertNil(wrong)
+        XCTAssertEqual(member.coordinator.shareActionReason, "password")
+        XCTAssertNil(member.store.snapshot.shares)
+        XCTAssertEqual(member.store.commits, commits)
+        XCTAssertEqual(shared.files[FolderLayout.keyringPath], ring)
+        // A free device is refused before the folder is read.
+        member.pro.on = false
+        let free = await member.coordinator.joinShare(bookmark: [2], password: Self.sharePassword, deviceName: "Member")
+        XCTAssertNil(free)
+        XCTAssertEqual(member.coordinator.shareActionReason, "pro-required")
+        XCTAssertNil(member.store.snapshot.shares)
+        XCTAssertEqual(CollectionCatalog.collections(in: member.store.snapshot).count, 0)
+    }
+
+    func test_a_removal_notice_moves_the_items_to_recently_deleted_and_is_reported_on_the_collection() async throws {
+        let shared = MemoryFolder()
+        let owner = ShareDevice(folder: shared, clock: clock)
+        let member = ShareDevice(folder: shared, clock: clock)
+        let (cid, itemID) = try sharedNote(owner.store)
+        let created = await owner.coordinator.createShare(collectionID: cid, bookmark: [1], password: Self.sharePassword,
+                                                          deviceName: "Owner", membersCanEdit: true)
+        let gid = try XCTUnwrap(created?.groupID, owner.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        let joined = await member.coordinator.joinShare(bookmark: [2], password: Self.sharePassword, deviceName: "Member")
+        XCTAssertEqual(joined?.groupID, gid, member.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        await owner.coordinator.sync(.manual)   // adopts the join: the member waits for approval
+        let waiting = try ShareGroups.pendingMembers(in: owner.store.snapshot, groupID: gid)
+        XCTAssertEqual(waiting.map(\.name), ["Member"])
+        let approved = await owner.coordinator.approveShare(groupID: gid, deviceIDs: waiting.map(\.deviceID))
+        XCTAssertEqual(approved?.map(\.deviceID), waiting.map(\.deviceID), owner.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        XCTAssertNotNil(member.store.snapshot.records[itemID], "the shared note arrived: \(member.coordinator.shareIssues)")
+        XCTAssertEqual(CollectionCatalog.memberships(of: itemID, in: member.store.snapshot), [cid])
+
+        // The owner removes the member: a new password, the notice, the rotated keyring.
+        clock.now += 1
+        let memberID = try XCTUnwrap(member.shares[gid]).state.deviceID
+        let mismatch = await owner.coordinator.removeShareMember(groupID: gid, deviceID: memberID,
+                                                                 newPassword: Self.newSharePassword, again: "typo")
+        XCTAssertFalse(mismatch)
+        XCTAssertEqual(owner.coordinator.shareActionReason, "password-mismatch")
+        let removed = await owner.coordinator.removeShareMember(groupID: gid, deviceID: memberID,
+                                                                newPassword: Self.newSharePassword,
+                                                                again: Self.newSharePassword)
+        XCTAssertTrue(removed, owner.coordinator.shareActionReason ?? "")
+        XCTAssertTrue(owner.coordinator.shareRemovalWritten)
+
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        // The shared note left the vault for Recently deleted (with its collection); the group is forgotten.
+        XCTAssertNil(member.store.snapshot.records[itemID])
+        let trashedIDs = (member.local.localData?.trash ?? []).compactMap { row -> String? in
+            guard case .object(let r)? = try? row.record(), case .string(let id)? = r["id"] else { return nil }
+            return id
+        }
+        XCTAssertEqual(trashedIDs, [itemID])
+        XCTAssertEqual(member.shares.count, 0)
+        // Reported on the collection, which stays (the group is gone).
+        let issue = try XCTUnwrap(member.coordinator.removedShares[cid])
+        XCTAssertEqual(issue, SyncIssue("share-removed", cid))
+        XCTAssertEqual(member.coordinator.shareIssues[gid], [issue])
+        let status = SyncWording.shareStatus(issue)
+        XCTAssertEqual(status.text, "You were removed from this shared collection. Its items on this iPhone were moved to the trash.")
+        XCTAssertFalse(status.joinAgain)
+        XCTAssertEqual(CollectionCatalog.collections(in: member.store.snapshot).map(\.id), [cid])
+        // The owner keeps everything.
+        XCTAssertNotNil(owner.store.snapshot.records[itemID])
+    }
+
+    func test_share_passwords_are_never_stored() async throws {
+        let shared = MemoryFolder()
+        let owner = ShareDevice(folder: shared, clock: clock)
+        let member = ShareDevice(folder: shared, clock: clock)
+        let (cid, _) = try sharedNote(owner.store)
+        let created = await owner.coordinator.createShare(collectionID: cid, bookmark: [1], password: Self.sharePassword,
+                                                          deviceName: "Owner", membersCanEdit: false)
+        let gid = try XCTUnwrap(created?.groupID, owner.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        let joined = await member.coordinator.joinShare(bookmark: [2], password: Self.sharePassword, deviceName: "Member")
+        XCTAssertNotNil(joined, member.coordinator.shareActionReason ?? "")
+        let memberID = try XCTUnwrap(member.shares[gid]).state.deviceID
+        clock.now += 1
+        await owner.coordinator.sync(.manual)
+        let removed = await owner.coordinator.removeShareMember(groupID: gid, deviceID: memberID,
+                                                                newPassword: Self.newSharePassword,
+                                                                again: Self.newSharePassword)
+        XCTAssertTrue(removed, owner.coordinator.shareActionReason ?? "")
+        func contains(_ hay: [UInt8], _ needle: String) -> Bool {
+            let n = Array(needle.utf8)
+            guard hay.count >= n.count else { return false }
+            return (0...(hay.count - n.count)).contains { Array(hay[$0..<($0 + n.count)]) == n }
+        }
+        for device in [owner, member] {
+            let s = device.store.snapshot
+            var bytes = try CanonicalJSON.encode(.object(s.records), dialect: .utf8)
+            if let shares = s.shares { bytes += try CanonicalJSON.encode(shares, dialect: .utf8) }
+            for slot in VaultSlot.allCases { bytes += (try device.keychain.read(slot)) ?? [] }
+            let described = String(describing: try ShareGroups.records(in: s))
+            for password in [Self.sharePassword, Self.newSharePassword] {
+                XCTAssertFalse(contains(bytes, password))
+                XCTAssertFalse(described.contains(password))
+            }
+        }
+        for (_, file) in shared.files {
+            XCTAssertFalse(contains(file, Self.sharePassword))
+            XCTAssertFalse(contains(file, Self.newSharePassword))
+        }
+    }
+}
+
+// MARK: shared collections, fix round 1 (task 5g review)
+
+extension SyncCoordinatorTests {
+    /// Puts `d`'s vault in a personal Wi-Fi group paired with a PC at a LAN address (its `FakeLan` answers with no
+    /// state), so every sync runs the personal group before the shares, as on a real phone.
+    func personalWifi(_ d: ShareDevice) throws {
+        let me = try DeviceIdentity.generate(random: FixedRandom())
+        let pc = try DeviceIdentity.generate(random: FixedRandom())
+        let gid = UUID().uuidString.lowercased()
+        let state = SyncGroupState(groupID: gid, epoch: 1, key: FixedRandom().bytes(count: 32), identity: me,
+                                   installID: try d.keychain.installID(random: FixedRandom()), hasFolder: false)
+        let s = d.store.snapshot
+        try d.store.commit(StoreChange(baseRevision: s.revision, records: s.records, meta: s.meta, sync: state))
+        try d.keychain.setPairedPeer(PinnedPeer(deviceID: pc.deviceID, groupID: gid, signingPublic: pc.signingPublicKey,
+                                                exchangePublic: pc.exchangePublicKey,
+                                                endpoint: try LanEndpoint(validating: "192.168.1.20", port: 47821)))
+    }
+
+    func setCollections(_ d: ShareDevice, _ itemID: String, _ ids: [String]) throws {
+        let change = try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: itemID, kind: "note", to: ids,
+                                                                        in: d.store.snapshot))
+        try d.store.commit(change)
+    }
+
+    func trashIDs(_ d: ShareDevice) -> [String] {
+        (d.local.localData?.trash ?? []).compactMap { row -> String? in
+            guard case .object(let r)? = try? row.record(), case .string(let id)? = r["id"] else { return nil }
+            return id
+        }
+    }
+
+    func test_an_item_a_share_brings_back_leaves_recently_deleted_in_a_vault_with_a_personal_group() async throws {
+        let shared = MemoryFolder()
+        let owner = ShareDevice(folder: shared, clock: clock)
+        let member = ShareDevice(folder: shared, clock: clock)
+        try personalWifi(member)
+        let (cid, itemID) = try sharedNote(owner.store)
+        let created = await owner.coordinator.createShare(collectionID: cid, bookmark: [1], password: Self.sharePassword,
+                                                          deviceName: "Owner", membersCanEdit: true)
+        let gid = try XCTUnwrap(created?.groupID, owner.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        let joined = await member.coordinator.joinShare(bookmark: [2], password: Self.sharePassword, deviceName: "Member")
+        XCTAssertNotNil(joined, member.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        await owner.coordinator.sync(.manual)
+        let waiting = try ShareGroups.pendingMembers(in: owner.store.snapshot, groupID: gid).map(\.deviceID)
+        let approved = await owner.coordinator.approveShare(groupID: gid, deviceIDs: waiting)
+        XCTAssertNotNil(approved)
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        await member.coordinator.sync(.manual)   // the personal run now holds the shared note live
+        XCTAssertNotNil(member.store.snapshot.records[itemID], "\(member.coordinator.shareIssues)")
+
+        // The owner takes the note out of the share while the member's Recently deleted is full: the share's delete
+        // waits, and says why (never `busy`).
+        let full = Array(repeating: LocalData.TrashRow(recordJSON: "{}", deletedAt: 0), count: LocalData.maxTrash)
+        try member.local.commitLocalData(LocalData(trash: full))
+        try setCollections(owner, itemID, [])
+        clock.now += 1
+        await owner.coordinator.sync(.manual)
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        let refused = try XCTUnwrap(member.coordinator.shareIssues[gid])
+        XCTAssertTrue(refused.contains(SyncIssue("trash-full", ShareSync.runDetail)), "\(refused)")
+        XCTAssertFalse(refused.contains { $0.kind == "busy" })
+        XCTAssertEqual(member.coordinator.shareStatus(groupID: gid)?.text, SyncWording.text(SyncIssue("trash-full")))
+        XCTAssertNotNil(member.store.snapshot.records[itemID])
+
+        // Room again: the note goes to Recently deleted, and the next personal run makes its personal meta a tombstone.
+        try member.local.commitLocalData(LocalData())
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        XCTAssertNil(member.store.snapshot.records[itemID])
+        XCTAssertEqual(trashIDs(member), [itemID])
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        XCTAssertEqual(member.store.snapshot.meta[itemID]?.deleted, true)
+
+        // The owner puts it back in the share: it comes back live here and leaves Recently deleted.
+        try setCollections(owner, itemID, [cid])
+        clock.now += 1
+        await owner.coordinator.sync(.manual)
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        XCTAssertNotNil(member.store.snapshot.records[itemID], "\(member.coordinator.shareIssues)")
+        XCTAssertEqual(trashIDs(member), [])
+
+        // Without Recently deleted no share runs, and the share says so rather than looking synced.
+        member.coordinator.shareTrash = nil
+        await member.coordinator.sync(.manual)
+        XCTAssertTrue(member.coordinator.shareRan(groupID: gid))
+        XCTAssertEqual(member.coordinator.shareIssues[gid], [SyncIssue("item-error", ShareSync.runDetail)])
+        XCTAssertEqual(member.coordinator.shareStatus(groupID: gid)?.text, SyncWording.text(SyncIssue("apply-failed")))
+        XCTAssertFalse(member.coordinator.shareRan(groupID: "00000000-0000-4000-8000-0000000000ff"))
+        // A free device says it needs Pro, as its runs would (5g review R4), not that Recently deleted failed.
+        member.pro.on = false
+        await member.coordinator.sync(.manual)
+        XCTAssertEqual(member.coordinator.shareIssues[gid], [SyncIssue("pro-required", gid)])
+    }
+
+    func test_a_personal_folder_peer_never_changes_an_item_of_a_view_only_share() async throws {
+        // Final wave (5m review finding 1, Swift too): the personal folder run gets this device's share records
+        // (`collectionShares`); without them a personal peer could change an item of a view-only share here.
+        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try SyncVectors.data("keyring_v1_epoch1.json")
+        for who in ["A", "B", "C"] {
+            let id = try SyncVectors.identity(who).deviceID
+            folder.files["LocalGateKeys Sync/devices/\(id).lgksync"] = try SyncVectors.data("devices/\(who).lgksync")
+        }
+        clock.now = 1_790_000_000 + 1000
+        let shared = MemoryFolder()
+        let owner = ShareDevice(folder: shared, clock: clock)
+        let member = ShareDevice(folder: shared, clock: clock, folders: RoutedFolders(personal: folder, shared: shared))
+        let joinedFolder = await member.coordinator.joinFolder(bookmark: Array("bm".utf8), password: SyncVectors.password)
+        XCTAssertTrue(joinedFolder, member.coordinator.actionError ?? "")
+        let (cid, itemID) = try sharedNote(owner.store)
+        let created = await owner.coordinator.createShare(collectionID: cid, bookmark: [1], password: Self.sharePassword,
+                                                          deviceName: "Owner", membersCanEdit: false)
+        let gid = try XCTUnwrap(created?.groupID, owner.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        let joined = await member.coordinator.joinShare(bookmark: [2], password: Self.sharePassword, deviceName: "Member")
+        XCTAssertEqual(joined?.groupID, gid, member.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        await owner.coordinator.sync(.manual)
+        let waiting = try ShareGroups.pendingMembers(in: owner.store.snapshot, groupID: gid).map(\.deviceID)
+        let approved = await owner.coordinator.approveShare(groupID: gid, deviceIDs: waiting)
+        XCTAssertNotNil(approved, owner.coordinator.shareActionReason ?? "")
+        clock.now += 1
+        await member.coordinator.sync(.manual)
+        clock.now += 1
+        await member.coordinator.sync(.manual)   // the personal run now holds the shared item too
+        XCTAssertEqual(ShareGroups.readOnlyCollectionIDs(in: member.store.snapshot), [cid])
+        let before = try XCTUnwrap(member.store.snapshot.records[itemID])
+        let vv = try XCTUnwrap(member.store.snapshot.meta[itemID], "the personal run published it").vv
+
+        // Personal peer A (the vectors' device) publishes an edit of that item, a version above this device's.
+        let state = try XCTUnwrap(member.store.snapshot.sync)
+        let gk = try GroupKey(groupID: state.groupID, epoch: state.epoch, key: state.key)
+        let a = try SyncVectors.identity("A")
+        let path = "LocalGateKeys Sync/devices/\(a.deviceID).lgksync"
+        let decoded = try ViewFile.decode(try XCTUnwrap(folder.files[path]), key: gk, expectedDeviceID: a.deviceID)
+        let (_, changed) = noteRecord(7, title: "Changed by a personal peer")
+        var newVV = vv
+        newVV[a.deviceID] = 1_000
+        let edit = try ItemState(itemID: itemID, vv: newVV, deleted: false, deletedAt: nil, item: changed)
+        clock.now += 60
+        let states = (decoded.states + [edit]).sorted { $0.itemID < $1.itemID }
+        let next = try ViewFile.encode(key: gk, deviceID: a.deviceID, counter: decoded.header.counter + 1, states: states,
+                                       now: clock, random: FixedRandom())
+        folder.files[path] = next
+        folder.files[try XCTUnwrap(FolderLayout.signatureFile(a.deviceID))] =
+            try ViewSignature.sign(next, header: try ViewFile.decodeHeader(next), identity: a)
+        await member.coordinator.sync(.manual)
+        XCTAssertEqual(member.store.snapshot.sync?.lastSeen[a.deviceID], decoded.header.counter + 1)
+        XCTAssertEqual(member.store.snapshot.records[itemID], before, "the view-only item is not changed by a personal peer")
+    }
+
+    func test_choosing_a_shared_collections_folder_again_is_not_a_damaged_key_file() async throws {
+        let me = try DeviceIdentity.generate(random: FixedRandom())
+        let state = SyncGroupState(groupID: UUID().uuidString.lowercased(), epoch: 1, key: FixedRandom().bytes(count: 32),
+                                   identity: me, installID: try keychain.installID(random: FixedRandom()), hasFolder: true)
+        let store = LockedStore(StoreSnapshot(sync: state))
+        // Any keyring with the share fields is a shared collection's (`Keyring.parse` refuses it as `share-group`).
+        folder.files[FolderLayout.keyringPath] = Array(#"{"metadata":{},"owner_sig":"x"}"#.utf8)
+        let c = SyncCoordinator(store: store, deps: deps())
+        let ok = await c.repickFolder(bookmark: [5])
+        XCTAssertFalse(ok)
+        XCTAssertEqual(c.actionError, SyncWording.errorText(reason: "share-group"))
+        XCTAssertNotEqual(c.actionError, SyncWording.errorText(reason: "keyring-corrupt"))
+        XCTAssertNil(try keychain.read(.folderBookmark))
+        XCTAssertEqual(store.commits, 0)
+    }
+}
+
+// MARK: keep the device id on Leave (design 2026-11-17)
+
+extension SyncCoordinatorTests {
+    /// A plain refusal frame, as a host on a released build answers a known device id.
+    nonisolated static let plainRefusal = Enrollment.refusedMagic + Array(#"{"reason":"refused"}"#.utf8)
+
+    func test_leave_then_pair_again_reuses_the_kept_identity_and_items_sync_both_ways() async throws {
+        let a = try SyncVectors.identity("A"), b = try SyncVectors.identity("B")
+        let host = HostSim(device: a.deviceID, peer: b.deviceID, now: clock.now)
+        lan.exchange = { states in try host.serve(states) }
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        // A raised generation offset (an acknowledged rollback): peers witnessed generations that include it.
+        var snap = store.snapshot
+        snap.sync?.generationOffset = 7
+        let (mine, wrapper) = noteRecord(31, title: "Before leave")
+        snap.records[mine] = wrapper
+        try store.commit(StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync))
+        await c.sync(.manual)
+        XCTAssertNotNil(host.records[mine])
+
+        await c.leave()
+        XCTAssertNil(store.snapshot.sync)
+        let kept = try XCTUnwrap(store.snapshot.keptIdentity, "Leave keeps the identity")
+        XCTAssertEqual(kept.deviceID, b.deviceID); XCTAssertEqual(kept.generationOffset, 7)
+        XCTAssertEqual(kept.groupID, try SyncVectors.lanGroupKey().groupID)
+
+        // Pairing again: the inviter's recorded reply is bound to B, so only the kept identity can open it; a new
+        // identity (C) would be refused.
+        let (fromHost, hostWrapper) = noteRecord(32, title: "From host")
+        let hostOnly = try peerStates([fromHost: hostWrapper], device: a.deviceID, now: clock.now)
+        lan.exchange = { states in
+            let served = try host.serve(states)   // once the phone has the host's item, the host lists it itself
+            return served + hostOnly.filter { h in !served.contains { $0.itemID == h.itemID } }
+        }
+        try inviterAnswers()
+        let again = SyncCoordinator(store: store, deps: deps(identity: try SyncVectors.identity("C")))
+        let ok = await again.joinByQR(try SyncVectors.qrText())
+        XCTAssertTrue(ok, again.actionError ?? "")
+        let state = try XCTUnwrap(store.snapshot.sync)
+        XCTAssertEqual(state.deviceID, b.deviceID, "the same id as before the Leave")
+        XCTAssertEqual(state.identity, kept.identity)
+        XCTAssertEqual(state.generationOffset, 7, "the generation continues, never lower")
+        XCTAssertNil(store.snapshot.keptIdentity, "the join made it the live identity again")
+        // Both ways after the rejoin: the host's new item arrived, and a new item here reaches the host.
+        XCTAssertEqual(store.snapshot.records[fromHost], hostWrapper)
+        snap = store.snapshot
+        let (later, laterWrapper) = noteRecord(33, title: "After rejoin")
+        snap.records[later] = laterWrapper
+        try store.commit(StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync))
+        await again.sync(.manual)
+        XCTAssertNotNil(host.records[later])
+        XCTAssertEqual(again.issues, [])
+    }
+
+    func test_a_released_host_refusing_the_kept_id_drops_it_and_says_so() async throws {
+        lan.exchange = { _ in [] }
+        let store = LockedStore()
+        _ = try await qrJoined(store)
+        let c = SyncCoordinator(store: store, deps: deps(identity: try SyncVectors.identity("C")))
+        await c.leave()
+        XCTAssertNotNil(store.snapshot.keptIdentity)
+
+        // Declined, full or expired keep it: only the plain refusal means "a known id".
+        lan.enrollReply = { _ in Enrollment.refusedMagic + Array(#"{"reason":"declined"}"#.utf8) }
+        await c.joinByQR(try SyncVectors.qrText())
+        XCTAssertNotNil(store.snapshot.keptIdentity)
+
+        lan.enrollReply = { _ in Self.plainRefusal }
+        let joined = await c.joinByQR(try SyncVectors.qrText())
+        XCTAssertFalse(joined)
+        XCTAssertEqual(c.actionError,
+                       "The other device could not pair this device under its earlier name. Show a new code there and scan it again.")
+        XCTAssertEqual(c.actionError, SyncWording.errorText(reason: "rejoin-refused"))
+        XCTAssertNil(store.snapshot.keptIdentity, "the next pairing uses a new identity")
+        XCTAssertNil(store.snapshot.sync)
+        // Without a kept identity the same refusal is the ordinary one.
+        await c.joinByQR(try SyncVectors.qrText())
+        XCTAssertEqual(c.actionError, SyncWording.errorText(reason: "refused"))
+    }
+
+    func test_reset_drops_the_kept_identity_and_the_next_join_has_a_new_id() async throws {
+        lan.exchange = { _ in [] }
+        let store = LockedStore()
+        let c = try await qrJoined(store)
+        await c.leave()
+        XCTAssertNotNil(store.snapshot.keptIdentity)
+        await c.reset()
+        XCTAssertNil(store.snapshot.keptIdentity)
+
+        // The next pairing is made with a new identity (C), so the same refusal is the ordinary one.
+        let offer = try PairingOffer.parseQR(try SyncVectors.qrText())
+        let a = try SyncVectors.identity("A"), cID = try SyncVectors.identity("C").deviceID
+        lan.enrollReply = { request in
+            XCTAssertEqual(try Enrollment.openRequest(offer: offer, inviter: a, raw: request).deviceID, cID)
+            return Self.plainRefusal
+        }
+        let fresh = SyncCoordinator(store: store, deps: deps(identity: try SyncVectors.identity("C")))
+        await fresh.joinByQR(try SyncVectors.qrText())
+        XCTAssertEqual(fresh.actionError, SyncWording.errorText(reason: "refused"), "no kept identity was used")
+    }
+
+    func test_a_verified_removal_notice_or_a_removed_state_keeps_nothing_on_leave() async throws {
+        lan.exchange = { _ in [] }
+        let store = LockedStore()
+        _ = try await qrJoined(store)
+        let state = try XCTUnwrap(store.snapshot.sync)
+        let a = try SyncVectors.identity("A")
+        // The watch file of the last folder run, and a notice by A in the folder (keyring at the removal's epoch).
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("kept-\(UUID().uuidString)")
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let watchURL = dir.appendingPathComponent("vault.sync-watch.json")
+        let installID = try keychain.installID(random: FixedRandom())
+        FileRemovalWatchStore(url: watchURL, folder: "f").save(RemovalWatch(
+            groupID: state.groupID, deviceID: state.deviceID, epoch: 1, installID: installID, folder: "f",
+            signers: [a.deviceID: Base64.encode(a.signingPublicKey)]).encoded())
+        folder.files[try XCTUnwrap(RemovalNotice.path(state.deviceID))] = try RemovalNotice.make(
+            identity: a, groupID: state.groupID, deviceID: state.deviceID, epoch: 2, issuedAt: clock.now)
+        folder.files["LocalGateKeys Sync/keyring.lgkkeys"] = try CanonicalJSON.encode(.object([
+            "group_id": .string(state.groupID), "epoch": .int(2), "members": .array([])]), dialect: .utf8)
+        try keychain.write(.folderBookmark, [1])
+        var d = deps(); d.watchFile = watchURL
+        XCTAssertTrue(SyncCoordinator.removalNoticeVerified(d))
+        let c = SyncCoordinator(store: store, deps: d)
+        await c.leave()
+        XCTAssertNil(store.snapshot.sync)
+        XCTAssertNil(store.snapshot.keptIdentity, "a removed device never comes back under its old id")
+    }
+
+    func test_the_second_vault_and_another_installation_keep_nothing() async throws {
+        lan.exchange = { _ in [] }
+        let store = LockedStore()
+        _ = try await qrJoined(store)
+        var inert = deps(); inert.inert = true
+        try SyncCoordinator.clear(store: store, deps: inert, history: false, keepIdentity: true)
+        XCTAssertNil(store.snapshot.keptIdentity, "the duress vault never keeps one")
+
+        let other = LockedStore()
+        _ = try await qrJoined(other)
+        try keychain.write(.installID, Array("another-install".utf8))   // set up on another installation
+        try SyncCoordinator.clear(store: other, deps: deps(), history: false, keepIdentity: true)
+        XCTAssertNil(other.snapshot.keptIdentity)
+    }
+
+    func test_the_kept_identity_survives_the_store_and_is_in_no_backup_or_export() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("kept-store-\(UUID().uuidString)")
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+        let vault = InMemoryKeychainVault()
+        let store = try LocalStore.bootstrap(directory: dir, vault: vault)
+        let (id, wrapper) = noteRecord(41)
+        let kept = KeptIdentity(identity: try SyncVectors.identity("B"), groupID: "g-kept", epoch: 2, ownCounter: 11,
+                                generationOffset: 3)
+        var snap = try store.load()
+        try store.commit(StoreChange(baseRevision: snap.revision, records: [id: wrapper], meta: [:], sync: nil,
+                                     keptIdentity: .set(kept)))
+        snap = try store.load()
+        try store.commit(StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: nil))
+        let reopened = try LocalStore.open(directory: dir, vault: vault)
+        XCTAssertEqual(try reopened.load().keptIdentity, kept, "kept across commits that do not set it, sealed in the store")
+
+        // Backup and CSV export: neither the kept device id nor its keys.
+        let mem = MemoryStore(try reopened.load())
+        let exporter = VaultExporter(store: mem, isPro: { true }, appVersion: "1.2.0", fallbackDeviceID: { "0123456789abcdef0123456789abcdef" },
+                                     now: { Date(timeIntervalSince1970: 1_800_000_000) }, random: SystemRandomSource())
+        let url = try await exporter.encryptedBackup(password: "correct horse battery", confirmation: "correct horse battery")
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        let payload = try PhoneBackup.open(try Data(contentsOf: url), password: "correct horse battery")
+        XCTAssertNotEqual(payload.deviceID, kept.deviceID)
+        let dump = "\(payload)"
+        for secret in [kept.deviceID, Base64.encode(kept.identity.signingPrivateKey), Base64.encode(kept.identity.exchangePrivateKey)] {
+            XCTAssertFalse(dump.contains(secret))
+        }
+        XCTAssertEqual(payload.states.map(\.id), [id])
+
+        // Reset drops it from the store.
+        snap = try reopened.load()
+        try reopened.commit(StoreChange(baseRevision: snap.revision, records: snap.records, meta: [:], sync: nil, keptIdentity: .set(nil)))
+        XCTAssertNil(try LocalStore.open(directory: dir, vault: vault).load().keptIdentity)
     }
 }

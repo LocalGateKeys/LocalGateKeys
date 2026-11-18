@@ -23,6 +23,12 @@
             "value" : "Desbloquea tu bóveda con Face ID para rellenar contraseñas."
           }
         },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déverrouillez votre coffre-fort avec Face ID pour remplir les mots de passe."
+          }
+        },
         "it" : {
           "stringUnit" : {
             "state" : "translated",

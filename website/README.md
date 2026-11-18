@@ -1,10 +1,8 @@
 # LocalGateKeys website
 
-A static site: plain HTML and one stylesheet. No JavaScript (except the /buy
-checkout page, which loads Paddle.js under its own policy), no cookies, no
-analytics, no third-party scripts or fonts. `_headers` sets a Content Security
-Policy that blocks scripts and every external origin, so nothing can creep in
-unnoticed.
+A static site: plain HTML and one stylesheet. The site loads no third-party analytics
+script of its own; `/buy` loads Paddle.js under its own policy. `_headers` allows
+only local site scripts plus Cloudflare Web Analytics (cookieless).
 
 ```text
 website/
@@ -41,11 +39,13 @@ config or the brand assets.
 ## Preview locally
 
 ```powershell
-python -m http.server 8765 --bind 127.0.0.1 --directory website/public
+python website/serve.py
 ```
 
-Then open `http://127.0.0.1:8765/`. Opening the HTML files directly also
-works, because every link is relative (except on the 404 page).
+Then open `http://127.0.0.1:8765/`. Links are extensionless (`features`,
+`de/`), the URLs Cloudflare Pages serves without a redirect, so a plain
+`python -m http.server` cannot follow them: `serve.py` maps `/features` to
+`features.html` and answers missing pages with `404.html`, like Pages.
 
 ## Deploy to Cloudflare Pages
 
@@ -77,9 +77,10 @@ npx wrangler pages deploy website/public --project-name localgatekeys-site
 **After the first deploy**
 
 - Add `{{DOMAIN}}` as a custom domain and turn on "Always Use HTTPS".
-- Leave Cloudflare Web Analytics, Bot Fight Mode, Zaraz and any other feature
-  that injects scripts or sets cookies **off**; the privacy policy promises a
-  site without them.
+- Keep Cloudflare Web Analytics on (automatic setup; cookieless, allowed in
+  `_headers` CSP and disclosed in the privacy policy). Leave Zaraz and any other feature that injects
+  scripts or sets cookies **off**. Do not add Google Analytics or other
+  trackers.
 - Check the headers: `curl -I https://{{DOMAIN}}/` should show the
   `Content-Security-Policy` from `_headers`.
 - Cloudflare Pages serves `pricing.html` at `/pricing` (and redirects the
@@ -101,13 +102,13 @@ them with the pages that use them.
 | `COPYRIGHT_YEAR` | Footer year (preset to 2026) | Footer |
 | `DOMAIN` | Website domain, without `https://` | Canonical links, sitemap, robots.txt, security.txt, privacy policy |
 | `CONTACT_EMAIL` | General support address | Footer, support, licence, legal |
-| `SECURITY_EMAIL` | Security reports address | Security, download, disclosure policy, security.txt |
+| `SECURITY_EMAIL` | Security reports address | Security, disclosure policy, security.txt |
 | `PRIVACY_EMAIL` | Privacy requests address (can equal `CONTACT_EMAIL`) | Privacy policy |
 | `JURISDICTION` | Country or state whose lawyer reviews the drafts and whose courts apply | Legal pages |
 | `GOVERNING_LAW` | Governing law of the EULA and terms of sale | EULA, terms of sale |
 | `EFFECTIVE_DATE` | Date the legal documents take effect | Legal pages |
 | `PRIVACY_EFFECTIVE_DATE` | Date the current privacy policy takes effect | Privacy policy |
-| `PRICE` | Pro price, with currency ("US$4.99") | Home, pricing, terms of sale, EULA |
+| `PRICE` | Pro price, with currency ("US$29.99") | Home, pricing, terms of sale, EULA |
 | `LIABILITY_CAP_FREE` | Liability cap for the Free edition, for example "EUR 50" | EULA |
 | `MERCHANT_OF_RECORD` | "Paddle" or "Lemon Squeezy" | Pricing, support, licence, legal |
 | `MERCHANT_TERMS_URL` | The merchant's buyer terms | Terms of sale |
@@ -120,14 +121,12 @@ them with the pages that use them.
 | `LICENCE_RETENTION` | How long the licence service keeps issued licences, for example "10 years" | Privacy policy |
 | `ORDER_RETENTION` | How long order records are kept, for example "10 years" | Privacy policy |
 | `SUPPORT_RETENTION` | How long support emails are kept, for example "2 years" | Privacy policy |
-| `LATEST_VERSION` | Current release, for example "0.4.0" | Download |
-| `MS_STORE_URL` | Microsoft Store listing | Home, get started, download |
+| `MS_STORE_URL` | Microsoft Store listing | Home, get started, download. Windows ships only through the Microsoft Store; there is no website installer download |
 | `MS_STORE_LIVE` | `true` once the Store listing is public; shows the Store buttons instead of "Coming soon" | Home, get started, download |
 | `IPHONE_APP_URL` | App Store link of the iPhone app; when set, the App Store button is shown | Home, download, help |
-| `INSTALLER_URL` | Direct installer download | Download |
-| `INSTALLER_FILENAME` | Installer file name, for the Get-FileHash example | Download |
-| `INSTALLER_SHA256` | SHA-256 of that installer | Download |
-| `CHROME_STORE_URL` | Chrome Web Store listing (`null` until it exists: "coming soon") | Download, get started |
+| `MAC_APP_URL` | Mac App Store link (`null` until the Mac app is live: "Coming soon" button) | Home |
+| `ANDROID_APP_URL` | Google Play link (`null` until the Android app is live: "Coming soon" button) | Home |
+| `CHROME_STORE_URL` | Chrome Web Store listing (`null` until it exists: "coming soon") | Home, download, get started |
 | `EDGE_ADDONS_URL` | Microsoft Edge Add-ons listing | Download, get started |
 | `UPDATE_HOST` | Host of the update feed and revocation list, for example `updates.{{DOMAIN}}` | Privacy policy |
 | `SECURITY_TXT_EXPIRES` | RFC 3339 timestamp, under a year ahead, for example `2027-10-01T00:00:00Z` | security.txt, disclosure policy |
@@ -145,13 +144,13 @@ draft in `docs/legal/`, and the cross-cutting ones in `docs/legal/README.md`.
 The site follows the item-limit licensing model in `docs/LICENSING.md`. Keep these true or change the copy:
 
 - Free has browser and Windows app fill, passkeys, Windows Hello, a recovery
-  phrase, imports and backups, for up to 4 live items; items in the trash do
+  phrase, imports and backups, for up to 7 live items; items in the trash do
   not count. Sync, two-factor codes and documents (attachments) are Pro
   (`licensing.Feature`); without Pro, existing codes and documents stay usable
   and only adding or changing them, and syncing, are refused.
 - Over the limit nothing is taken away: existing items stay usable, editable
   and fillable; only adding is blocked. Imports take the remaining free places.
-- Pro is US$4.99 once, with all future updates (licences carry
+- Pro is US$29.99 once, with every update free forever (licences carry
   `updates_until = 9999-12-31`). No device limit; one licence per person.
 - After checkout the buyer lands on the licence page (`/license/<token>` on
   the licence Worker) with the `LGK1-` key, a file and an "Install in

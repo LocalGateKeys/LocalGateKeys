@@ -1,11 +1,13 @@
 # Holding page for localgatekeys.app
 
-Served by the Cloudflare Pages project `localgatekeys-site` until the full
-site in `website/` is ready (placeholders filled, legal drafts reviewed).
-The full site deploys to the same project and replaces this page.
+**Retired.** The full site in `website/` is live on the Cloudflare Pages project
+`localgatekeys-site`. Do not deploy this folder to branch `main`: that would
+replace the whole website with the holding page. If it is ever needed again
+(for example during an outage), deploy it to a preview branch first:
 
 ```powershell
-npx wrangler pages deploy cloudflare/holding-page/public --project-name localgatekeys-site --branch main
+cd cloudflare/license-issuer; npm ci   # once: installs the pinned wrangler
+npx wrangler pages deploy ../holding-page/public --project-name localgatekeys-site --branch holding-preview
 ```
 
 Zone settings this relies on (also needed by the full site): Always Use HTTPS

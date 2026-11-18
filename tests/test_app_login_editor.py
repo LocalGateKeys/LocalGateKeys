@@ -238,3 +238,57 @@ def test_desktop_login_edits_username_password_and_totp_and_keeps_binding(env):
     assert detail["username"] == "anna" and detail["totp"]["secret"] == TOTP["secret"]
     assert detail["scope"]["exe_path"].endswith("example.exe")
     assert controller.session.credential_secret(entry_id) == "new-desktop-pw-1"
+
+
+def test_answer_mode_preference_gives_random_password_and_chip(env):
+    from localvault.password_tools import generate_from_preferences
+    from localvault.app.login_editor import chip_for
+    from localvault.password_tools import normalize_generator_options
+
+    editor, controller, _port = env
+    controller.settings.generator_preferences = {"mode": "answer"}
+    assert chip_for(normalize_generator_options(controller.settings.generator_preferences)) == "Random"
+    editor._generate = lambda: generate_from_preferences(controller.settings.generator_preferences)
+    view = editor.open_new()
+    assert " " not in editor._drafts[view["draft_id"]].draft.password
+
+
+class _Clip:
+    timeout_seconds = 30
+
+    def __init__(self):
+        self.copied = []
+
+    def copy(self, value):
+        self.copied.append(str(value))
+
+
+def test_change_password_flow_copies_new_password_and_keeps_old_in_history(env):
+    """Sub-plan 12 Task 2: the user confirms the copy; saving puts the old password in history."""
+    editor, controller, _port = env
+    controller.clipboard = _Clip()
+    entry_id = controller.session.create_web_login(
+        urls=[{"url": "https://alpha.test", "match": "exact_origin"}], username="ann", password="old-pw-1234567",
+        label="Alpha")
+    view = editor.open(_ref(entry_id))
+    view = editor.regenerate(view["draft_id"], "Random")
+    result = editor.copy_password(view["draft_id"])
+    new = controller.clipboard.copied[-1]
+    assert new and new != "old-pw-1234567"
+    assert result["message"] == "New password copied. Clipboard clears in 30 seconds."
+    editor.save(view["draft_id"])
+    assert controller.session.credential_secret(entry_id) == new
+    history = controller.session.password_history(entry_id)
+    assert [str(h["password"]) for h in history][:1] == ["old-pw-1234567"]
+
+
+def test_copy_password_refused_without_a_new_password(env):
+    editor, controller, _port = env
+    controller.clipboard = _Clip()
+    entry_id = controller.session.create_web_login(
+        urls=[{"url": "https://alpha.test", "match": "exact_origin"}], username="ann", password="old-pw-1234567",
+        label="Alpha")
+    view = editor.open(_ref(entry_id))
+    with pytest.raises(ApiError):
+        editor.copy_password(view["draft_id"])
+    assert controller.clipboard.copied == []

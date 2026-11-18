@@ -21,7 +21,8 @@ final class MacSyncWiringTests: XCTestCase {
     func testSyncSlotsInAppOnlyGroup() throws {
         let sync: Set<VaultSlot> = [.pairedPeer, .installID, .folderBookmark, .helloCounter, .peerCounters]
         let backups: Set<VaultSlot> = [.scheduledBackupFolder, .scheduledBackupMirror, .manualBackupFolder]
-        XCTAssertEqual(VaultSlot.appOnly, sync.union(backups))
+        // The key file's bookmark too: AutoFill hands vaults with factors to the app.
+        XCTAssertEqual(VaultSlot.appOnly, sync.union(backups).union([.unlockKeyFile]))
         XCTAssertTrue(VaultSlot.appOnly.isDisjoint(with: VaultSlot.deviceUnlocked))
         XCTAssertFalse(VaultSlot.appOnly.contains(.localKey))
 
@@ -131,7 +132,7 @@ final class MacSyncWiringTests: XCTestCase {
         let gated = try XCTUnwrap(coordinator.store as? GatedStore)
         // Sync commits through the publishing store, marked as sync's own (never counted as local edits).
         let source = try XCTUnwrap(gated.base as? SyncSourceStore)
-        XCTAssertTrue(source.base is PublishingItemStore)
+        XCTAssertNotNil(source.base as PublishingItemStore?)
         XCTAssertTrue((source.base as AnyObject) === (lock.store as AnyObject))
         // Remote deletes (Wi-Fi client and cloud folder) are copied to this lock model's Recently deleted.
         XCTAssertTrue((source.local as AnyObject?) === lock)

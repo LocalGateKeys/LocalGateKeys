@@ -20,24 +20,39 @@ class SyncWordingTest {
     private val en = EnglishTxt()
     private val words = SyncWording(en)
 
-    /** The desktop word "PC" read as "phone" (what the Swift tables say once adapted for this app). */
-    private fun phone(text: String): String = Regex("\\bPC\\b").replace(text.replace("another PC", "another device"), "phone")
+    /** The desktop word "PC" (or the iPhone's own "iPhone") read as "phone" (what the Swift copy says once adapted for this app). */
+    private fun phone(text: String): String =
+        Regex("\\biPhone\\b").replace(Regex("\\bPC\\b").replace(text.replace("another PC", "another device"), "phone"), "phone")
 
     private val swift: String = File(checkNotNull(System.getProperty("lgk.repoRoot")), "ios/App/Sync/SyncWording.swift").readText()
 
-    /** `"key": "text",` entries of the Swift dictionary literal named [name]. */
-    private fun swiftTable(name: String): Map<String, String> {
-        val start = swift.indexOf("static let $name: [String: String] = [")
-        check(start >= 0) { "$name not found" }
-        val end = swift.indexOf("\n    ]", start)
-        val body = swift.substring(start, end)
-        return Regex("""^\s*"([^"]+)": "((?:[^"\\]|\\.)*)",\s*$""", RegexOption.MULTILINE).findAll(body)
-            .associate { it.groupValues[1] to unescape(it.groupValues[2]) }
+    /**
+     * The first catalog text in [code]: its `defaultValue`, or the key when the entry has none, with `\(s)` read as
+     * `{subject}`. In `pc(here, desktop, phone:, mac:)` that is the desktop text; in `onDevice(phone:, mac:)` the iPhone's.
+     */
+    private fun firstText(code: String): String {
+        // The iPad-only variants (`ipad.` keys, picked by DeviceText.isPad) are skipped: this app compares with the iPhone's.
+        val m = Regex("""String\(localized: "((?:[^"\\]|\\.)*)"(?:, defaultValue: "((?:[^"\\]|\\.)*)")?""").findAll(code)
+            .firstOrNull { !it.groupValues[1].startsWith("ipad.") }
+            ?: error("no catalog text in $code")
+        return unescape((m.groups[2]?.value ?: m.groupValues[1]).replace("\\(s)", "{subject}"))
     }
 
+    /** `case "kind", ...: <copy>` lines of the Swift `switch` in the function named [name]. */
+    private fun swiftTable(name: String): Map<String, String> {
+        val start = swift.indexOf("static func $name(")
+        check(start >= 0) { "$name not found" }
+        val body = swift.substring(start, swift.indexOf("default: nil", start))
+        return Regex("""^\s*case ((?:"[^"]+"(?:, )?)+):(.*)$""", RegexOption.MULTILINE).findAll(body)
+            .flatMap { m -> Regex(""""([^"]+)"""").findAll(m.groupValues[1]).map { it.groupValues[1] to firstText(m.groupValues[2]) } }
+            .toMap()
+    }
+
+    /** A Swift `static let` string literal, or the copy of a `static var` / `static func` of that name. */
     private fun swiftConstant(name: String): String {
-        val m = Regex("""static let $name = "((?:[^"\\]|\\.)*)"""").find(swift) ?: error("$name not found")
-        return unescape(m.groupValues[1])
+        Regex("""static let $name = "((?:[^"\\]|\\.)*)"""").find(swift)?.let { return unescape(it.groupValues[1]) }
+        val m = Regex("""static (?:var|func) $name\b[^\n]*(?:\n[^\n]*)?""").find(swift) ?: error("$name not found")
+        return firstText(m.value)
     }
 
     private fun unescape(s: String) = s.replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\")
@@ -278,5 +293,104 @@ class SyncWordingTest {
         assertEquals("1 conflict copy made since you unlocked.", SyncStatus(en).conflictText(1))
         assertEquals("3 conflict copies made since you unlocked.", SyncStatus(en).conflictText(3))
         assertFalse(words.text(SyncIssue("not-joined")).contains("PC"))
+    }
+
+    // ---- shared collection statuses (sub-plan 07 Task 5m; the iPhone's SyncStatusSummaryTests share cases) ----
+
+    @Test fun share_statuses_have_their_own_copy_and_severity() {
+        val merged = words.shareStatus(SyncIssue("keyring-merged", "keyring.lgkkeys"))
+        assertEquals(SyncWording.Severity.NOTICE, merged.severity)
+        assertEquals("Someone joined while you were letting others in. They are waiting for your approval below.", merged.text)
+        val pending = words.shareStatus(SyncIssue("awaiting-approval", "g"))
+        assertEquals(SyncWording.Severity.NOTICE, pending.severity)
+        assertEquals("Waiting for the person who shared this collection to let you in. Nothing syncs until then.", pending.text)
+        // Final review A1: another share's keyring the owner replaced is a warning of its own.
+        val replaced = words.shareStatus(SyncIssue("other-group-replaced", "keyring.lgkkeys"))
+        assertEquals(SyncWording.Severity.WARNING, replaced.severity)
+        assertEquals("This folder held another share's key file; it was replaced.", replaced.text)
+        val superseded = words.shareStatus(SyncIssue("superseded", "g"))
+        assertEquals(SyncWording.Severity.WARNING, superseded.severity)
+        assertTrue(superseded.joinAgain)
+        assertEquals("Join again", words.joinAgainAction)
+        val tampered = words.shareStatus(SyncIssue("tampered", "x"))
+        assertEquals(SyncWording.Severity.ERROR, tampered.severity)
+        assertFalse(tampered.joinAgain)
+        assertEquals(
+            "The shared folder's key file was changed in a way LocalGateKeys does not accept. Syncing this collection stopped.",
+            tampered.text,
+        )
+        assertEquals(
+            "Shared collections need LocalGateKeys Pro. Items already shared with you stay on this phone and keep working.",
+            words.shareStatus(SyncIssue("pro-required", "g")).text,
+        )
+        assertEquals(
+            "The shared folder is not available. Check that it still exists and is synced to this phone.",
+            words.shareStatus(SyncIssue("folder-missing", "g")).text,
+        )
+        assertEquals(
+            "This phone can no longer open the shared collection. Ask the person who shared it whether you were removed, then join again.",
+            words.shareStatus(SyncIssue("rejoin-required", "not-member")).text,
+        )
+        for (kind in listOf("pro-required", "folder-missing", "trash-full", "item-error", "share-removed", "rejoin-required")) {
+            assertEquals(kind, SyncWording.Severity.WARNING, words.shareStatus(SyncIssue(kind)).severity)
+        }
+        // Share v2: a keyring from a newer app stops this share until the app is updated (desktop `_ERROR_ISSUES`).
+        val update = words.shareStatus(SyncIssue("update-required", "keyring.lgkkeys"))
+        assertEquals(SyncWording.Severity.ERROR, update.severity)
+        assertEquals("This shared collection needs a newer version of LocalGateKeys. Update the app to keep syncing it.", update.text)
+        for (kind in listOf("bad-owner", "bad-owner-sig", "state-corrupt", "keyring-corrupt", "update-required")) {
+            assertEquals(kind, SyncWording.Severity.ERROR, words.shareStatus(SyncIssue(kind)).severity)
+        }
+        // Any other kind: the sync screen's copy.
+        assertEquals(words.text(SyncIssue("write-failed"), folder = true), words.shareStatus(SyncIssue("write-failed")).text)
+    }
+
+    @Test fun share_status_kinds_and_copy_match_the_iphone() {
+        // The kind sets are the iPhone's (desktop `NOTICE_KINDS` / `_ERROR_ISSUES`), and the English copy is the iPhone's
+        // with "phone" for "iPhone".
+        assertEquals(swiftSet("shareNoticeKinds"), SyncWording.SHARE_NOTICE_KINDS)
+        assertEquals(swiftSet("shareErrorKinds"), SyncWording.SHARE_ERROR_KINDS)
+        val start = swift.indexOf("static func shareCopy(")
+        val body = swift.substring(start, swift.indexOf("default: nil", start))
+        val kinds = Regex("""^\s*case ((?:"[^"]+"(?:, )?)+)(?: where [^:]+)?:(.*)$""", RegexOption.MULTILINE).findAll(body)
+            .filter { !it.value.contains(" where ") }
+            .flatMap { m -> Regex(""""([^"]+)"""").findAll(m.groupValues[1]).map { it.groupValues[1] to m.groupValues[2] } }
+            .toList()
+        assertTrue(kinds.size >= 10)
+        for ((kind, code) in kinds) {
+            if (!code.contains("String(localized:")) continue
+            assertEquals(kind, phone(firstText(code)), words.shareCopy(SyncIssue(kind, "x")))
+        }
+    }
+
+    @Test fun share_trash_problems_are_never_busy() {
+        // A removal that Recently deleted cannot take says so for the removal.
+        assertEquals(
+            "You were removed from this shared collection, but the trash is full. Empty the trash so its items can be moved there.",
+            words.shareStatus(SyncIssue("trash-full", "the trash cannot hold this collection's items")).text,
+        )
+        assertEquals(
+            "You were removed from this shared collection, but some of its items could not be moved to the trash. LocalGateKeys tries again at the next sync.",
+            words.shareStatus(SyncIssue("item-error", "Recently deleted is not available")).text,
+        )
+        // A normal share run's commit that Recently deleted refused is that refusal, worded as the sync trash message.
+        val full = ShareRuns.runIssue(SyncIssue("busy", ShareTrashRefusal(ShareTrashRefusal.FULL).message!!))
+        assertEquals(SyncIssue("trash-full", ShareRuns.RUN_DETAIL), full)
+        assertEquals(words.text(SyncIssue("trash-full")), words.shareStatus(full).text)
+        val closed = ShareRuns.runIssue(SyncIssue("busy", ShareTrashRefusal(ShareTrashRefusal.UNAVAILABLE).message!!))
+        assertEquals(SyncIssue("item-error", ShareRuns.RUN_DETAIL), closed)
+        assertEquals(words.text(SyncIssue("apply-failed")), words.shareStatus(closed).text)
+        // A store that changed meanwhile stays `busy` (information: the next run tries again).
+        val busy = ShareRuns.runIssue(SyncIssue("busy", "store-changed: the vault changed"))
+        assertEquals("busy", busy.kind)
+        assertEquals(SyncWording.Severity.NOTICE, words.shareStatus(busy).severity)
+    }
+
+    @Test fun a_share_status_is_its_most_important_issue() {
+        assertNull(words.shareStatus(emptyList<SyncIssue>()))
+        val shown = words.shareStatus(listOf(SyncIssue("keyring-merged"), SyncIssue("folder-missing"), SyncIssue("tampered"), SyncIssue("superseded")))
+        assertEquals("tampered", shown?.kind)
+        assertEquals("superseded", words.shareStatus(listOf(SyncIssue("keyring-merged"), SyncIssue("superseded"), SyncIssue("folder-missing")))?.kind)
+        assertEquals(SyncWording.Severity.NOTICE, words.shareStatus(listOf(SyncIssue("keyring-merged")))?.severity)
     }
 }

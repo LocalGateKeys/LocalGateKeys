@@ -55,6 +55,23 @@ class VaultGroupAndModelTest {
         assertNull(m.loadError.value)
     }
 
+    @Test fun recent_searches_are_the_last_five_distinct_item_searches_newest_first() {
+        val m = VaultListModel(MemoryItemStore(snapshot(listOf(webLogin, note))), EnglishTxt())
+        for (q in listOf("  bank ", "", "> lock", "mail", "Bank", "a", "b", "c", "d")) {
+            m.query.value = q
+            m.noteSearch()
+        }
+        // Blank and `>` queries are never kept; "Bank" replaced "bank" (case-insensitive) and moved to the front.
+        assertEquals(listOf("d", "c", "b", "a", "Bank"), m.recentSearches.value)
+        assertEquals(listOf("x", "y"), VaultListModel.remember("x", listOf("y", "X")))
+    }
+
+    @Test fun recent_items_are_the_five_most_recently_changed() {
+        val items = itemsOf(k("a", "note", 1), k("b", "note", 7), k("c", "web", 3), k("d", "note", 9), k("e", "card", 2), k("f", "note", 5))
+        assertEquals(listOf("d", "b", "f", "c", "e"), VaultListModel.recentItems(items).map { it.id })
+        assertTrue(VaultListModel.recentItems(emptyList()).isEmpty())
+    }
+
     @Test fun a_filter_that_no_longer_has_items_falls_back_to_all() {
         val store = MemoryItemStore(snapshot(listOf(webLogin, note)))
         val m = VaultListModel(store, EnglishTxt())

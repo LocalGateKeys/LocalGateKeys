@@ -240,6 +240,21 @@ final class TwoFactorScanModel {
     func cancelReplacements() { replaceQuestion = nil; confirmReplaceID = nil }
 
     /// Forgets the scan, its keys included.
+    /// Copies of the scan view on screen (`viewAppeared` / `viewDisappeared`).
+    @ObservationIgnored private var visibleViews = 0
+
+    func viewAppeared() { visibleViews += 1 }
+
+    /// The scan view went away: once the current update has finished and no copy came back, the keys are dropped.
+    func viewDisappeared() {
+        visibleViews = max(0, visibleViews - 1)
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self, self.visibleViews == 0 else { return }
+            self.reset()
+        }
+    }
+
     func reset() {
         step = .scanning; error = nil; accounts = []; skipped = []; selected = []; parts = [:]; partCount = 0; scannedText = nil
         showUpgrade = false; rows = []; replaceQuestion = nil; confirmReplaceID = nil; notice = nil; confirmedReplacements = []

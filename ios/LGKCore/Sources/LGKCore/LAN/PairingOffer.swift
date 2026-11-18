@@ -78,6 +78,9 @@ public struct LanEndpoint: Equatable, Sendable {
 public struct PairingOffer: Equatable, Sendable {
     public static let qrPrefix = "lgk-pair:"
     public static let maxQRPayload = 1200
+    /// Offer version 2 carries `commit` (commit-then-reveal verification code, docs/formats/LAN_SYNC_V3.md 3.1;
+    /// desktop `OFFER_COMMIT_VERSION`).
+    public static let commitVersion: Int64 = 2
 
     public let version: Int64
     public let offerID: String
@@ -91,6 +94,53 @@ public struct PairingOffer: Equatable, Sendable {
     public let transcriptNonce: [UInt8]
     public let pairingSecret: [UInt8]
     public let code: String
+    /// Version 2: SHA-256(`enroll-commit|v3|` + reveal), in the QR. nil in a version-1 offer.
+    public let commit: [UInt8]?
+    /// The 32 random bytes behind `commit`: only in the inviter's own offer (`create`), never in the QR, a log
+    /// or a comparison.
+    let reveal: [UInt8]?
+
+    public init(version: Int64, offerID: String, groupID: String, endpoint: LanEndpoint, inviterDeviceID: String,
+                inviterSigningPublic: [UInt8], inviterExchangePublic: [UInt8], certificateFingerprint: String,
+                expiresAt: Int64, transcriptNonce: [UInt8], pairingSecret: [UInt8], code: String,
+                commit: [UInt8]? = nil) {
+        self.init(version: version, offerID: offerID, groupID: groupID, endpoint: endpoint, inviterDeviceID: inviterDeviceID,
+                  inviterSigningPublic: inviterSigningPublic, inviterExchangePublic: inviterExchangePublic,
+                  certificateFingerprint: certificateFingerprint, expiresAt: expiresAt, transcriptNonce: transcriptNonce,
+                  pairingSecret: pairingSecret, code: code, commit: commit, reveal: nil)
+    }
+
+    init(version: Int64, offerID: String, groupID: String, endpoint: LanEndpoint, inviterDeviceID: String,
+         inviterSigningPublic: [UInt8], inviterExchangePublic: [UInt8], certificateFingerprint: String,
+         expiresAt: Int64, transcriptNonce: [UInt8], pairingSecret: [UInt8], code: String,
+         commit: [UInt8]?, reveal: [UInt8]?) {
+        self.version = version; self.offerID = offerID; self.groupID = groupID; self.endpoint = endpoint
+        self.inviterDeviceID = inviterDeviceID; self.inviterSigningPublic = inviterSigningPublic
+        self.inviterExchangePublic = inviterExchangePublic; self.certificateFingerprint = certificateFingerprint
+        self.expiresAt = expiresAt; self.transcriptNonce = transcriptNonce; self.pairingSecret = pairingSecret
+        self.code = code; self.commit = commit; self.reveal = reveal
+    }
+
+    /// Every bundle field; the inviter's reveal is not compared (desktop `compare=False`).
+    public static func == (a: PairingOffer, b: PairingOffer) -> Bool {
+        a.version == b.version && a.offerID == b.offerID && a.groupID == b.groupID && a.endpoint == b.endpoint
+            && a.inviterDeviceID == b.inviterDeviceID && a.inviterSigningPublic == b.inviterSigningPublic
+            && a.inviterExchangePublic == b.inviterExchangePublic && a.certificateFingerprint == b.certificateFingerprint
+            && a.expiresAt == b.expiresAt && a.transcriptNonce == b.transcriptNonce && a.pairingSecret == b.pairingSecret
+            && a.code == b.code && a.commit == b.commit
+    }
+
+    /// This offer with the inviter's `reveal`, which must match `commit` (tests and `create`).
+    func withReveal(_ reveal: [UInt8]) throws -> PairingOffer {
+        guard let commit, reveal.count == 32, Keyring.constantTimeEqual(Enrollment.commitment(reveal), commit) else {
+            throw PairingError.malformed("Pairing reveal does not match its commitment")
+        }
+        return PairingOffer(version: version, offerID: offerID, groupID: groupID, endpoint: endpoint,
+                            inviterDeviceID: inviterDeviceID, inviterSigningPublic: inviterSigningPublic,
+                            inviterExchangePublic: inviterExchangePublic, certificateFingerprint: certificateFingerprint,
+                            expiresAt: expiresAt, transcriptNonce: transcriptNonce, pairingSecret: pairingSecret,
+                            code: code, commit: commit, reveal: reveal)
+    }
 
     /// Strict QR text parse (desktop `parse_qr_payload` + `from_bundle_dict`): prefix, unpadded
     /// canonical base64url, duplicate-free canonical JSON; unknown bundle keys are ignored.
@@ -140,22 +190,30 @@ public struct PairingOffer: Equatable, Sendable {
         case .int(let v)?: version = v
         default: throw PairingError.malformed("Pairing offer version is malformed")
         }
+        // Version 2 and later need a 32-byte `commit`. In a version-1 bundle the key is not read (like any unknown
+        // key; desktop `from_bundle_dict`), so such an offer has no commitment and keeps the version-1 flow.
+        var commit: [UInt8]?
+        if version >= commitVersion {
+            commit = try Pairing.b64(o["commit"], length: 32, "pairing commitment")
+        }
         return PairingOffer(version: version, offerID: offerID, groupID: groupID, endpoint: endpoint,
                             inviterDeviceID: inviter, inviterSigningPublic: signing, inviterExchangePublic: exchange,
                             certificateFingerprint: fingerprint, expiresAt: expires, transcriptNonce: nonce,
-                            pairingSecret: secret, code: code)
+                            pairingSecret: secret, code: code, commit: commit)
     }
 
-    /// The reviewable bundle without the two enrollment credentials.
+    /// The reviewable bundle without the two enrollment credentials (with `commit` for a version-2 offer).
     public var publicJSON: JSONValue {
-        .object([
+        var o: [String: JSONValue] = [
             "version": .int(version), "offer_id": .string(offerID), "group_id": .string(groupID),
             "endpoint": endpoint.json, "inviter_device_id": .string(inviterDeviceID),
             "inviter_signing_public": .string(Base64.encode(inviterSigningPublic)),
             "inviter_exchange_public": .string(Base64.encode(inviterExchangePublic)),
             "certificate_fingerprint": .string(certificateFingerprint), "expires_at": .int(expiresAt),
             "transcript_nonce": .string(Base64.encode(transcriptNonce)),
-        ])
+        ]
+        if let commit { o["commit"] = .string(Base64.encode(commit)) }
+        return .object(o)
     }
 
     public var bundleJSON: JSONValue {

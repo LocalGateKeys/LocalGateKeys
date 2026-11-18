@@ -14,6 +14,14 @@ struct DetailField: Identifiable, Equatable, Sendable {
     var isMultiline: Bool { value.contains("\n") }
 }
 
+/// One line of the read-only Token section; `expired` adds the Expired badge.
+struct TokenRow: Identifiable, Equatable, Sendable {
+    let id: String
+    let label: String
+    let value: String
+    var expired = false
+}
+
 struct TOTPState: Equatable, Sendable {
     let code: String
     let period: Int
@@ -66,6 +74,19 @@ final class ItemDetailModel {
             totpSpec = nil
         }
         tick()
+    }
+
+    /// This screen's model for `stored`, the item as saved now, when a screen pushed on top of it (access rules, a
+    /// restored field, an earlier password) changed it; nil when it is unchanged. The detail screen stays open after
+    /// those, so without this a rule set just now applied only once the item was opened again (simulator check
+    /// 2026-11-16: "Confirm it's me" saved, then Reveal showed the password without asking). Secrets start masked
+    /// when `concealSecrets` (the caller passes true for a login whose rules mask them); the screen-capture state is
+    /// kept.
+    func reloaded(_ stored: VaultItem, concealSecrets: Bool) -> ItemDetailModel? {
+        guard stored.id == item.id, stored != item else { return nil }
+        let next = ItemDetailModel(item: stored, clipboard: clipboard, clock: clock, concealSecrets: concealSecrets)
+        next.screenCaptured = screenCaptured
+        return next
     }
 
     /// Kinds the phone cannot edit (desktop logins, documents) can still be deleted from the detail screen;
@@ -172,13 +193,117 @@ final class ItemDetailModel {
         if revealed.contains(field.id) { revealed.remove(field.id) } else { revealed.insert(field.id) }
     }
 
-    func copy(_ field: DetailField) { clipboard.copy(field.value); lastCopied = field.label }
+    // MARK: Wi-Fi QR
 
-    /// True when there was a code to copy.
+    private var wifiPayload: [String: JSONValue] { item.record["payload"]?.objectValue ?? [:] }
+
+    /// A Wi-Fi item whose security type a plain QR can express (not enterprise): the "Show QR" button is offered.
+    var offersWifiQR: Bool {
+        item.kind == "wifi"
+            && WifiQR.text(ssid: "", password: "", security: wifiPayload["security"]?.stringValue ?? "wpa2", hidden: false) != nil
+    }
+
+    /// The Wi-Fi item's password field, when it has one.
+    var wifiPasswordField: DetailField? { fields.first { $0.id == "password" } }
+
+    /// The QR text, only while the password is revealed (showing the QR needs the same permission as revealing the
+    /// password); an open network has no password and needs no reveal. Nil for enterprise and other kinds.
+    var wifiQRText: String? {
+        guard offersWifiQR else { return nil }
+        if let pw = wifiPasswordField, !revealed.contains(pw.id) { return nil }
+        let p = wifiPayload
+        var hidden = false
+        if case .bool(let b)? = p["hidden"] { hidden = b }
+        return WifiQR.text(ssid: p["ssid"]?.stringValue ?? "", password: p["password"]?.stringValue ?? "",
+                           security: p["security"]?.stringValue ?? "wpa2", hidden: hidden)
+    }
+
+    // MARK: JWT token
+
+    /// The decoded JWT of a revealed API-key value (`key`, `secret`), or nil: other kinds, a hidden value, or a value
+    /// that is not a token. The signature is never checked. A hidden value is never decoded.
+    func token(for field: DetailField) -> JWTInfo? {
+        guard item.kind == "api_key", field.id == "key" || field.id == "secret",
+              field.isSecret, revealed.contains(field.id) else { return nil }
+        return JWTView.decode(field.value)
+    }
+
+    /// The Token section's lines: algorithm and type, issuer, subject, audience and the three dates (empty ones left out).
+    func tokenRows(_ info: JWTInfo) -> [TokenRow] {
+        func text(_ name: String) -> String {
+            if case .object(let c) = info.claims, case .string(let s)? = c[name] { return String(s.prefix(200)) }
+            return ""
+        }
+        var typ = ""
+        if case .object(let h) = info.header, case .string(let s)? = h["typ"] { typ = String(s.prefix(200)) }
+        var audience = ""
+        if case .object(let c) = info.claims {
+            if case .array(let list)? = c["aud"] {
+                audience = list.compactMap { (v: JSONValue) -> String? in if case .string(let s) = v { return String(s.prefix(200)) } else { return nil } }
+                    .prefix(10).joined(separator: ", ")
+            } else { audience = text("aud") }
+        }
+        func time(_ seconds: Int64?) -> String { seconds.map(Self.tokenTime) ?? "" }
+        let rows = [
+            TokenRow(id: "alg", label: String(localized: "Algorithm"), value: [info.alg ?? "", typ].filter { !$0.isEmpty }.joined(separator: " · ")),
+            TokenRow(id: "iss", label: String(localized: "Issuer"), value: text("iss")),
+            TokenRow(id: "sub", label: String(localized: "Subject"), value: text("sub")),
+            TokenRow(id: "aud", label: String(localized: "Audience"), value: audience),
+            TokenRow(id: "iat", label: String(localized: "Issued"), value: time(info.issued)),
+            TokenRow(id: "nbf", label: String(localized: "Not before"), value: time(info.notBefore)),
+            TokenRow(id: "exp", label: String(localized: "Expires"), value: time(info.expires), expired: info.expired(now: clock.now)),
+        ]
+        return rows.filter { !$0.value.isEmpty }
+    }
+
+    /// A token time as a local date and time.
+    static func tokenTime(_ seconds: Int64) -> String {
+        tokenTimeFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(seconds)))
+    }
+
+    private static let tokenTimeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium; f.timeStyle = .short
+        return f
+    }()
+
+    private static let expiryFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    /// "Set expiry from token": the token has an `exp` and the item has no expiry yet.
+    func canSetExpiry(from info: JWTInfo) -> Bool { info.expires != nil && !fields.contains { $0.id == "expires" } }
+
+    /// The item's `expires` value for `info`: the token's local date, `yyyy-MM-dd`. Nil without an `exp`.
+    static func expiryDate(_ info: JWTInfo) -> String? {
+        guard let exp = info.expires else { return nil }
+        return expiryFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(exp)))
+    }
+
+    /// Writes `expires` through the editor's own save, so the change is normalised, stamped and synced like an edit.
+    static func setExpiry(_ date: String, item: VaultItem, store: any ItemStore, pro: ProModel) -> SaveResult {
+        let editor = EditorModel(store: store, pro: pro, editing: item, kind: .apiKey,
+                                 clock: SystemClock(), random: SystemRandomSource())
+        editor.set("expires", date)
+        return editor.save()
+    }
+
+    /// `limit`: cleared after at most that many seconds (copy once, feature pack §4.1); nil: the user's setting.
+    func copy(_ field: DetailField, clearAfterAtMost limit: Int64? = nil) {
+        if let limit { clipboard.copy(field.value, clearAfterAtMost: limit) } else { clipboard.copy(field.value) }
+        lastCopied = field.label
+    }
+
+    /// True when there was a code to copy. `limit` as in `copy(_:clearAfterAtMost:)`.
     @discardableResult
-    func copyTOTP() -> Bool {
+    func copyTOTP(clearAfterAtMost limit: Int64? = nil) -> Bool {
         guard let code = totp?.code else { return false }
-        clipboard.copy(code); lastCopied = String(localized: "Code")
+        if let limit { clipboard.copy(code, clearAfterAtMost: limit) } else { clipboard.copy(code) }
+        lastCopied = String(localized: "Code")
         return true
     }
 

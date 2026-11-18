@@ -74,12 +74,14 @@ import app.localgatekeys.android.ui.theme.LgkTheme
 import app.localgatekeys.android.ui.theme.lgkGroupSurface
 import app.localgatekeys.android.unlock.LocalActivityMonitor
 import app.localgatekeys.core.importing.GenericCsvMapping
-import app.localgatekeys.core.importing.ImportSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The system "open" picker for an export file (`ACTION_OPEN_DOCUMENT`): its bytes (64 MB cap + 1) and display name. */
+/**
+ * The system "open" picker for an export file (`ACTION_OPEN_DOCUMENT`): its bytes ([ImportRead]: 8 MiB + 1 for text
+ * exports, 64 MB + 1 for zip archives) and display name.
+ */
 fun interface ImportDocuments {
     fun open(done: (ByteArray?, String) -> Unit)
 }
@@ -130,19 +132,7 @@ private fun read(context: Context, uri: Uri): Pair<ByteArray?, String> {
         null
     } ?: ""
     val bytes = try {
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            val limit = ImportSource.MAX_ARCHIVE_BYTES + 1
-            val out = java.io.ByteArrayOutputStream()
-            val buf = ByteArray(64 * 1024)
-            var total = 0
-            while (total < limit) {
-                val n = input.read(buf, 0, minOf(buf.size, limit - total))
-                if (n < 0) break
-                out.write(buf, 0, n)
-                total += n
-            }
-            out.toByteArray()
-        }
+        context.contentResolver.openInputStream(uri)?.use { input -> ImportRead.read(input) }
     } catch (e: Exception) {
         null
     }
@@ -158,6 +148,8 @@ fun ImportScreen(flow: ImportFlow, documents: ImportDocuments, onClose: () -> Un
     val password by flow.password.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val close: () -> Unit = { flow.reset(); onClose() }
+    // The journal may have expired (or been used) since this page was last open.
+    androidx.compose.runtime.LaunchedEffect(flow) { flow.refreshUndo() }
     val choose: () -> Unit = { documents.open { bytes, name -> scope.launch { flow.chose(bytes, name) } } }
     val openIt: () -> Unit = { scope.launch { flow.open() } }
     val action: Pair<String, () -> Unit>? = when (state.step) {
@@ -174,6 +166,11 @@ fun ImportScreen(flow: ImportFlow, documents: ImportDocuments, onClose: () -> Un
                 Footnote(txt.s(ImportText.CHOOSE_HINT))
                 Group { RowButton(txt.s(ImportText.CHOOSE), "import-choose", divider = false, onClick = choose) }
                 Footnote(txt.s(ImportText.FOOTER))
+                // The last import stays undoable from here for 7 days after leaving its Done page (contract section 6.1).
+                if (state.canUndo) {
+                    Group { RowButton(stringResource(R.string.import_undo), "import-undo-last", divider = false, onClick = { scope.launch { flow.undo() } }) }
+                }
+                state.undone?.let { Text(it, color = c.success, modifier = Modifier.testTag("import-undone")) }
             }
             ImportFlow.Step.PASSWORD -> {
                 state.format?.let { Footnote(ImportText.passwordPrompt(it, txt)) }
@@ -185,10 +182,22 @@ fun ImportScreen(flow: ImportFlow, documents: ImportDocuments, onClose: () -> Un
             }
             ImportFlow.Step.REVIEW -> Review(state, flow)
             ImportFlow.Step.DONE -> {
-                state.outcome?.let {
-                    Text(it.notice(txt), color = c.success, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("import-done"))
+                val report = state.report
+                if (report != null) {
+                    Text(report.summary(txt), color = c.success, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("import-done"))
+                    Report(report, state.issues)
+                } else {
+                    state.outcome?.let {
+                        Text(it.notice(txt), color = c.success, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.testTag("import-done"))
+                    }
                 }
+                Footnote(stringResource(R.string.import_report_check_hint))
                 Footnote(stringResource(R.string.import_delete_export_note))
+                if (state.canUndo) {
+                    val scope = androidx.compose.runtime.rememberCoroutineScope()
+                    TextButton({ scope.launch { flow.undo() } }, Modifier.testTag("import-undo")) { Text(stringResource(R.string.import_undo), color = c.accentText) }
+                }
+                state.undone?.let { Text(it, color = c.success, modifier = Modifier.testTag("import-undone")) }
             }
         }
         if (state.working) Working(if (state.step == ImportFlow.Step.REVIEW) txt.s(ImportText.SAVING) else txt.s(ImportText.OPENING))
@@ -219,12 +228,70 @@ private fun Review(state: ImportFlow.State, flow: ImportFlow) {
     }
 }
 
+/** The switch report (contract section 6.1, Windows `SwitchReport.svelte`): kinds, updated, passkeys, fields, duplicates, not imported. */
+@Composable
+private fun Report(report: SwitchReport, notes: List<String>) {
+    val c = LgkTheme.colors
+    val txt = rememberTxt()
+    @Composable
+    fun Line(label: String, value: String?, tag: String) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp).testTag(tag), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = c.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            if (value != null) Text(value, color = c.text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
+    Text(
+        stringResource(R.string.import_report_title), color = c.secondaryText, style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.padding(start = 4.dp).semantics { heading() },
+    )
+    Group(Modifier.testTag("import-report-kinds")) {
+        if (report.kinds.isEmpty()) Line(stringResource(R.string.import_report_nothing_added), null, "import-report-nothing")
+        report.kinds.forEach { Line(SwitchReport.countLine(it, txt), null, "import-report-kind-${it.kind}") }
+        if (report.updated > 0) Line(stringResource(R.string.import_report_updated), report.updated.toString(), "import-report-updated")
+    }
+    Group(Modifier.testTag("import-report-details")) {
+        if (report.passkeys.total > 0) {
+            Line(stringResource(R.string.import_report_passkeys), stringResource(R.string.import_report_passkeys_counts, report.passkeys.imported, report.passkeys.skipped), "import-report-passkeys")
+        }
+        Line(stringResource(R.string.import_report_fields), report.fieldsKept.toString(), "import-report-fields")
+        Line(stringResource(R.string.import_report_duplicates), report.duplicates.toString(), "import-report-duplicates")
+    }
+    if (report.skipped > 0) {
+        Text(
+            androidx.compose.ui.res.pluralStringResource(R.plurals.import_report_skipped, report.skipped, report.skipped), color = c.secondaryText,
+            style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 4.dp).semantics { heading() }.testTag("import-report-skipped"),
+        )
+        Group(Modifier.testTag("import-report-not-carried")) {
+            report.notCarried.forEachIndexed { i, row ->
+                if (i > 0) HorizontalDivider(thickness = 0.5.dp, color = c.separator)
+                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp).testTag("import-report-row-${row.row}"), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        row.name.ifEmpty { stringResource(R.string.import_row_n, row.row) }, color = c.text, style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
+                    )
+                    Text(SwitchReport.reasonText(row.reason, txt), color = c.secondaryText, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+            if (report.unreadableRows > 0) {
+                if (report.notCarried.isNotEmpty()) HorizontalDivider(thickness = 0.5.dp, color = c.separator)
+                Line(SwitchReport.reasonText(SwitchReport.SkipReason.UNREADABLE, txt), report.unreadableRows.toString(), "import-report-unreadable")
+            }
+        }
+    }
+    if (notes.isNotEmpty()) {
+        Group(Modifier.testTag("import-report-notes")) {
+            notes.forEach { Text(it, color = c.secondaryText, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 4.dp)) }
+        }
+    }
+}
+
 private fun kindLabel(k: ImportDraft.Kind, t: Txt) = t.s(
     when (k) {
         ImportDraft.Kind.LOGIN -> R.string.import_kind_login
         ImportDraft.Kind.NOTE -> R.string.import_kind_note
         ImportDraft.Kind.CARD -> R.string.import_kind_card
         ImportDraft.Kind.IDENTITY -> R.string.import_kind_identity
+        ImportDraft.Kind.PASSKEY -> R.string.new_item_passkey
     },
 )
 

@@ -11,10 +11,25 @@ import AppShared
 /// is kept only inside the encrypted vault record. Nothing here is ever written in clear, except the short-lived
 /// open copies (`temporaryCopy`), which are deleted after use and at every launch.
 enum AttachmentFiles {
+    /// `Application Support/LocalGateKeys`, or `…/LocalGateKeys/Profiles/<id>` for a Mac profile other than the default.
+    static func localRoot(_ support: URL) -> URL {
+        let root = support.appendingPathComponent("LocalGateKeys", isDirectory: true)
+        if ProfileScope.isDefault { return root }
+        return root.appendingPathComponent("Profiles", isDirectory: true).appendingPathComponent(ProfileScope.currentID, isDirectory: true)
+    }
+
     static func localFolder() -> BlobFolder? {
         guard let base = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                       appropriateFor: nil, create: true) else { return nil }
-        let folder = BlobFolder(root: base.appendingPathComponent("LocalGateKeys", isDirectory: true))
+        var root = localRoot(base)
+        #if os(iOS)
+        // Sub-plan 08 (ruling T4b): a duress session's documents live in the second vault's own folder.
+        if DuressSession.shared.isOpen { guard let duress = PhoneDuress.shared() else { return nil }; root = duress.files.dir }
+        #else
+        // The Mac's duress session (sub-plan 08): the second vault's documents stay in its own folder too.
+        if DuressSession.shared.isOpen { guard let dir = DuressSession.shared.secondDir else { return nil }; root = dir }
+        #endif
+        let folder = BlobFolder(root: root)
         try? FileManager.default.createDirectory(at: folder.dir, withIntermediateDirectories: true)
         // The files are encrypted already; still keep them out of reach while the device is locked.
         #if os(iOS)

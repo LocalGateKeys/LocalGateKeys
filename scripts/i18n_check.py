@@ -21,6 +21,8 @@ import xcstrings as xc  # noqa: E402
 DEFAULT_DIR = ROOT / "src" / "localvault" / "assets" / "i18n"
 DEFAULT_GLOSSARY = ROOT / "i18n" / "glossary.csv"
 DEFAULT_ANDROID = ROOT / "android" / "app" / "src" / "main" / "res"
+# Sub-plan 06: the Wear OS tile app (every string translated).
+DEFAULT_WEAR = ROOT / "android" / "wear" / "src" / "main" / "res"
 DEFAULT_LOCALES = ROOT / "browser-extension" / "_locales"
 DEFAULT_WEBSITE = ROOT / "website" / "i18n"
 _PH = re.compile(r"\{([^{}]*)\}")
@@ -365,6 +367,7 @@ def main(argv: list[str] | None = None) -> int:
     problems += check_android(
         DEFAULT_ANDROID, langs=(args.lang,) if args.lang else SUPPORTED, strict=args.android_strict
     )
+    problems += check_android(DEFAULT_WEAR, langs=(args.lang,) if args.lang else SUPPORTED, strict=True)
     apple = check_apple(apple_catalogs(), strict=args.apple_strict)
     if args.lang:
         apple = [p for p in apple if f" {args.lang}:" in p]

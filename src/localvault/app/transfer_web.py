@@ -230,10 +230,30 @@ class TransferService:
         finally:
             password = confirm = ""
             self._paths.pop(str(handle), None)
+        if mode == "import":
+            self._agent_switch_off(result)
         notify_item_limit(lambda limit: self._port.show_upgrade(limit=limit.limit, message=str(limit),
                                                                 on_enter=lambda: None), result)
         self._controller.touch()
         return {"lines": self._lines(result, mode), "status": t(DONE), "changed": mode == "import"}
+
+    def _agent_switch_off(self, result: dict[str, Any]) -> None:
+        """A package keeps item ids: imported items arrive with "AI agents may use this item" off on this device."""
+        from dataclasses import replace
+
+        id_map = result.get("id_map") if isinstance(result.get("id_map"), dict) else {}
+        imported = {value for value in id_map.values() if isinstance(value, str)}
+        settings = self._controller.settings
+        allowed = list(getattr(settings, "agent_items", []) or [])
+        kept = [item_id for item_id in allowed if item_id not in imported]
+        if kept == allowed:
+            return
+        candidate = replace(settings, agent_items=kept)
+        try:
+            candidate.save()
+        except OSError:
+            pass  # the in-memory switch is still off for this run of the app
+        self._controller.settings = candidate
 
     def cancel(self) -> dict[str, Any]:
         self._cancel.set()

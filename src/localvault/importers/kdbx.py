@@ -54,6 +54,7 @@ from . import (
 )
 from ._source import iso_timestamp, parse_timestamp, read_source_bytes
 from ..i18n import t
+from ..keyfile import KeyFileError, key_material
 
 SIGNATURE_1 = 0x9AA2D903
 SIGNATURE_2 = 0xB54BFB67
@@ -443,40 +444,14 @@ def _encode_header_v3(*, compress: bool, master_seed: bytes, transform_seed: byt
 
 # --------------------------------------------------------------------------- key derivation
 def keyfile_key(source: bytes | Path | str | None) -> bytes | None:
-    """Return the 32-byte key material a KeePass key file contributes."""
+    """Return the key material a KeePass key file contributes (rules in ``localvault.keyfile``)."""
     if source is None:
         return None
     data = read_source_bytes(source, limit=MAX_KDBX_BYTES) if not isinstance(source, (bytes, bytearray)) else bytes(source)
-    text = data.strip()
-    if text.startswith(b"<?xml") or text.startswith(b"<KeyFile"):
-        root = _safe_fromstring(text, doctype_message="Key file contains a DOCTYPE and was rejected",
-                                malformed_message="Key file XML is malformed")
-        version = (root.findtext("Meta/Version") or "1.0").strip()
-        node = root.find("Key/Data")
-        if node is None or not (node.text or "").strip():
-            raise KdbxError("Key file XML has no key data")
-        payload = "".join((node.text or "").split())
-        if version.startswith("2"):
-            try:
-                key = bytes.fromhex(payload)
-            except ValueError as exc:
-                raise KdbxError("Key file 2.0 data must be hexadecimal") from exc
-            expected = node.get("Hash")
-            if expected and hashlib.sha256(key).hexdigest()[:len(expected)].casefold() != expected.casefold():
-                raise KdbxError("Key file hash does not match its data")
-            return key
-        try:
-            return base64.b64decode(payload, validate=True)
-        except (ValueError, TypeError) as exc:
-            raise KdbxError("Key file 1.0 data must be Base64") from exc
-    if len(data) == 32:
-        return data
-    if len(text) == 64:
-        try:
-            return bytes.fromhex(text.decode("ascii"))
-        except (UnicodeDecodeError, ValueError):
-            pass
-    return hashlib.sha256(data).digest()
+    try:
+        return key_material(data)
+    except KeyFileError as exc:
+        raise KdbxError(str(exc)) from None
 
 
 def _composite_key(password: str | None, key_material: bytes | None) -> bytes:
@@ -525,6 +500,9 @@ def _block_hmac(base: bytes, index: int, data: bytes) -> bytes:
 # --------------------------------------------------------------------------- payload codecs
 def _cipher(cipher_id: bytes, key: bytes, iv: bytes) -> Cipher:
     if cipher_id == CIPHER_AES:
+        # Semgrep: the KDBX file format fixes AES-CBC; integrity is the format's HMAC block
+        # stream (KDBX 4) or hashed block stream (KDBX 3), checked by the readers below.
+        # nosemgrep
         return Cipher(algorithms.AES(key), modes.CBC(iv))
     return Cipher(algorithms.ChaCha20(key, b"\x00" * 4 + iv), None)
 

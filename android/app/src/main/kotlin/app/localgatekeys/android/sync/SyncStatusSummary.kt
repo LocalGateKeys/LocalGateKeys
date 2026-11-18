@@ -10,7 +10,7 @@ import java.util.Date
  * "Sync status you can tap" (UX plan 2026-10-27 workstream 6): the vault header's pill ("Synced 2 min ago · 3 devices"
  * with a green, orange or red dot) and the sheet's device rows. Pure: built from the coordinator's state.
  */
-data class SyncStatusSummary(val pill: String, val dot: Dot, val devices: List<Device>) {
+data class SyncStatusSummary(val pill: String, val dot: Dot, val devices: List<Device>, val ownLabel: String? = null) {
     enum class Dot { GREEN, ORANGE, RED }
 
     enum class Route(@StringRes val label: Int) {
@@ -51,7 +51,7 @@ data class SyncStatusSummary(val pill: String, val dot: Dot, val devices: List<D
                 }
                 val at = membership.peerSyncedAt[id]
                 val warning = if (at != null && now - at > STALE_DAYS * DAY) t.s(NOT_SEEN) else null
-                Device(id, words.shortID(id), route, at, warning)
+                Device(id, words.deviceLabel(id, membership.names), route, at, warning)
             }
             val dot = when {
                 issues.any { it.severity == SyncWording.Severity.ERROR } -> Dot.RED
@@ -61,7 +61,10 @@ data class SyncStatusSummary(val pill: String, val dot: Dot, val devices: List<D
             }
             val count = devices.size + 1
             val time = if (lastSyncedAt == null) t.s(R.string.status_sync_never) else t.s(R.string.sync_status_synced, ago(now - lastSyncedAt, t))
-            return SyncStatusSummary("$time · ${t.plural(R.plurals.sync_pill_devices, count, count)}", dot, devices)
+            return SyncStatusSummary(
+                "$time · ${t.plural(R.plurals.sync_pill_devices, count, count)}", dot, devices,
+                ownLabel = membership.deviceId?.let { words.thisDeviceLabel(it, membership.names) },
+            )
         }
 
         /** "just now", "2 min ago", "3 h ago", "4 days ago". */

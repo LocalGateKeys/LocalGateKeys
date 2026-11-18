@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys voor iPhone en iPad: handleiding</title>
+  <meta name="description" content="LocalGateKeys op iPhone en iPad: instellen, automatisch invullen, passkeys, 2FA-codes, importeren en synchroniseren.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/nl/guide/iphone">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/iphone">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/iphone">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/iphone">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/iphone">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/iphone">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/iphone">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/iphone">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/iphone">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/iphone">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/iphone">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/iphone">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/iphone">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys voor iPhone en iPad: handleiding">
+  <meta property="og:description" content="LocalGateKeys op iPhone en iPad: instellen, automatisch invullen, passkeys, 2FA-codes, importeren en synchroniseren.">
+  <meta property="og:url" content="https://localgatekeys.app/nl/guide/iphone">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Het LocalGateKeys-logo: een wachtwoordbeheerder voor Windows, Mac en iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys voor iPhone en iPad: handleiding">
+  <meta name="twitter:description" content="LocalGateKeys op iPhone en iPad: instellen, automatisch invullen, passkeys, 2FA-codes, importeren en synchroniseren.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Naar de inhoud</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../nl/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Hoofdmenu">
+        <ul class="nav">
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Hoofdmenu">
+          <ul class="nav nav-stack">
+            <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Taal</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/iphone" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/iphone" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/iphone" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/iphone" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/iphone" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/iphone" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/iphone" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/iphone" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/iphone" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/iphone" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/iphone" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys voor iPhone</h1>
+  <p class="lead">Stapsgewijze hulp bij elk scherm en elke functie op dit apparaat. Elke kop is een link die je kunt delen.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platforms">
+    <ul><li><a class="help-tab" href="../../nl/guide/windows">Windows</a></li><li><a class="help-tab" href="../../nl/guide/mac">Mac</a></li><li><a class="help-tab" href="../../nl/guide/iphone" aria-current="page">iPhone en iPad</a></li><li><a class="help-tab" href="../../nl/guide/android">Android</a></li><li><a class="help-tab" href="../../nl/guide/extension">Browserextensie</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Goed om te weten, op elk apparaat</h2>
+    <ul>
+      <li><strong>Je kluis blijft op je apparaten.</strong> Er is geen account en geen LocalGateKeys-server die je wachtwoorden bewaart.</li>
+      <li><strong>Niemand kan je hoofdwachtwoord of app-wachtwoord opnieuw instellen.</strong> Stel een herstelzin in en bewaar die op papier.</li>
+      <li><strong>Free</strong> bevat tot 7 items. <strong>Pro</strong> (US$29.99, eenmalig betaald) geeft onbeperkt items, tweestapscodes, bestanden en synchronisatie. Bewerken, verwijderen en invullen van items die je al hebt wordt nooit geblokkeerd.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
+    <h2 class="panel-title" id="iphone-title">Onderwerpen iPhone</h2>
+    <p class="panel-lead">Download het in de <a href="https://apps.apple.com/app/id6825488435">App Store</a> (iOS 17 of later). De app heeft vier tabbladen: <strong>Kluis</strong>, <strong>Synchronisatie</strong>, <strong>Beveiliging</strong> en <strong>Instellingen</strong>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Onderwerpen iPhone">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Op dit tabblad</summary>
+          <ol>
+            <li><a href="#ios-setup">Eerste start en ontgrendelen</a></li>
+            <li><a href="#ios-apppw">App-wachtwoord en herstel</a></li>
+            <li><a href="#ios-items">Items: toevoegen, bewerken, verwijderen</a></li>
+            <li><a href="#ios-search">Zoeken en acties</a></li>
+            <li><a href="#ios-generator">Wachtwoordgenerator</a></li>
+            <li><a href="#ios-2fa">Tweestapscodes</a></li>
+            <li><a href="#ios-autofill">Automatisch invullen in apps en Safari</a></li>
+            <li><a href="#ios-passkeys">Passkeys</a></li>
+            <li><a href="#ios-safari">Opslaan vanuit Safari</a></li>
+            <li><a href="#ios-security">Tabblad Beveiliging</a></li>
+            <li><a href="#ios-import">Importeren en exporteren</a></li>
+            <li><a href="#ios-sync">Synchronisatie</a></li>
+            <li><a href="#ios-share">Een item delen</a></li>
+            <li><a href="#ios-settings">Instellingen</a></li>
+            <li><a href="#ios-more">Dwangwachtwoord en meer</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ios-setup">
+          <h3><a href="#ios-setup">Eerste start en ontgrendelen</a></h3>
+          <p>Je hoeft geen wachtwoord te maken. Je kluis opent met <strong>Face ID</strong>, <strong>Touch ID</strong> of je iPhone-toegangscode, net als je telefoon. (De iPhone moet een toegangscode hebben.)</p>
+          <ol>
+            <li>Open de app en tik op <strong>Ontgrendel</strong>.</li>
+            <li>Er volgt een korte configuratie: Ontgrendel met Face ID, <strong>Importeer je wachtwoorden</strong>, <strong>Voeg een app-wachtwoord toe</strong> (optioneel) en <strong>Zet Automatisch invullen aan</strong>.</li>
+            <li>Sla over wat je wilt. Een kaart <em>Instellen afronden</em> bovenaan de kluis brengt je terug; Instellingen › <strong>Instellen opnieuw tonen</strong> ook.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ios-apppw">
+          <h3><a href="#ios-apppw">App-wachtwoord en herstelzin</a></h3>
+          <p>Een optioneel extra wachtwoord dat LocalGateKeys opent in plaats van je iPhone-toegangscode. Handig als anderen je toegangscode kennen.</p>
+          <ol>
+            <li>Instellingen › App-wachtwoord › zet <strong>Gebruik een app-wachtwoord</strong> aan.</li>
+            <li>Kies een sterk wachtwoord (minstens 12 tekens) en laat <strong>Ontgrendelen met Face ID</strong> aan als je dat als snelkoppeling wilt.</li>
+            <li>Schrijf de <strong>herstelzin</strong> van 24 woorden op, tik op <strong>Ik heb ze opgeschreven</strong> en typ de drie woorden die gevraagd worden.</li>
+          </ol>
+          <p><strong>Vergeten?</strong> Tik op het ontgrendelscherm op <strong>App-wachtwoord vergeten?</strong>, typ de 24 woorden en kies een nieuw app-wachtwoord.</p>
+          <p class="note">Voeg je een nieuw gezicht of een nieuwe vingerafdruk toe aan de iPhone, dan gaat de Face ID-snelkoppeling uit voor de veiligheid: typ één keer het app-wachtwoord en zet hem weer aan.</p>
+        </article>
+
+        <article class="topic" id="ios-items">
+          <h3><a href="#ios-items">Items: toevoegen, bewerken, verwijderen</a></h3>
+          <ol>
+            <li>Tik op het tabblad Kluis op <strong>+</strong> en kies een soort: website-login, beveiligde notitie, kaart, identiteit, bankrekening, aankoop, abonnement, garantie, wifi, softwarelicentie, API-sleutel, SSH-sleutel of bladwijzer.</li>
+            <li>Vul de velden in en tik op <strong>Bewaar</strong>. Stop je halverwege, dan biedt de app aan je niet-bewaarde item later te <strong>Hervatten</strong>.</li>
+          </ol>
+          <ul>
+            <li>Houd een item in de kluis ingedrukt voor <strong>Gebruikersnaam kopiëren</strong>, <strong>Wachtwoord kopiëren</strong>, <strong>2FA-code kopiëren</strong>, <strong>Website openen</strong> of om het als <strong>Favoriet</strong> te markeren. Open het om elk veld te kopiëren, het een ster te geven of het te <strong>Delen</strong>. Gekopieerde tekst wordt na een tijdje van het klembord gewist en gaat nooit naar je andere Apple-apparaten.</li>
+            <li><strong>Wachtwoordgeschiedenis</strong> bij een login bewaart oude wachtwoorden: kopieer of herstel er een (vraagt om Face ID).</li>
+            <li>Elk item behalve een login (een kaart, abonnement, garantie, licentie…) kan een <strong>herinnering</strong> krijgen voordat het verloopt; bij een kaart wordt de vervaldatum voorgesteld.</li>
+            <li><strong>Voeg een bestand toe</strong> (Pro, tot 25 MB, versleuteld bewaard) via <strong>+</strong>.</li>
+            <li><strong>Verwijder</strong>: het item gaat naar <em>Recent verwijderd</em>, met <strong>Ongedaan maken</strong> voor een paar seconden. Via Instellingen › Gegevens › <strong>Recent verwijderd</strong> kun je <strong>Herstellen</strong> of <strong>Definitief verwijderen</strong>.</li>
+            <li><strong>Sorteer</strong> op naam of datum, favorieten eerst, of gegroepeerd per type.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-search">
+          <h3><a href="#ios-search">Zoeken en snelle acties</a></h3>
+          <p>Tik op de zoekknop (het vergrootglas) boven in de kluis en typ; de kluis omlaag trekken synchroniseert. Typ eerst <code>&gt;</code> om <strong>Acties</strong> te zien: Nieuw item, Wachtwoord genereren, QR-code scannen, Nu vergrendelen, Nu synchroniseren, Beveiligingscontrole, Recent verwijderd, Importeren en exporteren en meer.</p>
+        </article>
+
+        <article class="topic" id="ios-generator">
+          <h3><a href="#ios-generator">Wachtwoordgenerator</a></h3>
+          <p>Via <code>&gt;</code> Wachtwoord genereren, of tijdens het bewerken van het wachtwoord van een login. Kies een wachtwoord met een <strong>Lengte</strong>, of een wachtwoordzin met een aantal <strong>Woorden</strong> en een <strong>Scheidingsteken</strong>. Tik op de vernieuwknop om opnieuw te genereren, dan <strong>Gebruiken</strong>. De laatst gebruikte opties worden onthouden; Instellingen › Wachtwoordgenerator › <strong>Standaardwaarden herstellen</strong> zet de standaardwaarden terug.</p>
+        </article>
+
+        <article class="topic" id="ios-2fa">
+          <h3><a href="#ios-2fa">Tweestapscodes</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>Zet op de website 2FA met een authenticator-app aan, zodat er een QR-code verschijnt.</li>
+            <li>Kies in LocalGateKeys <strong>QR-code scannen</strong> (via <code>&gt;</code> of het 2FA-veld van de login). Tik op <strong>Camera gebruiken</strong> of <strong>Kies uit Foto's</strong> (voor een schermafbeelding).</li>
+            <li>De code gaat naar de bijbehorende login, of er opent een nieuwe login die klaar is om te bewaren.</li>
+          </ol>
+          <p>Codes verschijnen in het item en in de regel <strong>Codes</strong> van de kluis. Je kunt ook een instelsleutel plakken in het veld <strong>2FA-geheim</strong> van de login. Exports uit Google Authenticator (Accounts overzetten) werken ook, ook als ze uit meerdere delen bestaan.</p>
+          <p>De codes op je pols? Zie <a href="../../nl/help#watch">Apple Watch</a>.</p>
+        </article>
+
+        <article class="topic" id="ios-autofill">
+          <h3><a href="#ios-autofill">Automatisch invullen in apps en Safari</a></h3>
+          <ol>
+            <li>Ga in LocalGateKeys naar Instellingen › Automatisch invullen › <strong>Open instellingen voor Automatisch invullen</strong>.</li>
+            <li>Zet in de iPhone-instellingen, onder <strong>Algemeen › Automatisch invullen en wachtwoorden</strong>, <strong>LocalGateKeys</strong> aan.</li>
+            <li>Tik nu in een willekeurige app of website op een vak voor gebruikersnaam of wachtwoord: je login verschijnt boven het toetsenbord, of tik op het sleutelpictogram om er een te kiezen.</li>
+          </ol>
+          <p>Opties in Instellingen › Automatisch invullen:</p>
+          <ul>
+            <li><strong>Toon logins in de QuickType-balk</strong>: suggesties boven het toetsenbord.</li>
+            <li><strong>2FA-code kopiëren bij het invullen</strong>: zodat je de code op het volgende scherm kunt plakken. Hij wordt gewist na de tijd van <strong>Klembord wissen na</strong> (standaard 60 seconden).</li>
+            <li><strong>Bied LocalGateKeys aan voor passkeys</strong>.</li>
+          </ul>
+          <p>Op iOS 18 en later worden ook kaarten en contactgegevens ingevuld: tik op een tekstveld, kies <strong>Automatisch invullen › Wachtwoorden</strong> en kies het veld. Een login die voor een <code>https</code>-site is opgeslagen wordt niet aangeboden op een gewone <code>http</code>-pagina.</p>
+        </article>
+
+        <article class="topic" id="ios-passkeys">
+          <h3><a href="#ios-passkeys">Passkeys</a></h3>
+          <p>Met Automatisch invullen aan kies je LocalGateKeys wanneer een website aanbiedt een passkey te maken. De passkey wordt in je kluis bewaard en gesynchroniseerd met je pc. Inloggen op een computer door de QR-code ervan met de iPhone te scannen werkt ook. De detailpagina van een passkey toont de site en het account; de sleutel zelf wordt nooit getoond. Je kunt hem een andere naam geven of verwijderen.</p>
+        </article>
+
+        <article class="topic" id="ios-safari">
+          <h3><a href="#ios-safari">Logins opslaan vanuit Safari</a></h3>
+          <ol>
+            <li>iPhone-instellingen › Apps › Safari › Extensies › <strong>LocalGateKeys</strong>: zet hem aan en sta hem toe op alle websites.</li>
+            <li>Log in Safari in op een site en tik in de vraag op <strong>Bewaar</strong>.</li>
+            <li>Bij de volgende ontgrendeling van LocalGateKeys toont <strong>Bewaren vanuit Safari?</strong> wat er is opgevangen, gemarkeerd als <em>Nieuwe login</em> of <em>Werkt het bewaarde wachtwoord bij</em>. Kies wat je wilt houden, of <strong>Later beslissen</strong>.</li>
+          </ol>
+          <p>Kies <strong>Nooit op deze site</strong> om de vraag op een site te stoppen.</p>
+        </article>
+
+        <article class="topic" id="ios-security">
+          <h3><a href="#ios-security">Tabblad Beveiliging</a></h3>
+          <p>Een score en lijsten met logins die <strong>Gelekt</strong>, <strong>Hergebruikt</strong>, <strong>Zwak</strong> of <strong>Oud</strong> zijn of 2FA zouden kunnen gebruiken. Veeg op een login naar links voor <strong>Wachtwoord wijzigen</strong> of <strong>Sluiten</strong>. Lekcontroles staan uit tot je Instellingen › <strong>Strikte offlinemodus</strong> uitzet (standaard aan) en <strong>Datalekcontroles toestaan</strong> aanzet.</p>
+        </article>
+
+        <article class="topic" id="ios-import">
+          <h3><a href="#ios-import">Importeren en exporteren</a></h3>
+          <h4>Uit Apple Wachtwoorden (iOS 26)</h4>
+          <ol>
+            <li>Open de app <strong>Wachtwoorden</strong>, tik op het menu en kies <strong>Exporteer gegevens naar een andere app</strong>.</li>
+            <li>Kies <strong>LocalGateKeys</strong>. Logins, 2FA-codes en passkeys komen mee. Opnieuw doen voegt niets dubbel toe.</li>
+          </ol>
+          <h4>Uit een bestand</h4>
+          <p>Instellingen › Importeren en exporteren › <strong>Importeren uit een bestand</strong>: exports uit Apple Wachtwoorden, Safari, Chrome, Edge, Brave, Firefox, Bitwarden (ook met wachtwoord beveiligd), 1Password (<code>.1pux</code>), LastPass, KeePass (<code>.kdbx</code>), Proton Pass, Dashlane of een andere CSV. Je controleert elk item voordat je op <strong>Importeren</strong> tikt. Verwijder daarna het exportbestand.</p>
+          <h4>Back-up en export</h4>
+          <ul>
+            <li><strong>Versleutelde back-up exporteren</strong>: een <code>.lgkm</code>-bestand met een wachtwoord van 12+ tekens. Herstel het op Windows.</li>
+            <li><strong>Exporteren als CSV</strong>: onversleuteld, om naar een andere app te verhuizen. Je wordt om bevestiging gevraagd.</li>
+            <li><strong>Exporteren naar een CXF-bestand…</strong> schrijft de logins, notities en passkeys die je kiest naar een Credential Exchange-bestand dat andere wachtwoordmanagers kunnen importeren. Het bestand is niet versleuteld.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-sync">
+          <h3><a href="#ios-sync">Synchroniseren met je pc</a> <span class="badge-pro">Pro</span></h3>
+          <h4>Via wifi</h4>
+          <ol>
+            <li>Open op de pc Sync en apparaten en kies <strong>QR-code tonen</strong>.</li>
+            <li>Open op de iPhone het tabblad <strong>Synchronisatie</strong> en tik binnen 120 seconden op <strong>QR-code scannen</strong>. (Sta de eerste keer toegang tot het lokale netwerk toe.) Geen camera? Tik op <strong>Codetekst plakken</strong> en plak de tekst van <strong>Codetekst kopiëren</strong> op de computer.</li>
+            <li>Controleer of beide schermen dezelfde code tonen en kies dan op de computer <strong>Accepteren</strong>.</li>
+          </ol>
+          <p>Synchronisatie gebeurt als beide op hetzelfde wifinetwerk zitten en ontgrendeld zijn. <strong>Nu synchroniseren</strong> dwingt het af; <strong>Opnieuw zoeken</strong> helpt als het adres van de computer is veranderd.</p>
+          <h4>Via een cloudmap</h4>
+          <p>Tik op <strong>Deelnemen aan een map…</strong>, kies de map <em>LocalGateKeys Sync</em> in iCloud Drive of Dropbox en typ het synchronisatiewachtwoord van de groep.</p>
+          <p class="note">OneDrive en Google Drive zijn voorlopig niet beschikbaar voor synchronisatie, tot een probleem met Apple is opgelost. Gebruik Dropbox, iCloud Drive of wifi-synchronisatie.</p>
+          <h4>Stoppen</h4>
+          <p><strong>Synchronisatie verlaten…</strong> of <strong>Synchronisatie op deze iPhone resetten…</strong> (elk vraagt twee keer). Je items blijven op de telefoon.</p>
+        </article>
+
+        <article class="topic" id="ios-share">
+          <h3><a href="#ios-share">Een item delen</a></h3>
+          <ol>
+            <li>Open het item en tik op <strong>Deel</strong>.</li>
+            <li>De app toont zes woorden. Stuur het bestand met <strong>AirDrop of deel het bestand…</strong>, of <strong>Toon de code als QR</strong>.</li>
+            <li>Vertel de zes woorden apart aan de andere persoon, nooit samen met het bestand.</li>
+          </ol>
+          <p><strong>Ontvangen:</strong> open het <code>.lgkshare</code>-bestand uit AirDrop of Bestanden (of <strong>Gedeeld item ontvangen</strong>) en typ de zes woorden. Passkeys en items met een bijgevoegd bestand kunnen niet worden gedeeld.</p>
+        </article>
+
+        <article class="topic" id="ios-settings">
+          <h3><a href="#ios-settings">Instellingen</a></h3>
+          <dl class="defs">
+            <dt>Beveiliging</dt><dd><strong>Automatisch vergrendelen na verlaten van de app</strong>, <strong>Vergrendelen bij inactiviteit</strong>, <strong>Wachtwoorden verbergen tot je tikt</strong>, <strong>Klembord wissen na</strong>, <strong>Nu vergrendelen</strong>.</dd>
+            <dt>Privacy</dt><dd><strong>Strikte offlinemodus</strong>, websitepictogrammen, itemnamen in meldingen, lekcontroles.</dd>
+            <dt>Weergave</dt><dd>Systeem, Licht of Donker.</dd>
+            <dt>Gegevens</dt><dd>Recent verwijderd, hoe lang verwijderde items bewaard blijven, Importeren en exporteren.</dd>
+            <dt>Wissen</dt><dd><strong>Kluis van deze iPhone wissen</strong> verwijdert de kluis alleen op deze iPhone (vraagt twee keer). Je pc en synchronisatiemap veranderen niet.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">Dwangwachtwoord en meer</a></h3>
+          <ul>
+            <li><strong>Dwangwachtwoord</strong> (Pro): een tweede appwachtwoord voor als iemand je dwingt te ontgrendelen. Het opent een aparte kluis met alleen de items die je kiest, en je kluis weigert daarna zijn appwachtwoord voor het aantal uren dat je instelt. Zet eerst het appwachtwoord aan en stel het daarna in bij Instellingen onder <strong>Dwangwachtwoord</strong>.</li>
+            <li><strong>Wifi-synchronisatie hosten op deze telefoon</strong> (Pro), op het tabblad Sync, laat je andere apparaten rechtstreeks met de iPhone koppelen, zonder pc.</li>
+            <li>Een noodtoegangsplan dat je op de pc maakt, komt via synchronisatie op de iPhone, zodat je verzoeken ook hier kunt weigeren of toestaan. <strong>Notitie voor het nalatenschapspakket maken</strong> voegt de notitie voor je erfgenamen toe.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-pro">
+          <h3><a href="#ios-pro">Pro</a></h3>
+          <p>Instellingen › Pro › <strong>Upgraden</strong>, dan kopen: één betaling, geen abonnement, geen account. Gebruik op een nieuwe iPhone <strong>Aankopen herstellen</strong> met hetzelfde Apple Account.</p>
+          <p>Je aankoop ontgrendelt ook Windows. Koppel je pc aan de iPhone op het tabblad <strong>Synchronisatie</strong>, en een gratis pc neemt de licentie over via synchronisatie en wordt Pro. Of kies <strong>Sleutel kopiëren</strong> en installeer die sleutel op de pc (Instellingen › Abonnement en synchronisatie › Licentie).</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../nl/help">De hele handleiding op één pagina</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Een wachtwoordmanager voor Windows, Mac en iPhone die je kluis op je eigen apparaten bewaart.</p>
+        <p class="quiet">Deze website telt bezoeken met Cloudflare Web Analytics, dat geen cookies gebruikt. Ze gebruikt geen advertentietrackers en plaatst geen cookies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/download">Downloaden</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/switch/">Overstappen</a></li>
+          <li><a href="../../buy">Pro kopen</a></li>
+          <li><a href="../../nl/licence">Je Pro-licentie</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Licentie terugvinden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hulp">
+        <h2>Hulp</h2>
+        <ul>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/support">Support en veelgestelde vragen</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Een kwetsbaarheid melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Juridisch">
+        <h2>Juridisch</h2>
+        <p class="quiet">Deze documenten zijn in het Engels, en de Engelse versie is van toepassing en bindend.</p>
+        <ul>
+          <li><a href="../../legal/eula">Licentieovereenkomst</a></li>
+          <li><a href="../../legal/privacy">Privacybeleid</a></li>
+          <li><a href="../../legal/terms-of-sale">Verkoopvoorwaarden</a></li>
+          <li><a href="../../legal/refunds">Terugbetalingsbeleid</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is een handelsmerk van de Microsoft-groep van bedrijven. Chrome is een handelsmerk van Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID en Safari zijn handelsmerken van Apple Inc., geregistreerd in de VS en andere landen.</p>
+      <nav class="lang-switch" aria-label="Taal"><ul><li><a href="../../guide/iphone" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/iphone" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/iphone" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/iphone" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/iphone" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/iphone" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/iphone" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/iphone" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/iphone" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/iphone" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/iphone" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

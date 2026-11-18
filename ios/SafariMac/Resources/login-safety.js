@@ -27,6 +27,68 @@
    for (const sr of shadowRoots(root)) out.push(...sr.querySelectorAll(selector));
    return out;
  }
+ // ---- Top-layer covers (design decision 2026-11-12). The panel and icon
+ // hosts sit in the top layer (popover="manual"), so only another top-layer
+ // element, its ::backdrop, or a view transition can paint above them, and
+ // with pointer-events:none elementFromPoint does not see it. Firefox and
+ // Safari have no IntersectionObserver v2 to report that, so the click-time
+ // check looks for them itself: in the document, open shadow roots and closed
+ // ones where the browser lets an extension open them (Firefox content
+ // scripts: el.openOrClosedShadowRoot; Chromium: chrome.dom).
+ const TOP_LAYER=[":popover-open","dialog:modal",":fullscreen"];
+ function anyShadowRoot(el) {
+   try { const r=el.openOrClosedShadowRoot; if (r) return r; } catch {}
+   try {
+     const dom=globalThis.chrome?.dom;
+     if (dom && typeof dom.openOrClosedShadowRoot==="function") { const r=dom.openOrClosedShadowRoot(el); if (r) return r; }
+   } catch {}
+   return el.shadowRoot || null;
+ }
+ function everyElement(root=document, depth=0, out=[]) {
+   if (depth>MAX_SHADOW_DEPTH || !root || typeof root.querySelectorAll!=="function") return out;
+   for (const el of root.querySelectorAll("*")) {
+     out.push(el);
+     const sr=anyShadowRoot(el);
+     if (sr) everyElement(sr, depth+1, out);
+   }
+   return out;
+ }
+ function inTopLayer(el) {
+   for (const selector of TOP_LAYER) { try { if (el.matches(selector)) return true; } catch {} }
+   return false;
+ }
+ const noPaint = v => { const s=clean(v); return !s || s==="none"; };
+ function transparentColor(v) {
+   const s=clean(v);
+   return s==="transparent" || /^rgba\(.*,\s*0(\.0+)?\)$/.test(s) || /\/\s*0(\.0+)?%?\)$/.test(s);
+ }
+ // Whether an element's ::backdrop paints anything. A style the browser
+ // cannot give (no properties) counts as painting: fail closed.
+ function backdropPaints(el) {
+   let s;
+   try { s=getComputedStyle(el,"::backdrop"); } catch { return true; }
+   if (!s || !s.length) return true;
+   if (clean(s.display)==="none") return false;
+   if (!transparentColor(s.backgroundColor) || !noPaint(s.backgroundImage)) return true;
+   if (!noPaint(s.backdropFilter) || !noPaint(s.filter) || !noPaint(s.boxShadow)) return true;
+   return ["borderTopStyle","borderRightStyle","borderBottomStyle","borderLeftStyle","outlineStyle"].some(k=>!noPaint(s[k]) && clean(s[k])!=="hidden");
+ }
+ function viewTransitionActive() {
+   try { if (document.activeViewTransition) return true; } catch {}
+   try { return document.documentElement.matches(":active-view-transition"); } catch { return false; }
+ }
+ // rect: the host's box; ours: our own hosts. True when something in the top
+ // layer may paint over rect.
+ function topLayerCover(rect, ours=new Set()) {
+   if (viewTransitionActive()) return true;
+   for (const el of everyElement()) {
+     if (ours.has(el) || !inTopLayer(el)) continue;
+     const r=el.getBoundingClientRect();
+     if (r.right>rect.left && r.left<rect.right && r.bottom>rect.top && r.top<rect.bottom) return true;
+     if (backdropPaints(el)) return true;
+   }
+   return false;
+ }
  // Composed-tree parent: crosses from a shadow root up to its host.
  function composedParent(el) {
    if (el.parentElement) return el.parentElement;
@@ -86,6 +148,25 @@
    const y=Math.max(1,Math.min(innerHeight-1,r.top+r.height/2));
    const hit=deepElementFromPoint(x,y);
    return hit===el || el.contains(hit);
+ }
+ // ---- New-password fields (sign-up, change-password). autocomplete wins;
+ // without it, a name/label hint, a password + confirm pair, or a sign-up URL.
+ const newPwHint=/(^|[^a-z])(new|create|choose|confirm|repeat|retype|re-?enter|verify|sign[\s_-]?up|register|neu|bestätig|wiederhol|nuev|crear|confirmar|repetir|nouve|créer|confirmer|répét|nuov|crea|conferma|ripet|nieuw|bevestig|herhaal|now[eay]|potwierd|powtórz|utwórz|criar)|新しい|確認|再入力|作成|새|확인|재입력|만들|新|确认|再次|创建/i;
+ const curPwHint=/(^|[^a-z])(current|old|existing|aktuell|bisherig|actual|anterior|actuel|ancien|attual|vecchi|huidig|oud|obecn|star[eay]|atual)|現在|기존|현재|当前|旧/i;
+ const signUpPath=/(^|[/_-])(sign[-_]?up|register|registration|join|create[-_]?account|new[-_]?account)([/_.-]|$)/i;
+ function newPassword(el) {
+   if (!(el instanceof HTMLInputElement) || el.type!=="password") return false;
+   const ac=clean(el.autocomplete);
+   if (ac==="new-password") return true;
+   if (ac==="current-password") return false;
+   const hint=otpText(el);
+   if (curPwHint.test(hint)) return false;
+   if (newPwHint.test(hint)) return true;
+   const scope=el.form || el.getRootNode();
+   const pw=typeof scope.querySelectorAll==="function" ? Array.from(scope.querySelectorAll('input[type="password"]')).filter(f=>(f.form||f.getRootNode())===scope && visible(f)) : [];
+   if (pw.some(f=>clean(f.autocomplete)==="current-password" || curPwHint.test(otpText(f)))) return false;
+   if (pw.length===2 && pw.includes(el)) return true;
+   return pw.length===1 && signUpPath.test(location.pathname);
  }
  function currentPassword(el) { return el instanceof HTMLInputElement && el.type==="password" && clean(el.autocomplete)!=="new-password" && onTop(el); }
  // ---- Form destination. A form is safe only when every way it can be
@@ -326,7 +407,7 @@
    const wanted=new Set(candidates.map(c=>clean(c)));
    return Array.from(select.options).find(o=>wanted.has(clean(o.value)) || wanted.has(clean(o.textContent))) || null;
  }
- const api={visible,clipHides,clipPathHides,onTop,currentPassword,safeForm,formState,sameFormState,snapshot,unchanged,submitCandidate,otpField,otpBoxes,otpSnapshot,queryAll,shadowRoots,isSignInLabel,
+ const api={visible,clipHides,clipPathHides,onTop,topLayerCover,currentPassword,newPassword,safeForm,formState,sameFormState,snapshot,unchanged,submitCandidate,otpField,otpBoxes,otpSnapshot,queryAll,shadowRoots,isSignInLabel,
    cardToken,cardScope,cardFieldMap,cardSnapshot,cardUnchanged,cardExpiryShape,cardExpiryParts,formatCardExpiry,formatCardYear,formatCardMonth,cardSelectOption,CARD_TOKENS};
  globalThis.LGKLoginSafety=api;
 })();

@@ -124,6 +124,7 @@ from .lan_sync import ENROLL_GRACE_SECONDS, LanResponder, sync_with, transport_s
 from .runner import RunReport, SyncIssue
 from .transport import LANEndpoint, SyncTransport
 from .vault_bridge import (
+    KEPT_IDENTITY_KEY,
     BridgeError,
     SyncGroupState,
     _check_lease,
@@ -142,6 +143,10 @@ MAX_UI_PARK_SECONDS = 120.0
 #: Issue kinds that are informational: shown in the sync screen, but the status bar stays calm.
 NOTICE_KINDS = frozenset({
     "counter-resynced", "keyring-restored", "busy", "ignored-file", "stale-self", "unreachable", "no-endpoint",
+    # A share owner re-signed its approvals over a join that raced them (sub-plan 07): information only.
+    "keyring-merged",
+    # A share member waits for the owner's approval before anything syncs (sub-plan 07): information only.
+    "awaiting-approval",
 })
 
 _log = logging.getLogger(__name__)
@@ -513,6 +518,9 @@ class SyncStatusView:
     items_changed: int = 0
     #: Per-device "last synced" times (``SyncGroupState.peer_synced_at``): peer id -> unix seconds.
     peer_synced_at: Mapping[str, int] = field(default_factory=dict)
+    #: Shared collections (sub-plan 07): one status per share group (``name`` is the group id), kept
+    #: apart from the device-sync ``issues``.
+    shares: tuple[TransportStatus, ...] = ()
 
     @property
     def needs_attention(self) -> bool:
@@ -560,20 +568,31 @@ class FolderAdapter:
         if state is None or not state.folder_path:
             return RunReport(issues=(SyncIssue("not-joined"),))
         fs = FolderSync(state.folder_path, install_id=self.install_id, _kdf_override=self._kdf_override)
-        # Folder I/O (a cloud placeholder download can stall any of these) runs with
-        # the UI free; the state lock stays held.  Only vault access stays parked.
-        for name in FOLDER_IO_STEPS:
-            setattr(fs, name, _ui_released(gate, getattr(fs, name)))
-        # The own-file write is fenced: re-check lease, service and park state right before it.
-        fs.write_own = _fenced(lease, fs.write_own)
+        _release_folder_io(fs, gate, lease)
         if self.licence_only:
             return fs.licence_round(session, lease, now=now)
         return fs.run_once(session, lease, now=now)
 
 
+#: Result key prefix of a share group's run (``SyncService._run_shares``).
+SHARE_PREFIX = "share:"
+#: Folder-only steps of a share run (keyring and notice I/O; never the vault), next to ``FOLDER_IO_STEPS``.
+SHARE_FOLDER_IO_STEPS = ("read_keyring_bytes", "write_keyring", "_read_share_notice")
+
 #: ``FolderSync`` steps that only touch the folder (never the vault).
 FOLDER_IO_STEPS = ("_folder_exists", "_trusted_keyring", "_sweep_own_temp_files", "_sweep_keyring_temp_files",
                    "read_peers", "_own_file_status", "write_own")
+
+
+def _release_folder_io(fs: FolderSync, gate: SyncGate, lease: Any, extra: tuple[str, ...] = ()) -> None:
+    """Folder I/O (a cloud placeholder download can stall any of these) runs with the UI free.
+
+    The state lock stays held; only vault access stays parked.  The own-file write is fenced:
+    lease, service and park state are checked again right before it.
+    """
+    for name in (*FOLDER_IO_STEPS, *extra):
+        setattr(fs, name, _ui_released(gate, getattr(fs, name)))
+    fs.write_own = _fenced(lease, fs.write_own)
 
 
 def _ui_released(gate: SyncGate, fn: Callable[..., Any]) -> Callable[..., Any]:
@@ -657,27 +676,29 @@ class _GatedEnrollment:
             return
         owner = getattr(handler, "__self__", None)
         prefilter = getattr(owner, "enroll_prefilter", None)
-        verify, wait, finish = (getattr(owner, name, None)
-                                for name in ("enroll_verify", "await_decision", "enroll_finish"))
-        if callable(verify) and callable(wait) and callable(finish):
-            # Verify and admit inside the gate; the wait for Accept (up to a minute) holds no gate,
-            # so sync runs and other requests go on while the prompt is open.
+        verify, reveal, wait, finish = (getattr(owner, name, None) for name in (
+            "enroll_verify", "enroll_reveal", "await_decision", "enroll_finish"))
+        if callable(verify) and callable(reveal) and callable(wait) and callable(finish):
+            # Verify and admit inside the gate; sending the reveal and the wait for Accept (up to a
+            # minute) hold no gate, so sync runs and other requests go on while the prompt is open.
             gated_verify, gated_finish = self._gate.wrap(verify), self._gate.wrap(finish)
 
-            def run(raw: bytes) -> bytes | None:
+            def run(raw: bytes, send: Callable[[bytes], None] | None = None) -> bytes | None:
                 first = gated_verify(raw)
                 if isinstance(first, bytes) or first is None:
                     return first
+                if not reveal(first, send):
+                    return None
                 return gated_finish(first, wait(first))
         else:
             run = self._gate.wrap(handler)
 
-        def enroll(raw: bytes) -> bytes | None:
+        def enroll(raw: bytes, send: Callable[[bytes], None] | None = None) -> bytes | None:
             if callable(prefilter):
                 answered, reply = prefilter(raw)
                 if answered:
                     return reply
-            return run(raw)
+            return run(raw, send)
 
         self._inner.set_enrollment_handler(enroll)
 
@@ -910,10 +931,16 @@ class LanAdapter:
             peer_id = entry.get("device_id")
             if not isinstance(peer_id, str) or entry.get("revoked") is True or not entry.get("endpoint"):
                 continue  # a peer without an endpoint (a phone) connects to us instead
-            report = sync_with(releasing, peer_id, session, lease, install_id=self.install_id, now=now,
-                               timeout=self._timeout, licence_only=self.licence_only)
-            if any(i.kind == "unreachable" for i in report.issues) and self.browser is not None:
-                report = self._find_again(releasing, gate, session, lease, peer_id, now, found_box) or report
+            try:
+                report = sync_with(releasing, peer_id, session, lease, install_id=self.install_id, now=now,
+                                   timeout=self._timeout, licence_only=self.licence_only)
+                if any(i.kind == "unreachable" for i in report.issues) and self.browser is not None:
+                    report = self._find_again(releasing, gate, session, lease, peer_id, now, found_box) or report
+            except SyncAborted:
+                raise  # the vault locked or the service stopped: no further peer, no normal run record
+            except Exception as exc:  # noqa: BLE001 - one broken or hostile peer must not stop the others
+                issues.append(SyncIssue("error", f"{peer_id}: {type(exc).__name__}"))
+                continue
             applied, deleted = applied + report.applied, deleted + report.deleted
             conflicts += report.conflicts
             skipped.update(report.skipped)
@@ -939,7 +966,7 @@ class LanAdapter:
 
 
 def reset_sync(session: Any, lease: Any) -> bool:
-    """Forget this vault's sync state (``sync_meta`` and the group) in one transaction.
+    """Forget this vault's sync state (``sync_meta``, the group, the kept identity) in one transaction.
 
     For recovery from structural sync-metadata corruption or a forged conflict.
     Call it ONLY after the user explicitly confirmed (it drops the group key,
@@ -948,13 +975,17 @@ def reset_sync(session: Any, lease: Any) -> bool:
     was cleared.  In the app, use ``SyncService.reset`` (worker + gate).
     """
     _check_lease(session, lease)
+    from .removal import forget_session_watch
+
+    forget_session_watch(session)  # a later removal notice must not erase a vault that reset sync
     payload = session._require_typed_catalog()
-    if "sync_meta" not in payload and "sync_group" not in payload:
+    if "sync_meta" not in payload and "sync_group" not in payload and KEPT_IDENTITY_KEY not in payload:
         return False
     with session.transaction():
         payload = session._require_typed_catalog()
         payload.pop("sync_meta", None)
         payload.pop("sync_group", None)
+        payload.pop(KEPT_IDENTITY_KEY, None)  # after a reset the next join gets a new device id
         _check_lease(session, lease)
     return True
 
@@ -980,6 +1011,7 @@ class _Status:
     aborted: bool = False
     license_adopted: bool = False
     items_changed: int = 0
+    shares: dict[str, TransportStatus] = field(default_factory=dict)
 
 
 def _changed_items(report: RunReport) -> int:
@@ -1276,6 +1308,7 @@ class SyncService:
         """One pass over the configured transports (inside the gate)."""
         state = self._joined_state()
         self._sync_listeners(state)
+        self._run_shares(now, results)
         if state is not None:
             for adapter in self._transports:
                 configured[adapter.name] = adapter.configured(state)
@@ -1307,6 +1340,38 @@ class SyncService:
                 raise
             except Exception:  # noqa: BLE001 - witness bookkeeping must not fail the run
                 _log.exception("witness flush failed")
+
+    def _run_shares(self, now: int, results: dict[str, RunReport]) -> None:
+        """Every share group with a folder (sub-plan 07), as ``share:<group id>`` results.
+
+        Never licence-only; a share runs whether or not this vault is in a device-sync group.  Without
+        Pro a share's run does its keyring step only (repair, adoption, a removal) and reports
+        ``pro-required`` (``FolderSync`` "Share groups").  A failing share is reported on its own and
+        never stops the other runs.
+        """
+        if self.licence_only:
+            return
+        from . import share_group as sg
+
+        try:
+            folders = sg.share_folders(self.session)
+        except sg.ShareGroupError as exc:
+            results[SHARE_PREFIX + "?"] = RunReport(issues=(SyncIssue("state-corrupt", exc.reason),))
+            return
+        kdf = next((getattr(t, "_kdf_override", None) for t in self._transports if isinstance(t, FolderAdapter)), None)
+        for group_id, folder in folders:
+            _check_lease(self.session, self._lease)
+            try:
+                fs = FolderSync(folder, install_id=self.install_id, share=group_id, _kdf_override=kdf)
+                _release_folder_io(fs, self.gate, self._lease, SHARE_FOLDER_IO_STEPS)
+                results[SHARE_PREFIX + group_id] = fs.run_once(self.session, self._lease, now=now)
+            except SyncAborted:
+                raise
+            except Exception as exc:
+                if self._cancelled():
+                    raise
+                _log.exception("share sync failed")
+                results[SHARE_PREFIX + group_id] = RunReport(issues=(SyncIssue("error", type(exc).__name__),))
 
     def _adopt_licenses(self, results: dict[str, RunReport]) -> bool:
         """Offer licences to the licence store (inside the gate).
@@ -1347,6 +1412,15 @@ class SyncService:
                     adapter.name, True, now, now if synced else old.last_sync, dedupe_issues(report.issues))
                 st.skipped[adapter.name] = tuple(report.skipped)
                 st.conflicts += report.conflicts
+            for name, report in results.items():
+                if not name.startswith(SHARE_PREFIX):
+                    continue
+                group_id = name[len(SHARE_PREFIX):]
+                old = st.shares.get(group_id, TransportStatus(group_id))
+                synced = report.own_states is not None
+                st.shares[group_id] = TransportStatus(group_id, True, now, now if synced else old.last_sync,
+                                                      dedupe_issues(report.issues))
+                st.conflicts += report.conflicts
 
     def _peer_synced(self, name: str, report: RunReport) -> None:
         """A peer (a phone, which connects to this PC) synced with us: record it like a run of *name*."""
@@ -1380,7 +1454,7 @@ class SyncService:
                 issues=issues, skipped=skipped, conflicts=st.conflicts, running=self._running,
                 listening=any(getattr(t, "listening", False) for t in self._transports), aborted=st.aborted,
                 license_adopted=st.license_adopted, items_changed=st.items_changed,
-                peer_synced_at=self._peer_synced_at())
+                peer_synced_at=self._peer_synced_at(), shares=tuple(st.shares[k] for k in sorted(st.shares)))
 
     def _peer_synced_at(self) -> dict[str, int]:
         """The stored per-device times; empty when the vault is locked or not in a group."""
@@ -1388,7 +1462,14 @@ class SyncService:
             state = load_sync_state(self.session)
         except Exception:  # noqa: BLE001 - a status read never fails the status bar
             return {}
-        return dict(state.peer_synced_at) if state is not None else {}
+        if state is None:
+            return {}
+        from . import seen
+
+        times = dict(state.peer_synced_at)
+        for peer, at in seen.times(state.group_id).items():
+            times[peer] = max(at, times.get(peer, 0))
+        return times
 
     # LAN enrollment ---------------------------------------------------------------------------------------
 

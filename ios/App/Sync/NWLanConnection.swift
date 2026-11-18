@@ -86,16 +86,19 @@ actor SocketLanConnection: LanConnection {
 /// Sends the one enrollment request of a scanned offer and returns the one-frame reply (desktop
 /// `SyncTransport.enroll`). Not retried, like the desktop. The reply comes only after the user chose
 /// Accept on the inviting device, so the read waits up to `Enrollment.replySeconds` (75 s).
+/// A version-2 offer's inviter first sends one interim frame, its reveal (`Enrollment.revealMagic`): it goes to
+/// `onInterim` (which throws to abort) and the final reply is read after it; a second one is refused.
 protocol EnrollmentSending: Sendable {
     /// `onConnected`: called once the connection is up, before the request is sent.
-    func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void) async throws -> [UInt8]
+    func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void,
+                onInterim: @escaping @Sendable ([UInt8]) throws -> Void) async throws -> [UInt8]
 }
 
 struct SocketEnroller: EnrollmentSending {
     let dialer: any LanDialer
 
-    func enroll(endpoint: LanEndpoint, request: [UInt8],
-                onConnected: @escaping @Sendable () -> Void = {}) async throws -> [UInt8] {
+    func enroll(endpoint: LanEndpoint, request: [UInt8], onConnected: @escaping @Sendable () -> Void = {},
+                onInterim: @escaping @Sendable ([UInt8]) throws -> Void = { _ in }) async throws -> [UInt8] {
         guard LanAddress.isLAN(endpoint.host) else { throw LanSocketError("not a LAN address") }
         guard request.starts(with: Enrollment.requestMagic), request.count <= Enrollment.maxBytes else {
             throw LanSocketError("enrollment request is malformed")
@@ -105,8 +108,15 @@ struct SocketEnroller: EnrollmentSending {
         defer { s.close() }
         onConnected()
         try await s.send(try LanTransport.encodeFrame(request))
-        let reply = try LanTransport.decodeFrame(try await s.receiveFrame())
+        var reply = try LanTransport.decodeFrame(try await s.receiveFrame())
         guard reply.count <= Enrollment.maxBytes else { throw LanSocketError("enrollment reply exceeds the bound") }
+        if reply.starts(with: Enrollment.revealMagic) {
+            try onInterim(reply)
+            reply = try LanTransport.decodeFrame(try await s.receiveFrame())
+            guard reply.count <= Enrollment.maxBytes, !reply.starts(with: Enrollment.revealMagic) else {
+                throw LanSocketError("enrollment reply is malformed")
+            }
+        }
         return reply
     }
 }

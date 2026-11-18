@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">Kolekcje</string>
+    <string name="collections_none">Brak kolekcji.</string>
+    <string name="collections_footer">Notatki, karty i inne elementy typowane można dodawać do kolekcji. Danych logowania nie.</string>
+    <string name="collections_add_starters">Dodaj kolekcje startowe</string>
+    <string name="collections_new">Nowa kolekcja</string>
+    <string name="collections_name">Nazwa</string>
+    <string name="collections_create">Utwórz</string>
+    <string name="collections_delete_title">Usunąć kolekcję?</string>
+    <string name="collections_delete_message">Elementy w niej zostają zachowane.</string>
+    <string name="collections_view_only">Tylko do przeglądania</string>
+    <string name="collections_shared">Udostępniona</string>
+    <string name="collections_picker_footer">Element może należeć do maksymalnie 20 kolekcji.</string>
+    <string name="collections_all_items">Wszystkie elementy</string>
+    <string name="collections_manage">Zarządzaj kolekcjami</string>
+    <string name="collections_filter">Kolekcja: %1$s</string>
+    <string name="collections_filter_clear">Pokaż wszystkie elementy</string>
+    <string name="collections_filter_empty">Brak elementów w tej kolekcji.</string>
+    <string name="collections_read_only_item">Ten element należy do kolekcji udostępnionej Ci tylko do przeglądania, więc nie można go zmienić na tym urządzeniu.</string>
+    <string name="collections_read_only">Ta kolekcja jest Ci udostępniona tylko do przeglądania, więc nie można jej zmienić na tym urządzeniu.</string>
+    <string name="collections_shared_delete">Udostępnionej kolekcji nie można usunąć. Najpierw przestań ją udostępniać lub ją opuść.</string>
+    <string name="collections_limit">Możesz mieć maksymalnie 500 kolekcji.</string>
+    <string name="collections_not_member">Danych logowania i dokumentów nie można dodać do kolekcji.</string>
+    <string name="collections_bad_name">Tej nazwy nie można użyć.</string>
+    <string name="collections_gone">Ta kolekcja już nie istnieje.</string>
+    <string name="collections_failed">Nie udało się zmienić kolekcji.</string>
+    <string name="collections_empty_name">Wpisz nazwę kolekcji.</string>
+    <string name="collections_long_name">Nazwy kolekcji mogą mieć najwyżej 100 znaków.</string>
+    <string name="collections_duplicate">Kolekcja o tej nazwie już istnieje.</string>
+    <string name="collections_too_many">Element nie może należeć do więcej niż 20 kolekcji.</string>
+    <string name="collections_read_failed">Nie udało się odczytać sejfu na tym urządzeniu.</string>
+    <string name="collection_starter_personal">Osobiste</string>
+    <string name="collection_starter_work">Praca</string>
+    <string name="collection_starter_travel">Podróże</string>
+    <string name="collection_starter_emergency">Awaryjne</string>
+</resources>

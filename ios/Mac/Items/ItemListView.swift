@@ -11,15 +11,18 @@ enum ItemListFilter {
 
 /// Small record edits made outside the editor.
 enum ItemActions {
-    enum Failure: Error { case notFound }
+    /// `readOnly`: the item is in a collection shared with this vault as view only (sub-plan 07; Windows
+    /// `check_writable` runs after a favourite change too).
+    enum Failure: Error { case notFound, readOnly }
 
     /// Stars or un-stars an item: the record's `favorite` field, as the iPhone and Windows store it, saved
     /// through the store like the editor's saves (normal form, wrapper, `updated_at` stamped).
     static func setFavourite(id: String, _ on: Bool, store: any ItemStore, clock: any UnixClock) throws {
         var snap = try store.load()
         guard case .object(let w)? = snap.records[id], case .string(let nsRaw)? = w["ns"],
-              let ns = Namespace(rawValue: nsRaw), case .object(var record)? = w["record"] else { throw Failure.notFound }
+              let ns = Namespace(rawValue: nsRaw), ns != .heir, case .object(var record)? = w["record"] else { throw Failure.notFound }
         guard record["favorite"] != .bool(on) else { return }
+        if EditorModel.itemIsReadOnly(id, in: snap) { throw Failure.readOnly }
         record["favorite"] = .bool(on)
         record["updated_at"] = .int(clock.now)
         let normal = try Normalise.normalForm(ns: ns, record: .object(record))
@@ -41,6 +44,16 @@ enum ItemActions {
     }
 }
 
+/// What a list row offers (selected row's buttons, right-click menu). Each returns nil when the item has nothing to
+/// do there, so the entry is left out.
+struct ItemRowActions {
+    var copyUsername: @MainActor (VaultItem) -> (() -> Void)? = { _ in nil }
+    var copyPassword: @MainActor (VaultItem) -> (() -> Void)? = { _ in nil }
+    var copyCode: @MainActor (VaultItem) -> (() -> Void)? = { _ in nil }
+    var edit: @MainActor (VaultItem) -> (() -> Void)? = { _ in nil }
+    var moveToTrash: @MainActor (VaultItem) -> (() -> Void)? = { _ in nil }
+}
+
 /// The item list of the middle panel. ↑/↓ move the selection (the detail panel follows), Return or Space
 /// (or a double-click) opens the item in the detail panel.
 struct ItemListView: View {
@@ -52,6 +65,8 @@ struct ItemListView: View {
     var tag: (String) -> String? = { _ in nil }
     /// Scrolls with the list, above it: the overview, title and chips.
     var header: AnyView = AnyView(EmptyView())
+    /// Copy buttons on the selected row and the right-click menu (nil: neither).
+    var rowActions: ItemRowActions? = nil
     /// Shown instead of the rows when there are none.
     var emptyText: String = ""
     @Environment(\.macTheme) private var theme
@@ -67,10 +82,15 @@ struct ItemListView: View {
                     LazyVStack(spacing: 0) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                             if index > 0 { Rectangle().fill(theme.line).frame(height: 1) }
-                            ItemRow(item: item, selected: item.id == selection, tag: tag(item.id))
+                            let selected = item.id == selection
+                            ItemRow(item: item, selected: selected, tag: tag(item.id),
+                                    onCopyUsername: selected ? rowActions?.copyUsername(item) : nil,
+                                    onCopyPassword: selected ? rowActions?.copyPassword(item) : nil)
                                 .id(item.id)
                                 .onTapGesture { selection = item.id; focused.wrappedValue = true }
                                 .simultaneousGesture(TapGesture(count: 2).onEnded { selection = item.id; onOpen(item.id) })
+                                .contextMenu { if let rowActions { contextMenu(item, rowActions) } }
+                                .accessibilityActions { if let rowActions { accessibilityActions(item, rowActions) } }
                         }
                     }
                     .background(theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -88,6 +108,28 @@ struct ItemListView: View {
             .onKeyPress(.space) { open(); return .handled }
             .onChange(of: selection) { _, id in if let id { withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(id) } } }
         }
+    }
+
+    /// VoiceOver actions on every row (VO-⌘-Space), so copying needs no trip into the detail panel.
+    @ViewBuilder private func accessibilityActions(_ item: VaultItem, _ actions: ItemRowActions) -> some View {
+        if let user = actions.copyUsername(item) { Button(String(localized: "Copy username"), action: user) }
+        if let password = actions.copyPassword(item) { Button(String(localized: "Copy password"), action: password) }
+        if let code = actions.copyCode(item) { Button(String(localized: "Copy one-time code"), action: code) }
+    }
+
+    /// Right-click on a row: copy username, password, 2FA code; Edit; Move to trash (entries the item lacks are left out).
+    @ViewBuilder private func contextMenu(_ item: VaultItem, _ actions: ItemRowActions) -> some View {
+        let user = actions.copyUsername(item)
+        let password = actions.copyPassword(item)
+        let code = actions.copyCode(item)
+        let edit = actions.edit(item)
+        let trash = actions.moveToTrash(item)
+        if let user { Button(String(localized: "Copy username"), action: user) }
+        if let password { Button(String(localized: "Copy password"), action: password) }
+        if let code { Button(String(localized: "Copy one-time code"), action: code) }
+        if user != nil || password != nil || code != nil, edit != nil || trash != nil { Divider() }
+        if let edit { Button(String(localized: "Edit"), action: edit) }
+        if let trash { Button(String(localized: "Move to Recently deleted"), action: trash) }
     }
 
     private func move(_ step: Int, _ proxy: ScrollViewProxy) {

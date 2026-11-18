@@ -15,12 +15,20 @@ public struct KeyringError: Error, Equatable, Sendable, CustomStringConvertible 
 /// `signing_proof`, the member's own signature over `keyring-member|v2|` + group id + `|` + device id + `|`
 /// + `exchange_public` + `|` + `signing_public` (both keys as the entry's base64 text). Both are null for
 /// a member carried over from format 1, else both set; the structure check verifies every proof
-/// (`bad-member-proof`). Every write (join, attach) produces format 2.
+/// (`bad-member-proof`). Every personal write (join, attach) produces format 2.
+///
+/// Format 3 is a share v2 keyring (`ShareKeyring`; spec `2026-11-12-collections-crypto-gating.md`): a format-2 share
+/// keyring plus `content` (the content key `C` wrapped to the approved members). A keyring whose format is an integer
+/// above 3 is refused first with `newer-format` (the share run reports `update-required`).
 public enum Keyring {
-    /// The format every write produces.
+    /// The format every personal write produces.
     static let format: Int64 = 2
-    /// The formats this version reads (format 1 has no member signing keys).
-    static let readFormats: Set<Int64> = [1, 2]
+    /// The format of a share v2 keyring (item views sealed with the content key).
+    static let shareFormat: Int64 = 3
+    /// The formats this version reads (format 1 has no member signing keys; format 3 is share v2).
+    static let readFormats: Set<Int64> = [1, 2, 3]
+    /// The newest format this version reads; an integer above it is `newer-format`.
+    static let newestFormat: Int64 = 3
     static let kdfName = "argon2id"
     static let kdfMemoryKiB: Int64 = 131072
     static let kdfIterations: Int64 = 4
@@ -250,8 +258,10 @@ public enum Keyring {
         return try groupKey(gid, epoch, plain)
     }
 
-    /// (eph, nonce, ct) wrap of `gk` to `exchangePublic`. Draws eph (32) then nonce (12).
-    static func wrapDevice(_ gk: GroupKey, deviceID: String, exchangePublic: [UInt8], random: RandomSource) throws -> JSONValue {
+    /// (eph, nonce, ct) wrap of `gk` to `exchangePublic`. Draws eph (32) then nonce (12). `info` and `aadLabel`: the
+    /// device wrap of G by default; the content wrap of C with `ShareKeyring.contentInfo` and `contentAAD`.
+    static func wrapDevice(_ gk: GroupKey, deviceID: String, exchangePublic: [UInt8], random: RandomSource,
+                           info: [UInt8] = Keyring.deviceInfo, aadLabel: [UInt8] = Keyring.deviceAAD) throws -> JSONValue {
         let ephRaw = try draw(random, 32)
         let ephPublic: [UInt8]
         let shared: [UInt8]
@@ -263,8 +273,9 @@ public enum Keyring {
         } catch { throw KeyringError("bad-member-key", "exchange key unusable") }
         guard shared.contains(where: { $0 != 0 }) else { throw KeyringError("bad-member-key", "exchange key unusable") }
         let nonce = try draw(random, nonceLen)
-        let ct = try CryptoBox.sealGCM(key: deviceKey(shared: shared, groupID: gk.groupID, deviceID: deviceID),
-                                       nonce: nonce, plaintext: gk.key, aad: deviceAAD(gk.groupID, gk.epoch, deviceID))
+        let key = CryptoBox.hkdf(ikm: shared, salt: Array(gk.groupID.utf8), info: info + Array(deviceID.utf8), length: keyLen)
+        let aad = aadLabel + Array(gk.groupID.utf8) + bar + epochBytes(gk.epoch) + bar + Array(deviceID.utf8)
+        let ct = try CryptoBox.sealGCM(key: key, nonce: nonce, plaintext: gk.key, aad: aad)
         return .object(["eph": .string(Base64.encode(ephPublic)),
                         "nonce": .string(Base64.encode(nonce)), "ct": .string(Base64.encode(ct))])
     }

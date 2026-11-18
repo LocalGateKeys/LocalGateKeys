@@ -7,12 +7,15 @@ sheet, collection management from the safe workspace, and
 from __future__ import annotations
 
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ..api.result import ApiError
+from ..collections import display_name
+from ..i18n import t
+from ..travel import hidden_id_set, visible_collections
 from ..vault import VaultError
 from .setting_links import open_settings
-from ..i18n import t
 
 CATALOG_TITLE = "workspace.thisVaultUsesTheLegacy"
 CATALOG_TEXT = ("workspace.typedItemsCollectionsTemplatesAnd")
@@ -38,9 +41,10 @@ class RemindersService(_Unlocked):
     def list(self) -> dict[str, Any]:
         session = self._session()
         titles = {str(s.id): str(getattr(s, "title", "") or "") for s in session.item_service.all_metadata_summaries()}
+        hidden = hidden_id_set(session)  # travel mode: a hidden item's reminder is left out (contract 2.3)
         rows = [{"id": str(r["id"]), "title": titles.get(str(r["item_id"])) or t("workspace.deletedItem"),
                  "due": str(r["due_date"]), "status": str(r["status"])}
-                for r in session.reminders.upcoming(3650)]
+                for r in session.reminders.upcoming(3650) if str(r["item_id"]) not in hidden]
         return {"title": t("command.reminders.title"), "subtitle": t("workspace.dueDatesStayEncryptedThis"), "rows": rows}
 
     def _act(self, fn: Callable[[], Any]) -> dict[str, Any]:
@@ -69,6 +73,15 @@ class ActivityService(_Unlocked):
                 for e in session.activity.history()]
         return {"title": t("workspacePages.activity"), "subtitle": t("workspace.onlyBoundedEventTypesResults"), "rows": rows}
 
+    def verify(self) -> dict[str, Any]:
+        report = self._session().activity.verify_chain()
+        return {"verified": bool(report.ok), "first_bad_id": report.first_bad_id,
+                "checkpoint": report.checkpoint}
+
+    def export(self) -> dict[str, Any]:
+        return {"jsonl": self._session().activity.export_jsonl(),
+                "filename": "localgatekeys-access-log.jsonl"}
+
 
 def shortcuts(settings: Any) -> dict[str, Any]:
     from ..hotkey import shortcut_cheat_sheet_rows
@@ -88,10 +101,11 @@ class CollectionsService(_Unlocked):
     def list(self) -> dict[str, Any]:
         session = self._session()
         try:
-            rows = session.collections.list()
+            rows = visible_collections(session, session.collections.list())
         except VaultError as exc:
             raise ApiError("catalog", str(exc)) from None
         return {"collections": [{"id": str(c.get("id")), "name": str(c.get("name", "")),
+                                 "label": display_name(str(c.get("name", ""))),
                                  "description": str(c.get("description", "") or ""),
                                  "archived": bool(c.get("archived"))} for c in rows]}
 

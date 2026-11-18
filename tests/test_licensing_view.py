@@ -1,5 +1,6 @@
 import datetime as dt
 
+from localvault import licensing
 from localvault.licensing import License, LicenseStatus
 from localvault.app.licence_view import PURCHASE_URL, licence_view
 from localvault.shell.nav import TOOLS_ENTRIES
@@ -35,20 +36,20 @@ def test_free_view():
     text = " ".join(v.detail_lines)
     # Sync, two-factor codes and attachments are Pro-only; desktop fill stays free.
     assert "sync" in text.lower() and "two-factor" in text.lower() and "desktop" not in text.lower()
-    assert "4 items" in text
+    assert "7 items" in text
 
 
 def test_free_view_shows_item_usage():
     v = licence_view(_st("free"), item_count=3)
-    assert v.detail_lines[0] == "Free plan: 3 of 4 items used"
-    over = licence_view(_st("free"), item_count=6)
-    assert over.detail_lines[0] == "Free plan: 6 of 4 items used"
+    assert v.detail_lines[0] == "Free plan: 3 of 7 items used"
+    over = licence_view(_st("free"), item_count=8)
+    assert over.detail_lines[0] == "Free plan: 8 of 7 items used"
 
 
 def test_licence_problem_views_show_item_usage():
     for state in ("expired_for_this_build", "revoked", "invalid"):
         v = licence_view(_st(state, LIC, "Problem."), item_count=2)
-        assert "Free plan: 2 of 4 items used" in v.detail_lines
+        assert "Free plan: 2 of 7 items used" in v.detail_lines
 
 
 def test_pro_and_unconfigured_views_have_no_usage_line():
@@ -82,11 +83,9 @@ def test_purchase_url_is_the_site_checkout():
     assert PURCHASE_URL == "https://localgatekeys.app/buy"
 
 
-def test_nav_has_licence_entry_after_devices():
-    labels = [e.label for e in TOOLS_ENTRIES]
-    assert labels.index("Licence") == labels.index("Devices & connections") + 1
-    entry = TOOLS_ENTRIES[labels.index("Licence")]
-    assert entry.action == "licence_clicked" and entry.icon == "nav.settings"
+def test_licence_moved_from_tools_to_settings_plan():
+    # The Licence page is reached from Settings > Plan & sync, not the Tools list.
+    assert all(e.action != "licence_clicked" for e in TOOLS_ENTRIES)
 
 
 def test_statusbar_warning_text():
@@ -100,9 +99,26 @@ def test_statusbar_warning_text():
 def test_upgrade_prompt_free_shows_item_limit_pitch():
     from localvault.app.licence_view import upgrade_prompt_text
     head, body = upgrade_prompt_text(_st("free"))
-    assert head == "The free plan holds up to 4 items."
-    assert body == ("LocalGateKeys Pro: unlimited items, device sync, two-factor codes and attachments — "
-                    "US$4.99 once, lifetime updates.")
+    assert head == "The free plan holds up to 7 items."
+    assert body == ("LocalGateKeys Pro: unlimited items, device sync, two-factor codes and attachments. "
+                    "US$29.99 once. One payment. Every update, forever, free.")
+
+
+def test_upgrade_copy_mentions_forever_and_no_price_for_pro_users():
+    from localvault.app.licence_view import upgrade_prompt_text
+    _head, body = upgrade_prompt_text(_st("free"))
+    assert "US$29.99" in body and "Every update, forever, free" in body
+    life = License("LGK-3", "pro", "Ada", "ada@example.com", dt.date(2026, 1, 1), licensing.LIFETIME_UNTIL)
+    pro = licence_view(_st("pro", life))
+    text = pro.headline + " " + " ".join(pro.detail_lines)
+    assert "lifetime" in text.lower()
+    assert "US$" not in text and "9999" not in text and "Updates until" not in text
+
+
+def test_dated_pro_licence_keeps_its_updates_date_and_no_forever_line():
+    v = licence_view(_st("pro", LIC))
+    text = " ".join(v.detail_lines)
+    assert "2027-01-01" in text and "forever" not in text
 
 
 def test_upgrade_prompt_names_sync_but_never_desktop_fill():
@@ -121,7 +137,7 @@ def test_upgrade_prompt_shows_licence_problem_instead_of_pitch():
         head, body = upgrade_prompt_text(_st(state, LIC, msg))
         assert head == msg
         assert "US$" not in body
-        assert "vault" in body and "4 items" in body
+        assert "vault" in body and "7 items" in body
 
 
 def test_no_feature_specific_pro_texts_remain():

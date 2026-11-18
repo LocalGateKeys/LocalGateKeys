@@ -3,6 +3,8 @@ package app.localgatekeys.core.records
 import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.engine.VersionVector
 import app.localgatekeys.core.json.JsonValue
+import app.localgatekeys.core.recovery.Heir
+import app.localgatekeys.core.recovery.HeirException
 import app.localgatekeys.core.sync.AttachmentRef
 import app.localgatekeys.core.sync.AttachmentSyncException
 
@@ -18,15 +20,44 @@ object Wrapper {
         return if (n in 0..VersionVector.MAX_COUNTER) n else 0L
     }
 
-    /** Wraps a record; a licence always ranks 0. */
+    /** Wraps a record; a licence always ranks 0, the emergency access plan by its `created`. */
     fun make(ns: Namespace, record: JsonValue): JsonValue = JsonValue.Obj(
         mapOf(
             "ns" to JsonValue.Str(ns.wire),
             "schema" to JsonValue.Int(SCHEMA),
-            "updated_at" to JsonValue.Int(if (ns == Namespace.LICENSE) 0L else rank(record)),
+            "updated_at" to JsonValue.Int(
+                when (ns) {
+                    Namespace.LICENSE -> 0L
+                    Namespace.HEIR -> ((record as? JsonValue.Obj)?.fields?.get("created") as? JsonValue.Int)?.v ?: 0L
+                    else -> rank(record)
+                },
+            ),
             "record" to record,
         ),
     )
+
+    internal fun isHeirId(id: String): Boolean = id == Heir.STATE_ID
+
+    /**
+     * The checked synced plan record of a `heir` state (desktop `_unwrap_heir`): the live state is `heir:plan` with no
+     * `id`; a conflict copy keeps its own id. The record must pass the desktop's `merge_synced(None, record)` rules and
+     * the wrapper's `updated_at` must be the record's `created`.
+     */
+    private fun unwrapHeir(state: ItemState, item: Map<String, JsonValue>, isCopy: Boolean): JsonValue {
+        val id = state.itemId
+        fun bad(d: String) = RecordException("bad-remote", id, d)
+        if (!isCopy && (item["id"] != null || !isHeirId(id))) throw bad("malformed emergency access state")
+        if (isCopy && (isHeirId(id) || item["id"] != JsonValue.Str(id))) throw bad("malformed emergency access state")
+        val record = item.getValue("record")
+        try {
+            Heir.mergeSynced(null, record)
+        } catch (e: HeirException) {
+            throw bad("malformed emergency access plan")
+        }
+        val created = ((record as JsonValue.Obj).fields["created"] as? JsonValue.Int)?.v
+        if (item["updated_at"] != JsonValue.Int(created ?: -1)) throw bad("rank does not match its record")
+        return record
+    }
 
     internal fun nsOf(record: Map<String, JsonValue>): Namespace {
         val k = (record["kind"] as? JsonValue.Str)?.v
@@ -65,9 +96,16 @@ object Wrapper {
         if (item["ns"] == JsonValue.Str(Namespace.LICENSE.wire)) {
             return Namespace.LICENSE to unwrapLicense(state, item, isCopy, licenseKeys)
         }
+        if (item["ns"] == JsonValue.Str(Namespace.HEIR.wire)) {
+            return Namespace.HEIR to unwrapHeir(state, item, isCopy)
+        }
         val ns = (item["ns"] as? JsonValue.Str)?.v?.let { Namespace.fromWire(it) }
         val recordObj = item["record"] as? JsonValue.Obj
-        if (ns == null || ns == Namespace.LICENSE || recordObj == null || isLicenseId(id)) throw bad("malformed wrapper")
+        if (ns == null || ns == Namespace.LICENSE || ns == Namespace.HEIR || recordObj == null || isLicenseId(id) || isHeirId(id)) {
+            throw bad("malformed wrapper")
+        }
+        // Personal collection states (`col:`, `cm:`, `csl:`) are reserved ids: no entry or item may use one.
+        if (app.localgatekeys.core.sync.CollectionStates.isStateId(id)) throw bad("reserved id")
         val record = LinkedHashMap(recordObj.fields)
         val u = (item["updated_at"] as? JsonValue.Int)?.v
         if (u == null || u != rank(JsonValue.Obj(record))) throw bad("rank does not match its record")

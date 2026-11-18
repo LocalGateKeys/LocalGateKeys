@@ -21,7 +21,7 @@ BUY_JS = ROOT / "website" / "src" / "static" / "buy.js"
 HARNESS = r"""
 const vm = require("node:vm");
 const fs = require("node:fs");
-const [src, href, eventClaim] = process.argv.slice(2);
+const [src, href, eventClaim, mode = ""] = process.argv.slice(2);
 const el = (extra = {}) => ({ textContent: "", hidden: true, disabled: true, href: "#", dataset: {}, listeners: {},
   addEventListener(n, f) { this.listeners[n] = f; }, ...extra });
 const nodes = {
@@ -49,6 +49,18 @@ const token = store.get("lgk_claim");
 const claim = eventClaim === "own" ? token : eventClaim;
 if (eventClaim !== "none") callback({ name: "checkout.completed", data: { custom_data: { lgk_claim: claim } } });
 out.token = token;
+if (mode === "again") {
+  // Buy again from the same tab: a repeated event for the first purchase changes
+  // nothing, the button opens a checkout with a fresh claim, and its completion
+  // links to that claim's licence page.
+  out.firstLink = nodes["licence-link"].href;
+  callback({ name: "checkout.completed", data: { custom_data: { lgk_claim: token } } });
+  out.statusAfterRepeat = nodes["checkout-status"].textContent;
+  nodes["open-checkout"].listeners.click();
+  out.secondToken = out.opens[out.opens.length - 1];
+  out.secondStored = store.get("lgk_claim") ?? null;
+  callback({ name: "checkout.completed", data: { custom_data: { lgk_claim: out.secondToken } } });
+}
 out.linkShown = !nodes["after-purchase"].hidden;
 out.link = nodes["licence-link"].href;
 out.status = nodes["checkout-status"].textContent;
@@ -59,11 +71,11 @@ console.log(JSON.stringify(out));
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 
 
-def run(tmp_path: Path, href: str, event_claim: str) -> dict:
+def run(tmp_path: Path, href: str, event_claim: str, mode: str = "") -> dict:
     harness = tmp_path / "harness.cjs"
     harness.write_text(HARNESS, encoding="utf-8")
     result = subprocess.run(
-        ["node", str(harness), str(BUY_JS), href, event_claim],
+        ["node", str(harness), str(BUY_JS), href, event_claim, mode],
         capture_output=True,
         text=True,
         timeout=30,
@@ -97,3 +109,18 @@ def test_completed_checkout_with_another_claim_shows_no_licence_link(tmp_path: P
     assert out["link"] == "#"
     assert out["claimKept"] is True
     assert "not for the checkout opened on this page" in out["status"]
+
+
+def test_second_purchase_from_the_same_tab_gets_its_own_claim(tmp_path: Path) -> None:
+    """Scan 2026-11-15 F1: buying again must not reuse the first purchase's claim."""
+    out = run(tmp_path, "https://localgatekeys.app/buy", "own", "again")
+    first = out["token"]
+    assert out["firstLink"] == "https://licenses.example/license/" + first
+    assert out["statusAfterRepeat"].startswith("Payment received. Taking you")
+    assert len(out["opens"]) == 2
+    second = out["secondToken"]
+    assert len(second) == 43 and second != first
+    assert out["secondStored"] == second  # kept for this tab until it is paid
+    assert out["link"] == "https://licenses.example/license/" + second
+    assert out["linkShown"] is True
+    assert out["claimKept"] is False

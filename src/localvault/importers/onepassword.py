@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import zipfile
 import zlib
 from collections.abc import Mapping
@@ -57,7 +58,22 @@ _IDENTITY_IDS = {
 _CARD_IDS = {"cardholder": "cardholder", "ccnum": "number", "cvv": "cvv", "expiry": "expiry", "pin": "pin",
              "type": "brand"}
 _ADDRESS_KEYS = {"street": "address_line1", "city": "city", "state": "state", "zip": "postal_code", "country": "country"}
-_SENSITIVE_HINTS = ("password", "secret", "pin", "key", "number", "cvv", "code", "token", "seed", "passphrase")
+_SENSITIVE_HINTS = frozenset({"password", "secret", "pin", "key", "number", "cvv", "code", "token", "seed",
+                               "passphrase"})
+# Labels that contain a hint word but are not secrets.
+_NOT_SENSITIVE = frozenset({"postal code", "zip code", "post code", "area code", "country code", "phone number",
+                            "mobile number", "house number", "street number", "fax number"})
+
+
+def _looks_sensitive(field_id: str, label: str) -> bool:
+    """Whole-word match of the hint list against the field id and label ("Postal code" stays visible)."""
+    for text in (field_id, label):
+        folded = " ".join(re.findall(r"[a-z0-9]+", text.casefold()))
+        if not folded or folded in _NOT_SENSITIVE:
+            continue
+        if any(word in _SENSITIVE_HINTS for word in folded.split()):
+            return True
+    return False
 
 
 class OnePasswordError(ImportFormatError):
@@ -178,7 +194,7 @@ def item_to_record(item: Mapping[str, Any], vault_name: str, *, source_row: int 
                     record.urls.append(text)
                 continue
             hidden = value_type in {"concealed", "creditCardNumber", "sshKey"} or bool(field.get("guarded")) \
-                or any(hint in field_id or hint in label.casefold() for hint in _SENSITIVE_HINTS)
+                or _looks_sensitive(field_id, label)
             add_custom_field(record, label, text, hidden=hidden)
     if record.kind == "identity":
         name = " ".join(record.identity.get(key, "") for key in ("given_name", "middle_name", "family_name")).strip()
@@ -197,6 +213,7 @@ def records_from_export(document: Mapping[str, Any]) -> ImportResult:
         raise OnePasswordError(t("onepassword.exportDataHasNoAccounts"))
     result = ImportResult("1pux")
     trashed = 0
+    passkeys = 0
     index = 0
     for account in accounts:
         if not isinstance(account, dict):
@@ -215,11 +232,16 @@ def records_from_export(document: Mapping[str, Any]) -> ImportResult:
                 if item.get("trashed") or str(item.get("state") or "").casefold() == "trashed":
                     trashed += 1
                     continue
+                details = item.get("details") if isinstance(item.get("details"), dict) else {}
+                if details.get("passkey"):
+                    passkeys += 1
                 record = item_to_record(item, vault_name, source_row=index)
                 if record is not None:
                     result.records.append(record)
     if trashed:
         result.diagnostics.append(t("onepassword.itemsInThe1passwordTrash", trashed=trashed))
+    if passkeys:
+        result.diagnostics.append(t("bitwarden.loginsHavePasskeys", count=passkeys))
     result.records = enforce_record_limit(result.records)
     return result
 

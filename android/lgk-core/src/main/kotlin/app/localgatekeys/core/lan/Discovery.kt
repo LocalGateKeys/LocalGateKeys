@@ -49,6 +49,14 @@ object Discovery {
     fun acceptedTags(groupKey: GroupKey, hostDeviceId: String, now: Long): Set<String> =
         setOf(tag(groupKey, hostDeviceId, utcDay(now)), tag(groupKey, hostDeviceId, utcDay(now - DAY)))
 
+    /** The TXT record a host announces: `{"v": "1", "t": <today's tag>}`. */
+    fun txtRecord(groupKey: GroupKey, hostDeviceId: String, now: Long): Map<String, String> =
+        mapOf("v" to TXT_VERSION, "t" to tag(groupKey, hostDeviceId, utcDay(now)))
+
+    /** `LocalGateKeys-` and four lowercase hex digits (random per listener start). */
+    fun instanceName(random: app.localgatekeys.core.primitives.RandomSource): String =
+        "LocalGateKeys-" + app.localgatekeys.core.primitives.Hex.lower(random.bytes(2))
+
     /** One resolved announcement: the host address text, the port and the TXT record. */
     data class Announcement(val host: String, val port: Int, val txt: Map<String, String>)
 

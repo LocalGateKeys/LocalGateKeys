@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys Windows 版用户指南</title>
+  <meta name="description" content="在 Windows 10 和 11 上逐步设置、解锁、填充、导入、备份和同步 LocalGateKeys。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/windows">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/windows">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/windows">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/windows">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/windows">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/windows">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys Windows 版用户指南">
+  <meta property="og:description" content="在 Windows 10 和 11 上逐步设置、解锁、填充、导入、备份和同步 LocalGateKeys。">
+  <meta property="og:url" content="https://localgatekeys.app/zh-hans/guide/windows">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 标志：适用于 Windows、Mac 和 iPhone 的密码管理器。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys Windows 版用户指南">
+  <meta name="twitter:description" content="在 Windows 10 和 11 上逐步设置、解锁、填充、导入、备份和同步 LocalGateKeys。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../zh-hans/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="主导航">
+        <ul class="nav">
+          <li><a href="../../zh-hans/features">功能</a></li>
+          <li><a href="../../zh-hans/get-started">入门</a></li>
+          <li><a href="../../zh-hans/help">指南</a></li>
+          <li><a href="../../zh-hans/security">安全</a></li>
+          <li><a href="../../zh-hans/pricing">价格</a></li>
+          <li><a href="../../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../../zh-hans/download">下载</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>菜单</summary>
+        <nav aria-label="主导航">
+          <ul class="nav nav-stack">
+            <li><a href="../../zh-hans/features">功能</a></li>
+          <li><a href="../../zh-hans/get-started">入门</a></li>
+          <li><a href="../../zh-hans/help">指南</a></li>
+          <li><a href="../../zh-hans/security">安全</a></li>
+          <li><a href="../../zh-hans/pricing">价格</a></li>
+          <li><a href="../../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../../zh-hans/download">下载</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>语言</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Windows 版 LocalGateKeys</h1>
+  <p class="lead">此设备上每个界面和功能的分步帮助。每个标题都是可以分享的链接。</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="平台">
+    <ul><li><a class="help-tab" href="../../zh-hans/guide/windows" aria-current="page">Windows</a></li><li><a class="help-tab" href="../../zh-hans/guide/mac">Mac</a></li><li><a class="help-tab" href="../../zh-hans/guide/iphone">iPhone 和 iPad</a></li><li><a class="help-tab" href="../../zh-hans/guide/android">Android</a></li><li><a class="help-tab" href="../../zh-hans/guide/extension">浏览器扩展</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>在所有设备上都值得了解</h2>
+    <ul>
+      <li><strong>保险库只保存在你的设备上。</strong>没有账户,也没有存放密码的 LocalGateKeys 服务器。</li>
+      <li><strong>没有人能重置你的主密码或 App 密码。</strong>请设置恢复短语,并写在纸上保存。</li>
+      <li><strong>Free</strong> 最多保存 7 个项目。<strong>Pro</strong>(US$29.99,一次性付费)提供无限项目、双重验证码、文件和同步。编辑、删除和填充已有项目永远不会受限。</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Windows 主题</h2>
+    <p class="panel-lead">Windows 10（版本 2004 或更高）和 Windows 11，64 位。可从 Microsoft Store 或<a href="../../zh-hans/download">下载页面</a>安装。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Windows 主题">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#win-setup">首次启动和配置文件</a></li>
+            <li><a href="#win-unlock">解锁和锁定</a></li>
+            <li><a href="#win-screen">主窗口</a></li>
+            <li><a href="#win-items">添加和编辑项目</a></li>
+            <li><a href="#win-trash">删除、回收站和撤销</a></li>
+            <li><a href="#win-search">搜索、命令面板、快速访问</a></li>
+            <li><a href="#win-generator">密码生成器</a></li>
+            <li><a href="#win-security">安全中心</a></li>
+            <li><a href="#win-2fa">双重验证码和二维码</a></li>
+            <li><a href="#win-import">导入</a></li>
+            <li><a href="#win-export">导出和传输</a></li>
+            <li><a href="#win-backups">备份和恢复</a></li>
+            <li><a href="#win-sync">同步</a></li>
+            <li><a href="#win-share">共享项目</a></li>
+            <li><a href="#win-apps">填充 Windows 应用</a></li>
+            <li><a href="#win-shared">共享集合</a></li>
+            <li><a href="#win-safety">紧急访问与胁迫密码</a></li>
+            <li><a href="#win-dev">开发者工具与 AI 代理</a></li>
+            <li><a href="#win-settings">设置</a></li>
+            <li><a href="#win-pro">Pro 许可证</a></li>
+            <li><a href="#win-updates">更新</a></li>
+            <li><a href="#win-keys">键盘快捷键</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">首次启动和配置文件</a></h3>
+          <ol>
+            <li>打开 LocalGateKeys。输入至少 12 个字符的<strong>主密码</strong>,在<strong>确认密码</strong>中再输入一次,然后选择<strong>创建保险库</strong>。</li>
+            <li>接下来是<strong>设置 LocalGateKeys</strong>向导,共五步:创建保险库、<strong>设置 Windows Hello</strong>、<strong>导入</strong>密码、<strong>打开恢复短语</strong>(重新输入其中三个单词以证明已保存)以及为浏览器扩展<strong>测试连接</strong>。</li>
+            <li>任何一步都可以<strong>跳过</strong>。跳过的步骤会留在保险库中的<em>完成设置</em>卡片上,提供<strong>继续设置</strong>和<strong>隐藏</strong>。</li>
+          </ol>
+          <p class="tip"><strong>提示:</strong>要再次查看向导,请选择 设置 › 帮助和诊断 › <strong>再次显示设置</strong>。</p>
+          <h4>配置文件</h4>
+          <p>每个配置文件都是独立的保险库,有自己的主密码,例如一个用于工作,一个用于家庭。</p>
+          <ul>
+            <li>在解锁界面选择<strong>使用其他配置文件</strong>,然后选择<strong>创建配置文件</strong>并输入<strong>配置文件名称</strong>。</li>
+            <li>要编辑配置文件,按 Ctrl+K 并运行<strong>切换配置文件</strong>。在那里可以<strong>添加配置文件</strong>、<strong>编辑</strong>、设置<strong>照片…</strong>和<strong>强调色</strong>,或将其<strong>移除</strong>。</li>
+            <li>托盘菜单中的<strong>锁定并切换用户</strong>会锁定并直接进入配置文件选择。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">解锁和锁定</a></h3>
+          <h4>解锁方式</h4>
+          <ul>
+            <li><strong>主密码</strong>,然后<strong>解锁</strong>。始终可用。</li>
+            <li><strong>使用 Windows Hello 解锁</strong>：指纹、面部或 PIN。在 设置 › 解锁 › Windows Hello › <strong>设置</strong>中设置。<strong>自动启动 Windows Hello</strong>（默认开启）会在窗口一打开时就显示验证提示。</li>
+            <li><strong>改用摄像头</strong>:使用普通网络摄像头进行面部比对,在电脑上完成。安全性低于 Windows Hello。通过<strong>设置摄像头验证</strong>进行设置。</li>
+          </ul>
+          <h4>忘记主密码?</h4>
+          <ol>
+            <li>在解锁界面选择<strong>忘记了?使用恢复短语</strong>。</li>
+            <li>输入 24 个单词,用空格分隔。</li>
+            <li>设置新的主密码(12 个字符或以上),输入两次,然后选择<strong>恢复保险库</strong>。</li>
+          </ol>
+          <p class="note"><strong>之后</strong>请重新设置 Windows Hello 和摄像头验证。恢复短语仍然有效。</p>
+          <h4>更改主密码</h4>
+          <p>设置 › 解锁 › 主密码 › <strong>更改…</strong>。输入当前密码，再输入两次新密码。若要让恢复短语继续可用，还需输入它的 24 个单词；否则请在之后创建新的短语。已创建的备份仍使用创建时的密码。</p>
+          <h4>锁定</h4>
+          <ul>
+            <li>顶部栏的<strong>锁定</strong>按钮,或 <kbd>Ctrl</kbd>+<kbd>L</kbd>。</li>
+            <li><strong>紧急锁定</strong>:在 Windows 任何位置按 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd>。立即锁定并取消正在进行的填充。</li>
+            <li>设置 › 锁定:
+              <ul>
+                <li><strong>闲置后锁定</strong>:从不,或 1 分钟到 24 小时。</li>
+                <li><strong>Windows 锁定时锁定</strong>(Win+L、切换用户、注销)和<strong>睡眠时锁定</strong>(合上盖子、睡眠、休眠)。</li>
+                <li><strong>保持解锁的最长时间</strong>:无论在做什么都适用的硬性上限。</li>
+                <li><strong>活动计算依据</strong>:电脑活动或保险库活动。</li>
+                <li><strong>向浏览器扩展提供双重验证码前先询问</strong>。</li>
+              </ul>
+            </li>
+          </ul>
+          <p>托盘图标菜单包含<strong>打开 LocalGateKeys</strong>、<strong>解锁保险库</strong>、<strong>锁定保险库</strong>、<strong>锁定并切换用户</strong>、<strong>快速访问</strong>、<strong>检查更新</strong>、<strong>浏览器集成</strong>和<strong>桌面填充图标</strong>开关，以及<strong>退出</strong>。</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">主窗口</a></h3>
+          <dl class="defs">
+            <dt>侧边栏 · 保险库</dt><dd><strong>所有项目</strong>、<strong>收藏</strong>、<strong>最近使用</strong>。</dd>
+            <dt>侧边栏 · 类型</dt><dd>你拥有的每种类型各占一行,例如登录信息、卡片、身份、安全笔记、文档、Wi-Fi 或通行密钥。</dd>
+            <dt>侧边栏 · 集合和视图</dt><dd>你的集合和固定的视图。</dd>
+            <dt>侧边栏 · 工具</dt><dd>安全中心、密码生成器、同步与设备、设备与连接、导入和导出、回收站。<strong>设置</strong>位于底部。 提醒从主页的<em>即将到期</em>卡片打开，活动在安全中心里，扫描二维码用 <kbd>Ctrl</kbd>+<kbd>K</kbd>，许可证在 设置 › 方案与同步 中。按 <kbd>Ctrl</kbd>+<kbd>K</kbd> 可前往任何页面。</dd>
+            <dt>顶部栏</dt><dd>搜索框、<strong>新建项目</strong>、<strong>锁定</strong>,以及用于命令面板的 <strong>Ctrl K</strong>。</dd>
+            <dt>主页</dt><dd>密码健康、备份和恢复、即将到期和生成器卡片,以及<strong>一次性验证码</strong>(点击验证码即可复制)。</dd>
+          </dl>
+          <h4>项目列表</h4>
+          <ul>
+            <li>筛选:<strong>全部</strong>、<strong>需要处理</strong>、<strong>无双重验证</strong>、<strong>即将到期</strong>。</li>
+            <li><strong>排序</strong>:标题 A–Z、标题 Z–A、修改日期、创建日期。</li>
+            <li>行上的标记表示密码已泄露、强度弱或被重复使用。</li>
+            <li>右键点击一行（或按 <kbd>Shift</kbd>+<kbd>F10</kbd>）可使用编辑、复制用户名、复制密码、复制双重验证码、打开网站、共享…、添加到收藏和移到回收站…。</li>
+          </ul>
+          <h4>详细信息窗格</h4>
+          <p>显示所选项目的字段。密码在点击前一直隐藏。按钮可复制用户名、密码或双重验证码,打开网站,<strong>编辑</strong>、<strong>共享</strong>或<strong>移到回收站</strong>。文档还提供<strong>打开文件</strong>、<strong>安全预览</strong>、<strong>保存副本…</strong>和<strong>替换文件…</strong>。</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">添加和编辑项目</a></h3>
+          <ol>
+            <li>选择<strong>新建项目</strong>或按 <kbd>Ctrl</kbd>+<kbd>N</kbd>。</li>
+            <li>选择一种类型(点击、按其编号,或开始输入名称):
+              <ul>
+                <li><em>登录</em>:网站登录、桌面应用登录、通行密钥</li>
+                <li><em>财务</em>：支付卡、银行账户 · <em>个人</em>：身份、安全笔记、文档</li>
+                <li><em>技术</em>：SSH 密钥、API 密钥、Wi-Fi 网络、书签 · <em>您拥有的物品</em>：许可证、订阅、保修、购买记录</li>
+              </ul>
+            </li>
+            <li>填写字段并选择<strong>保存</strong>。如果带着未保存的更改离开,系统会询问<em>放弃更改?</em></li>
+          </ol>
+          <h4>登录信息详解</h4>
+          <ul>
+            <li><strong>标题</strong>、<strong>网站</strong>、<strong>用户名</strong>、<strong>密码</strong>和<strong>备注</strong>。</li>
+            <li>密码旁的<strong>更改</strong>可让你输入新密码，或选择<strong>密码短语</strong>、<strong>随机</strong>或 <strong>PIN 码</strong>来生成一个。也要在网站上更改，然后保存。</li>
+            <li><strong>双重验证</strong>:在此粘贴网站的设置密钥(Pro)。参见<a href="#win-2fa">双重验证码</a>。</li>
+            <li><strong>自定义字段</strong>:其他信息用<strong>添加字段</strong>。将字段标记为隐藏,即可像密码一样处理。</li>
+            <li><strong>密码历史记录</strong>：最多 5 个旧密码会加密保存一年。<strong>复制旧密码</strong>或<strong>恢复此密码</strong>。</li>
+            <li><strong>恢复代码</strong>:每行一个。<strong>复制并使用下一个代码</strong>会复制一个代码并将其从列表中移除。</li>
+            <li><strong>自动填充规则</strong>：填充（点击时或关闭）、填充后登录（默认、从不或始终）、始终要求输入主密码，以及提示保存来自浏览器的更改。</li>
+          </ul>
+          <h4>其他类型</h4>
+          <p>每种类型都有自己的字段。日期格式为 YYYY-MM-DD。任何项目都可以设为<strong>收藏</strong>并添加<strong>标签</strong>(用逗号分隔)。文档使用<strong>选择文件并保存</strong>(Pro)。</p>
+          <h4>集合和提醒</h4>
+          <ul>
+            <li>集合可按你的方式分组项目:<strong>添加集合</strong>、<strong>重命名</strong>、<strong>归档</strong>。集合会与你的其他设备同步，也可以与他人共享(参见<a href="#win-shared">共享集合</a>)。</li>
+            <li><strong>提醒</strong>列出即将到期或已过期的项目,并提供<strong>完成</strong>和<strong>推迟 1 天</strong>。</li>
+            <li><strong>活动</strong>显示保险库中发生过的操作记录。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">删除、回收站和撤销</a></h3>
+          <ol>
+            <li>选择一个项目,然后选择<strong>移到回收站</strong>或按 <kbd>Delete</kbd>。</li>
+            <li>会出现带<strong>撤销</strong>的消息:点击即可立即恢复该项目。</li>
+            <li>之后可打开 工具 › <strong>回收站</strong>,使用<strong>恢复所选</strong>、<strong>删除所选</strong>或<strong>清空回收站</strong>。从回收站删除后无法撤销。</li>
+          </ol>
+          <p>设置 › 隐私 › <strong>已删除项目保留时长</strong>可设为 7、14、30 或 90 天,<strong>自动清空回收站</strong>会替你清空。</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">搜索、命令面板和快速访问</a></h3>
+          <ul>
+            <li><strong>搜索</strong>:按 <kbd>Ctrl</kbd>+<kbd>F</kbd> 输入,按 <kbd>Enter</kbd> 打开第一个结果,或按 <kbd>↓</kbd> 进入列表。</li>
+            <li><strong>命令面板</strong>:<kbd>Ctrl</kbd>+<kbd>K</kbd> 可查找项目和操作。以 <code>&gt;</code> 开头只显示操作(立即备份、生成密码、立即锁定、同步状态…),<code>#</code> 查找标签,<code>@</code> 查找集合。</li>
+            <li><strong>快速访问</strong>：在 Windows 任何位置按 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd>，会在快速访问页面打开 LocalGateKeys，用于查找登录信息、笔记或书签。可在 设置 › 自动填充 › 快速访问 中更改快捷键。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">密码生成器</a></h3>
+          <p>可从主页的<strong>生成器</strong>卡片，或 Ctrl+K › 生成密码 打开。</p>
+          <ul>
+            <li><strong>随机</strong>：选择长度以及要使用的字符：A–Z、a–z、0–9 和符号。</li>
+            <li><strong>密码短语</strong>:选择单词数量。更容易输入,足够长时同样安全。</li>
+            <li><strong>重新生成</strong>得到新的密码,<strong>复制</strong>即可复制。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">安全中心和密码健康</a></h3>
+          <p>工具 › <strong>安全中心</strong>列出应优先处理的问题:弱密码、重复使用的密码、旧密码和已泄露的密码,以及可以启用双重验证的登录信息。</p>
+          <ul>
+            <li><strong>检查全部是否泄露</strong>会将你的密码与 Have I Been Pwned 列表比对。离开电脑的只有哈希值的前 5 个字符,绝不会是密码本身。</li>
+            <li>泄露检查需要在 设置 › 隐私 中做两处更改：关闭<strong>严格离线模式</strong>（默认开启），并打开<strong>泄露检查</strong>。严格离线模式会阻止泄露检查、网站图标及其他所有网络请求。</li>
+            <li>在<strong>密码健康</strong>中使用<strong>打开条目</strong>或<strong>更改密码</strong>来修复项目。</li>
+          </ul>
+          <p>安全中心底部的<strong>网络活动</strong>列出 LocalGateKeys 每次联网的时间和原因：检查更新、泄露检查、网站图标，以及与你自己设备的同步。</p>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">双重验证码和二维码扫描</a> <span class="badge-pro">Pro</span></h3>
+          <p>LocalGateKeys 可以显示网站在密码之后要求输入的 6 位验证码,因此不需要另外的验证器应用。</p>
+          <ol>
+            <li>在网站上开启双重验证/验证器应用登录,使其显示二维码。</li>
+            <li>在 LocalGateKeys 中选择 Ctrl+K › <strong>扫描二维码</strong>。可通过以下三种方式之一导入图片:
+              <ul>
+                <li><strong>粘贴截图</strong>:按 <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>,框选二维码,然后按 <kbd>Ctrl</kbd>+<kbd>V</kbd>。</li>
+                <li><strong>选择图片…</strong>(PNG、JPEG、BMP),或将图片拖入。</li>
+                <li><strong>使用网络摄像头</strong>,将显示二维码的手机屏幕对准摄像头。</li>
+              </ul>
+            </li>
+            <li>选择所属的登录信息或<strong>新建登录信息</strong>,然后选择<strong>在编辑器中打开</strong>和<strong>保存</strong>。</li>
+            <li>在网站上输入当前验证码,完成双重验证的开启。</li>
+          </ol>
+          <p>也可以将设置密钥或 <code>otpauth://</code> 链接直接粘贴到登录信息的<strong>双重验证</strong>部分。</p>
+          <h4>从 Google Authenticator 迁移</h4>
+          <ol>
+            <li>在 Google Authenticator 中选择<strong>转移账号 › 导出</strong>。</li>
+            <li>扫描显示的二维码(如有多个,请逐个扫描:“已扫描第 1 个,共 3 个”)。</li>
+            <li>勾选账号,选择<strong>添加到现有登录信息</strong>或新建登录信息,然后选择<strong>添加</strong>。重复项会被跳过。</li>
+          </ol>
+          <p class="note">通过这种方式新建的登录信息会带有 <code>needs-password</code> 标签:稍后再填写真实密码。图片只在内存中读取,绝不保存。在 Free 版中,已有的验证码仍可使用;添加或更改需要 Pro。</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">从其他密码管理器导入</a></h3>
+          <ol>
+            <li>从旧应用导出密码(见下方列表)。</li>
+            <li>在 LocalGateKeys 中打开 工具 › 导入和导出 › <strong>导入密码和项目…</strong>并选择文件。格式会自动识别。加密的文件会要求输入其<strong>导入密码</strong>。</li>
+            <li>来自未知应用的普通 CSV 会显示<strong>选择列</strong>:指定哪一列是标题、用户名、密码等。</li>
+            <li>逐行检查:添加、跳过、替换、合并或保留两者。使用<strong>添加所有新项目</strong>、<strong>替换所有冲突</strong>或<strong>全部跳过</strong>可一次性处理。</li>
+            <li>选择<strong>导入</strong>。所有内容一次性导入;只要有一项失败,就不会写入任何内容。</li>
+            <li><strong>请删除导出文件</strong>:其中的密码未加密。</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">来源</th><th scope="col">文件</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux 或 CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON（也支持受密码保护的文件）或 CSV</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip 或 CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx(直接打开)、XML 或 CSV</td></tr>
+              <tr><td>Proton Pass</td><td>JSON zip 或 CSV(不使用 PGP 导出)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Apple 密码</td><td>CSV</td></tr>
+              <tr><td>其他应用</td><td>CSV,可选择列</td></tr>
+            </tbody>
+          </table>
+          <p class="note">不会导入:回收站、密码历史、通行密钥和附件。<code>http://</code> 网站会保存为 https。没有网站或密码的条目会变成安全笔记。在 Free 版中适用 7 个项目的上限。 也能识别其他密码管理器导出的 Credential Exchange(CXF,<code>.json</code> 或 <code>.cxf</code>)文件，通行密钥也会一并导入。</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">导出和加密传输</a></h3>
+          <p>工具 › 导入和导出 › <strong>导出…</strong>提供:</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong>:用你设定的密码(12 个字符以上)加密。安全的选择。</li>
+            <li>兼容 Bitwarden 的 CSV、Bitwarden JSON、KeePass 2 XML:<em>未加密</em>。用完后请删除。</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>：你选择的登录、笔记和通行密钥，供其他密码管理器导入。<em>未加密</em>；只有你同意时才会包含通行密钥的私钥。</li>
+            <li>勾选<strong>包含一次性密码(2FA)密钥</strong>,即可将双重验证码一并带走。</li>
+          </ul>
+          <p><strong>加密传输…</strong>会将所选项目(按收藏、类型、标签)打包成受密码保护的包,转移到另一个配置文件或电脑。在接收端选择<strong>导入包</strong>、<strong>检查</strong>、<strong>预览</strong>,然后导入。</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">备份和恢复</a></h3>
+          <h4>计划备份(推荐)</h4>
+          <ol>
+            <li>设置 › 备份 › <strong>备份密码</strong> › <strong>设置…</strong>。使用 12 个字符以上,并<strong>把它写下来</strong>。</li>
+            <li><strong>计划备份</strong>:每天或每周,可设置<strong>时间</strong>和<strong>星期几</strong>。</li>
+            <li><strong>云端副本</strong> › <strong>选择…</strong>一个文件夹(例如 U 盘或第二块硬盘)存放第二份副本。</li>
+            <li><strong>旧的计划备份</strong>:只保留最新的,或保留最新的和上一个。</li>
+            <li><strong>每周恢复测试</strong>：LocalGateKeys 每周验证一次计划备份能否恢复，不会保存任何内容。<strong>要保留的自动备份数量</strong>决定保留多少份自动备份。</li>
+          </ol>
+          <p class="note">备份仅在保险库解锁时运行。应用关闭期间错过的备份会在下次解锁时运行。</p>
+          <h4>备份和恢复页面</h4>
+          <p>可从备份和恢复卡片、Ctrl+K 或解锁界面上的<strong>备份和恢复</strong>打开。</p>
+          <ul>
+            <li><strong>创建备份</strong>:带有独立密码的加密 <code>.lgk</code> 文件。</li>
+            <li><strong>验证备份</strong>:检查文件能否打开,不会改动你的保险库。</li>
+            <li><strong>恢复备份</strong>:需要备份密码和创建备份时的主密码。可以恢复为新的配置文件。</li>
+            <li><strong>测试恢复</strong>:打开一个临时副本以证明备份可用,然后<strong>丢弃测试副本</strong>。</li>
+            <li><strong>恢复短语</strong>(设置 / 替换…)和<strong>生成恢复工具包</strong>(一张可打印的表单)。</li>
+          </ul>
+          <h4>恢复手机备份</h4>
+          <p>导入和导出 › <strong>还原手机备份…</strong>，选择来自 iPhone 应用的 <code>.lgkm</code> 文件，输入其密码，<strong>预览</strong>，然后<strong>还原</strong>。项目会添加到保险库中，不会清除任何内容。</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">在设备之间同步</a> <span class="badge-pro">Pro</span></h3>
+          <p>同步仅在解锁时运行:解锁时、每 5 分钟一次,以及更改后几秒钟。有两种方式,可以同时使用:</p>
+          <h4>Wi-Fi(同一网络中的手机或另一台电脑)</h4>
+          <ol>
+            <li>同步与设备 › <strong>开启 Wi-Fi 同步…</strong>。保留建议的地址和端口(47821),如有提示请选择<strong>在 Windows 防火墙中允许</strong>。</li>
+            <li>选择<strong>显示二维码…</strong>。二维码只能使用一次,有效期 120 秒。</li>
+            <li>在手机应用的同步标签页中扫描。如果是另一台电脑,选择<strong>复制代码文本</strong>,并在那台电脑上使用<strong>通过二维码文本加入…</strong>。</li>
+            <li>两台设备都会显示 6 位代码。只有一致时才选择<strong>接受</strong>,否则选择<strong>拒绝</strong>。</li>
+            <li>配对后如果发现弄错了,可立即用<strong>撤销</strong>移除新设备。</li>
+          </ol>
+          <p>如果电脑的地址发生变化,请在手机上选择<strong>重新查找</strong>。</p>
+          <h4>云文件夹(Dropbox、iCloud Drive…)</h4>
+          <ol>
+            <li>在第一台设备上:<strong>创建同步组…</strong>,选择云应用会同步的文件夹,并设置一个强同步密码(12 个字符以上)。</li>
+            <li>在其他每台设备上:<strong>加入文件夹…</strong>,选择包含 <em>LocalGateKeys Sync</em> 的文件夹,输入同步密码。</li>
+          </ol>
+          <p>云端只能看到加密的文件。</p>
+          <p class="note">在与 Apple 相关的问题解决之前,OneDrive 和 Google Drive 暂时无法用于同步。请改用 Dropbox、iCloud Drive 或 Wi-Fi 同步。</p>
+          <h4>管理同步</h4>
+          <ul>
+            <li>在同步状态页面(点击侧边栏中的同步指示)选择<strong>立即同步</strong>。</li>
+            <li><strong>移除设备…</strong>(会设置新的同步密码)、<strong>更改同步密码…</strong>。</li>
+            <li><strong>退出同步…</strong>会保留你的项目并忘记该组。<strong>在此电脑上重置同步…</strong>还会忘记其密钥(会询问两次)。</li>
+            <li>如果同一项目在两台设备上同时被更改,多出来的副本标题中会带有<em>(同步冲突)</em>。</li>
+          </ul>
+          <p class="note">组内每台设备都需要 Pro。已购买 Pro 的 iPhone 与免费版电脑配对后，电脑会通过同步接管许可证并升级为 Pro（参见 <a href="#win-pro">Pro 许可证</a>）。每组最多 16 台设备。</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">与他人共享项目</a></h3>
+          <ol>
+            <li>选择项目,选择<strong>共享</strong>,然后选择<strong>创建共享</strong>。</li>
+            <li>LocalGateKeys 会显示由六个单词组成的<strong>共享代码</strong>。选择<strong>另存为文件…</strong>(<code>.lgkshare</code>)或<strong>显示二维码</strong>。</li>
+            <li>发送文件,然后通过<em>其他方式</em>(例如电话或当面)告诉对方这六个单词。</li>
+          </ol>
+          <p><strong>接收:</strong>双击 <code>.lgkshare</code> 文件,或 Ctrl+K › 收到的共享项目 › <strong>打开共享项目…</strong>。输入六个单词,查看<strong>预览</strong>,然后选择<strong>保存到保险库</strong>、<strong>保留两者</strong>或<strong>拒绝</strong>。通行密钥、文档以及带附件的项目无法共享。</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">填充 Windows 应用</a></h3>
+          <p>LocalGateKeys 不仅能填充网站,还能填充普通 Windows 程序的登录窗口。</p>
+          <ol>
+            <li>打开程序的登录窗口。</li>
+            <li>按 <kbd>Ctrl</kbd>+<kbd>N</kbd>，选择<strong>桌面应用登录</strong>，然后选择<strong>检查应用…</strong>。</li>
+            <li><strong>映射登录字段</strong>:指向用户名和密码输入框。也可以<strong>映射登录按钮…</strong>。</li>
+            <li><strong>保存登录</strong>。</li>
+            <li>下次在该程序中按 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>,或点击密码框旁的填充按钮。</li>
+          </ol>
+          <p>如果程序在更新后发生变化，请打开该登录项并选择<strong>应用绑定…</strong> › <strong>刷新绑定…</strong>。LocalGateKeys 只读取窗口布局，绝不读取你输入的内容。</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">共享集合</a> <span class="badge-pro">Pro</span></h3>
+          <p>通过大家都能访问的文件夹(例如共享的 OneDrive 文件夹)与家人或团队共享一个集合。打开集合，选择<strong>共享集合</strong>，选好文件夹，决定成员可以编辑还是只能查看，并设置共享密码。</p>
+          <p>其他人选择<strong>加入共享集合</strong>，选好文件夹并输入共享密码；然后由你选择<strong>允许加入</strong>。只有该集合会经过这个文件夹，你的其他项目仍然保密。你随时可以移除某人、<strong>停止共享</strong>或退出。</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">紧急访问与胁迫密码</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>紧急访问</strong>(Pro):在“备份与还原”页面选择<strong>设置紧急访问</strong>。你的恢复短语会被拆分成若干份交给你信任的人；由你决定需要几份以及等待期。把每人的纸页或分片文件交给对方。</li>
+            <li>当足够多的持有人通过共享文件夹申请访问时，你的设备会显示请求，在等待期结束前你可以<strong>拒绝</strong>。持有人选择<strong>我获得了访问权限</strong>，添加分片并选择<strong>申请访问</strong>;获准后，保险库会作为新的配置文件打开。</li>
+            <li>同一页面上的<strong>遗产资料包</strong>会为继承人创建一条笔记(遗嘱在哪里、要注销的账户、设备以及谁持有分片),然后生成可打印的<strong>应急包</strong>。</li>
+            <li><strong>胁迫密码</strong>(Pro):设置 › 解锁 › <strong>胁迫密码</strong> › <strong>设置</strong>。这是在有人强迫你解锁时使用的第二个主密码。它会打开一个只含你所选项目的独立保险库，之后你的真实保险库会在你设定的小时数内拒绝其主密码。Windows、Mac、iPhone 和 Android 都支持。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">开发者工具与 AI 代理</a></h3>
+          <p>设置 › <strong>开发者</strong>可将保险库中的 SSH 密钥提供给本机的 ssh 和 Git，用于登录和签署提交。每次签名都需你批准。<strong>生成</strong>会在保险库中创建新的 Ed25519 密钥。</p>
+          <p><strong>允许 AI 代理使用 LocalGateKeys</strong>可让 Claude Code 等代理通过 MCP 连接。每次登录或读取都需你批准；代理永远看不到密码，每个请求都会被记录。在 Microsoft Store 版本中，用 <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code> 添加。</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">设置</a></h3>
+          <p>使用顶部的<strong>搜索设置</strong>框(<kbd>Ctrl</kbd>+<kbd>F</kbd>)可找到任何选项。更改会立即保存。</p>
+          <dl class="defs">
+            <dt>解锁</dt><dd>Windows Hello、安全密钥、摄像头检查、密钥文件、YubiKey、主密码、恢复短语。</dd>
+            <dt>锁定</dt><dd>自动锁定的时间和触发条件(参见<a href="#win-unlock">解锁和锁定</a>)。</dd>
+            <dt>自动填充</dt><dd>浏览器自动填充、<strong>为通行密钥提供 LocalGateKeys</strong>、桌面应用自动填充、填充后登录、快速访问快捷键。 <strong>将 LocalGateKeys 用于 Windows 通行密钥</strong>可在 Windows 11 的所有应用和浏览器中提供你的通行密钥，每次都需你批准。</dd>
+            <dt>隐私</dt><dd><strong>多久后清除剪贴板</strong>（5 秒到 5 分钟）、泄露检查、严格离线模式、在截图和屏幕共享中隐藏、回收站保留时长、在其他应用中打开文档。</dd>
+            <dt>备份</dt><dd>参见<a href="#win-backups">备份和恢复</a>。</dd>
+            <dt>外观和应用</dt><dd><strong>主题</strong>（跟随系统、浅色或深色）；<strong>语言</strong>；<strong>随 Windows 启动</strong>（以锁定状态启动）；<strong>在托盘中保持运行</strong>；更新。</dd>
+            <dt>方案与同步</dt><dd>你的许可证、设备同步，以及<strong>从同步中移除时清除此设备</strong>。</dd>
+            <dt>开发者</dt><dd>SSH 代理与 Git 签名，以及 AI 代理(参见<a href="#win-dev">开发者工具与 AI 代理</a>)。</dd>
+            <dt>帮助和诊断</dt><dd>键盘快捷键、再次显示设置、设备和连接、错误日志、法律页面。</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Pro 许可证</a></h3>
+          <ol>
+            <li>在<a href="../../zh-hans/pricing">价格页面</a>购买 Pro。密钥(以 <code>LGK1-</code> 开头)会通过电子邮件发送。</li>
+            <li>打开 设置 › 方案与同步 › <strong>许可证</strong>,粘贴密钥并选择<strong>安装</strong>;如果是 <code>.lgklicense</code> 文件,则选择<strong>打开文件…</strong>。</li>
+          </ol>
+          <p>在 iPhone 应用中购买了 Pro？将电脑与 iPhone 配对（参见<a href="#win-sync">同步</a>），免费版电脑就会通过同步升级为 Pro。或者在 iPhone 的设置中选择<strong>复制密钥</strong>，并以同样的方式安装到电脑上。许可证页面会显示您已使用 7 个免费项目中的几个。更多信息参见<a href="../../zh-hans/licence">您的 Pro 许可证</a>。</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">更新</a></h3>
+          <p>Microsoft Store 版 LocalGateKeys 通过 Store 自动更新。还在使用旧版安装程序版本？它的最后一次更新是 0.4.12：请在 Windows 设置 › 应用 › 已安装的应用 中将其卸载，然后从 Microsoft Store 安装 LocalGateKeys。你的保险库保持原位，并用同一个主密码打开。</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">键盘快捷键</a></h3>
+          <p>在应用中按 <kbd>F1</kbd> 或 <kbd>?</kbd> 可查看此列表。</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>命令面板</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>搜索</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>新建项目</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>锁定</td></tr>
+              <tr><th scope="row"><kbd>Esc</kbd></th><td>返回</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>打开所选项目</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>复制密码(先询问)</td></tr>
+              <tr><th scope="row"><kbd>Delete</kbd></th><td>移到回收站</td></tr>
+              <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>项目菜单</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>紧急锁定,在 Windows 任何位置</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>快速访问,在 Windows 任何位置</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd></th><td>填充已绑定的 Windows 应用</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../zh-hans/help">在一页中查看完整用户指南</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>适用于 Windows、Mac 和 iPhone 的密码管理器，让保管库留在您自己的设备上。</p>
+        <p class="quiet">本网站使用不依赖 Cookie 的 Cloudflare Web Analytics 统计页面访问量。网站不使用广告追踪器，也不设置 Cookie。</p>
+      </div>
+      <nav aria-label="产品">
+        <h2>产品</h2>
+        <ul>
+          <li><a href="../../zh-hans/features">功能</a></li>
+          <li><a href="../../zh-hans/pricing">价格</a></li>
+          <li><a href="../../zh-hans/download">下载</a></li>
+          <li><a href="../../zh-hans/get-started">入门</a></li>
+          <li><a href="../../zh-hans/switch/">迁移</a></li>
+          <li><a href="../../buy">购买 Pro</a></li>
+          <li><a href="../../zh-hans/licence">您的 Pro 许可证</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">找回许可证</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="帮助">
+        <h2>帮助</h2>
+        <ul>
+          <li><a href="../../zh-hans/help">用户指南</a></li>
+          <li><a href="../../zh-hans/support">支持与常见问题</a></li>
+          <li><a href="../../zh-hans/security">安全</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">报告漏洞</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法律">
+        <h2>法律</h2>
+        <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
+        <ul>
+          <li><a href="../../legal/eula">许可协议</a></li>
+          <li><a href="../../legal/privacy">隐私政策</a></li>
+          <li><a href="../../legal/terms-of-sale">销售条款</a></li>
+          <li><a href="../../legal/refunds">退款政策</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。Apple、iPhone、Apple Watch、Face ID、Touch ID 和 Safari 是 Apple Inc. 在美国及其他国家/地区注册的商标。</p>
+      <nav class="lang-switch" aria-label="语言"><ul><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

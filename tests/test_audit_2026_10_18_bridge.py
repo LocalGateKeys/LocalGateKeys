@@ -137,7 +137,11 @@ def test_page_api_exposes_only_the_calls_with_their_params():
     assert not hasattr(facade, "__dict__")
     # pywebview's own listing (inject_pywebview.get_functions) sees the same names and Api's params.
     params = inspect.getfullargspec(facade.vault_unlock).args[1:]
-    assert params == ["password"]
+    assert params == ["password", "use_picked_keyfile"]
+    # Key files: the page passes no paths (Python's own dialogs pick them).
+    assert inspect.getfullargspec(facade.factors_add_keyfile).args[1:] == []
+    assert inspect.getfullargspec(facade.factors_create_keyfile).args[1:] == []
+    assert inspect.getfullargspec(facade.factors_pick_keyfile).args[1:] == []
     assert inspect.getfullargspec(facade.items_list).args[1:] == ["filter_kind", "chip", "query"]
 
 
@@ -177,7 +181,7 @@ def test_real_dispatch_through_guard_and_facade(monkeypatch):
 def test_main_turns_off_pywebview_external_links_and_installs_the_guard():
     source = MAIN.read_text(encoding="utf-8")
     assert 'webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = False' in source
-    assert "js_api=api" not in source and source.count("js_api=js_api") == 2
+    assert "js_api=api" not in source and source.count("js_api=js_api") == 3
     assert "install_call_guard(PAGE_CALLS)" in source
     # The setting and the guard come before webview.start.
     start = source.index("webview.start(")

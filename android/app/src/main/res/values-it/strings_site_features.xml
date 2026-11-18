@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">Non HTTPS</string>
+    <string name="security_expl_http">Questi accessi usano un indirizzo non cifrato. Controllalo e passa a https:// se il sito lo supporta.</string>
+    <string name="security_cat_passkey">Passkey disponibile</string>
+    <string name="security_expl_passkey">Questi siti supportano le passkey, un modo più sicuro per accedere. Salvane una per ciascuno.</string>
+</resources>

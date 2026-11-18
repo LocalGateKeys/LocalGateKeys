@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>用户指南 | LocalGateKeys</title>
-  <meta name="description" content="LocalGateKeys 的每项功能在 Windows、浏览器扩展、iPhone、Mac、Apple Watch 和 Android 上如何使用,附分步说明。">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys 使用指南</title>
+  <meta name="description" content="Windows、Mac、iPhone、Apple Watch 和浏览器扩展中每项功能的分步说明。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/zh-hans/help">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/help">
@@ -20,32 +19,64 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/help">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/help">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/help">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/help">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/help">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys 使用指南">
+  <meta property="og:description" content="Windows、Mac、iPhone、Apple Watch 和浏览器扩展中每项功能的分步说明。">
+  <meta property="og:url" content="https://localgatekeys.app/zh-hans/help">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 标志：适用于 Windows、Mac 和 iPhone 的密码管理器。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys 使用指南">
+  <meta name="twitter:description" content="Windows、Mac、iPhone、Apple Watch 和浏览器扩展中每项功能的分步说明。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
   <link rel="stylesheet" href="../styles.css">
 </head>
-<body class="page">
+<body class="help-page">
   <a class="skip" href="#main">跳到正文</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../zh-hans/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../zh-hans/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="主导航">
+      <nav class="nav-wide" aria-label="主导航">
         <ul class="nav">
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../zh-hans/get-started.html">入门</a></li>
-          <li><a href="../zh-hans/help.html" aria-current="page">指南</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/support.html">支持</a></li>
-          <li><a href="../buy.html">购买 Pro</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help" aria-current="page">指南</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>菜单</summary>
+        <nav aria-label="主导航">
+          <ul class="nav nav-stack">
+            <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help" aria-current="page">指南</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>语言</span></summary>
+        <ul class="lang-menu-list"><li><a href="../help" hreflang="en" lang="en">English</a></li><li><a href="../es/help" hreflang="es" lang="es">Español</a></li><li><a href="../it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/help" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/help" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/help" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -53,11 +84,15 @@
 <div class="wrap page-head">
   <h1>用户指南</h1>
   <p class="lead">每个界面和功能的分步帮助。先选择设备,再跳转到主题。每个标题都是可分享的链接。</p>
+  <nav class="guide-links" aria-labelledby="guide-links-title">
+    <p id="guide-links-title">各设备的指南</p>
+    <ul><li><a class="guide-link" href="../zh-hans/guide/windows">Windows</a></li><li><a class="guide-link" href="../zh-hans/guide/mac">Mac</a></li><li><a class="guide-link" href="../zh-hans/guide/iphone">iPhone 和 iPad</a></li><li><a class="guide-link" href="../zh-hans/guide/android">Android</a></li><li><a class="guide-link" href="../zh-hans/guide/extension">浏览器扩展</a></li></ul>
+  </nav>
 </div>
 
 <div class="wrap page-body help">
 
-  <nav class="help-tabs" aria-label="平台">
+  <nav class="help-tabs glass" aria-label="平台">
     <a class="help-tab" href="#windows" data-tab="windows">Windows</a>
     <a class="help-tab" href="#extension" data-tab="extension">浏览器扩展</a>
     <a class="help-tab" href="#iphone" data-tab="iphone">iPhone</a>
@@ -66,44 +101,49 @@
     <a class="help-tab" href="#android" data-tab="android">Android</a>
   </nav>
 
-  <aside class="help-basics">
+  <aside class="help-basics glass">
     <h2>在所有设备上都值得了解</h2>
     <ul>
       <li><strong>保险库只保存在你的设备上。</strong>没有账户,也没有存放密码的 LocalGateKeys 服务器。</li>
       <li><strong>没有人能重置你的主密码或 App 密码。</strong>请设置恢复短语,并写在纸上保存。</li>
-      <li><strong>Free</strong> 最多保存 4 个项目。<strong>Pro</strong>(US$4.99,一次性付费)提供无限项目、双重验证码、文件和同步。编辑、删除和填充已有项目永远不会受限。</li>
+      <li><strong>Free</strong> 最多保存 7 个项目。<strong>Pro</strong>(US$29.99,一次性付费)提供无限项目、双重验证码、文件和同步。编辑、删除和填充已有项目永远不会受限。</li>
     </ul>
   </aside>
 
   <!-- ============================== WINDOWS ============================== -->
   <section class="help-panel" id="windows" aria-labelledby="windows-title">
     <h2 class="panel-title" id="windows-title">Windows 版 LocalGateKeys</h2>
-    <p class="panel-lead">Windows 10 和 11,64 位。可从 Microsoft Store 或<a href="../zh-hans/download.html">下载页面</a>安装。</p>
+    <p class="panel-lead">Windows 10（版本 2004 或更高）和 Windows 11，64 位。可从 Microsoft Store 或<a href="../zh-hans/download">下载页面</a>安装。</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Windows 主题">
-        <p class="help-toc-title">本页内容</p>
-        <ol>
-          <li><a href="#win-setup">首次启动和配置文件</a></li>
-          <li><a href="#win-unlock">解锁和锁定</a></li>
-          <li><a href="#win-screen">主窗口</a></li>
-          <li><a href="#win-items">添加和编辑项目</a></li>
-          <li><a href="#win-trash">删除、回收站和撤销</a></li>
-          <li><a href="#win-search">搜索、命令面板、快速访问</a></li>
-          <li><a href="#win-generator">密码生成器</a></li>
-          <li><a href="#win-security">安全中心</a></li>
-          <li><a href="#win-2fa">双重验证码和二维码</a></li>
-          <li><a href="#win-import">导入</a></li>
-          <li><a href="#win-export">导出和传输</a></li>
-          <li><a href="#win-backups">备份和恢复</a></li>
-          <li><a href="#win-sync">同步</a></li>
-          <li><a href="#win-share">共享项目</a></li>
-          <li><a href="#win-apps">填充 Windows 应用</a></li>
-          <li><a href="#win-settings">设置</a></li>
-          <li><a href="#win-pro">Pro 许可证</a></li>
-          <li><a href="#win-updates">更新</a></li>
-          <li><a href="#win-keys">键盘快捷键</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#win-setup">首次启动和配置文件</a></li>
+            <li><a href="#win-unlock">解锁和锁定</a></li>
+            <li><a href="#win-screen">主窗口</a></li>
+            <li><a href="#win-items">添加和编辑项目</a></li>
+            <li><a href="#win-trash">删除、回收站和撤销</a></li>
+            <li><a href="#win-search">搜索、命令面板、快速访问</a></li>
+            <li><a href="#win-generator">密码生成器</a></li>
+            <li><a href="#win-security">安全中心</a></li>
+            <li><a href="#win-2fa">双重验证码和二维码</a></li>
+            <li><a href="#win-import">导入</a></li>
+            <li><a href="#win-export">导出和传输</a></li>
+            <li><a href="#win-backups">备份和恢复</a></li>
+            <li><a href="#win-sync">同步</a></li>
+            <li><a href="#win-share">共享项目</a></li>
+            <li><a href="#win-apps">填充 Windows 应用</a></li>
+            <li><a href="#win-shared">共享集合</a></li>
+            <li><a href="#win-safety">紧急访问与胁迫密码</a></li>
+            <li><a href="#win-dev">开发者工具与 AI 代理</a></li>
+            <li><a href="#win-settings">设置</a></li>
+            <li><a href="#win-pro">Pro 许可证</a></li>
+            <li><a href="#win-updates">更新</a></li>
+            <li><a href="#win-keys">键盘快捷键</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -130,7 +170,7 @@
           <h4>解锁方式</h4>
           <ul>
             <li><strong>主密码</strong>,然后<strong>解锁</strong>。始终可用。</li>
-            <li><strong>使用 Windows Hello 解锁</strong>:指纹、面部或 PIN。在 设置 › 解锁 › Windows Hello › <strong>设置</strong>中设置。打开<strong>自动启动 Windows Hello</strong>,窗口一打开就会出现验证提示。</li>
+            <li><strong>使用 Windows Hello 解锁</strong>：指纹、面部或 PIN。在 设置 › 解锁 › Windows Hello › <strong>设置</strong>中设置。<strong>自动启动 Windows Hello</strong>（默认开启）会在窗口一打开时就显示验证提示。</li>
             <li><strong>改用摄像头</strong>:使用普通网络摄像头进行面部比对,在电脑上完成。安全性低于 Windows Hello。通过<strong>设置摄像头验证</strong>进行设置。</li>
           </ul>
           <h4>忘记主密码?</h4>
@@ -141,7 +181,7 @@
           </ol>
           <p class="note"><strong>之后</strong>请重新设置 Windows Hello 和摄像头验证。恢复短语仍然有效。</p>
           <h4>更改主密码</h4>
-          <p>设置 › 解锁 › 主密码 › <strong>更改…</strong>。输入当前密码,再输入两次新密码。已创建的备份仍使用创建时的密码。</p>
+          <p>设置 › 解锁 › 主密码 › <strong>更改…</strong>。输入当前密码，再输入两次新密码。若要让恢复短语继续可用，还需输入它的 24 个单词；否则请在之后创建新的短语。已创建的备份仍使用创建时的密码。</p>
           <h4>锁定</h4>
           <ul>
             <li>顶部栏的<strong>锁定</strong>按钮,或 <kbd>Ctrl</kbd>+<kbd>L</kbd>。</li>
@@ -156,7 +196,7 @@
               </ul>
             </li>
           </ul>
-          <p>托盘图标菜单包含<strong>解锁保险库</strong>、<strong>锁定保险库</strong>、<strong>快速访问</strong>和<strong>退出</strong>。</p>
+          <p>托盘图标菜单包含<strong>打开 LocalGateKeys</strong>、<strong>解锁保险库</strong>、<strong>锁定保险库</strong>、<strong>锁定并切换用户</strong>、<strong>快速访问</strong>、<strong>检查更新</strong>、<strong>浏览器集成</strong>和<strong>桌面填充图标</strong>开关，以及<strong>退出</strong>。</p>
         </article>
 
         <article class="topic" id="win-screen">
@@ -165,7 +205,7 @@
             <dt>侧边栏 · 保险库</dt><dd><strong>所有项目</strong>、<strong>收藏</strong>、<strong>最近使用</strong>。</dd>
             <dt>侧边栏 · 类型</dt><dd>你拥有的每种类型各占一行,例如登录信息、卡片、身份、安全笔记、文档、Wi-Fi 或通行密钥。</dd>
             <dt>侧边栏 · 集合和视图</dt><dd>你的集合和固定的视图。</dd>
-            <dt>侧边栏 · 工具</dt><dd>安全中心、提醒、同步、设备和连接、许可证、导入和导出、扫描二维码、活动、回收站。<strong>设置</strong>位于底部。</dd>
+            <dt>侧边栏 · 工具</dt><dd>安全中心、密码生成器、同步与设备、设备与连接、导入和导出、回收站。<strong>设置</strong>位于底部。 提醒从主页的<em>即将到期</em>卡片打开，活动在安全中心里，扫描二维码用 <kbd>Ctrl</kbd>+<kbd>K</kbd>，许可证在 设置 › 方案与同步 中。按 <kbd>Ctrl</kbd>+<kbd>K</kbd> 可前往任何页面。</dd>
             <dt>顶部栏</dt><dd>搜索框、<strong>新建项目</strong>、<strong>锁定</strong>,以及用于命令面板的 <strong>Ctrl K</strong>。</dd>
             <dt>主页</dt><dd>密码健康、备份和恢复、即将到期和生成器卡片,以及<strong>一次性验证码</strong>(点击验证码即可复制)。</dd>
           </dl>
@@ -174,7 +214,7 @@
             <li>筛选:<strong>全部</strong>、<strong>需要处理</strong>、<strong>无双重验证</strong>、<strong>即将到期</strong>。</li>
             <li><strong>排序</strong>:标题 A–Z、标题 Z–A、修改日期、创建日期。</li>
             <li>行上的标记表示密码已泄露、强度弱或被重复使用。</li>
-            <li>右键点击一行(或按 <kbd>Shift</kbd>+<kbd>F10</kbd>)可使用复制密码、复制用户名、复制双重验证码、打开网站、收藏、共享… 和移到回收站…。</li>
+            <li>右键点击一行（或按 <kbd>Shift</kbd>+<kbd>F10</kbd>）可使用编辑、复制用户名、复制密码、复制双重验证码、打开网站、共享…、添加到收藏和移到回收站…。</li>
           </ul>
           <h4>详细信息窗格</h4>
           <p>显示所选项目的字段。密码在点击前一直隐藏。按钮可复制用户名、密码或双重验证码,打开网站,<strong>编辑</strong>、<strong>共享</strong>或<strong>移到回收站</strong>。文档还提供<strong>打开文件</strong>、<strong>安全预览</strong>、<strong>保存副本…</strong>和<strong>替换文件…</strong>。</p>
@@ -187,8 +227,8 @@
             <li>选择一种类型(点击、按其编号,或开始输入名称):
               <ul>
                 <li><em>登录</em>:网站登录、桌面应用登录、通行密钥</li>
-                <li><em>个人</em>:支付卡、银行账户、身份、安全笔记、文档、Wi-Fi 网络</li>
-                <li><em>你拥有的东西</em>:许可证、购买记录、保修、订阅、书签</li>
+                <li><em>财务</em>：支付卡、银行账户 · <em>个人</em>：身份、安全笔记、文档</li>
+                <li><em>技术</em>：SSH 密钥、API 密钥、Wi-Fi 网络、书签 · <em>您拥有的物品</em>：许可证、订阅、保修、购买记录</li>
               </ul>
             </li>
             <li>填写字段并选择<strong>保存</strong>。如果带着未保存的更改离开,系统会询问<em>放弃更改?</em></li>
@@ -196,18 +236,18 @@
           <h4>登录信息详解</h4>
           <ul>
             <li><strong>标题</strong>、<strong>网站</strong>、<strong>用户名</strong>、<strong>密码</strong>和<strong>备注</strong>。</li>
-            <li>密码旁的<strong>更改</strong>会用生成器创建新密码。也要在网站上更改,然后保存。</li>
+            <li>密码旁的<strong>更改</strong>可让你输入新密码，或选择<strong>密码短语</strong>、<strong>随机</strong>或 <strong>PIN 码</strong>来生成一个。也要在网站上更改，然后保存。</li>
             <li><strong>双重验证</strong>:在此粘贴网站的设置密钥(Pro)。参见<a href="#win-2fa">双重验证码</a>。</li>
             <li><strong>自定义字段</strong>:其他信息用<strong>添加字段</strong>。将字段标记为隐藏,即可像密码一样处理。</li>
-            <li><strong>密码历史</strong>:旧密码会加密保存一年。<strong>复制上一个密码</strong>或<strong>恢复此密码</strong>。</li>
+            <li><strong>密码历史记录</strong>：最多 5 个旧密码会加密保存一年。<strong>复制旧密码</strong>或<strong>恢复此密码</strong>。</li>
             <li><strong>恢复代码</strong>:每行一个。<strong>复制并使用下一个代码</strong>会复制一个代码并将其从列表中移除。</li>
-            <li><strong>自动填充规则</strong>:填充(默认、点击时、从不)、填充后登录、始终要求主密码,以及提议保存来自浏览器的更改。</li>
+            <li><strong>自动填充规则</strong>：填充（点击时或关闭）、填充后登录（默认、从不或始终）、始终要求输入主密码，以及提示保存来自浏览器的更改。</li>
           </ul>
           <h4>其他类型</h4>
           <p>每种类型都有自己的字段。日期格式为 YYYY-MM-DD。任何项目都可以设为<strong>收藏</strong>并添加<strong>标签</strong>(用逗号分隔)。文档使用<strong>选择文件并保存</strong>(Pro)。</p>
           <h4>集合和提醒</h4>
           <ul>
-            <li>集合可按你的方式分组项目:<strong>添加集合</strong>、<strong>重命名</strong>、<strong>归档</strong>。集合只保存在这台电脑上,不会同步。</li>
+            <li>集合可按你的方式分组项目:<strong>添加集合</strong>、<strong>重命名</strong>、<strong>归档</strong>。集合会与你的其他设备同步，也可以与他人共享(参见<a href="#win-shared">共享集合</a>)。</li>
             <li><strong>提醒</strong>列出即将到期或已过期的项目,并提供<strong>完成</strong>和<strong>推迟 1 天</strong>。</li>
             <li><strong>活动</strong>显示保险库中发生过的操作记录。</li>
           </ul>
@@ -228,15 +268,15 @@
           <ul>
             <li><strong>搜索</strong>:按 <kbd>Ctrl</kbd>+<kbd>F</kbd> 输入,按 <kbd>Enter</kbd> 打开第一个结果,或按 <kbd>↓</kbd> 进入列表。</li>
             <li><strong>命令面板</strong>:<kbd>Ctrl</kbd>+<kbd>K</kbd> 可查找项目和操作。以 <code>&gt;</code> 开头只显示操作(立即备份、生成密码、立即锁定、同步状态…),<code>#</code> 查找标签,<code>@</code> 查找集合。</li>
-            <li><strong>快速访问</strong>:在 Windows 任何位置按 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd>,会打开一个小搜索窗口,用于查找登录信息、笔记和书签。可在 设置 › 自动填充 › 快速访问 中更改快捷键。</li>
+            <li><strong>快速访问</strong>：在 Windows 任何位置按 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd>，会在快速访问页面打开 LocalGateKeys，用于查找登录信息、笔记或书签。可在 设置 › 自动填充 › 快速访问 中更改快捷键。</li>
           </ul>
         </article>
 
         <article class="topic" id="win-generator">
           <h3><a href="#win-generator">密码生成器</a></h3>
-          <p>可从主页的<strong>生成器</strong>卡片、登录信息中的<strong>更改</strong>,或 Ctrl+K › 生成密码 打开。</p>
+          <p>可从主页的<strong>生成器</strong>卡片，或 Ctrl+K › 生成密码 打开。</p>
           <ul>
-            <li><strong>随机</strong>:选择长度以及是否使用大写字母和符号。</li>
+            <li><strong>随机</strong>：选择长度以及要使用的字符：A–Z、a–z、0–9 和符号。</li>
             <li><strong>密码短语</strong>:选择单词数量。更容易输入,足够长时同样安全。</li>
             <li><strong>重新生成</strong>得到新的密码,<strong>复制</strong>即可复制。</li>
           </ul>
@@ -247,9 +287,10 @@
           <p>工具 › <strong>安全中心</strong>列出应优先处理的问题:弱密码、重复使用的密码、旧密码和已泄露的密码,以及可以启用双重验证的登录信息。</p>
           <ul>
             <li><strong>检查全部是否泄露</strong>会将你的密码与 Have I Been Pwned 列表比对。离开电脑的只有哈希值的前 5 个字符,绝不会是密码本身。</li>
-            <li>在打开 设置 › 隐私 › <strong>泄露检查</strong>之前,泄露检查处于关闭状态。<strong>严格离线模式</strong>会阻止泄露检查、网站图标及其他所有网络请求。</li>
+            <li>泄露检查需要在 设置 › 隐私 中做两处更改：关闭<strong>严格离线模式</strong>（默认开启），并打开<strong>泄露检查</strong>。严格离线模式会阻止泄露检查、网站图标及其他所有网络请求。</li>
             <li>在<strong>密码健康</strong>中使用<strong>打开条目</strong>或<strong>更改密码</strong>来修复项目。</li>
           </ul>
+          <p>安全中心底部的<strong>网络活动</strong>列出 LocalGateKeys 每次联网的时间和原因：检查更新、泄露检查、网站图标，以及与你自己设备的同步。</p>
         </article>
 
         <article class="topic" id="win-2fa">
@@ -257,7 +298,7 @@
           <p>LocalGateKeys 可以显示网站在密码之后要求输入的 6 位验证码,因此不需要另外的验证器应用。</p>
           <ol>
             <li>在网站上开启双重验证/验证器应用登录,使其显示二维码。</li>
-            <li>在 LocalGateKeys 中选择 工具 › <strong>扫描二维码</strong>。可通过以下三种方式之一导入图片:
+            <li>在 LocalGateKeys 中选择 Ctrl+K › <strong>扫描二维码</strong>。可通过以下三种方式之一导入图片:
               <ul>
                 <li><strong>粘贴截图</strong>:按 <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>,框选二维码,然后按 <kbd>Ctrl</kbd>+<kbd>V</kbd>。</li>
                 <li><strong>选择图片…</strong>(PNG、JPEG、BMP),或将图片拖入。</li>
@@ -291,7 +332,7 @@
             <thead><tr><th scope="col">来源</th><th scope="col">文件</th></tr></thead>
             <tbody>
               <tr><td>1Password 8</td><td>.1pux 或 CSV</td></tr>
-              <tr><td>Bitwarden</td><td>JSON,也支持受密码保护的文件</td></tr>
+              <tr><td>Bitwarden</td><td>JSON（也支持受密码保护的文件）或 CSV</td></tr>
               <tr><td>LastPass</td><td>CSV</td></tr>
               <tr><td>Dashlane</td><td>zip 或 CSV</td></tr>
               <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx(直接打开)、XML 或 CSV</td></tr>
@@ -301,7 +342,7 @@
               <tr><td>其他应用</td><td>CSV,可选择列</td></tr>
             </tbody>
           </table>
-          <p class="note">不会导入:回收站、密码历史、通行密钥和附件。<code>http://</code> 网站会保存为 https。没有网站或密码的条目会变成安全笔记。在 Free 版中适用 4 个项目的上限。</p>
+          <p class="note">不会导入:回收站、密码历史、通行密钥和附件。<code>http://</code> 网站会保存为 https。没有网站或密码的条目会变成安全笔记。在 Free 版中适用 7 个项目的上限。 也能识别其他密码管理器导出的 Credential Exchange(CXF,<code>.json</code> 或 <code>.cxf</code>)文件，通行密钥也会一并导入。</p>
         </article>
 
         <article class="topic" id="win-export">
@@ -310,6 +351,7 @@
           <ul>
             <li><strong>KeePass KDBX 4</strong>:用你设定的密码(12 个字符以上)加密。安全的选择。</li>
             <li>兼容 Bitwarden 的 CSV、Bitwarden JSON、KeePass 2 XML:<em>未加密</em>。用完后请删除。</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>：你选择的登录、笔记和通行密钥，供其他密码管理器导入。<em>未加密</em>；只有你同意时才会包含通行密钥的私钥。</li>
             <li>勾选<strong>包含一次性密码(2FA)密钥</strong>,即可将双重验证码一并带走。</li>
           </ul>
           <p><strong>加密传输…</strong>会将所选项目(按收藏、类型、标签)打包成受密码保护的包,转移到另一个配置文件或电脑。在接收端选择<strong>导入包</strong>、<strong>检查</strong>、<strong>预览</strong>,然后导入。</p>
@@ -323,6 +365,7 @@
             <li><strong>计划备份</strong>:每天或每周,可设置<strong>时间</strong>和<strong>星期几</strong>。</li>
             <li><strong>云端副本</strong> › <strong>选择…</strong>一个文件夹(例如 U 盘或第二块硬盘)存放第二份副本。</li>
             <li><strong>旧的计划备份</strong>:只保留最新的,或保留最新的和上一个。</li>
+            <li><strong>每周恢复测试</strong>：LocalGateKeys 每周验证一次计划备份能否恢复，不会保存任何内容。<strong>要保留的自动备份数量</strong>决定保留多少份自动备份。</li>
           </ol>
           <p class="note">备份仅在保险库解锁时运行。应用关闭期间错过的备份会在下次解锁时运行。</p>
           <h4>备份和恢复页面</h4>
@@ -335,7 +378,7 @@
             <li><strong>恢复短语</strong>(设置 / 替换…)和<strong>生成恢复工具包</strong>(一张可打印的表单)。</li>
           </ul>
           <h4>恢复手机备份</h4>
-          <p>导入和导出 › <strong>恢复手机备份…</strong>,选择来自 iPhone 或 Android 应用的 <code>.lgkm</code> 文件,输入其密码,<strong>预览</strong>,然后<strong>恢复</strong>。项目会添加到保险库中,不会清除任何内容。</p>
+          <p>导入和导出 › <strong>还原手机备份…</strong>，选择来自 iPhone 应用的 <code>.lgkm</code> 文件，输入其密码，<strong>预览</strong>，然后<strong>还原</strong>。项目会添加到保险库中，不会清除任何内容。</p>
         </article>
 
         <article class="topic" id="win-sync">
@@ -343,7 +386,7 @@
           <p>同步仅在解锁时运行:解锁时、每 5 分钟一次,以及更改后几秒钟。有两种方式,可以同时使用:</p>
           <h4>Wi-Fi(同一网络中的手机或另一台电脑)</h4>
           <ol>
-            <li>工具 › 同步 › <strong>开启 Wi-Fi 同步…</strong>。保留建议的地址和端口(47821),如有提示请选择<strong>在 Windows 防火墙中允许</strong>。</li>
+            <li>同步与设备 › <strong>开启 Wi-Fi 同步…</strong>。保留建议的地址和端口(47821),如有提示请选择<strong>在 Windows 防火墙中允许</strong>。</li>
             <li>选择<strong>显示二维码…</strong>。二维码只能使用一次,有效期 120 秒。</li>
             <li>在手机应用的同步标签页中扫描。如果是另一台电脑,选择<strong>复制代码文本</strong>,并在那台电脑上使用<strong>通过二维码文本加入…</strong>。</li>
             <li>两台设备都会显示 6 位代码。只有一致时才选择<strong>接受</strong>,否则选择<strong>拒绝</strong>。</li>
@@ -364,7 +407,7 @@
             <li><strong>退出同步…</strong>会保留你的项目并忘记该组。<strong>在此电脑上重置同步…</strong>还会忘记其密钥(会询问两次)。</li>
             <li>如果同一项目在两台设备上同时被更改,多出来的副本标题中会带有<em>(同步冲突)</em>。</li>
           </ul>
-          <p class="note">每台电脑都需要自己的 Pro 许可证;在手机上购买的 Pro 可以解锁一台电脑(参见<a href="#win-pro">Pro 许可证</a>)。集合不会同步。每个组最多 16 台设备。</p>
+          <p class="note">组内每台设备都需要 Pro。已购买 Pro 的 iPhone 与免费版电脑配对后，电脑会通过同步接管许可证并升级为 Pro（参见 <a href="#win-pro">Pro 许可证</a>）。每组最多 16 台设备。</p>
         </article>
 
         <article class="topic" id="win-share">
@@ -382,24 +425,48 @@
           <p>LocalGateKeys 不仅能填充网站,还能填充普通 Windows 程序的登录窗口。</p>
           <ol>
             <li>打开程序的登录窗口。</li>
-            <li>创建<strong>桌面应用登录</strong>,然后选择<strong>应用绑定…</strong> › <strong>检查应用…</strong>。</li>
+            <li>按 <kbd>Ctrl</kbd>+<kbd>N</kbd>，选择<strong>桌面应用登录</strong>，然后选择<strong>检查应用…</strong>。</li>
             <li><strong>映射登录字段</strong>:指向用户名和密码输入框。也可以<strong>映射登录按钮…</strong>。</li>
-            <li><strong>保存绑定</strong>。</li>
+            <li><strong>保存登录</strong>。</li>
             <li>下次在该程序中按 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>,或点击密码框旁的填充按钮。</li>
           </ol>
-          <p>如果程序在更新后发生变化,请选择<strong>刷新绑定</strong>。LocalGateKeys 只读取窗口布局,绝不读取你输入的内容。</p>
+          <p>如果程序在更新后发生变化，请打开该登录项并选择<strong>应用绑定…</strong> › <strong>刷新绑定…</strong>。LocalGateKeys 只读取窗口布局，绝不读取你输入的内容。</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">共享集合</a> <span class="badge-pro">Pro</span></h3>
+          <p>通过大家都能访问的文件夹(例如共享的 OneDrive 文件夹)与家人或团队共享一个集合。打开集合，选择<strong>共享集合</strong>，选好文件夹，决定成员可以编辑还是只能查看，并设置共享密码。</p>
+          <p>其他人选择<strong>加入共享集合</strong>，选好文件夹并输入共享密码；然后由你选择<strong>允许加入</strong>。只有该集合会经过这个文件夹，你的其他项目仍然保密。你随时可以移除某人、<strong>停止共享</strong>或退出。</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">紧急访问与胁迫密码</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>紧急访问</strong>(Pro):在“备份与还原”页面选择<strong>设置紧急访问</strong>。你的恢复短语会被拆分成若干份交给你信任的人；由你决定需要几份以及等待期。把每人的纸页或分片文件交给对方。</li>
+            <li>当足够多的持有人通过共享文件夹申请访问时，你的设备会显示请求，在等待期结束前你可以<strong>拒绝</strong>。持有人选择<strong>我获得了访问权限</strong>，添加分片并选择<strong>申请访问</strong>;获准后，保险库会作为新的配置文件打开。</li>
+            <li>同一页面上的<strong>遗产资料包</strong>会为继承人创建一条笔记(遗嘱在哪里、要注销的账户、设备以及谁持有分片),然后生成可打印的<strong>应急包</strong>。</li>
+            <li><strong>胁迫密码</strong>(Pro):设置 › 解锁 › <strong>胁迫密码</strong> › <strong>设置</strong>。这是在有人强迫你解锁时使用的第二个主密码。它会打开一个只含你所选项目的独立保险库，之后你的真实保险库会在你设定的小时数内拒绝其主密码。Windows、Mac、iPhone 和 Android 都支持。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">开发者工具与 AI 代理</a></h3>
+          <p>设置 › <strong>开发者</strong>可将保险库中的 SSH 密钥提供给本机的 ssh 和 Git，用于登录和签署提交。每次签名都需你批准。<strong>生成</strong>会在保险库中创建新的 Ed25519 密钥。</p>
+          <p><strong>允许 AI 代理使用 LocalGateKeys</strong>可让 Claude Code 等代理通过 MCP 连接。每次登录或读取都需你批准；代理永远看不到密码，每个请求都会被记录。在 Microsoft Store 版本中，用 <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code> 添加。</p>
         </article>
 
         <article class="topic" id="win-settings">
           <h3><a href="#win-settings">设置</a></h3>
           <p>使用顶部的<strong>搜索设置</strong>框(<kbd>Ctrl</kbd>+<kbd>F</kbd>)可找到任何选项。更改会立即保存。</p>
           <dl class="defs">
-            <dt>解锁</dt><dd>Windows Hello、摄像头验证、主密码、恢复短语。</dd>
+            <dt>解锁</dt><dd>Windows Hello、安全密钥、摄像头检查、密钥文件、YubiKey、主密码、恢复短语。</dd>
             <dt>锁定</dt><dd>自动锁定的时间和触发条件(参见<a href="#win-unlock">解锁和锁定</a>)。</dd>
-            <dt>自动填充</dt><dd>浏览器自动填充、<strong>为通行密钥提供 LocalGateKeys</strong>、桌面应用自动填充、填充后登录、快速访问快捷键。</dd>
-            <dt>隐私</dt><dd><strong>清除剪贴板的时间</strong>(5 秒到 5 分钟)、泄露检查、严格离线模式、回收站保留时长、在其他应用中打开文档。</dd>
+            <dt>自动填充</dt><dd>浏览器自动填充、<strong>为通行密钥提供 LocalGateKeys</strong>、桌面应用自动填充、填充后登录、快速访问快捷键。 <strong>将 LocalGateKeys 用于 Windows 通行密钥</strong>可在 Windows 11 的所有应用和浏览器中提供你的通行密钥，每次都需你批准。</dd>
+            <dt>隐私</dt><dd><strong>多久后清除剪贴板</strong>（5 秒到 5 分钟）、泄露检查、严格离线模式、在截图和屏幕共享中隐藏、回收站保留时长、在其他应用中打开文档。</dd>
             <dt>备份</dt><dd>参见<a href="#win-backups">备份和恢复</a>。</dd>
-            <dt>外观和应用</dt><dd><strong>主题</strong>(跟随系统、浅色或深色);<strong>随 Windows 启动</strong>(以锁定状态启动);<strong>在托盘中保持运行</strong>;更新。</dd>
+            <dt>外观和应用</dt><dd><strong>主题</strong>（跟随系统、浅色或深色）；<strong>语言</strong>；<strong>随 Windows 启动</strong>（以锁定状态启动）；<strong>在托盘中保持运行</strong>；更新。</dd>
+            <dt>方案与同步</dt><dd>你的许可证、设备同步，以及<strong>从同步中移除时清除此设备</strong>。</dd>
+            <dt>开发者</dt><dd>SSH 代理与 Git 签名，以及 AI 代理(参见<a href="#win-dev">开发者工具与 AI 代理</a>)。</dd>
             <dt>帮助和诊断</dt><dd>键盘快捷键、再次显示设置、设备和连接、错误日志、法律页面。</dd>
           </dl>
         </article>
@@ -407,15 +474,15 @@
         <article class="topic" id="win-pro">
           <h3><a href="#win-pro">Pro 许可证</a></h3>
           <ol>
-            <li>在<a href="../zh-hans/pricing.html">价格页面</a>购买 Pro。密钥(以 <code>LGK1-</code> 开头)会通过电子邮件发送。</li>
-            <li>打开 工具 › <strong>许可证</strong>,粘贴密钥并选择<strong>安装</strong>;如果是 <code>.lgklicense</code> 文件,则选择<strong>打开文件…</strong>。</li>
+            <li>在<a href="../zh-hans/pricing">价格页面</a>购买 Pro。密钥(以 <code>LGK1-</code> 开头)会通过电子邮件发送。</li>
+            <li>打开 设置 › 方案与同步 › <strong>许可证</strong>,粘贴密钥并选择<strong>安装</strong>;如果是 <code>.lgklicense</code> 文件,则选择<strong>打开文件…</strong>。</li>
           </ol>
-          <p>在 iPhone 或 Android 应用中购买了 Pro?在手机的设置中选择<strong>复制密钥</strong>,并以同样方式安装到电脑上。许可证页面会显示你已使用 4 个免费项目中的几个。详情见<a href="../zh-hans/licence.html">你的 Pro 许可证</a>。</p>
+          <p>在 iPhone 应用中购买了 Pro？将电脑与 iPhone 配对（参见<a href="#win-sync">同步</a>），免费版电脑就会通过同步升级为 Pro。或者在 iPhone 的设置中选择<strong>复制密钥</strong>，并以同样的方式安装到电脑上。许可证页面会显示您已使用 7 个免费项目中的几个。更多信息参见<a href="../zh-hans/licence">您的 Pro 许可证</a>。</p>
         </article>
 
         <article class="topic" id="win-updates">
           <h3><a href="#win-updates">更新</a></h3>
-          <p>Microsoft Store 版会自动更新。安装程序版请选择<strong>检查更新</strong>(设置、托盘菜单或 Ctrl+K)。如有新版本,<strong>打开发布页面</strong>会带你前往下载。应用绝不会自行下载或运行任何内容。</p>
+          <p>Microsoft Store 版 LocalGateKeys 通过 Store 自动更新。还在使用旧版安装程序版本？它的最后一次更新是 0.4.12：请在 Windows 设置 › 应用 › 已安装的应用 中将其卸载，然后从 Microsoft Store 安装 LocalGateKeys。你的保险库保持原位，并用同一个主密码打开。</p>
         </article>
 
         <article class="topic" id="win-keys">
@@ -428,7 +495,7 @@
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>新建项目</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>锁定</td></tr>
               <tr><th scope="row"><kbd>Esc</kbd></th><td>返回</td></tr>
-              <tr><th scope="row"><kbd>Enter</kbd> / <kbd>F2</kbd></th><td>打开所选项目</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>打开所选项目</td></tr>
               <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>复制密码(先询问)</td></tr>
               <tr><th scope="row"><kbd>Delete</kbd></th><td>移到回收站</td></tr>
               <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>项目菜单</td></tr>
@@ -445,23 +512,25 @@
 
   <!-- ============================== EXTENSION ============================== -->
   <section class="help-panel" id="extension" aria-labelledby="extension-title">
-    <h2 class="panel-title" id="extension-title">适用于 Edge 和 Chrome 的浏览器扩展</h2>
-    <p class="panel-lead">在网站上填充并保存登录信息。它只与同一台电脑上的 LocalGateKeys 应用通信,因此请先安装 Windows 应用。</p>
+    <h2 class="panel-title" id="extension-title">适用于 Edge、Chrome 和 Firefox 的浏览器扩展</h2>
+    <p class="panel-lead">在网站上填充并保存登录信息。它只与同一台电脑上的 LocalGateKeys 应用通信,因此请先安装 Windows 应用。使用 Safari?这里无需下载:Mac 和 iPhone App 通过自动填充在 Safari 中填写,并自带 Safari 扩展。请参阅<a href="#mac-autofill">Mac 上的自动填充和 Safari</a>或<a href="#ios-autofill">iPhone 上的说明</a>。</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="扩展主题">
-        <p class="help-toc-title">本页内容</p>
-        <ol>
-          <li><a href="#ext-install">安装和连接</a></li>
-          <li><a href="#ext-popup">扩展窗口</a></li>
-          <li><a href="#ext-fill">填充登录信息</a></li>
-          <li><a href="#ext-save">保存登录信息</a></li>
-          <li><a href="#ext-2fa">填充双重验证码</a></li>
-          <li><a href="#ext-cards">卡片和身份</a></li>
-          <li><a href="#ext-generate">新密码</a></li>
-          <li><a href="#ext-passkeys">通行密钥</a></li>
-          <li><a href="#ext-trouble">疑难解答</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#ext-install">安装和连接</a></li>
+            <li><a href="#ext-popup">扩展窗口</a></li>
+            <li><a href="#ext-fill">填充登录信息</a></li>
+            <li><a href="#ext-save">保存登录信息</a></li>
+            <li><a href="#ext-2fa">填充双重验证码</a></li>
+            <li><a href="#ext-cards">卡片和身份</a></li>
+            <li><a href="#ext-generate">新密码</a></li>
+            <li><a href="#ext-passkeys">通行密钥</a></li>
+            <li><a href="#ext-trouble">疑难解答</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -470,7 +539,7 @@
           <h3><a href="#ext-install">安装和连接</a></h3>
           <ol>
             <li>安装并设置 <a href="#windows">Windows 应用</a>。</li>
-            <li>添加扩展:<strong>Edge</strong> 从 <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Edge 加载项</a>获取(选择<strong>获取</strong>)。Chrome 网上应用店的页面即将推出。</li>
+            <li>添加扩展：<strong>Edge</strong> 从 <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">Edge 加载项</a>获取（选择<strong>获取</strong>）。<strong>Chrome</strong> 从 <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">Chrome 网上应用店</a>获取（选择<strong>添加至 Chrome</strong>）。<strong>Firefox</strong> 从 <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">Firefox 附加组件</a>获取（选择<strong>添加到 Firefox</strong>）。</li>
             <li>点击工具栏中的拼图图标,固定 <strong>LocalGateKeys</strong>。</li>
             <li>点击 LocalGateKeys 图标。连接卡片应显示<strong>已连接</strong>或<strong>已锁定</strong>。</li>
           </ol>
@@ -560,28 +629,31 @@
   <!-- ============================== IPHONE ============================== -->
   <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
     <h2 class="panel-title" id="iphone-title">iPhone 版 LocalGateKeys</h2>
-    <p class="panel-lead">在 <a href="https://apps.apple.com/app/id6825488435">App Store</a> 获取。应用有四个标签页:<strong>保险库</strong>、<strong>同步</strong>、<strong>安全</strong>和<strong>设置</strong>。</p>
+    <p class="panel-lead">在 <a href="https://apps.apple.com/app/id6825488435">App Store</a> 获取（iOS 17 或更高版本）。应用有四个标签页：<strong>保险库</strong>、<strong>同步</strong>、<strong>安全</strong>和<strong>设置</strong>。</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="iPhone 主题">
-        <p class="help-toc-title">本页内容</p>
-        <ol>
-          <li><a href="#ios-setup">首次启动和解锁</a></li>
-          <li><a href="#ios-apppw">App 密码和恢复</a></li>
-          <li><a href="#ios-items">项目:添加、编辑、删除</a></li>
-          <li><a href="#ios-search">搜索和操作</a></li>
-          <li><a href="#ios-generator">密码生成器</a></li>
-          <li><a href="#ios-2fa">双重验证码</a></li>
-          <li><a href="#ios-autofill">在 App 和 Safari 中自动填充</a></li>
-          <li><a href="#ios-passkeys">通行密钥</a></li>
-          <li><a href="#ios-safari">从 Safari 存储</a></li>
-          <li><a href="#ios-security">安全标签页</a></li>
-          <li><a href="#ios-import">导入和导出</a></li>
-          <li><a href="#ios-sync">同步</a></li>
-          <li><a href="#ios-share">共享项目</a></li>
-          <li><a href="#ios-settings">设置</a></li>
-          <li><a href="#ios-pro">Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#ios-setup">首次启动和解锁</a></li>
+            <li><a href="#ios-apppw">App 密码和恢复</a></li>
+            <li><a href="#ios-items">项目:添加、编辑、删除</a></li>
+            <li><a href="#ios-search">搜索和操作</a></li>
+            <li><a href="#ios-generator">密码生成器</a></li>
+            <li><a href="#ios-2fa">双重验证码</a></li>
+            <li><a href="#ios-autofill">在 App 和 Safari 中自动填充</a></li>
+            <li><a href="#ios-passkeys">通行密钥</a></li>
+            <li><a href="#ios-safari">从 Safari 存储</a></li>
+            <li><a href="#ios-security">安全标签页</a></li>
+            <li><a href="#ios-import">导入和导出</a></li>
+            <li><a href="#ios-sync">同步</a></li>
+            <li><a href="#ios-share">共享项目</a></li>
+            <li><a href="#ios-settings">设置</a></li>
+            <li><a href="#ios-more">胁迫密码及更多</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -601,9 +673,8 @@
           <p>一个可选的额外密码,用来代替 iPhone 密码打开 LocalGateKeys。适合他人知道你手机密码的情况。</p>
           <ol>
             <li>设置 › App 密码 › 打开<strong>使用 App 密码</strong>。</li>
-            <li>设置一个强密码。</li>
+            <li>设置一个强密码（至少 12 个字符）；如果想用它作为快捷方式，请保持<strong>使用 Face ID 解锁</strong>开启。</li>
             <li>写下 24 个单词的<strong>恢复短语</strong>,轻点<strong>我已写下</strong>,然后输入要求的三个单词。</li>
-            <li>可以保留<strong>用面容 ID 解锁</strong>作为快捷方式。</li>
           </ol>
           <p><strong>忘记了?</strong>在解锁界面轻点<strong>忘记 App 密码?</strong>,输入 24 个单词,然后设置新的 App 密码。</p>
           <p class="note">如果在 iPhone 上添加了新的面容或指纹,出于安全考虑,面容 ID 快捷方式会关闭:输入一次 App 密码后重新打开即可。</p>
@@ -616,9 +687,9 @@
             <li>填写字段并轻点<strong>存储</strong>。中途离开时,应用会提议稍后<strong>继续</strong>编辑未存储的项目。</li>
           </ol>
           <ul>
-            <li>打开项目可<strong>复制用户名</strong>、<strong>复制密码</strong>、<strong>复制双重验证码</strong>、<strong>打开网站</strong>、标记为<strong>收藏</strong>或<strong>共享</strong>。复制的文本会在一段时间后从剪贴板清除,且绝不会传到你的其他 Apple 设备。</li>
+            <li>在保险库中按住某个项目，可<strong>复制用户名</strong>、<strong>复制密码</strong>、<strong>复制双重验证码</strong>、<strong>打开网站</strong>或标记为<strong>收藏</strong>。打开项目可复制任意字段、加星标或<strong>共享</strong>。复制的文本会在一段时间后从剪贴板清除，且绝不会传到你的其他 Apple 设备。</li>
             <li>登录信息的<strong>密码历史</strong>会保留旧密码:可复制或恢复(需要面容 ID)。</li>
-            <li>卡片、护照、许可证和订阅可以在到期前设置<strong>提醒</strong>。</li>
+            <li>除登录信息外的任何项目（卡片、订阅、保修、许可证…）都可以在到期前设置<strong>提醒</strong>；卡片会建议使用其到期日期。</li>
             <li>从 <strong>+</strong> <strong>附加文件</strong>(Pro,最大 25 MB,加密存储)。</li>
             <li><strong>删除</strong>:项目会移到<em>最近删除</em>,几秒钟内可<strong>撤销</strong>。在 设置 › 数据 › <strong>最近删除</strong>中可以<strong>恢复</strong>或<strong>永久删除</strong>。</li>
             <li>按名称或日期<strong>排序</strong>,收藏优先,或按类型分组。</li>
@@ -627,12 +698,12 @@
 
         <article class="topic" id="ios-search">
           <h3><a href="#ios-search">搜索和快捷操作</a></h3>
-          <p>下拉保险库或轻点<strong>搜索</strong>并输入。先输入 <code>&gt;</code> 可查看<strong>操作</strong>:新建项目、生成密码、扫描二维码、立即锁定、立即同步、安全检查、最近删除、导入和导出等。</p>
+          <p>轻点保险库顶部的搜索按钮（放大镜）并输入；下拉保险库会进行同步。先输入 <code>&gt;</code> 可查看<strong>操作</strong>：新建项目、生成密码、扫描二维码、立即锁定、立即同步、安全检查、最近删除、导入和导出等。</p>
         </article>
 
         <article class="topic" id="ios-generator">
           <h3><a href="#ios-generator">密码生成器</a></h3>
-          <p>从 <code>&gt;</code> 生成密码,或在编辑登录信息的密码时使用。选择指定<strong>长度</strong>的密码,或指定<strong>单词</strong>数和<strong>分隔符</strong>的密码短语。<strong>重新生成</strong>,然后<strong>使用</strong>。会记住上次使用的选项;<strong>恢复默认设置</strong>可将其还原。</p>
+          <p>从 <code>&gt;</code> 生成密码，或在编辑登录信息的密码时使用。选择指定<strong>长度</strong>的密码，或指定<strong>单词</strong>数和<strong>分隔符</strong>的密码短语。轻点刷新按钮重新生成，然后<strong>使用</strong>。会记住上次使用的选项；设置 › 密码生成器 › <strong>恢复默认设置</strong>可还原默认值。</p>
         </article>
 
         <article class="topic" id="ios-2fa">
@@ -656,15 +727,15 @@
           <p>设置 › 自动填充 中的选项:</p>
           <ul>
             <li><strong>在 QuickType 栏中显示登录信息</strong>:在键盘上方显示建议。</li>
-            <li><strong>填充时复制双重验证码</strong>:方便在下一个界面粘贴验证码。60 秒后清除。</li>
+            <li><strong>填充时复制 2FA 验证码</strong>：方便在下一个界面粘贴验证码。会在<strong>多久后清除剪贴板</strong>设定的时间（默认 60 秒）后清除。</li>
             <li><strong>为通行密钥提供 LocalGateKeys</strong>。</li>
           </ul>
-          <p>卡片和联系信息的填充方式相同。为 <code>https</code> 网站保存的登录信息不会在普通 <code>http</code> 页面上提供。</p>
+          <p>在 iOS 18 及更高版本中，卡片和联系信息也能填充：轻点文本框，选择<strong>自动填充 › 密码</strong>，然后选择字段。为 <code>https</code> 网站保存的登录信息不会在普通 <code>http</code> 页面上提供。</p>
         </article>
 
         <article class="topic" id="ios-passkeys">
           <h3><a href="#ios-passkeys">通行密钥</a></h3>
-          <p>开启自动填充后,当网站提议创建通行密钥时,选择 LocalGateKeys。通行密钥会保存在你的保险库中,并同步到你的电脑或 Mac。用 iPhone 扫描电脑上的二维码进行登录也同样可行。通行密钥的详细信息页面会显示网站和账户;密钥本身绝不会显示。你可以重命名或删除它。</p>
+          <p>开启自动填充后，当网站提议创建通行密钥时，选择 LocalGateKeys。通行密钥会保存在你的保险库中，并同步到你的电脑。用 iPhone 扫描电脑上的二维码进行登录也同样可行。通行密钥的详细信息页面会显示网站和账户；密钥本身绝不会显示。你可以重命名或删除它。</p>
         </article>
 
         <article class="topic" id="ios-safari">
@@ -679,7 +750,7 @@
 
         <article class="topic" id="ios-security">
           <h3><a href="#ios-security">安全标签页</a></h3>
-          <p>评分以及<strong>已泄露</strong>、<strong>重复使用</strong>、<strong>弱</strong>、<strong>陈旧</strong>或可以使用双重验证的登录信息列表。在登录信息上向左轻扫可选择<strong>更改密码</strong>或<strong>忽略</strong>。在打开 设置 › <strong>允许泄露检查</strong>之前,泄露检查处于关闭状态。</p>
+          <p>评分以及<strong>已泄露</strong>、<strong>重复使用</strong>、<strong>弱</strong>、<strong>旧</strong>或可以使用双重验证的登录信息列表。在登录信息上向左轻扫可选择<strong>更改密码</strong>或<strong>关闭</strong>。在关闭 设置 › <strong>严格离线模式</strong>（默认开启）并打开<strong>允许泄露检查</strong>之前，泄露检查处于关闭状态。</p>
         </article>
 
         <article class="topic" id="ios-import">
@@ -690,19 +761,20 @@
             <li>选择 <strong>LocalGateKeys</strong>。登录信息、双重验证码和通行密钥都会迁移过来。再次执行不会重复添加。</li>
           </ol>
           <h4>从文件</h4>
-          <p>设置 › 导入和导出 › <strong>从文件导入</strong>:Apple 密码 CSV、Bitwarden <code>.json</code>(也支持受密码保护的文件)、1Password <code>.1pux</code> 或其他任何 CSV。在轻点<strong>导入</strong>前可检查每个项目。之后请删除导出文件。</p>
+          <p>设置 › 导入与导出 › <strong>从文件导入</strong>：来自 Apple 密码、Safari、Chrome、Edge、Brave、Firefox、Bitwarden（也支持受密码保护的文件）、1Password（<code>.1pux</code>）、LastPass、KeePass（<code>.kdbx</code>）、Proton Pass、Dashlane 的导出文件，或任何 CSV。在轻点<strong>导入</strong>前可检查每个项目。之后请删除导出文件。</p>
           <h4>备份和导出</h4>
           <ul>
-            <li><strong>导出加密备份</strong>:带有 12 个字符以上密码的 <code>.lgkm</code> 文件。可在 Windows、Mac 或另一部手机上恢复。</li>
+            <li><strong>导出加密备份</strong>：带有 12 个字符以上密码的 <code>.lgkm</code> 文件。可在 Windows 上恢复。</li>
             <li><strong>导出为 CSV</strong>:未加密,用于迁移到其他应用。会要求你确认。</li>
+            <li><strong>导出到 CXF 文件…</strong>会把你选择的登录、笔记和通行密钥写入其他密码管理器可导入的 Credential Exchange 文件。该文件未加密。</li>
           </ul>
         </article>
 
         <article class="topic" id="ios-sync">
-          <h3><a href="#ios-sync">与电脑或 Mac 同步</a> <span class="badge-pro">Pro</span></h3>
+          <h3><a href="#ios-sync">与电脑同步</a> <span class="badge-pro">Pro</span></h3>
           <h4>通过 Wi-Fi</h4>
           <ol>
-            <li>在电脑或 Mac 上打开同步,选择<strong>显示二维码</strong>。</li>
+            <li>在电脑上打开 同步与设备，选择<strong>显示二维码</strong>。</li>
             <li>在 iPhone 上打开<strong>同步</strong>标签页,并在 120 秒内轻点<strong>扫描二维码</strong>。(首次使用时请允许访问本地网络。)没有相机?轻点<strong>粘贴代码文本</strong>,粘贴电脑上<strong>复制代码文本</strong>得到的文本。</li>
             <li>确认两个屏幕显示相同的代码,然后在电脑上选择<strong>接受</strong>。</li>
           </ol>
@@ -728,17 +800,26 @@
           <h3><a href="#ios-settings">设置</a></h3>
           <dl class="defs">
             <dt>安全</dt><dd><strong>离开 App 后自动锁定</strong>、<strong>闲置时锁定</strong>、<strong>轻点前隐藏密码</strong>、<strong>清除剪贴板的时间</strong>、<strong>立即锁定</strong>。</dd>
-            <dt>隐私</dt><dd><strong>严格离线模式</strong>、网站图标、通知中的项目名称、<strong>锁定时清除 Apple Watch 验证码</strong>、泄露检查。</dd>
+            <dt>隐私</dt><dd><strong>严格离线模式</strong>、网站图标、通知中的项目名称、泄露检查。</dd>
             <dt>外观</dt><dd>跟随系统、浅色或深色。</dd>
             <dt>数据</dt><dd>最近删除、已删除项目的保留时长、导入和导出。</dd>
             <dt>抹掉</dt><dd><strong>抹掉此 iPhone 的保险库</strong>只会删除这台 iPhone 上的保险库(会询问两次)。你的电脑和同步文件夹不受影响。</dd>
           </dl>
         </article>
 
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">胁迫密码及更多</a></h3>
+          <ul>
+            <li><strong>胁迫密码</strong>(Pro):在有人强迫你解锁时使用的第二个应用密码。它会打开一个只含你所选项目的独立保险库，之后你的保险库会在你设定的小时数内拒绝应用密码。请先开启应用密码，再在“设置”的<strong>胁迫密码</strong>中设置。</li>
+            <li>“同步”标签页中的<strong>在这部手机上托管 Wi-Fi 同步</strong>(Pro)可让你的其他设备直接与 iPhone 配对，无需电脑。</li>
+            <li>在电脑上创建的紧急访问计划会通过同步到达 iPhone，因此你也可以在这里拒绝或批准请求。<strong>创建遗产资料包笔记</strong>会添加给继承人的笔记。</li>
+          </ul>
+        </article>
+
         <article class="topic" id="ios-pro">
           <h3><a href="#ios-pro">Pro</a></h3>
-          <p>设置 › Pro › <strong>购买 Pro</strong>:一次付费,无需订阅,无需账户。同时解锁 Mac 应用。在新的 iPhone 上,使用同一个 Apple 账户选择<strong>恢复购买</strong>。</p>
-          <p>如需同时解锁 Windows,请在<em>同时解锁 Windows</em>下选择<strong>复制密钥</strong>,并将该密钥安装到电脑上(工具 › 许可证)。</p>
+          <p>设置 › Pro › <strong>升级</strong>，然后购买：一次付款，无订阅，无需账户。在新 iPhone 上，请用同一个 Apple 账户选择<strong>恢复购买</strong>。</p>
+          <p>您的购买也会解锁 Windows。在<strong>同步</strong>标签页中将电脑与 iPhone 配对，免费版电脑就会通过同步接管许可证并升级为 Pro。或者选择<strong>复制密钥</strong>，并在电脑上安装该密钥（设置 › 方案与同步 › 许可证）。</p>
         </article>
 
       </div>
@@ -748,25 +829,29 @@
   <!-- ============================== MAC ============================== -->
   <section class="help-panel" id="mac" aria-labelledby="mac-title">
     <h2 class="panel-title" id="mac-title">Mac 版 LocalGateKeys</h2>
-    <p class="panel-lead">侧边栏包含<strong>保险库</strong>、<strong>安全中心</strong>、<strong>恢复中心</strong>、<strong>导入和导出</strong>、<strong>同步</strong>、<strong>设备和连接</strong>和<strong>设置</strong>。</p>
+
+    <p class="panel-lead">侧边栏列出你的项目（<strong>所有项目</strong>、<strong>收藏</strong>、<strong>最近使用</strong>、各类型和你的集合）以及工具<strong>安全中心</strong>、<strong>生成器</strong>、<strong>同步与设备</strong>、<strong>导入和导出</strong>和<strong>回收站</strong>，<strong>设置</strong>位于底部。<strong>恢复中心</strong>从 设置 › 备份 打开，<strong>设备与连接</strong>从 同步与设备 打开。</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Mac 主题">
-        <p class="help-toc-title">本页内容</p>
-        <ol>
-          <li><a href="#mac-setup">创建保险库</a></li>
-          <li><a href="#mac-unlock">解锁和锁定</a></li>
-          <li><a href="#mac-items">项目</a></li>
-          <li><a href="#mac-2fa">双重验证码</a></li>
-          <li><a href="#mac-security">安全中心</a></li>
-          <li><a href="#mac-autofill">自动填充和 Safari</a></li>
-          <li><a href="#mac-import">导入和导出</a></li>
-          <li><a href="#mac-backups">备份</a></li>
-          <li><a href="#mac-sync">同步</a></li>
-          <li><a href="#mac-share">共享</a></li>
-          <li><a href="#mac-pro">Pro</a></li>
-          <li><a href="#mac-keys">键盘快捷键</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#mac-setup">创建保险库</a></li>
+            <li><a href="#mac-unlock">解锁和锁定</a></li>
+            <li><a href="#mac-items">项目</a></li>
+            <li><a href="#mac-2fa">双重验证码</a></li>
+            <li><a href="#mac-security">安全中心</a></li>
+            <li><a href="#mac-autofill">自动填充和 Safari</a></li>
+            <li><a href="#mac-import">导入和导出</a></li>
+            <li><a href="#mac-backups">备份</a></li>
+            <li><a href="#mac-sync">同步</a></li>
+            <li><a href="#mac-share">共享</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">设置</a></li>
+            <li><a href="#mac-keys">键盘快捷键</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -782,10 +867,10 @@
         <article class="topic" id="mac-unlock">
           <h3><a href="#mac-unlock">解锁和锁定</a></h3>
           <ul>
-            <li><strong>触控 ID</strong>:设置 › 解锁 › <strong>使用触控 ID 解锁</strong>。如果更改了指纹,请使用一次主密码。</li>
+            <li><strong>触控 ID</strong>：设置 › 安全 › 解锁 › <strong>触控 ID</strong>。如果更改了指纹，请使用一次主密码。</li>
             <li><strong>更改主密码</strong>:设置 › 解锁。你的项目保持不变。</li>
             <li><strong>恢复短语</strong>:在<strong>恢复中心</strong>中设置并确认三个单词。如果忘记主密码,请在锁定界面选择<strong>忘记主密码?</strong> › <strong>使用恢复短语恢复</strong>。</li>
-            <li><strong>锁定</strong>:<kbd>⌘</kbd><kbd>L</kbd>。在 设置 › 锁定 中可设置闲置锁定、随屏幕锁定、睡眠时锁定以及最长会话时间。</li>
+            <li><strong>锁定</strong>:<kbd>⌘</kbd><kbd>L</kbd>。在 设置 › 锁定 中可设置闲置锁定、随屏幕锁定、睡眠时锁定以及最长会话时间。您还可以选择闲置锁定以哪些操作作为活动。</li>
           </ul>
         </article>
 
@@ -794,8 +879,8 @@
           <ul>
             <li><strong>新建项目</strong>(<kbd>⌘</kbd><kbd>N</kbd>)提供与 iPhone 相同的类型,另外还有<strong>附加文件…</strong>(Pro)。</li>
             <li>复制:<kbd>⌘</kbd><kbd>C</kbd>(密码)、<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>(用户名)、<kbd>⌘</kbd><kbd>T</kbd>(双重验证码)。</li>
-            <li>用于自定义字段的<strong>添加字段</strong>、<strong>标签</strong>和<strong>集合</strong>(集合只保存在这台 Mac 上)。</li>
-            <li><kbd>⌫</kbd> 会将项目移到最近删除。在那里使用<strong>恢复所选</strong>或<strong>清空回收站</strong>。</li>
+            <li>用于自定义字段的<strong>添加字段</strong>、<strong>标签</strong>和<strong>集合</strong>（会与你的其他设备同步）。</li>
+            <li><kbd>⌫</kbd> 会将项目移到最近删除。在侧边栏打开<strong>回收站</strong>，使用<strong>还原所选项</strong>或<strong>清空回收站</strong>。</li>
             <li>附件在通过触控 ID 或主密码验证后,用快速查看打开。</li>
             <li><strong>生成器</strong>:随机密码(选择字符集、避免易混淆字符)或密码短语(首字母大写、添加数字、分隔符)。</li>
           </ul>
@@ -803,7 +888,7 @@
 
         <article class="topic" id="mac-2fa">
           <h3><a href="#mac-2fa">双重验证码</a> <span class="badge-pro">Pro</span></h3>
-          <p>选择<strong>扫描二维码…</strong>,然后<strong>选择图片…</strong>,用 <kbd>⌘</kbd><kbd>V</kbd> 粘贴截图(用 <kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd> 截取),或拖入图片。验证码会通过自动填充在 Safari 中填入。</p>
+          <p>选择<strong>扫描二维码…</strong>，然后<strong>选择图片…</strong>，用 <kbd>⌘</kbd><kbd>V</kbd> 粘贴截图（用 <kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd> 复制截图），或拖入图片。验证码会通过自动填充在 Safari 中填入。</p>
         </article>
 
         <article class="topic" id="mac-security">
@@ -818,7 +903,10 @@
             <li>选择<strong>打开自动填充设置</strong>,在 系统设置 › 自动填充与密码 中打开 LocalGateKeys。</li>
             <li>选择<strong>打开 Safari 设置</strong>,在 Safari 浏览器 › 设置 › 扩展 中打开 LocalGateKeys 扩展。</li>
           </ol>
-          <p>之后,密码、通行密钥和双重验证码会在 Safari 和应用中填充。Safari 中的新登录会提议存储;请在下次解锁时检查。Mac 上暂不支持其他浏览器。</p>
+          <p>要在 Safari 中填写登录信息,请点按用户名或密码栏。Safari 会在下方列出你的 LocalGateKeys 登录:选择一个,并用触控 ID 或主密码确认。通行密钥和双重验证码也以同样方式提供,自动填充在其他 Mac App 中同样可用。</p>
+          <p>登录后,Safari 扩展会提议存储新的登录。下次解锁 LocalGateKeys 时检查它捕获的内容。Mac 上暂不支持其他浏览器。</p>
+          <p>没有列出登录?打开<strong>设备和连接</strong>,确认自动填充已打开。在同一个系统设置页面中,你可以关闭“密码”,这样只有 LocalGateKeys 提供登录。</p>
+          <p>如果打开<strong>设备和连接</strong>时 LocalGateKeys 退出,请在 Mac App Store 中更新它。</p>
         </article>
 
         <article class="topic" id="mac-import">
@@ -837,15 +925,15 @@
           <ul>
             <li><strong>完整备份</strong>:<strong>创建…</strong> <code>.lgk</code> 文件,或<strong>恢复…</strong>一个(会替换保险库)。可在 Mac 和 Windows 之间使用。系统会保留一份安全副本,因此<strong>放回原样…</strong>可撤销恢复。</li>
             <li><strong>计划备份</strong>:频率、星期几、时间、保留数量、文件夹和镜像文件夹,以及备份密码(12 个字符以上)。</li>
-            <li><strong>恢复工具包…</strong>:一张包含恢复信息的可打印表单。</li>
+            <li><strong>恢复工具包…</strong>：描述你最近一次备份的文件，应与备份放在一起。<strong>打印应急包…</strong>会打印一页说明，写明保险库和备份的位置以及如何恢复。</li>
           </ul>
         </article>
 
         <article class="topic" id="mac-sync">
           <h3><a href="#mac-sync">同步</a> <span class="badge-pro">Pro</span></h3>
           <ul>
-            <li><strong>托管 Wi-Fi 同步</strong>:显示配对二维码。有设备加入时,核对其代码并选择<strong>接受</strong>或<strong>拒绝</strong>。如果事后发现不认识该设备,请选择<strong>撤销</strong>。</li>
-            <li><strong>加入 Windows 电脑</strong>:使用电脑上<strong>复制代码文本</strong>得到的代码文本。</li>
+            <li><strong>Wi-Fi（当前网络）</strong>：<strong>开启 Wi-Fi 同步</strong>，然后<strong>显示二维码…</strong>。有设备加入时，核对其代码并选择<strong>接受</strong>或<strong>拒绝</strong>。如果事后发现不认识该设备，请选择<strong>撤销</strong>。</li>
+            <li><strong>使用验证码加入</strong>：在另一台设备上选择<strong>显示二维码</strong>，然后<strong>复制代码文本</strong>，并把文本粘贴到这里。</li>
             <li><strong>云文件夹</strong>:在 Dropbox 或 iCloud 云盘等文件夹中,使用同步密码加入或创建一个组。在与 Apple 相关的问题解决之前,OneDrive 和 Google Drive 暂时不可用。</li>
             <li><strong>退出同步…</strong> / <strong>在此 Mac 上重置同步…</strong>。</li>
           </ul>
@@ -853,12 +941,18 @@
 
         <article class="topic" id="mac-share">
           <h3><a href="#mac-share">共享</a></h3>
-          <p>选择项目,然后选择<strong>共享…</strong>。要接收,请选择 文件 › <strong>接收共享项目…</strong>,打开或拖入文件(或粘贴二维码文本),然后输入六个单词。通行密钥和带附件的项目无法共享。</p>
+          <p>选择项目，然后选择<strong>共享…</strong>。要接收，请选择 编辑 › <strong>接收共享项目…</strong>（或用 <kbd>⌘</kbd><kbd>K</kbd> 查找），打开或拖入文件（或粘贴二维码文本），然后输入六个单词。通行密钥和带附件的项目无法共享。</p>
         </article>
 
         <article class="topic" id="mac-pro">
           <h3><a href="#mac-pro">Pro</a></h3>
           <p>在 设置 › 方案 中购买 Pro。一次购买同时适用于 iPhone 和 Mac 应用;在另一台设备上使用<strong>恢复购买</strong>。与 Pro iPhone 同步的免费 Mac 会显示<em>来自已同步设备的 Pro</em>。</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">设置</a></h3>
+          <p>主窗口和 <kbd>⌘</kbd><kbd>,</kbd> 中的设置完全相同，“工具”始终显示在边栏底部。设置 › 备份 包含备份计划、<strong>每周恢复测试</strong>和要保留的自动备份数量；恢复中心、许可证和“再次显示设置向导”在两个窗口中都能打开。其他设置：自动锁定以哪种活动为准、复制双重验证码前先询问、在其他应用中打开保险库里的文档、自定义快速访问快捷键，以及帮助链接。</p>
+          <p><strong>胁迫密码</strong>(Pro),位于 设置 › 胁迫密码：在有人强迫你解锁时使用的第二个主密码。它会打开一个只含你所选项目的独立保险库，之后你的保险库会在你设定的小时数内拒绝主密码。</p>
         </article>
 
         <article class="topic" id="mac-keys">
@@ -884,17 +978,18 @@
   <!-- ============================== WATCH ============================== -->
   <section class="help-panel" id="watch" aria-labelledby="watch-title">
     <h2 class="panel-title" id="watch-title">Apple Watch 版 LocalGateKeys</h2>
-    <p class="panel-lead">在手腕上显示双重验证码。随 iPhone 应用一起提供。只保存验证码:没有密码,不能编辑。<span class="badge-pro">Pro</span></p>
-    <p class="callout-soon"><strong>将随 iPhone 应用 1.1 推出。</strong>手表应用和<em>在 Apple Watch 上显示</em>按钮将随 1.1 版推出,该版本正在 App Review 审核中。可在 iPhone 设置 › 关于本机 中查看版本。</p>
+    <p class="panel-lead">在手腕上显示双重验证码。随 iPhone 应用一起提供，需要 watchOS 10 或更高版本。只保存验证码：没有密码，不能编辑。<span class="badge-pro">Pro</span></p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Apple Watch 主题">
-        <p class="help-toc-title">本页内容</p>
-        <ol>
-          <li><a href="#watch-add">将验证码放到手表上</a></li>
-          <li><a href="#watch-use">使用验证码</a></li>
-          <li><a href="#watch-remove">移除验证码</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#watch-add">将验证码放到手表上</a></li>
+            <li><a href="#watch-use">使用验证码</a></li>
+            <li><a href="#watch-remove">移除验证码</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
@@ -915,7 +1010,7 @@
         </article>
         <article class="topic" id="watch-remove">
           <h3><a href="#watch-remove">移除验证码</a></h3>
-          <p>在 iPhone 上打开登录信息,轻点<strong>从 Apple Watch 移除</strong>。如需在 iPhone 应用每次锁定时清除所有手表验证码,请打开 iPhone 设置 › <strong>锁定时清除 Apple Watch 验证码</strong>。</p>
+          <p>在 iPhone 上打开登录信息，轻点<strong>从 Apple Watch 移除</strong>。如需在 iPhone 应用每次锁定时清除所有手表验证码，请在 LocalGateKeys › 设置 › 自动填充 中打开<strong>锁定时忘记 Apple Watch 验证码</strong>。</p>
         </article>
       </div>
     </div>
@@ -925,43 +1020,45 @@
   <section class="help-panel" id="android" aria-labelledby="android-title">
     <h2 class="panel-title" id="android-title">Android 版 LocalGateKeys</h2>
     <p class="callout-soon"><strong>即将推出。</strong>Android 应用尚未上架 Google Play。本指南介绍它将如何工作。</p>
-    <p class="panel-lead">应用有三个标签页:<strong>保险库</strong>、<strong>搜索</strong>和<strong>同步</strong>。设置可从角落里的姓名首字母打开。</p>
+    <p class="panel-lead">应用有四个标签页：<strong>保险库</strong>、<strong>同步</strong>、<strong>安全</strong>和<strong>设置</strong>。搜索是保险库标签页顶部的放大镜。</p>
 
     <div class="help-layout">
       <nav class="help-toc" aria-label="Android 主题">
-        <p class="help-toc-title">本页内容</p>
-        <ol>
-          <li><a href="#and-setup">首次启动和解锁</a></li>
-          <li><a href="#and-apppw">App 密码和恢复</a></li>
-          <li><a href="#and-items">项目</a></li>
-          <li><a href="#and-search">搜索和操作</a></li>
-          <li><a href="#and-generator">密码生成器</a></li>
-          <li><a href="#and-2fa">双重验证码</a></li>
-          <li><a href="#and-autofill">自动填充</a></li>
-          <li><a href="#and-passkeys">通行密钥</a></li>
-          <li><a href="#and-import">导入</a></li>
-          <li><a href="#and-backups">备份</a></li>
-          <li><a href="#and-sync">同步</a></li>
-          <li><a href="#and-share">共享</a></li>
-          <li><a href="#and-settings">设置和 Pro</a></li>
-        </ol>
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">本页内容</summary>
+          <ol>
+            <li><a href="#and-setup">首次启动和解锁</a></li>
+            <li><a href="#and-apppw">App 密码和恢复</a></li>
+            <li><a href="#and-items">项目</a></li>
+            <li><a href="#and-search">搜索和操作</a></li>
+            <li><a href="#and-generator">密码生成器</a></li>
+            <li><a href="#and-2fa">双重验证码</a></li>
+            <li><a href="#and-autofill">自动填充</a></li>
+            <li><a href="#and-passkeys">通行密钥</a></li>
+            <li><a href="#and-import">导入</a></li>
+            <li><a href="#and-backups">备份</a></li>
+            <li><a href="#and-sync">同步</a></li>
+            <li><a href="#and-share">共享</a></li>
+            <li><a href="#and-settings">设置和 Pro</a></li>
+          </ol>
+        </details>
       </nav>
 
       <div class="help-content prose">
 
         <article class="topic" id="and-setup">
           <h3><a href="#and-setup">首次启动和解锁</a></h3>
-          <p>保险库通过手机的指纹、面部或屏幕锁定打开。(手机需要设置屏幕锁定。)接下来是简短设置:用指纹解锁、<strong>打开自动填充设置</strong>、<strong>导入…</strong>以及可选的 App 密码。任何步骤都可以跳过;<em>完成设置</em>卡片可以带你返回。</p>
-          <p>设置 › 安全 可设置<strong>离开 App 后自动锁定</strong>(立即到 1 小时,或从不),并提供<strong>立即锁定</strong>。应用在最近任务视图中处于隐藏状态。</p>
+          <p>保险库通过手机的指纹、面部或屏幕锁定打开。（手机需要设置屏幕锁定。）接下来是简短设置：用指纹解锁、<strong>导入…</strong>、可选的应用密码以及<strong>打开自动填充设置</strong>。任何步骤都可以跳过；<em>完成设置</em>卡片可以带你返回。</p>
+          <p>设置 › 锁定与安全 可设置<strong>离开应用后自动锁定</strong>（立即到 1 小时）和<strong>空闲时锁定</strong>（1 到 30 分钟，或从不），并提供<strong>立即锁定</strong>。应用在最近任务视图中处于隐藏状态。</p>
         </article>
 
         <article class="topic" id="and-apppw">
           <h3><a href="#and-apppw">App 密码和恢复短语</a></h3>
           <ol>
-            <li>设置 › <strong>开启 App 密码</strong>并设置一个密码。此后由它而不是屏幕锁定来打开 LocalGateKeys。</li>
-            <li>写下 24 个单词的恢复短语,轻点<strong>我已写下</strong>,然后输入要求的单词。</li>
+            <li>设置 › 锁定与安全 › 打开<strong>使用应用密码</strong>，设置一个密码并轻点<strong>继续</strong>。此后由它而不是屏幕锁定来打开 LocalGateKeys。</li>
+            <li>写下 24 个单词的恢复短语，轻点<strong>我已写下</strong>，输入要求的单词，然后轻点<strong>开启应用密码</strong>。</li>
           </ol>
-          <p>忘记了?轻点<strong>忘记 App 密码?</strong>,输入 24 个单词,然后设置新密码。<strong>更改</strong>和<strong>关闭</strong>位于设置中。</p>
+          <p>忘记了？轻点<strong>忘记应用密码？</strong>，输入 24 个单词，然后设置新密码。<strong>更改应用密码</strong>，以及用于关闭它的<strong>使用应用密码</strong>开关，位于 设置 › 锁定与安全。</p>
           <p class="note">从 Google 备份恢复手机后,保险库无法打开(其密钥不会被备份)。请选择<strong>重新开始</strong>,然后与电脑同步以恢复所有内容。</p>
         </article>
 
@@ -978,7 +1075,7 @@
 
         <article class="topic" id="and-search">
           <h3><a href="#and-search">搜索和操作</a></h3>
-          <p>在搜索标签页输入名称,或以 <code>&gt;</code> 开头使用操作,例如导出备份、生成密码、导入密码、锁定、接收共享项目、扫描二维码配对和立即同步。</p>
+          <p>轻点保险库标签页上的放大镜并输入名称，或以 <code>&gt;</code> 开头使用操作，例如导出备份、生成密码、导入密码、锁定、接收共享项目、扫描二维码配对和立即同步。</p>
         </article>
 
         <article class="topic" id="and-generator">
@@ -1002,12 +1099,12 @@
 
         <article class="topic" id="and-passkeys">
           <h3><a href="#and-passkeys">通行密钥</a></h3>
-          <p>打开 设置 › <strong>为通行密钥提供 LocalGateKeys</strong>。当网站或应用提供通行密钥时,选择 LocalGateKeys;之后使用<strong>使用你的通行密钥</strong>登录。</p>
+          <p>打开 设置 › 自动填充 › <strong>为通行密钥提供 LocalGateKeys</strong>。当网站或应用提供通行密钥时，选择 LocalGateKeys；之后使用<strong>使用您的通行密钥</strong>登录。</p>
         </article>
 
         <article class="topic" id="and-import">
           <h3><a href="#and-import">导入</a></h3>
-          <p><strong>从其他应用导入</strong> ›<strong>选择导出文件</strong>:Chrome、Edge、Brave、Firefox、Apple 密码、Bitwarden <code>.json</code>(也支持受密码保护的文件)、1Password <code>.1pux</code> 或任何 CSV。全部检查后再导入。之后请删除导出文件。</p>
+          <p>设置 › 同步与数据 › <strong>从文件导入</strong> › <strong>选择导出文件</strong>：Chrome、Edge、Brave、Firefox、Apple 密码、Bitwarden <code>.json</code>（也支持受密码保护的文件）、1Password <code>.1pux</code> 或任何 CSV。全部检查后再导入。之后请删除导出文件。</p>
         </article>
 
         <article class="topic" id="and-backups">
@@ -1028,15 +1125,17 @@
 
         <article class="topic" id="and-share">
           <h3><a href="#and-share">共享</a></h3>
-          <p>打开项目 › <strong>共享此项目</strong> › <strong>以文件发送…</strong>或<strong>以二维码显示</strong>,并单独告知六个单词。接收:<strong>接收共享项目</strong>,输入六个单词,然后<strong>添加到保险库</strong>。共享内容在 24 小时内只能打开一次;输错三次代码会将其删除。通行密钥和文件无法共享。</p>
+          <p>打开项目，轻点共享，然后选择<strong>以文件发送…</strong>或<strong>显示为二维码</strong>，并单独告知六个单词。接收：设置 › 同步与数据 › <strong>接收共享项目</strong>，输入六个单词，轻点<strong>打开</strong>，然后<strong>添加到保管库</strong>。共享内容在 24 小时内只能打开一次；输错三次代码会将其删除。通行密钥和文件无法共享。</p>
         </article>
 
         <article class="topic" id="and-settings">
           <h3><a href="#and-settings">设置和 Pro</a></h3>
           <ul>
             <li><strong>外观</strong>:跟随系统、浅色或深色,以及你的姓名首字母。</li>
-            <li><strong>安全</strong>:轻点前隐藏密码、清除剪贴板的时间、<strong>抹掉此手机的保险库</strong>(仅限此手机)。</li>
-            <li><strong>Pro</strong>:通过 Google Play 一次性<strong>购买</strong>,在使用同一 Google 账号的另一部手机上<strong>恢复购买</strong>,并用<strong>复制密钥</strong>同时解锁 Windows。</li>
+            <li><strong>锁定与安全</strong>中有<strong>多久后清除剪贴板</strong>，<strong>隐私</strong>中有<strong>点按前隐藏密码</strong>，<strong>同步与数据</strong>中有<strong>清除此手机的保管库</strong>（仅限此手机）。Android 仅在应用打开时允许检查剪贴板，因此从快速设置图块复制的内容，或在切换到其他应用前复制的内容，会在下次打开 LocalGateKeys 时清除。</li>
+            <li><strong>Pro</strong>（位于设置顶部）：通过<strong>升级</strong>在 Google Play 一次性购买，在使用同一 Google 账号的另一部手机上<strong>恢复购买</strong>，并用<strong>复制密钥</strong>同时解锁 Windows。</li>
+            <li><strong>胁迫密码</strong>(Pro):在有人强迫你解锁时使用的第二个应用密码。它会打开一个只含你所选项目的独立保险库，之后你的保险库会在你设定的小时数内拒绝应用密码。请先开启应用密码，再在“设置”的<strong>胁迫密码</strong>中设置。</li>
+            <li><strong>导出到 CXF 文件…</strong>会把你选择的登录、笔记和通行密钥写入其他密码管理器可导入的 Credential Exchange 文件。该文件未加密。</li>
           </ul>
         </article>
 
@@ -1044,50 +1143,55 @@
     </div>
   </section>
 
-  <p class="help-more">找不到需要的内容?请查看<a href="../zh-hans/support.html">支持和常见问题</a>,或发送电子邮件至 <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>。</p>
+  <p class="help-more">找不到需要的内容?请查看<a href="../zh-hans/support">支持和常见问题</a>,或发送电子邮件至 <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a>。</p>
 </div>
+<script src="../guide.js"></script>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>一款 Windows 密码管理器，把您的保管库保存在您自己的设备上。</p>
-        <p class="quiet">本网站不设置 Cookie，不运行统计分析，也不加载其他公司的任何内容。</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>适用于 Windows、Mac 和 iPhone 的密码管理器，让保管库留在您自己的设备上。</p>
+        <p class="quiet">本网站使用不依赖 Cookie 的 Cloudflare Web Analytics 统计页面访问量。网站不使用广告追踪器，也不设置 Cookie。</p>
       </div>
       <nav aria-label="产品">
         <h2>产品</h2>
         <ul>
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/licence.html">您的 Pro 许可证</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/download">下载</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/switch/">迁移</a></li>
+          <li><a href="../buy">购买 Pro</a></li>
+          <li><a href="../zh-hans/licence">您的 Pro 许可证</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">找回许可证</a></li>
         </ul>
       </nav>
       <nav aria-label="帮助">
         <h2>帮助</h2>
         <ul>
-          <li><a href="../zh-hans/help.html">用户指南</a></li>
-          <li><a href="../zh-hans/support.html">支持与常见问题</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">报告漏洞</a></li>
+          <li><a href="../zh-hans/help">用户指南</a></li>
+          <li><a href="../zh-hans/support">支持与常见问题</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../legal/vulnerability-disclosure">报告漏洞</a></li>
         </ul>
       </nav>
       <nav aria-label="法律">
         <h2>法律</h2>
         <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
         <ul>
-          <li><a href="../legal/eula.html">许可协议</a></li>
-          <li><a href="../legal/privacy.html">隐私政策</a></li>
-          <li><a href="../legal/terms-of-sale.html">销售条款</a></li>
-          <li><a href="../legal/refunds.html">退款政策</a></li>
+          <li><a href="../legal/eula">许可协议</a></li>
+          <li><a href="../legal/privacy">隐私政策</a></li>
+          <li><a href="../legal/terms-of-sale">销售条款</a></li>
+          <li><a href="../legal/refunds">退款政策</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。</p>
-      <p class="lang-switch" role="navigation" aria-label="语言"><a href="../help.html" hreflang="en" lang="en">English</a> · <a href="../es/help.html" hreflang="es" lang="es">Español</a> · <a href="../it/help.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/help.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/help.html" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a> · <a href="../ja/help.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/help.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/help.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/help.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/help.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。Apple、iPhone、Apple Watch、Face ID、Touch ID 和 Safari 是 Apple Inc. 在美国及其他国家/地区注册的商标。</p>
+      <nav class="lang-switch" aria-label="语言"><ul><li><a href="../help" hreflang="en" lang="en">English</a></li><li><a href="../es/help" hreflang="es" lang="es">Español</a></li><li><a href="../it/help" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/help" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/help" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/help" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/help" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/help" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/help" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/help" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/help" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

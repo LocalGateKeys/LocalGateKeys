@@ -26,6 +26,10 @@
   import SettingsPage from '../components/SettingsPage.svelte';
   import LicencePage from '../components/LicencePage.svelte';
   import ConnectionsPage from '../components/ConnectionsPage.svelte';
+  import PasskeyDoctorPage from '../components/PasskeyDoctorPage.svelte';
+  import HygienePage from '../components/HygienePage.svelte';
+  import PrivacyProofPage from '../components/PrivacyProofPage.svelte';
+  import DeveloperPage from '../components/DeveloperPage.svelte';
   import ProfilesPage from '../components/ProfilesPage.svelte';
   import BackupPasswordSheet from '../components/BackupPasswordSheet.svelte';
   import SyncPage from '../components/SyncPage.svelte';
@@ -81,8 +85,9 @@
     setupCard = setup.ok && setup.card ? setup : null;
   }
 
-  // "Finish setting up · 3 of 5": the setup steps left, until they are done or the card is hidden.
+  // "Setup 3 of 5" chip in the filter row: the setup steps left, until they are done or the chip is hidden.
   let setupCard = $state(null);
+  function openSetup() { replacing = true; push({ kind: 'onboarding', action: 'onboarding_clicked' }, refreshOverview); replacing = false; }
   async function hideSetupCard() {
     const result = await call('onboarding_hide');
     if (okOrToast(result, t('home.cardNotHidden'))) setupCard = null;
@@ -197,35 +202,54 @@
   }
   function closePages() { pages = []; afterClose = []; forward = []; }
   // Which sidebar action the open page belongs to, so its entry stays highlighted.
+  // Pages without their own Tools entry light up the entry they are reached from (Licence: Settings > Plan).
   const PAGE_ACTIONS = { security: 'security_health_clicked', health: 'security_health_clicked', settings: 'settings_clicked',
-    licence: 'licence_clicked', connections: 'connections_clicked', sync: 'sync_clicked', 'import-menu': 'import_export_clicked',
-    import: 'import_clicked', export: 'export_clicked', 'sync-status': 'sync_clicked', transfer: 'transfer_clicked', onboarding: 'onboarding_clicked',
-    trash: 'trash_clicked', scan: 'scan_qr_clicked', 'phone-backup': 'import_export_clicked', incoming: 'import_export_clicked' };
-  const WORKSPACE_ACTIONS = { reminders: 'reminders_clicked', activity: 'activity_clicked', shortcuts: 'show_shortcuts_clicked',
+    licence: 'settings_clicked', connections: 'connections_clicked', sync: 'sync_clicked', 'import-menu': 'import_export_clicked',
+    import: 'import_export_clicked', export: 'import_export_clicked', 'sync-status': 'sync_clicked', transfer: 'import_export_clicked',
+    onboarding: 'onboarding_clicked', trash: 'trash_clicked', scan: 'import_export_clicked', 'phone-backup': 'import_export_clicked',
+    incoming: 'import_export_clicked' };
+  const WORKSPACE_ACTIONS = { reminders: 'reminders_clicked', activity: 'security_health_clicked', shortcuts: 'show_shortcuts_clicked',
     collections: 'collections_clicked' };
   const activeActions = $derived(panePages.map((p) => p.action ?? (p.kind === 'workspace' ? WORKSPACE_ACTIONS[p.which] : PAGE_ACTIONS[p.kind]))
     .filter(Boolean));
+  // The generator belongs to the view it was opened over: moving to another sidebar entry closes it.
+  // (Editors stay open, so unsaved changes are never dropped by a sidebar click.)
+  function closeGenerator() { if (sheet?.kind === 'generator') sheet = null; }
   function sidebarAction(action) {
+    closeGenerator();
     const before = pageIds;
     replacing = true;
     try { navAction(action); } finally { replacing = false; }
     if (pages.length && pages[0].id > before) pages[0].action = action;
   }
-  function sidebarFilter(token) { closePages(); setFilter(token); }
+  function sidebarFilter(token) { closeGenerator(); closePages(); setFilter(token); }
   let update = $state(null);
-  const updateText = $derived(update ? t('home.updateText', { current: update.current, latest: update.latest }) + (update.note ? '\n\n' + update.note : '') : '');
+  const updateText = $derived(update ? (update.unsupported ? update.message + '\n\n' : '') + t('home.updateText', { current: update.current, latest: update.latest }) + (update.note ? '\n\n' + update.note : '') : '');
 
   // After unlock: an old build suggests an update check (no network until the user says yes).
   let reminder = $state(null);
   // Otherwise, from the third unlock: ask once for a Microsoft Store rating.
   let ratePrompt = $state(null);
+  // Before both, in the last installer build: LocalGateKeys has moved to the Microsoft Store.
+  let storeMove = $state(null);
   $effect(() => {
-    call('updates_reminder').then(async (r) => {
+    call('store_move_notice').then(async (m) => {
+      if (m?.ok && m.due) { storeMove = m; return; }
+      const r = await call('updates_reminder');
       if (r.ok && r.due) { reminder = r; return; }
       const rate = await call('rating_prompt');
       if (rate.ok && rate.due) ratePrompt = rate;
     });
   });
+  async function storeMoveAnswer(yes) {
+    storeMove = null;
+    const result = await call('store_move_answer', yes);
+    if (!result.ok) toast(result.error.message, '', 'error');
+  }
+  async function openStore() {
+    const result = await call('store_move_open');
+    if (!result.ok) toast(result.error.message, '', 'error');
+  }
   function reminderAnswer(yes) {
     reminder = null;
     if (yes) checkUpdates(); else call('updates_snooze');
@@ -244,7 +268,7 @@
     const result = await call('updates_check');
     if (!result.ok) { if (result.error.code !== 'cancelled') toast(result.error.message, '', 'error'); return; }
     if (result.available) update = result;
-    else toast(result.message);
+    else toast(result.message, '', result.unsupported ? 'error' : 'info');
   }
 
   async function openRelease(yes) {
@@ -254,27 +278,32 @@
     if (!result.ok) toast(result.error.message, '', 'error');
   }
 
+  // The scheduled-backup password sheet (set, change, reset, rebind, confirm, remove); "dismiss" hides the upgrade notice.
   async function backupPassword(params, refresh) {
-    if (params.clear) {
-      const result = await call('backup_password_clear');
-      if (result.ok) toast(result.message);
-      else if (result.error.code !== 'cancelled') toast(result.error.message, '', 'error');
+    if (params.mode === 'dismiss') {
+      const result = await call('backup_notice_dismiss');
+      if (!result.ok) toast(result.error.message, '', 'error');
       if (refresh) refresh();
       return;
     }
-    push({ kind: 'backup-password' }, refresh);
+    push({ kind: 'backup-password', mode: params.mode ?? 'set' }, refresh);
   }
 
   function route(target, params = {}, refresh = null) {
     if (target === 'security') push({ kind: 'security' }, refresh);
     else if (target === 'health') push({ kind: 'health', filter: params.filter ?? null, scanAll: !!params.scan_all }, refresh);
     else if (target === 'rate') rate();
+    else if (target === 'store-move') openStore();
     else if (target === 'master') push({ kind: 'master' }, refresh);
     else if (target === 'recovery') push({ kind: 'recovery', initial: params.initial ?? null }, refresh);
     else if (target === 'hello' || target === 'face') push({ kind: 'unlocking', startHello: !!params.startHello }, refresh);
     else if (target === 'settings') push({ kind: 'settings', section: params.section ?? null }, refresh);
     else if (target === 'licence') push({ kind: 'licence' }, refresh);
     else if (target === 'connections') push({ kind: 'connections' }, refresh);
+    else if (target === 'passkey-doctor') push({ kind: 'passkey-doctor' }, refresh);
+    else if (target === 'hygiene') push({ kind: 'hygiene' }, refresh);
+    else if (target === 'privacy-proof') push({ kind: 'privacy-proof' }, refresh);
+    else if (target === 'developer') push({ kind: 'developer' }, refresh);
     else if (target === 'profiles' || target === 'switch-profile') push({ kind: 'profiles' }, refresh);
     else if (target === 'updates' || target === 'check-updates') checkUpdates();
     else if (target === 'backup_password') backupPassword(params, refresh);
@@ -300,11 +329,12 @@
   const NAV_ROUTES = { security_health_clicked: 'security', settings_clicked: 'settings', licence_clicked: 'licence',
     connections_clicked: 'connections', sync_clicked: 'sync', import_export_clicked: 'import-menu',
     import_clicked: 'import', export_clicked: 'export', transfer_clicked: 'transfer', reminders_clicked: 'reminders',
-    activity_clicked: 'activity', show_shortcuts_clicked: 'shortcuts', onboarding_clicked: 'onboarding',
+    activity_clicked: 'activity', collections_clicked: 'collections', show_shortcuts_clicked: 'shortcuts', onboarding_clicked: 'onboarding',
     quick_access_clicked: 'quick-access', scan_qr_clicked: 'scan-qr' };
 
   function navAction(action) {
     if (action === 'trash_clicked') { route('trash'); return; }
+    if (action === 'password_generator_clicked') { sheet = { kind: 'generator' }; return; }
     if (NAV_ROUTES[action]) { route(NAV_ROUTES[action]); return; }
     toast(t('home.comingTitle'), t('home.comingText'));
   }
@@ -330,11 +360,20 @@
     push({ kind: 'share', item: { source: ref.source, id: ref.id, kind: ref.kind } });
   }
 
+  // "Copy CLI reference" is offered only while command line access is on.
+  async function openMenu(item, at) {
+    const state = await call('developer_cli_get');
+    menu = { item, at, cli: state?.ok === true && state.enabled === true };
+  }
+
   async function menuPick(action) {
     const item = menu.item;
     const ref = item.ref;
     if (action === 'edit' || action === 'open') openItem(ref);
-    else if (action.startsWith('copy-')) {
+    else if (action === 'copy-cli-reference') {
+      const result = await call('developer_copy_reference', ref.id, ref.source === 'credential' ? 'password' : '');
+      if (okOrToast(result, t('home.notCopied'))) notice(result);
+    } else if (action.startsWith('copy-')) {
       const result = await call('item_copy', ref, action.slice(5));
       if (okOrToast(result, t('home.notCopied'))) notice(result);
     } else if (action === 'open-website') okOrToast(await call('item_open_website', ref), t('home.websiteNotOpened'));
@@ -367,11 +406,12 @@
     if (okOrToast(result, t('home.notTrashed'))) notice(result);
   }
 
-  async function copyPassword(ref) {
+  async function copyField(ref, field) {
     if (ref.source !== 'credential') return;
-    const result = await call('item_copy', ref, 'password');
+    const result = await call('item_copy', ref, field);
     if (okOrToast(result, t('home.notCopied'))) notice(result);
   }
+  const copyPassword = (ref) => copyField(ref, 'password');
 
   function inTextField(target) {
     const tag = target?.tagName;
@@ -389,7 +429,8 @@
     const copy = event.ctrlKey && (event.key === 'c' || event.key === 'C');
     if (inSearch && !(arrow || event.key === 'Enter')) return false;
     if (!arrow && event.key !== 'Enter' && !copy) return false;
-    if (event.key === 'Enter' && !selected && list?.items?.length) selected = list.items[0].ref; // Enter in search opens the top hit
+    if (event.key === 'Enter' && inSearch && list?.items?.length) selected = list.items[0].ref; // Enter in search opens the top hit
+    else if (event.key === 'Enter' && !selected && list?.items?.length) selected = list.items[0].ref;
     return itemList.key(event);
   }
 
@@ -407,7 +448,11 @@
     return false;
   }
 
-  function keys(event) {
+  async function keys(event) {
+    // Esc in a non-empty search box clears it first.
+    if (event.key === 'Escape' && event.target === searchInput && query && !event.ctrlKey && !event.altKey) {
+      event.preventDefault(); query = ''; refresh(); return;
+    }
     if (pageKeys(event)) return;
     // F1 / ? open the shortcuts from the main screen only, never over a sheet, page or dialog.
     if ((event.key === 'F1' || (event.key === '?' && !inTextField(event.target))) && !event.ctrlKey && !event.altKey
@@ -417,11 +462,13 @@
       return;
     }
     if (sheet && sheet.kind !== 'editor' && sheet.kind !== 'typed') return;
+    // An open editor may hold unsaved changes: only the lock shortcuts reach past it (its own Esc asks first).
+    if (sheet && !(event.ctrlKey && (event.key === 'l' || event.key === 'L'))) return;
     if (!sheet && !pages.length && !update && !offer && !document.querySelector('.scrim') && listKeys(event)) return;
     if (event.ctrlKey && (event.key === 'k' || event.key === 'K')) { event.preventDefault(); sheet = { kind: 'palette' }; }
     else if (event.ctrlKey && (event.key === 'n' || event.key === 'N')) { event.preventDefault(); sheet = { kind: 'new' }; }
-    else if (event.ctrlKey && event.altKey && (event.key === 'l' || event.key === 'L')) { event.preventDefault(); call('lock_emergency'); }
-    else if (event.ctrlKey && (event.key === 'l' || event.key === 'L')) { event.preventDefault(); call('vault_lock'); }
+    else if (event.ctrlKey && event.altKey && (event.key === 'l' || event.key === 'L')) { event.preventDefault(); okOrToast(await call('lock_emergency'), t('home.lockFailed')); }
+    else if (event.ctrlKey && (event.key === 'l' || event.key === 'L')) { event.preventDefault(); okOrToast(await call('vault_lock'), t('home.lockFailed')); }
     else if (event.ctrlKey && (event.key === 'f' || event.key === 'F')) { event.preventDefault(); searchInput?.focus(); }
   }
 </script>
@@ -441,11 +488,16 @@
 
 {#snippet pageView(pg)}
     {#if pg.kind === 'security'}
-      <SecurityPage onclose={pop} onroute={route} />
+      <SecurityPage onclose={pop} onroute={route} active={pg === panePage} />
     {:else if pg.kind === 'health'}
       <HealthPage filter={pg.filter} scanAll={pg.scanAll} onclose={pop} onroute={route}
-        onopen={(id) => { closePages(); openItem({ source: 'credential', id, kind: 'web' }); }}
-        onchangepassword={(id) => { sheet = { kind: 'editor', ref: { source: 'credential', id, kind: 'web' }, newPassword: true }; }} />
+        onopen={(id, kind = 'web') => { closePages(); openItem(kind === 'web' ? { source: 'credential', id, kind }
+          : { source: 'typed', id, kind }); }}
+        onchangepassword={async (id) => {
+          const page = await call('change_password_open', id);
+          if (page.ok && page.note) toast(page.note);
+          sheet = { kind: 'editor', ref: { source: 'credential', id, kind: 'web' }, newPassword: true };
+        }} />
     {:else if pg.kind === 'unlocking'}
       <UnlockingPage startHello={!!pg.startHello} onclose={pop} />
     {:else if pg.kind === 'recovery'}
@@ -456,6 +508,14 @@
       <LicencePage onclose={pop} />
     {:else if pg.kind === 'connections'}
       <ConnectionsPage onclose={pop} />
+    {:else if pg.kind === 'passkey-doctor'}
+      <PasskeyDoctorPage onclose={pop} />
+    {:else if pg.kind === 'hygiene'}
+      <HygienePage onclose={() => { pop(); refresh(); }} onopen={(ref) => { closePages(); refresh(); selected = ref; }} />
+    {:else if pg.kind === 'privacy-proof'}
+      <PrivacyProofPage onclose={pop} />
+    {:else if pg.kind === 'developer'}
+      <DeveloperPage onclose={pop} />
     {:else if pg.kind === 'profiles'}
       <ProfilesPage onclose={pop} />
     {:else if pg.kind === 'desktop'}
@@ -477,7 +537,7 @@
     {:else if pg.kind === 'phone-backup'}
       <PhoneBackupSheet onclose={() => { pop(); refresh(); }} />
     {:else if pg.kind === 'sync'}
-      <SyncPage onclose={pop} onlicence={() => push({ kind: 'licence' }, refresh)} />
+      <SyncPage onclose={pop} onlicence={() => push({ kind: 'licence' }, refresh)} onconnections={() => push({ kind: 'connections' })} />
     {:else if pg.kind === 'sync-status'}
       <SyncStatusPage onclose={pop} onsettings={() => push({ kind: 'sync' })} />
     {:else if pg.kind === 'trash'}
@@ -497,18 +557,8 @@
   <section class="center" hidden={!!panePage}>
     <TopBar bind:query bind:searchInput oninput={searched} onlock={() => call('vault_lock')}
       onnew={() => (sheet = { kind: 'new' })} onpalette={() => (sheet = { kind: 'palette' })} />
-    {#if !filter && !query && !chip}<Overview {overview} ongenerator={() => (sheet = { kind: 'generator' })} />{/if}
+    {#if !filter && !query && !chip}<Overview {overview} onreminders={() => { replacing = true; route('reminders'); replacing = false; }} />{/if}
     {#if !filter && !query && !chip}<CodesCard />{/if}
-    {#if setupCard && !filter && !query && !chip}
-      <section class="import-card setup-card" aria-label={t('home.finishSetup')}>
-        <h2>{t('home.finishSetupProgress', { progress: setupCard.progress })}</h2>
-        <p>{t('home.finishSetupText')}</p>
-        <div class="import-card-actions">
-          <button type="button" class="primary" onclick={() => { replacing = true; push({ kind: 'onboarding', action: 'onboarding_clicked' }, refreshOverview); replacing = false; }}>{t('home.continueSetup')}</button>
-          <button type="button" onclick={hideSetupCard}>{t('home.hide')}</button>
-        </div>
-      </section>
-    {/if}
     {#if list?.import_card && !filter && !query && !chip}
       <section class="import-card" aria-label={t('home.importTitle')}>
         <h2>{t('home.importTitle')}</h2>
@@ -524,15 +574,17 @@
       <span class="count">{list ? t('home.itemCount', { count: list.count, number: formatNumber(list.count) }) : ''}</span>
       <SortMenu sort={list?.sort ?? null} searching={!!query.trim()} onchange={setSort} />
     </div>
-    <Chips counts={list?.chips ?? {}} active={chip} onselect={setChip} />
+    <Chips counts={list?.chips ?? {}} active={chip} onselect={setChip}
+      setup={setupCard && !filter && !query ? setupCard.progress : null} onsetup={openSetup} onsetuphide={hideSetupCard} />
     <ItemList bind:this={itemList} items={list?.items ?? []} {selected} empty={list?.empty}
       onselect={(ref) => (selected = ref)} onopen={openItem} onemptyaction={emptyAction}
-      onmenu={(item, at) => (menu = { item, at })} ontrash={trash} oncopy={copyPassword} />
+      onmenu={openMenu} ontrash={trash} oncopy={copyPassword} oncopyfield={copyField} />
   </section>
   <section class="right" hidden={!!panePage}>
     <DetailPane {selected} icon={list?.items?.find((i) => i.ref.id === selected?.id)?.icon ?? null} onedit={openItem} onchanged={refresh}
       onshare={shareItem} />
     {#if reminder}<Modal title={reminder.title} message={reminder.text} allowLabel={t('home.checkNow')} denyLabel={t('common.notNow')} onanswer={reminderAnswer} />{/if}
+    {#if storeMove}<Modal title={storeMove.title} message={storeMove.text} allowLabel={t('storeMove.open')} denyLabel={t('storeMove.later')} onanswer={storeMoveAnswer} />{/if}
     {#if ratePrompt}<Modal title={ratePrompt.title} message={ratePrompt.text} allowLabel={t('home.rateNow')} denyLabel={t('home.noThanks')} onanswer={rateAnswer} />{/if}
     {#if quick}<QuickAccess onclose={() => (quick = false)} onopen={(ref) => { quick = false; openItem(ref); }} />{/if}
     {#if !panePage}{@render itemSheets()}{/if}
@@ -557,7 +609,7 @@
   {#if pg.kind === 'master'}
     <div class="dialog-host"><MasterSheet onclose={pop} /></div>
   {:else if pg.kind === 'backup-password'}
-    <div class="dialog-host"><BackupPasswordSheet onclose={pop} /></div>
+    <div class="dialog-host"><BackupPasswordSheet mode={pg.mode} onclose={pop} /></div>
   {/if}
 {/each}
 {#if update}
@@ -567,14 +619,15 @@
   <Modal title={offer.title} message={offer.text} allowLabel={t('home.setUp')} denyLabel={t('common.notNow')} onanswer={answerOffer} />
 {/if}
 {#if menu}
-  <ItemMenu item={menu.item} at={menu.at} onpick={menuPick} onclose={() => (menu = null)} />
+  <ItemMenu item={menu.item} at={menu.at} cli={menu.cli} onpick={menuPick} onclose={() => (menu = null)} />
 {/if}
 
 <style>
   .home {
     height: 100%;
     display: grid;
-    grid-template-columns: 210px minmax(320px, 1fr) minmax(340px, 0.9fr);
+    /* Fits the 900 px minimum window less its frame (about 884 px of page): 210 + 320 + 300 + gaps and padding. */
+    grid-template-columns: 210px minmax(320px, 1fr) minmax(300px, 0.9fr);
     grid-template-rows: 1fr auto;
     gap: 10px;
     padding: 10px 10px 0;
@@ -598,7 +651,7 @@
   .import-card-actions button:hover { background: var(--glass-hover); }
   .import-card-actions button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
   .import-card-actions button.primary:hover { background: var(--accent-hover); }
-  .list-head { display: flex; align-items: baseline; gap: 10px; padding: 4px 16px 6px; }
+  .list-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 4px 16px 6px; min-width: 0; }
   h1 { margin: 0; font: 600 20px var(--font-display); }
   .count { color: var(--text-faint); font-size: 12.5px; }
   .center :global(.list) { flex: 1; }

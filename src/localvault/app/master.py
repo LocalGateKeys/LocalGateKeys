@@ -42,11 +42,21 @@ class MasterService:
                phrase: str | None) -> dict[str, Any]:
         """The passwords stay the caller's: the bridge wipes them once this returns, never kept here."""
         from ..face_unlock import cleanup_after_password_change as cleanup_face
+        from ..fido_unlock import cleanup_after_password_change as cleanup_fido
         from ..hello_unlock import cleanup_after_password_change as cleanup_hello
 
         session, lease = self._session_lease()
         if not secrets_match(new, confirm):
             raise ApiError("invalid", t("masterSheet.mismatch"))
+        from .. import duress
+
+        try:
+            # Kept apart from the duress password (and, inside a duress session, from the real one).
+            duress.check_new_master(session, new)
+        except duress.DuressError as exc:
+            raise ApiError("invalid", str(exc)) from None
+        except VaultError as exc:  # the real vault's throttle, from inside a duress session
+            raise ApiError("invalid", str(exc)) from None
         phrase = (phrase or "").strip() or None
         if not self._port.confirm(t(CONFIRM_TITLE), t(CONFIRM_TEXT)):
             raise ApiError("cancelled", t("error.cancelled"))
@@ -55,17 +65,24 @@ class MasterService:
         record_id = session.hello_binding()
         had_face = bool(session.face_binding())
         vault_path = session.path
+        from .factors import YubiKeyFailure, with_factors
+
         try:
-            result = session.change_master_password(current, new, recovery_phrase=phrase)
+            # Keeps the key file / YubiKey (a session opened by Hello etc. is asked for them first).
+            result = with_factors(self._controller, lambda factors: session.change_master_password(
+                current, new, recovery_phrase=phrase, factors=factors))
+        except YubiKeyFailure as exc:
+            raise exc.api_error() from None
         except VaultError as exc:
             raise ApiError("invalid", str(exc)) from None
         require_master_unlock(profile_id)
         hello_cleaned = cleanup_hello(vault_path, record_id)
         face_cleaned = cleanup_face(vault_path) if had_face else True
+        fido_cleaned = cleanup_fido(vault_path)
         self._controller.lock(t(LOCK_REASON))
         notes = []
         if result.get("recovery_phrase_invalidated"):
             notes.append(dict(PHRASE_NOTE))
-        if not hello_cleaned or not face_cleaned:
+        if not hello_cleaned or not face_cleaned or not fido_cleaned:
             notes.append(dict(CLEANUP_NOTE))
         return {"notes": notes}

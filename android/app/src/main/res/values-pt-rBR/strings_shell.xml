@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The shell (UX workstream 1, Android parity Task 5): search screen, `>` actions, Settings › Breach checks. -->
+<resources>
+    <string name="search_recent_searches">Buscas recentes</string>
+    <string name="search_recent_items">Itens recentes</string>
+    <string name="search_again_hint">Busca novamente</string>
+    <string name="cmd_security_check">Verificação de segurança</string>
+    <string name="cmd_sync_settings">Ajustes de sincronização</string>
+    <string name="settings_breach_title">Verificações de vazamento</string>
+    <string name="settings_strict_offline">Modo offline estrito</string>
+    <string name="settings_allow_breach">Permitir verificações de vazamento</string>
+    <string name="settings_breach_footer">%1$s Nada é verificado automaticamente; a aba Segurança pergunta a cada vez.</string>
+</resources>

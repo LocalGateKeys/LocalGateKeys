@@ -1,8 +1,8 @@
 <script>
-  /** Overview cards above the list: password health, coming up, backup. */
+  /** Overview boxes above the list: password health, coming up (opens Reminders), backup & recovery. */
   import { formatNumber, t } from '../lib/i18n.svelte.js';
 
-  let { overview = null, ongenerator } = $props();
+  let { overview = null, onreminders = undefined } = $props();
 
   function ago(seconds) {
     if (seconds < 3600) return t('overview.withinHour');
@@ -26,14 +26,15 @@
         <div class="muted">{overview.health?.label ?? t('overview.noLogins')}</div>
       {/if}
     </div>
-    <div class="card group">
-      <div class="title">{t('overview.comingUp')}</div>
+    <button type="button" class="card group open" aria-label={`${t('overview.comingUp')}: ${t('overview.openReminders')}`}
+      title={t('overview.openReminders')} onclick={() => onreminders?.()}>
+      <span class="title">{t('overview.comingUp')}</span>
       {#each overview.reminders as line (line.date + line.label)}
-        <div class="line"><span class="date">{line.date}</span>{line.label}<span class="meta" class:overdue={line.overdue}>{line.meta}</span></div>
+        <span class="line"><span class="date">{line.date}</span><span class="what">{line.label}</span><span class="meta" class:overdue={line.overdue}>{line.meta}</span></span>
       {:else}
-        <div class="muted">{t('overview.nothingComingUp')}</div>
+        <span class="muted">{t('overview.nothingComingUp')}</span>
       {/each}
-    </div>
+    </button>
     <div class="card group">
       <div class="title">{t('overview.backup')}</div>
       {#if overview.backup?.last_at}
@@ -43,27 +44,28 @@
       {/if}
       {#if overview.backup?.warning}<div class="warn">{overview.backup.warning}</div>{/if}
     </div>
-    <div class="card group">
-      <div class="title">{t('overview.generator')}</div>
-      <button class="link" onclick={ongenerator}>{t('overview.openGenerator')}</button>
-    </div>
   </div>
 {/if}
 
 <style>
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding: 4px 14px 10px; }
-  .card { padding: 12px 14px; min-height: 92px; display: grid; align-content: start; gap: 6px; }
-  .title { font-weight: 600; }
-  .big { font: 600 26px var(--font-display); }
-  .of { font: 400 13px var(--font-ui); color: var(--text-muted); }
-  .pills { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
-  .pills span, .pill { padding: 2px 8px; border-radius: 9px; background: var(--glass); width: fit-content; font-size: 12px; }
+  /* Three small boxes in one row; text wraps inside them, nothing is clipped at the narrowest window. */
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 4px 14px 8px; }
+  .card { padding: 8px 10px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 4px; min-width: 0; font-size: 12px;
+    overflow-wrap: anywhere; }
+  button.card { border: none; color: inherit; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+  button.card:hover { filter: brightness(1.15); }
+  button.card:focus-visible { outline: 2px solid var(--link); outline-offset: 1px; }
+  .title { font-weight: 600; font-size: 11.5px; hyphens: auto; overflow-wrap: break-word; word-break: normal; color: var(--text-muted); }
+  .big { font: 600 18px var(--font-display); }
+  .of { font: 400 12px var(--font-ui); color: var(--text-muted); }
+  .pills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pills span, .pill { padding: 1px 7px; border-radius: 9px; background: var(--glass); width: fit-content; max-width: 100%; font-size: 11px; }
   .pill.stale { color: var(--warning); }
-  .warn { color: var(--danger); font-size: 12.5px; }
+  .warn { color: var(--danger); font-size: 11.5px; }
   .muted { color: var(--text-muted); }
-  .line { display: flex; gap: 8px; font-size: 12.5px; }
-  .date { color: var(--text-faint); width: 48px; }
-  .meta { margin-left: auto; color: var(--text-muted); }
+  .line { display: flex; flex-wrap: wrap; column-gap: 6px; }
+  .date { color: var(--text-faint); }
+  .what { min-width: 0; }
+  .meta { color: var(--text-muted); }
   .overdue { color: var(--danger); }
-  .link { background: none; border: none; color: var(--link); cursor: pointer; padding: 0; text-align: left; }
 </style>

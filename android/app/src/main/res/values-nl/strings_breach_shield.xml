@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Geverifieerde site</string>
+    <string name="autofill_site_related">Verwante site</string>
+    <string name="autofill_site_lookalike">Nagemaakte site</string>
+    <string name="autofill_site_new">Nieuwe site</string>
+    <string name="autofill_guard_title">Is dit de juiste site?</string>
+    <string name="autofill_guard_body">%1$s lijkt op %2$s, waar uw login is opgeslagen, maar het is een andere site. Ga alleen verder als u het zeker weet.</string>
+    <string name="autofill_guard_body_mixed">%1$s mengt letters uit verschillende alfabetten, een veelgebruikte phishingtruc. Ga alleen verder als u het zeker weet.</string>
+    <string name="autofill_guard_continue">Doorgaan op %1$s</string>
+    <string name="autofill_guard_go_back">Terug</string>
+    <string name="autofill_same_account_title">Is dit hetzelfde account als op %1$s?</string>
+    <string name="autofill_same_account_body">%1$s heeft dezelfde naam als %2$s, waar uw login is opgeslagen, maar een andere extensie. Ga alleen verder als het hetzelfde bedrijf is.</string>
+    <string name="autofill_same_account_yes">Hetzelfde account</string>
+    <string name="autofill_pick_other_site_body">Deze login is opgeslagen voor %2$s, niet voor %1$s. Vul hem alleen in op %1$s als u zeker weet dat het de juiste site is.</string>
+    <string name="autofill_pick_no_site_body">Voor deze login is geen website opgeslagen. Vul hem alleen in op %1$s als u zeker weet dat het de juiste site is.</string>
+    <string name="autofill_pick_scheme_unknown_body">De browser heeft niet aangegeven of %1$s een beveiligde pagina (https) is. Vul alleen in als u het zeker weet.</string>
+</resources>

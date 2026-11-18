@@ -139,6 +139,41 @@ def test_reject_deletes_and_same_package_cannot_return(env, tmp_path):
     assert code
 
 
+def test_revoke_over_sync_stops_a_paired_device_opening_it(env, tmp_path, monkeypatch):
+    import base64
+
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    key = ed25519.Ed25519PrivateKey.generate()
+    public = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    sync_dir = tmp_path / "cloud" / "LocalGateKeys Sync"
+    channel = (sync_dir, SimpleNamespace(device_id="dev-pc", signing_key=key),
+               {"dev-pc": base64.b64encode(public).decode()})
+    monkeypatch.setattr(ShareService, "_sync_channel", lambda self: channel)
+    started = env.service.start(env.ref)
+    env.service.save_file(started["handle"])
+    assert "message" in env.service.revoke(started["handle"])
+    _second_profile(env)
+    got = env.service.receive_file()
+    with pytest.raises(ApiError) as exc:
+        env.service.preview(got["id"], started["code"])
+    assert exc.value.code == "revoked"
+    assert env.service.incoming()["incoming"] == []
+
+
+def test_revoke_without_sync_says_so(env, monkeypatch):
+    monkeypatch.setattr(ShareService, "_sync_channel", lambda self: None)
+    started = env.service.start(env.ref)
+    with pytest.raises(ApiError) as exc:
+        env.service.revoke(started["handle"])
+    assert exc.value.code == "no_sync"
+
+
+def test_no_sync_state_means_nothing_revoked(env):
+    assert env.service._revoked_over_sync() == set()
+
+
 def test_free_limit_keeps_the_package(env, monkeypatch):
     code = _send(env)
     _second_profile(env)

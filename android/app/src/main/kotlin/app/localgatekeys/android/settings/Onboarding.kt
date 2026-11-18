@@ -63,6 +63,17 @@ class Onboarding(private val settings: AppSettings, private val t: Txt) {
         settings.setupDone = _done.value.filter { it != SetupStep.CREATE }.map { it.raw }.toSet()
     }
 
+    /**
+     * Whether a step's action button counts it as done. Autofill does not: it is done once the system reports
+     * LocalGateKeys as the autofill service ([autofillStatus]), so coming back without choosing it leaves the step open.
+     */
+    fun completesOnAction(step: SetupStep): Boolean = step != SetupStep.AUTOFILL
+
+    /** The autofill service status after a check (review 2026-11-15 UX 3): on completes the Autofill step. */
+    fun autofillStatus(enabled: Boolean?) {
+        if (enabled == true) complete(SetupStep.AUTOFILL)
+    }
+
     /** The pages were finished or skipped: they do not open again by themselves. */
     fun closePages() {
         _pagesOpen.value = false
@@ -97,4 +108,13 @@ class Onboarding(private val settings: AppSettings, private val t: Txt) {
     fun cardText(done: Int, total: Int): String = t.s(R.string.onboarding_card_text, done, total)
 
     fun pageCount(step: SetupStep): String = t.s(R.string.onboarding_page_count, step.ordinal + 1, SetupStep.entries.size)
+}
+
+/**
+ * The Vault list's "Autofill is off" banner (review 2026-11-15 UX 3): only once the system said autofill is off (not
+ * while unknown), not after its Not now, and not under the setup pages.
+ */
+object AutofillBanner {
+    fun shows(enabled: Boolean?, dismissed: Boolean, setupPagesOpen: Boolean): Boolean =
+        enabled == false && !dismissed && !setupPagesOpen
 }

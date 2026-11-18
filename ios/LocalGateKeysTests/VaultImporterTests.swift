@@ -68,8 +68,8 @@ final class VaultImporterTests: XCTestCase {
         _ = try importer(store).importCandidates([login("x.com"), login("y.com"), login("z.com")], unsupported: 0)
         let batch = (0..<50).map { login("site\($0).com") }
         let r = try importer(store, pro: false).importCandidates(batch, unsupported: 0)
-        XCTAssertEqual(r.added, 1)
-        XCTAssertEqual(r.needsPro, 49)
+        XCTAssertEqual(r.added, ItemLimit.freeItems - 3)
+        XCTAssertEqual(r.needsPro, 50 - (ItemLimit.freeItems - 3))
     }
 
     func testPasskeyDuplicateSkipped() throws {

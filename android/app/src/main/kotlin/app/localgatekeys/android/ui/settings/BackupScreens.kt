@@ -28,14 +28,19 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -60,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.localgatekeys.android.backup.BackupText
+import app.localgatekeys.android.backup.CxfExportFlow
 import app.localgatekeys.android.backup.ExportFlow
 import app.localgatekeys.android.backup.RestoreFlow
 import app.localgatekeys.android.ui.theme.AuroraBackground
@@ -91,8 +97,11 @@ class BackupSeams(
 
 /** The system "save as" and "open" pickers for backup files (`ACTION_CREATE_DOCUMENT` / `ACTION_OPEN_DOCUMENT`). */
 interface BackupDocuments {
-    /** Asks where to save [bytes] as [name]; [done] gets true once written, false when cancelled or failed, null when dropped. */
-    fun save(name: String, bytes: ByteArray, done: (Boolean?) -> Unit)
+    /**
+     * Asks where to save [bytes] as [name]; [done] gets true once written, false when cancelled or failed, null when
+     * dropped (or when another save is still pending). With [cancelled], a closed picker calls it instead of done(false).
+     */
+    fun save(name: String, bytes: ByteArray, done: (Boolean?) -> Unit, cancelled: (() -> Unit)? = null)
 
     /** Asks for a backup file; [done] gets its bytes (read up to the format's limit + 1), null when it could not be read. */
     fun open(done: (ByteArray?) -> Unit)
@@ -126,11 +135,14 @@ fun rememberBackupDocuments(onOpen: () -> Unit, onClose: () -> Boolean): BackupD
     val scope = rememberCoroutineScope()
     val open by rememberUpdatedState(onOpen)
     val close by rememberUpdatedState(onClose)
-    val pending = remember { arrayOfNulls<Any>(2) } // [0]: save (bytes, done); [1]: open done
+    val pending = remember { arrayOfNulls<Any>(3) } // [0]: save (bytes, done); [1]: open done; [2]: save cancelled
     val saver = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(MIME)) { uri ->
         @Suppress("UNCHECKED_CAST")
         val job = pending[0] as? Pair<ByteArray, (Boolean?) -> Unit>
+        @Suppress("UNCHECKED_CAST")
+        val onCancel = pending[2] as? () -> Unit
         pending[0] = null
+        pending[2] = null
         val stillUnlocked = close()
         if (job == null) {
             // A result for a request this screen no longer holds (the activity was recreated): the picker made an empty
@@ -144,7 +156,7 @@ fun rememberBackupDocuments(onOpen: () -> Unit, onClose: () -> Boolean): BackupD
                 if (uri != null) scope.launch(Dispatchers.IO) { deleteQuietly(context, uri) }
                 done(null)
             }
-            uri == null -> done(false)
+            uri == null -> if (onCancel != null) onCancel() else done(false)
             else -> scope.launch {
                 val ok = withContext(Dispatchers.IO) { write(context, uri, bytes).also { if (!it) deleteQuietly(context, uri) } }
                 done(ok)
@@ -170,14 +182,16 @@ fun rememberBackupDocuments(onOpen: () -> Unit, onClose: () -> Boolean): BackupD
     }
     return remember(saver, opener) {
         object : BackupDocuments {
-            override fun save(name: String, bytes: ByteArray, done: (Boolean?) -> Unit) {
-                if (pending[0] != null) return
+            override fun save(name: String, bytes: ByteArray, done: (Boolean?) -> Unit, cancelled: (() -> Unit)?) {
+                if (pending[0] != null) return done(null)
                 pending[0] = bytes to done
+                pending[2] = cancelled
                 open()
                 try {
                     saver.launch(name)
                 } catch (e: Exception) {
                     pending[0] = null
+                    pending[2] = null
                     close()
                     done(false)
                 }
@@ -241,7 +255,7 @@ fun ExportBackupScreen(flow: ExportFlow, documents: BackupDocuments, fileName: (
     val export: () -> Unit = {
         scope.launch {
             val bytes = flow.make() ?: return@launch
-            documents.save(fileName(), bytes) { ok -> if (ok != null) flow.written(ok) }
+            documents.save(fileName(), bytes, done = { ok -> if (ok != null) flow.written(ok) })
         }
     }
     BackupPage(text.exportTitle, "export-backup", onClose, action = if (saved) null else text.exportButton to export, actionEnabled = !working) {
@@ -258,6 +272,82 @@ fun ExportBackupScreen(flow: ExportFlow, documents: BackupDocuments, fileName: (
         }
         if (working) Working(text.working)
         message?.let { Text(it, color = if (saved) c.success else c.danger, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("export-message")) }
+    }
+}
+
+/**
+ * Export to a CXF file: the plaintext warnings, the logins, notes and passkeys to choose (titles only), then Export: the
+ * owner's fingerprint, face or screen lock, then the system "save as" picker for `LocalGateKeys-CXF-YYYY-MM-DD.json`.
+ * Declined: no picker opens and nothing is written; a write that fails deletes the document (best effort).
+ */
+@Composable
+fun CxfExportScreen(flow: CxfExportFlow, documents: BackupDocuments, fileName: () -> String, onClose: () -> Unit) {
+    val c = LgkTheme.colors
+    val state by flow.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(flow) { flow.load() }
+    // Leaving the screen (or an activity recreated while the picker is open) drops the job: zero the bytes it held.
+    DisposableEffect(flow) { onDispose { flow.clear() } }
+    val export: () -> Unit = {
+        scope.launch {
+            val bytes = flow.make() ?: return@launch
+            documents.save(fileName(), bytes, done = { ok -> flow.written(ok) }, cancelled = { flow.cancelled() })
+        }
+    }
+    BackupPage(
+        stringResource(R.string.cxf_export_title), "cxf-export", onClose,
+        action = if (state.saved) null else stringResource(R.string.export_sheet_export) to export,
+        actionEnabled = !state.working && state.selected.isNotEmpty(),
+    ) {
+        if (!state.saved) {
+            Group(Modifier.testTag("cxf-export-warnings")) {
+                flow.warnings(state).forEachIndexed { i, warning ->
+                    if (i > 0) HorizontalDivider(thickness = 0.5.dp, color = c.separator)
+                    Text(warning, color = c.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 10.dp))
+                }
+            }
+            if (state.loaded && state.choices.isEmpty()) Footnote(stringResource(R.string.cxf_export_empty))
+            if (state.choices.isNotEmpty()) {
+                Footnote(stringResource(R.string.cxf_export_choose))
+                Group(Modifier.testTag("cxf-export-items")) {
+                    val all = state.selected.size == state.choices.size
+                    TextButton({ flow.selectAll(!all) }, enabled = !state.working, modifier = Modifier.testTag("cxf-export-select-all")) {
+                        Text(stringResource(if (all) R.string.cxf_export_select_none else R.string.cxf_export_select_all), color = c.accentText)
+                    }
+                    state.choices.forEach { choice ->
+                        HorizontalDivider(thickness = 0.5.dp, color = c.separator)
+                        CxfChoiceRow(choice, choice.id in state.selected, enabled = !state.working) { flow.toggle(choice.id) }
+                    }
+                }
+            }
+        }
+        if (state.working) CircularProgressIndicator(Modifier.size(18.dp), color = c.secondaryText, strokeWidth = 2.dp)
+        state.message?.let {
+            Text(it, color = if (state.saved) c.success else c.danger, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag("cxf-export-message"))
+        }
+        state.notes.forEach { Footnote(it) }
+    }
+}
+
+@Composable
+private fun CxfChoiceRow(choice: CxfExportFlow.Choice, checked: Boolean, enabled: Boolean, onToggle: () -> Unit) {
+    val c = LgkTheme.colors
+    val kind = stringResource(
+        when (choice.kind) {
+            CxfExportFlow.Kind.LOGIN -> R.string.import_kind_login
+            CxfExportFlow.Kind.NOTE -> R.string.import_kind_note
+            CxfExportFlow.Kind.PASSKEY -> R.string.new_item_passkey
+        },
+    )
+    Row(
+        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onToggle).padding(vertical = 4.dp).testTag("cxf-item-${choice.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked, onCheckedChange = { onToggle() }, enabled = enabled, colors = CheckboxDefaults.colors(checkedColor = c.accent))
+        Column(Modifier.weight(1f)) {
+            Text(choice.title, color = c.text, style = MaterialTheme.typography.bodyLarge)
+            Text(listOf(kind, choice.detail).filter { it.isNotEmpty() }.joinToString(" · "), color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

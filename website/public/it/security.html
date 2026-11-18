@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sicurezza | LocalGateKeys</title>
-  <meta name="description" content="Come LocalGateKeys protegge la tua cassaforte e da cosa non protegge.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Sicurezza di LocalGateKeys: Argon2id e AES-256-GCM</title>
+  <meta name="description" content="Come LocalGateKeys protegge la cassaforte con Argon2id e AES-256-GCM, perché non c’è account né server e da cosa il progetto non protegge.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/it/security">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Sicurezza di LocalGateKeys: Argon2id e AES-256-GCM">
+  <meta property="og:description" content="Come LocalGateKeys protegge la cassaforte con Argon2id e AES-256-GCM, perché non c’è account né server e da cosa il progetto non protegge.">
+  <meta property="og:url" content="https://localgatekeys.app/it/security">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Il logo di LocalGateKeys: un password manager per Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sicurezza di LocalGateKeys: Argon2id e AES-256-GCM">
+  <meta name="twitter:description" content="Come LocalGateKeys protegge la cassaforte con Argon2id e AES-256-GCM, perché non c’è account né server e da cosa il progetto non protegge.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,22 +44,39 @@
   <a class="skip" href="#main">Vai al contenuto</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../it/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../it/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Principale">
+      <nav class="nav-wide" aria-label="Principale">
         <ul class="nav">
-          <li><a href="../it/features.html">Funzionalità</a></li>
-          <li><a href="../it/pricing.html">Prezzi</a></li>
-          <li><a href="../it/security.html" aria-current="page">Sicurezza</a></li>
-          <li><a href="../it/get-started.html">Per iniziare</a></li>
-          <li><a href="../it/help.html">Guida</a></li>
-          <li><a href="../it/download.html">Download</a></li>
-          <li><a href="../it/support.html">Supporto</a></li>
-          <li><a href="../buy.html">Acquista Pro</a></li>
+          <li><a href="../it/features">Funzionalità</a></li>
+          <li><a href="../it/get-started">Per iniziare</a></li>
+          <li><a href="../it/help">Guida</a></li>
+          <li><a href="../it/security" aria-current="page">Sicurezza</a></li>
+          <li><a href="../it/pricing">Prezzi</a></li>
+          <li><a href="../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../it/download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principale">
+          <ul class="nav nav-stack">
+            <li><a href="../it/features">Funzionalità</a></li>
+          <li><a href="../it/get-started">Per iniziare</a></li>
+          <li><a href="../it/help">Guida</a></li>
+          <li><a href="../it/security" aria-current="page">Sicurezza</a></li>
+          <li><a href="../it/pricing">Prezzi</a></li>
+          <li><a href="../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../it/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Lingua</span></summary>
+        <ul class="lang-menu-list"><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -62,13 +93,14 @@
   </div>
   <dl class="spec">
     <dt>Cifratura della cassaforte</dt><dd>AES-256-GCM con un nonce casuale nuovo a ogni salvataggio</dd>
-    <dt>Password principale</dt><dd>Argon2id, 64 MiB di memoria, 3 passate, parallelismo 4, salt casuale per ogni involucro</dd>
+    <dt>Password principale</dt><dd>Argon2id, 3 passate, parallelismo 4, salt casuale per ogni involucro; 256 MiB di memoria nell'app per Windows (64 MiB su un PC con meno di 4 GB di memoria) e 64 MiB nelle app per Mac, iPhone e Android</dd>
     <dt>Frase di recupero</dt><dd>Frase opzionale BIP39 di 24 parole (256 bit), espansa con HKDF-SHA256</dd>
-    <dt>Windows Hello</dt><dd>Racchiude la chiave della cassaforte, mai la password principale</dd>
+    <dt>Windows Hello, Touch ID, Face ID e impronta digitale</dt><dd>Sbloccano la chiave della cassaforte da un archivio protetto dal dispositivo; la password principale non viene mai salvata</dd>
     <dt>Backup e trasferimenti</dt><dd>Argon2id e AES-256-GCM con i parametri memorizzati nell'intestazione autenticata</dd>
     <dt>Sincronizzazione tra dispositivi</dt><dd>Una chiave di gruppo casuale, consegnata a ogni dispositivo con X25519 e HKDF-SHA256 e, per una cartella cloud, racchiusa anche dalla tua password di sincronizzazione con Argon2id; ogni record sigillato con AES-256-GCM e legato al suo elemento, alla sua versione e all'epoca della chiave; ogni file di dispositivo legato al dispositivo che lo ha scritto</dd>
-    <dt>Passkey</dt><dd>Chiavi ES256 (P-256) conservate nella cassaforte cifrata; l'app costruisce i dati firmati dall'origine che il browser segnala, mai dalla pagina</dd>
+    <dt>Passkey</dt><dd>Chiavi ES256 (P-256) conservate nella cassaforte cifrata; l'app costruisce i dati firmati dall'origine che il browser segnala, mai dalla pagina. L'app del Microsoft Store può anche fare da provider di passkey di Windows 11 (disattivato per impostazione predefinita); Windows tiene allora nel proprio elenco i nomi dei tuoi siti e account con passkey, mai le chiavi</dd>
     <dt>Scritture su disco</dt><dd>File temporaneo, scaricamento su disco, poi sostituzione atomica, così un arresto anomalo non può lasciare mezza cassaforte</dd>
+    <dt>Agenti IA</dt><dd>Disattivato per impostazione predefinita (Pro). Un agente raggiunge l'app solo tramite lgk mcp sul tuo dispositivo e vede solo gli accessi e gli elementi che hai consentito. Approvi ogni richiesta; l'app compila da sola l'accesso e nessuna risposta all'agente contiene una password. Ogni richiesta finisce in un registro degli accessi le cui voci sono concatenate con hash SHA-256, e il controllo di sicurezza indica se la catena è intatta</dd>
   </dl>
 
   <div class="ledger">
@@ -82,6 +114,8 @@
         <li>Password non cifrate sul disco</li>
         <li>Moduli inviati senza di te</li>
         <li>Il tuo provider cloud che legge i dati sincronizzati: conserva solo testo cifrato</li>
+        <li>Una pagina web che legga gli account che LocalGateKeys ti propone: in Chrome, Edge e Firefox l'elenco è disegnato in un riquadro separato dell'estensione che la pagina non può leggere</li>
+        <li>Un agente IA che ottenga una password da LocalGateKeys: nessuna risposta all'agente ne contiene una, e vede solo gli accessi che hai consentito</li>
       </ul>
     </section>
     <section class="not" aria-labelledby="not-protects">
@@ -93,6 +127,7 @@
         <li>Qualcuno che usa il tuo PC mentre la cassaforte è sbloccata</li>
         <li>Phishing all'interno di un'app autentica che mostra contenuti controllati da un attaccante</li>
         <li>Perdere la cassaforte, i backup e la password principale senza una frase di recupero: nessuno, noi compresi, può aprirla</li>
+        <li>Un agente IA che controlla il tuo browser e legge una password dopo che LocalGateKeys l'ha inserita nella pagina, o un comando che hai approvato e che trasmette i segreti ricevuti</li>
       </ul>
     </section>
   </div>
@@ -110,28 +145,34 @@
       <li>invio di un accesso che non hai avviato</li>
     </ul>
 
-    <h2>La rete, con onestà</h2>
+    <h2 id="network">La rete, con onestà</h2>
     <p>Non esiste alcun account LocalGateKeys e nessun server che conservi cassaforti. L'app si connette a Internet solo in questi casi:</p>
     <ul>
-      <li><strong>Controlli degli aggiornamenti.</strong> Quando scegli Cerca aggiornamenti, l'app scarica un piccolo file e ne verifica la firma con una chiave integrata nell'app. Non scarica né esegue mai un programma di installazione da sola.</li>
-      <li><strong>Elenco di revoca delle licenze.</strong> Insieme a ogni controllo degli aggiornamenti, l'app scarica un elenco firmato delle licenze rimborsate e verifica la tua licenza rispetto a esso sul tuo PC. Non invia nulla sulla tua licenza.</li>
+      <li><strong>Aggiornamenti.</strong> Il Microsoft Store aggiorna l'app per Windows e l'App Store le app per Mac e iPhone; LocalGateKeys non scarica né esegue mai da sola un programma di installazione. Le vecchie versioni per Windows con programma di installazione (fino alla 0.4.12, l'ultima) scaricano un piccolo file dal nostro server quando scegli Cerca aggiornamenti e ne verificano la firma con una chiave integrata nell'app.</li>
+      <li><strong>Elenco di revoca delle licenze.</strong> A ogni controllo degli aggiornamenti nelle versioni con programma di installazione, e quando scegli Cerca aggiornamenti nell'app del Microsoft Store con la modalità offline rigorosa disattivata, l'app scarica un elenco firmato delle licenze rimborsate e verifica la tua licenza rispetto a esso sul tuo PC. Non invia nulla sulla tua licenza.</li>
       <li><strong>Icone dei siti.</strong> Per mostrare l'icona di un sito, l'app la scarica dall'indirizzo di quel sito. Non vengono inviati nome utente, password né dati della cassaforte, ma ogni download comunica a quel sito, e a chiunque osservi la rete, che la tua cassaforte ha un account lì. È disattivato per impostazione predefinita e avviene solo se attivi "Mostra le icone dei siti web" nelle Impostazioni; la modalità offline rigorosa lo blocca.</li>
       <li><strong>Controlli delle violazioni, se li attivi.</strong> Quando avvii un controllo, l'app invia a Have I Been Pwned i primi cinque caratteri dell'hash SHA-1 di ogni password. Il servizio vede il tuo indirizzo IP, mai la password, l'hash completo, il nome utente o il sito web.</li>
       <li><strong>Sincronizzazione, se la configuri.</strong> Sulla rete di casa i dispositivi comunicano direttamente tra loro. Tramite una cartella cloud, è la tua app di archiviazione cloud a fare il caricamento.</li>
+      <li><strong>Acquisto di Pro nell'app per Mac, iPhone o Android.</strong> L'app invia la ricevuta d'acquisto firmata dello store al nostro server delle licenze, che risponde con la tua chiave di licenza. Non vengono inviati né indirizzi e-mail né dati del dispositivo.</li>
+      <li><strong>Sito verificato.</strong> Il controllo degli indirizzi simili avviene sul tuo dispositivo. I siti salvati non lasciano mai l'app e non viene inviato nulla a un server.</li>
     </ul>
-    <p>La modalità offline rigorosa è attiva per impostazione predefinita. Blocca le richieste Internet in background, le icone dei siti e i controlli delle violazioni, e prima di cercare aggiornamenti ti chiede conferma. L'<a href="../legal/privacy.html">informativa sulla privacy</a> elenca esattamente cosa vedono i nostri server quando cerchi aggiornamenti.</p>
+    <p>Nell'app per Windows, Centro sicurezza › Attività di rete elenca ognuna di queste connessioni con ora, host ed esito. I nomi dei siti che hai salvato compaiono solo mentre l'app è aperta e non vengono mai scritti su disco, e i dispositivi della tua rete compaiono come "Rete locale".</p>
+    <p>La modalità offline rigorosa è attiva per impostazione predefinita. Blocca le richieste Internet in background, le icone dei siti e i controlli delle violazioni, e prima di cercare aggiornamenti ti chiede conferma. L'<a href="../legal/privacy">informativa sulla privacy</a> elenca esattamente cosa vedono i nostri server quando cerchi aggiornamenti.</p>
 
     <h2>Limiti noti</h2>
     <ul>
-      <li>La password principale viene spostata in un buffer cancellabile appena raggiunge l'app e viene cancellata quando termina l'operazione che ne aveva bisogno. La pagina in cui la digiti gira in Microsoft Edge WebView2, e il passaggio da quella pagina all'app crea una copia di breve durata; nessuna delle due copie può essere cancellata dall'app.</li>
-      <li>Lo sblocco con la fotocamera è un controllo di comodità, non una protezione certificata contro foto o maschere. Windows Hello è la scelta più sicura.</li>
+      <li>La password principale viene spostata in un buffer cancellabile appena raggiunge l'app e viene cancellata quando termina l'operazione che ne aveva bisogno. La pagina in cui la digiti gira in Microsoft Edge WebView2. La pagina svuota il proprio campo e l'app rilascia la copia creata dal passaggio prima che la tua chiave venga calcolata, ma nessuna di queste due copie può essere sovrascritta in memoria, quindi per breve tempo possono restarne delle tracce.</li>
+      <li>Lo sblocco con la fotocamera richiede un movimento casuale della testa, quindi una foto tenuta piatta davanti alla fotocamera o un'immagine ferma su uno schermo non lo supera. Resta comunque un controllo di comodità, non una protezione certificata: una foto piegata o curvata, un video che segue le indicazioni o una maschera possono passare. Windows Hello è la scelta più sicura.</li>
       <li>La compilazione nelle app Windows non funziona con programmi eseguiti come amministratore, interfacce di giochi disegnate su misura o visualizzazioni web incorporate che non può verificare.</li>
-      <li>La cassaforte rileva il ritorno a una copia più vecchia. Se usi la sincronizzazione, anche i tuoi altri dispositivi ricordano quanto era recente la tua cassaforte, quindi eliminare insieme la cassaforte e il suo file di ancoraggio viene rilevato alla sincronizzazione successiva (per ora sui PC Windows; seguono le app per iPhone, Mac e Android). Senza sincronizzazione, chi riesce a sostituire entrambi i file può ancora eludere il controllo.</li>
-      <li>Le passkey funzionano solo in Chrome e Edge, e solo per la pagina stessa: un accesso all'interno del frame di un altro sito usa la finestra delle passkey del browser. Se un sito annulla dopo che hai approvato una nuova passkey, la passkey può restare nella cassaforte; eliminala nell'app.</li>
+      <li>La cassaforte rileva il ritorno a una copia più vecchia. Se usi la sincronizzazione, i tuoi altri dispositivi ricordano quanto era recente la tua cassaforte, quindi una copia più vecchia rimessa su un dispositivo viene segnalata alla sincronizzazione successiva, in ogni app. Senza sincronizzazione, un PC Windows conserva una seconda registrazione fuori dalla cartella della cassaforte, quindi una cassaforte più vecchia rimessa insieme al suo file di ancoraggio viene rifiutata; chi può modificare le impostazioni del tuo account Windows può rimuovere anche quella registrazione. Le app per iPhone, Mac e Android tengono i propri file chiusi alle altre app, ma senza sincronizzazione non si accorgono di una copia più vecchia messa al loro posto.</li>
+      <li>Le passkey funzionano in Chrome, Edge e Firefox. L'accesso con una passkey all'interno del frame di un altro sito funziona in Chrome e Edge quando il sito che lo contiene lo consente; in Firefox, e quando crei una passkey all'interno del frame di un altro sito, viene usata la finestra delle passkey del browser. Se un sito annulla dopo che hai approvato una nuova passkey, l'app la rimuove di nuovo; quando l'app non riesce a capire se il sito l'ha conservata, la passkey resta nella cassaforte e puoi eliminarla nell'app.</li>
+      <li>L'avviso sugli indirizzi simili è un indizio, non un muro: lo script di una pagina può aggirarlo, per esempio inviando una password senza l'invio di un modulo. Controlla tu stesso l'indirizzo.</li>
+      <li>L'accesso di emergenza non ha un server, quindi solo le app impongono l'attesa e il tuo veto. Chi ha abbastanza frammenti può recuperare subito il tuo backup, senza aspettare. Scegli titolari che non agirebbero insieme e tieni i frammenti separati.</li>
+      <li>La password di coercizione protegge dall'essere costretti a sbloccare l'app. Non protegge da chi esamina i file sul tuo disco, e una persona attenta può scoprire che esiste una seconda cassaforte. C'è su Windows, Mac, iPhone e Android.</li>
     </ul>
 
     <h2>Segnala una vulnerabilità</h2>
-    <p>Scrivi a <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. La <a href="../legal/vulnerability-disclosure.html">politica di divulgazione delle vulnerabilità</a> spiega cosa rientra nell'ambito, quanto rapidamente rispondiamo e come citiamo i ricercatori.</p>
+    <p>Scrivi a <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. La <a href="../legal/vulnerability-disclosure">politica di divulgazione delle vulnerabilità</a> spiega cosa rientra nell'ambito, quanto rapidamente rispondiamo e come citiamo i ricercatori.</p>
   </div>
 </div>
   </main>
@@ -139,43 +180,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Un gestore di password per Windows che tiene la tua cassaforte sui tuoi dispositivi.</p>
-        <p class="quiet">Questo sito non imposta cookie, non usa strumenti di analisi e non carica nulla da altre aziende.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestore di password per Windows, Mac e iPhone che tiene la tua cassaforte sui tuoi dispositivi.</p>
+        <p class="quiet">Questo sito conta le visite con Cloudflare Web Analytics, che non usa cookie. Non usa tracker pubblicitari e non imposta cookie.</p>
       </div>
       <nav aria-label="Prodotto">
         <h2>Prodotto</h2>
         <ul>
-          <li><a href="../it/features.html">Funzionalità</a></li>
-          <li><a href="../it/pricing.html">Prezzi</a></li>
-          <li><a href="../it/download.html">Download</a></li>
-          <li><a href="../it/licence.html">La tua licenza Pro</a></li>
+          <li><a href="../it/features">Funzionalità</a></li>
+          <li><a href="../it/pricing">Prezzi</a></li>
+          <li><a href="../it/download">Download</a></li>
+          <li><a href="../it/get-started">Per iniziare</a></li>
+          <li><a href="../it/switch/">Cambia</a></li>
+          <li><a href="../buy">Acquista Pro</a></li>
+          <li><a href="../it/licence">La tua licenza Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recupera la licenza</a></li>
         </ul>
       </nav>
       <nav aria-label="Aiuto">
         <h2>Aiuto</h2>
         <ul>
-          <li><a href="../it/help.html">Guida utente</a></li>
-          <li><a href="../it/support.html">Supporto e FAQ</a></li>
-          <li><a href="../it/security.html">Sicurezza</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Segnala una vulnerabilità</a></li>
+          <li><a href="../it/help">Guida utente</a></li>
+          <li><a href="../it/support">Supporto e FAQ</a></li>
+          <li><a href="../it/security">Sicurezza</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Segnala una vulnerabilità</a></li>
         </ul>
       </nav>
       <nav aria-label="Note legali">
         <h2>Note legali</h2>
         <p class="quiet">Questi documenti sono in inglese, e si applica la versione inglese, che è quella vincolante.</p>
         <ul>
-          <li><a href="../legal/eula.html">Contratto di licenza</a></li>
-          <li><a href="../legal/privacy.html">Informativa sulla privacy</a></li>
-          <li><a href="../legal/terms-of-sale.html">Condizioni di vendita</a></li>
-          <li><a href="../legal/refunds.html">Politica di rimborso</a></li>
+          <li><a href="../legal/eula">Contratto di licenza</a></li>
+          <li><a href="../legal/privacy">Informativa sulla privacy</a></li>
+          <li><a href="../legal/terms-of-sale">Condizioni di vendita</a></li>
+          <li><a href="../legal/refunds">Politica di rimborso</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contatto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows è un marchio del gruppo di società Microsoft. Chrome è un marchio di Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Lingua"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it" aria-current="true">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows è un marchio del gruppo di società Microsoft. Chrome è un marchio di Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari sono marchi di Apple Inc., registrati negli Stati Uniti e in altri paesi.</p>
+      <nav class="lang-switch" aria-label="Lingua"><ul><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

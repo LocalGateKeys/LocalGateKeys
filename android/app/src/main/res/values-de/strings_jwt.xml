@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">Token</string>
+    <string name="jwt_alg">Algorithmus</string>
+    <string name="jwt_iss">Aussteller</string>
+    <string name="jwt_sub">Betreff</string>
+    <string name="jwt_aud">Zielgruppe</string>
+    <string name="jwt_iat">Ausgestellt</string>
+    <string name="jwt_nbf">Nicht vor</string>
+    <string name="jwt_exp">Läuft ab</string>
+    <string name="jwt_expired">Abgelaufen</string>
+    <string name="jwt_unchecked">Signatur nicht geprüft</string>
+    <string name="jwt_setExpiry">Ablaufdatum aus Token übernehmen</string>
+    <string name="jwt_expirySet">Ablaufdatum auf %1$s gesetzt.</string>
+    <string name="jwt_notSaved">Das Ablaufdatum konnte nicht gesetzt werden.</string>
+</resources>

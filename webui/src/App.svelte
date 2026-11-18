@@ -13,6 +13,9 @@
 
   // Request kinds this build can show; anything else is declined at once so
   // Python is not left waiting for the timeout.
+  // Approvals that can arrive while the user types here (agent, passkey, fill/remember fallbacks when the popup is
+  // off) arm after the same delay as the popup, with Deny focused, so a stray click or Enter never approves.
+  const GUARD_MS = 500;
   const SUPPORTED = new Set(['confirm', 'password', 'upgrade', 'passkey', 'choose', 'confirm_remember']);
 
   let vault = $state(null);
@@ -46,7 +49,7 @@
       // Tray, hotkeys and the browser host ask for a page (quick access, updates).
       on('navigate', (detail) => window.dispatchEvent(new CustomEvent('lgk-route', { detail }))),
       on('modal.request', (detail) => {
-        if (detail.surface === 'popup') return; // shown by the small popup window
+        if (detail.surface === 'popup' || detail.surface === 'palette') return; // shown by the popup or palette window
         if (!SUPPORTED.has(detail.kind)) {
           call('modal_answer', detail.id, { choice: 'cancel' });
           return;
@@ -99,15 +102,25 @@
   </main>
 </div>
 
+{#if vault?.erased && !modals.length}
+  <!-- A vault erased after a verified sync removal (app.device_removal): said once, until OK. -->
+  <!-- Scheduled backups (backup password + master password) are kept, not erased: say where. -->
+  <Modal title={t('app.erasedTitle')}
+    message={vault.erased.kept_folders?.length
+      ? `${t('app.erasedMessage')}\n\n${t('app.erasedKeptBackups', { folders: vault.erased.kept_folders.join('\n') })}`
+      : t('app.erasedMessage')} allowLabel={t('common.ok')} denyLabel=""
+    onanswer={() => call('vault_dismiss_erased').then((r) => { if (r.ok) vault = r; })} />
+{/if}
+
 {#if modals.length}
   {@const modal = modals[0]}
   {#key modal.id}
     {#if modal.kind === 'password'}
       <PasswordModal title={modal.title} message={modal.message} onanswer={(value) => answer(modal.id, value)} />
     {:else if modal.kind === 'passkey'}
-      <PasskeyModal request={modal} onanswer={(value) => answer(modal.id, value)} />
+      <PasskeyModal request={modal} guardMs={GUARD_MS} onanswer={(value) => answer(modal.id, value)} />
     {:else if modal.kind === 'choose' || modal.kind === 'confirm_remember'}
-      <ChoiceModal request={modal} onanswer={(value) => answer(modal.id, value)} />
+      <ChoiceModal request={modal} guardMs={GUARD_MS} onanswer={(value) => answer(modal.id, value)} />
     {:else if modal.kind === 'notice'}
       <Modal title={modal.title} message={modal.message} allowLabel={t('common.ok')} denyLabel=""
         onanswer={() => (modals = modals.filter((m) => m.id !== modal.id))} />
@@ -116,7 +129,7 @@
         extraLabel={modal.purchase_url ? t('app.buyPro') : ''} onextra={() => buyPro(modal.id, modal.purchase_url)}
         onanswer={(yes) => upgradeAnswer(modal.id, yes)} />
     {:else}
-      <Modal title={modal.title} message={modal.message} onanswer={(value) => answer(modal.id, value)} />
+      <Modal title={modal.title} message={modal.message} guardMs={GUARD_MS} onanswer={(value) => answer(modal.id, value)} />
     {/if}
   {/key}
 {/if}

@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys para iPhone y iPad: guía</title>
+  <meta name="description" content="Cómo usar LocalGateKeys en iPhone y iPad: configuración, autorrelleno, llaves de acceso, códigos 2FA, importación y sincronización.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/es/guide/iphone">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/iphone">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/iphone">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/iphone">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/iphone">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/iphone">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/iphone">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/iphone">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/iphone">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/iphone">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/iphone">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/iphone">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/iphone">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys para iPhone y iPad: guía">
+  <meta property="og:description" content="Cómo usar LocalGateKeys en iPhone y iPad: configuración, autorrelleno, llaves de acceso, códigos 2FA, importación y sincronización.">
+  <meta property="og:url" content="https://localgatekeys.app/es/guide/iphone">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="El logotipo de LocalGateKeys: un gestor de contraseñas para Windows, Mac y iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys para iPhone y iPad: guía">
+  <meta name="twitter:description" content="Cómo usar LocalGateKeys en iPhone y iPad: configuración, autorrelleno, llaves de acceso, códigos 2FA, importación y sincronización.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Saltar al contenido</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../es/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../../es/features">Funciones</a></li>
+          <li><a href="../../es/get-started">Primeros pasos</a></li>
+          <li><a href="../../es/help">Guía</a></li>
+          <li><a href="../../es/security">Seguridad</a></li>
+          <li><a href="../../es/pricing">Precios</a></li>
+          <li><a href="../../es/support">Soporte</a></li>
+          <li><a class="nav-cta" href="../../es/download">Descargar</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menú</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../../es/features">Funciones</a></li>
+          <li><a href="../../es/get-started">Primeros pasos</a></li>
+          <li><a href="../../es/help">Guía</a></li>
+          <li><a href="../../es/security">Seguridad</a></li>
+          <li><a href="../../es/pricing">Precios</a></li>
+          <li><a href="../../es/support">Soporte</a></li>
+          <li><a class="nav-cta" href="../../es/download">Descargar</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Idioma</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/iphone" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/iphone" hreflang="es" lang="es" aria-current="true">Español</a></li><li><a href="../../it/guide/iphone" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/iphone" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/iphone" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/iphone" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/iphone" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/iphone" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/iphone" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/iphone" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/iphone" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys para iPhone</h1>
+  <p class="lead">Ayuda paso a paso para cada pantalla y función en este dispositivo. Cada título es un enlace que puedes compartir.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Plataformas">
+    <ul><li><a class="help-tab" href="../../es/guide/windows">Windows</a></li><li><a class="help-tab" href="../../es/guide/mac">Mac</a></li><li><a class="help-tab" href="../../es/guide/iphone" aria-current="page">iPhone y iPad</a></li><li><a class="help-tab" href="../../es/guide/android">Android</a></li><li><a class="help-tab" href="../../es/guide/extension">Extensión del navegador</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Conviene saber, en cualquier dispositivo</h2>
+    <ul>
+      <li><strong>Tu bóveda se queda en tus dispositivos.</strong> No hay cuenta ni ningún servidor de LocalGateKeys que guarde tus contraseñas.</li>
+      <li><strong>Nadie puede restablecer tu contraseña maestra ni tu contraseña de la app.</strong> Configura una frase de recuperación y guárdala en papel.</li>
+      <li><strong>Free</strong> admite hasta 7 elementos. <strong>Pro</strong> (US$29.99, pago único) añade elementos ilimitados, códigos de dos factores, archivos y sincronización. Editar, eliminar y rellenar los elementos que ya tienes nunca se bloquea.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="iphone" aria-labelledby="iphone-title">
+    <h2 class="panel-title" id="iphone-title">Temas de iPhone</h2>
+    <p class="panel-lead">Descárgala en la <a href="https://apps.apple.com/app/id6825488435">App Store</a> (iOS 17 o posterior). La app tiene cuatro pestañas: <strong>Bóveda</strong>, <strong>Sincronización</strong>, <strong>Seguridad</strong> y <strong>Ajustes</strong>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Temas de iPhone">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">En esta pestaña</summary>
+          <ol>
+            <li><a href="#ios-setup">Primer inicio y desbloqueo</a></li>
+            <li><a href="#ios-apppw">Contraseña de la app y recuperación</a></li>
+            <li><a href="#ios-items">Elementos: añadir, editar, eliminar</a></li>
+            <li><a href="#ios-search">Búsqueda y acciones</a></li>
+            <li><a href="#ios-generator">Generador de contraseñas</a></li>
+            <li><a href="#ios-2fa">Códigos de dos factores</a></li>
+            <li><a href="#ios-autofill">Autorrelleno en apps y Safari</a></li>
+            <li><a href="#ios-passkeys">Llaves de acceso</a></li>
+            <li><a href="#ios-safari">Guardar desde Safari</a></li>
+            <li><a href="#ios-security">Pestaña Seguridad</a></li>
+            <li><a href="#ios-import">Importar y exportar</a></li>
+            <li><a href="#ios-sync">Sincronización</a></li>
+            <li><a href="#ios-share">Compartir un elemento</a></li>
+            <li><a href="#ios-settings">Ajustes</a></li>
+            <li><a href="#ios-more">Contraseña de coacción y más</a></li>
+            <li><a href="#ios-pro">Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="ios-setup">
+          <h3><a href="#ios-setup">Primer inicio y desbloqueo</a></h3>
+          <p>No hay contraseña que crear. Tu bóveda se abre con <strong>Face ID</strong>, <strong>Touch ID</strong> o el código de tu iPhone, igual que tu teléfono. (El iPhone necesita tener un código).</p>
+          <ol>
+            <li>Abre la app y toca <strong>Desbloquear</strong>.</li>
+            <li>Sigue una configuración breve: Desbloquear con Face ID, <strong>Importa tus contraseñas</strong>, <strong>Añadir una contraseña de la app</strong> (opcional) y <strong>Activar Autorrelleno</strong>.</li>
+            <li>Omite lo que quieras. Una tarjeta <em>Termina la configuración</em> en la parte superior de la bóveda te lleva de vuelta; Ajustes › <strong>Mostrar la configuración de nuevo</strong> también.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="ios-apppw">
+          <h3><a href="#ios-apppw">Contraseña de la app y frase de recuperación</a></h3>
+          <p>Una contraseña adicional opcional que abre LocalGateKeys en lugar del código del iPhone. Útil si otras personas conocen tu código.</p>
+          <ol>
+            <li>Ajustes › Contraseña de la app › activa <strong>Usar una contraseña de la app</strong>.</li>
+            <li>Elige una contraseña fuerte (al menos 12 caracteres) y deja activado <strong>Desbloquear con Face ID</strong> si lo quieres como atajo.</li>
+            <li>Anota la <strong>frase de recuperación</strong> de 24 palabras, toca <strong>Ya las anoté</strong> y escribe las tres palabras que te pide.</li>
+          </ol>
+          <p><strong>¿La olvidaste?</strong> Toca <strong>¿Olvidaste la contraseña de la app?</strong> en la pantalla de desbloqueo, escribe las 24 palabras y elige una nueva contraseña de la app.</p>
+          <p class="note">Si añades un rostro o una huella nuevos al iPhone, el atajo de Face ID se desactiva por seguridad: escribe la contraseña de la app una vez y vuelve a activarlo.</p>
+        </article>
+
+        <article class="topic" id="ios-items">
+          <h3><a href="#ios-items">Elementos: añadir, editar, eliminar</a></h3>
+          <ol>
+            <li>En la pestaña Bóveda toca <strong>+</strong> y elige un tipo: inicio de sesión web, nota segura, tarjeta, identidad, cuenta bancaria, compra, suscripción, garantía, Wi-Fi, licencia de software, clave de API, clave SSH o marcador.</li>
+            <li>Rellena los campos y toca <strong>Guardar</strong>. Si sales a medias, la app te ofrece <strong>Continuar</strong> el elemento sin guardar más tarde.</li>
+          </ol>
+          <ul>
+            <li>Mantén pulsado un elemento de la bóveda para <strong>Copiar nombre de usuario</strong>, <strong>Copiar contraseña</strong>, <strong>Copiar código 2FA</strong>, <strong>Abrir sitio web</strong> o marcarlo como <strong>Favorito</strong>. Ábrelo para copiar cualquier campo, marcarlo con la estrella o <strong>Compartirlo</strong>. El texto copiado se borra del portapapeles al cabo de un rato y nunca va a tus otros dispositivos Apple.</li>
+            <li>El <strong>Historial de contraseñas</strong> de un inicio de sesión guarda contraseñas antiguas: copia o restaura una (pide Face ID).</li>
+            <li>Cualquier elemento salvo un inicio de sesión (una tarjeta, una suscripción, una garantía, una licencia…) puede tener un <strong>recordatorio</strong> antes de su vencimiento; en una tarjeta se sugiere su fecha de caducidad.</li>
+            <li><strong>Adjuntar un archivo</strong> (Pro, hasta 25 MB, guardado cifrado) desde <strong>+</strong>.</li>
+            <li><strong>Eliminar</strong>: el elemento va a <em>Eliminados recientemente</em>, con <strong>Deshacer</strong> durante unos segundos. Ajustes › Datos › <strong>Eliminados recientemente</strong> te permite <strong>Restaurar</strong> o <strong>Eliminar para siempre</strong>.</li>
+            <li><strong>Ordenar</strong> por nombre o fecha, favoritos primero, o agrupados por tipo.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-search">
+          <h3><a href="#ios-search">Búsqueda y acciones rápidas</a></h3>
+          <p>Toca el botón de búsqueda (la lupa) en la parte superior de la bóveda y escribe; al deslizar la bóveda hacia abajo se sincroniza. Escribe primero <code>&gt;</code> para ver <strong>Acciones</strong>: Nuevo elemento, Generar contraseña, Escanear código QR, Bloquear ahora, Sincronizar ahora, Revisión de seguridad, Eliminados recientemente, Importar y exportar, y más.</p>
+        </article>
+
+        <article class="topic" id="ios-generator">
+          <h3><a href="#ios-generator">Generador de contraseñas</a></h3>
+          <p>Desde <code>&gt;</code> Generar contraseña, o al editar la contraseña de un inicio de sesión. Elige una contraseña con una <strong>Longitud</strong>, o una frase de contraseña con un número de <strong>Palabras</strong> y un <strong>Separador</strong>. Toca el botón de actualizar para generar otra y luego <strong>Usar</strong>. Recuerda las opciones que usaste la última vez; Ajustes › Generador de contraseñas › <strong>Restablecer valores predeterminados</strong> devuelve los valores predeterminados.</p>
+        </article>
+
+        <article class="topic" id="ios-2fa">
+          <h3><a href="#ios-2fa">Códigos de dos factores</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>En el sitio web, activa la 2FA con app de autenticación para que muestre un código QR.</li>
+            <li>En LocalGateKeys elige <strong>Escanear código QR</strong> (desde <code>&gt;</code> o el campo 2FA del inicio de sesión). Toca <strong>Usar cámara</strong> o <strong>Elegir de Fotos</strong> (para una captura).</li>
+            <li>El código va al inicio de sesión correspondiente, o se abre uno nuevo listo para guardar.</li>
+          </ol>
+          <p>Los códigos aparecen en el elemento y en la fila <strong>Códigos</strong> de la bóveda. También puedes pegar una clave de configuración en el campo <strong>Secreto 2FA</strong> del inicio de sesión. Las exportaciones de Google Authenticator (Transferir cuentas) también funcionan, incluidas las de varias partes.</p>
+          <p>¿Quieres los códigos en la muñeca? Consulta <a href="../../es/help#watch">Apple Watch</a>.</p>
+        </article>
+
+        <article class="topic" id="ios-autofill">
+          <h3><a href="#ios-autofill">Autorrelleno en apps y Safari</a></h3>
+          <ol>
+            <li>En LocalGateKeys ve a Ajustes › Autorrelleno › <strong>Abrir ajustes de Autorrelleno</strong>.</li>
+            <li>En los Ajustes del iPhone, en <strong>General › Autorrelleno y contraseñas</strong>, activa <strong>LocalGateKeys</strong>.</li>
+            <li>Ahora toca un cuadro de usuario o contraseña en cualquier app o sitio web: tu inicio de sesión aparece sobre el teclado, o toca el icono de la llave para elegir uno.</li>
+          </ol>
+          <p>Opciones en Ajustes › Autorrelleno:</p>
+          <ul>
+            <li><strong>Mostrar inicios de sesión en la barra QuickType</strong>: sugerencias sobre el teclado.</li>
+            <li><strong>Copiar código 2FA al rellenar</strong>: para que puedas pegar el código en la siguiente pantalla. Se borra pasado el tiempo de <strong>Borrar el portapapeles tras</strong> (60 segundos de forma predeterminada).</li>
+            <li><strong>Ofrecer LocalGateKeys para llaves de acceso</strong>.</li>
+          </ul>
+          <p>En iOS 18 y posterior también se rellenan tarjetas y datos de contacto: toca un campo de texto, elige <strong>Autorrelleno › Contraseñas</strong> y elige el campo. Un inicio de sesión guardado para un sitio <code>https</code> no se ofrece en una página <code>http</code> simple.</p>
+        </article>
+
+        <article class="topic" id="ios-passkeys">
+          <h3><a href="#ios-passkeys">Llaves de acceso</a></h3>
+          <p>Con Autorrelleno activado, cuando un sitio web ofrezca crear una llave de acceso, elige LocalGateKeys. La llave se guarda en tu bóveda y se sincroniza con tu PC. También funciona iniciar sesión en un ordenador escaneando su código QR con el iPhone. La página de detalles de una llave de acceso muestra el sitio y la cuenta; la clave en sí nunca se muestra. Puedes renombrarla o eliminarla.</p>
+        </article>
+
+        <article class="topic" id="ios-safari">
+          <h3><a href="#ios-safari">Guardar inicios de sesión desde Safari</a></h3>
+          <ol>
+            <li>Ajustes del iPhone › Apps › Safari › Extensiones › <strong>LocalGateKeys</strong>: actívala y permítela en todos los sitios web.</li>
+            <li>Inicia sesión en un sitio en Safari y toca <strong>Guardar</strong> en el aviso.</li>
+            <li>La próxima vez que desbloquees LocalGateKeys, <strong>¿Guardar desde Safari?</strong> muestra lo capturado, marcado como <em>Nuevo inicio de sesión</em> o <em>Actualiza la contraseña guardada</em>. Elige qué conservar, o <strong>Decidir más tarde</strong>.</li>
+          </ol>
+          <p>Elige <strong>Nunca en este sitio</strong> para que deje de aparecer el aviso en un sitio.</p>
+        </article>
+
+        <article class="topic" id="ios-security">
+          <h3><a href="#ios-security">Pestaña Seguridad</a></h3>
+          <p>Una puntuación y listas de inicios de sesión <strong>Filtrados</strong>, <strong>Reutilizados</strong>, <strong>Débiles</strong>, <strong>Antiguos</strong> o que podrían usar 2FA. Desliza a la izquierda en un inicio de sesión para <strong>Cambiar contraseña</strong> o <strong>Descartar</strong>. Las comprobaciones de filtraciones están desactivadas hasta que en Ajustes desactivas el <strong>Modo estrictamente sin conexión</strong> (activado de forma predeterminada) y activas <strong>Permitir comprobaciones de filtraciones</strong>.</p>
+        </article>
+
+        <article class="topic" id="ios-import">
+          <h3><a href="#ios-import">Importar y exportar</a></h3>
+          <h4>Desde Contraseñas de Apple (iOS 26)</h4>
+          <ol>
+            <li>Abre la app <strong>Contraseñas</strong>, toca el menú y elige <strong>Exportar datos a otra app</strong>.</li>
+            <li>Elige <strong>LocalGateKeys</strong>. Se traen los inicios de sesión, los códigos 2FA y las llaves de acceso. Hacerlo de nuevo no duplica nada.</li>
+          </ol>
+          <h4>Desde un archivo</h4>
+          <p>Ajustes › Importar y exportar › <strong>Importar desde un archivo</strong>: exportaciones de Contraseñas de Apple, Safari, Chrome, Edge, Brave, Firefox, Bitwarden (también protegidas con contraseña), 1Password (<code>.1pux</code>), LastPass, KeePass (<code>.kdbx</code>), Proton Pass, Dashlane o cualquier CSV. Revisas cada elemento antes de tocar <strong>Importar</strong>. Después, elimina el archivo exportado.</p>
+          <h4>Copia de seguridad y exportación</h4>
+          <ul>
+            <li><strong>Exportar copia cifrada</strong>: un archivo <code>.lgkm</code> con una contraseña de 12 caracteres o más. Restáurala en Windows.</li>
+            <li><strong>Exportar como CSV</strong>: sin cifrar, para pasar a otra app. Se te pide confirmación.</li>
+            <li><strong>Exportar a un archivo CXF…</strong> guarda los inicios de sesión, notas y claves de acceso que elijas en un archivo Credential Exchange que otros gestores pueden importar. El archivo no está cifrado.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-sync">
+          <h3><a href="#ios-sync">Sincronizar con tu PC</a> <span class="badge-pro">Pro</span></h3>
+          <h4>Por Wi-Fi</h4>
+          <ol>
+            <li>En el PC, abre Sync y dispositivos y elige <strong>Mostrar código QR</strong>.</li>
+            <li>En el iPhone, abre la pestaña <strong>Sincronización</strong> y toca <strong>Escanear código QR</strong> antes de 120 segundos. (La primera vez, permite el acceso a la red local). ¿Sin cámara? Toca <strong>Pegar texto del código</strong> y pega el texto de <strong>Copiar texto del código</strong> del ordenador.</li>
+            <li>Comprueba que ambas pantallas muestran el mismo código y elige <strong>Aceptar</strong> en el ordenador.</li>
+          </ol>
+          <p>La sincronización ocurre cuando ambos están en la misma Wi-Fi y desbloqueados. <strong>Sincronizar ahora</strong> la fuerza; <strong>Buscar de nuevo</strong> ayuda si cambió la dirección del ordenador.</p>
+          <h4>Mediante una carpeta en la nube</h4>
+          <p>Toca <strong>Unirse a una carpeta…</strong>, elige la carpeta <em>LocalGateKeys Sync</em> en iCloud Drive o Dropbox y escribe la contraseña de sincronización del grupo.</p>
+          <p class="note">OneDrive y Google Drive no están disponibles para sincronizar por ahora, hasta que se resuelva un problema con Apple. Usa Dropbox, iCloud Drive o la sincronización por Wi-Fi.</p>
+          <h4>Dejar de sincronizar</h4>
+          <p><strong>Salir de la sincronización…</strong> o <strong>Restablecer la sincronización en este iPhone…</strong> (cada una pregunta dos veces). Tus elementos se quedan en el teléfono.</p>
+        </article>
+
+        <article class="topic" id="ios-share">
+          <h3><a href="#ios-share">Compartir un elemento</a></h3>
+          <ol>
+            <li>Abre el elemento y toca <strong>Compartir</strong>.</li>
+            <li>La app muestra seis palabras. Envía el archivo con <strong>AirDrop o compartir el archivo…</strong>, o <strong>Mostrar el código como QR</strong>.</li>
+            <li>Dile las seis palabras a la otra persona por separado, nunca junto con el archivo.</li>
+          </ol>
+          <p><strong>Para recibir:</strong> abre el archivo <code>.lgkshare</code> desde AirDrop o Archivos (o <strong>Recibir un elemento compartido</strong>) y escribe las seis palabras. Las llaves de acceso y los elementos con un archivo adjunto no se pueden compartir.</p>
+        </article>
+
+        <article class="topic" id="ios-settings">
+          <h3><a href="#ios-settings">Ajustes</a></h3>
+          <dl class="defs">
+            <dt>Seguridad</dt><dd><strong>Bloqueo automático al salir de la app</strong>, <strong>Bloquear en reposo</strong>, <strong>Ocultar contraseñas hasta tocarlas</strong>, <strong>Borrar el portapapeles después de</strong>, <strong>Bloquear ahora</strong>.</dd>
+            <dt>Privacidad</dt><dd><strong>Modo sin conexión estricto</strong>, iconos de sitios web, nombres de elementos en notificaciones, comprobación de filtraciones.</dd>
+            <dt>Apariencia</dt><dd>Sistema, Claro u Oscuro.</dd>
+            <dt>Datos</dt><dd>Eliminados recientemente, cuánto tiempo conservar los elementos eliminados, Importar y exportar.</dd>
+            <dt>Borrar</dt><dd><strong>Borrar la bóveda de este iPhone</strong> elimina la bóveda solo en este iPhone (pregunta dos veces). Tu PC y la carpeta de sincronización no cambian.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="ios-more">
+          <h3><a href="#ios-more">Contraseña de coacción y más</a></h3>
+          <ul>
+            <li><strong>Contraseña de coacción</strong> (Pro): una segunda contraseña de la app para cuando alguien te obliga a desbloquear. Abre una bóveda aparte con solo los elementos que elijas, y tu bóveda rechaza después su contraseña de la app durante las horas que fijes. Activa primero la contraseña de la app y luego configúrala en Ajustes, en <strong>Contraseña de coacción</strong>.</li>
+            <li><strong>Alojar la sincronización por Wi-Fi en este teléfono</strong> (Pro), en la pestaña Sync, permite que tus otros dispositivos se emparejen con el propio iPhone, sin necesidad de un PC.</li>
+            <li>Un plan de acceso de emergencia creado en el PC llega al iPhone por sincronización, así que también puedes rechazar o conceder solicitudes aquí. <strong>Crear nota del paquete sucesorio</strong> añade la nota para tus herederos.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="ios-pro">
+          <h3><a href="#ios-pro">Pro</a></h3>
+          <p>Ajustes › Pro › <strong>Mejorar</strong> y luego compra: un solo pago, sin suscripción, sin cuenta. En un iPhone nuevo, usa <strong>Restaurar compras</strong> con la misma cuenta de Apple.</p>
+          <p>Tu compra también activa Windows. Empareja tu PC con el iPhone en la pestaña <strong>Sincronización</strong>, y un PC gratuito recibe la licencia por sincronización y pasa a ser Pro. O elige <strong>Copiar clave</strong> e instala esa clave en el PC (Ajustes › Plan y sincronización › Licencia).</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../es/help">Toda la guía de usuario en una página</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestor de contraseñas para Windows, Mac y iPhone que mantiene tu bóveda en tus propios dispositivos.</p>
+        <p class="quiet">Este sitio cuenta las visitas con Cloudflare Web Analytics, que no usa cookies. No usa rastreadores publicitarios y no instala cookies.</p>
+      </div>
+      <nav aria-label="Producto">
+        <h2>Producto</h2>
+        <ul>
+          <li><a href="../../es/features">Funciones</a></li>
+          <li><a href="../../es/pricing">Precios</a></li>
+          <li><a href="../../es/download">Descargar</a></li>
+          <li><a href="../../es/get-started">Primeros pasos</a></li>
+          <li><a href="../../es/switch/">Cambiar</a></li>
+          <li><a href="../../buy">Comprar Pro</a></li>
+          <li><a href="../../es/licence">Tu licencia Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recuperar tu licencia</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Ayuda">
+        <h2>Ayuda</h2>
+        <ul>
+          <li><a href="../../es/help">Guía de usuario</a></li>
+          <li><a href="../../es/support">Soporte y preguntas frecuentes</a></li>
+          <li><a href="../../es/security">Seguridad</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Informar de una vulnerabilidad</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        <p class="quiet">Estos documentos están en inglés, y la versión en inglés es la que se aplica y la vinculante.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contrato de licencia</a></li>
+          <li><a href="../../legal/privacy">Política de privacidad</a></li>
+          <li><a href="../../legal/terms-of-sale">Condiciones de venta</a></li>
+          <li><a href="../../legal/refunds">Política de reembolsos</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contacto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows es una marca comercial del grupo de empresas Microsoft. Chrome es una marca comercial de Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID y Safari son marcas comerciales de Apple Inc., registradas en EE. UU. y en otros países.</p>
+      <nav class="lang-switch" aria-label="Idioma"><ul><li><a href="../../guide/iphone" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/iphone" hreflang="es" lang="es" aria-current="true">Español</a></li><li><a href="../../it/guide/iphone" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/iphone" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/iphone" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/iphone" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/iphone" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/iphone" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/iphone" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/iphone" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/iphone" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

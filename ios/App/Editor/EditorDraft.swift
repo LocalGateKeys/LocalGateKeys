@@ -38,6 +38,13 @@ extension EditorModel {
         EditorDraft(kind: kind, itemID: editingID, baseHash: originalRecord.flatMap(EditorDraft.recordHash),
                     values: values, createdAt: now)
     }
+
+    /// The form differs from what the editor opened with (the item's fields, or a new item's defaults); empty fields
+    /// count as absent. An untouched editor leaves no draft behind on lock (review L2).
+    var formChanged: Bool {
+        let opened = originalRecord.map { Self.values(of: $0, kind: kind) } ?? kind.defaults
+        return values.filter { !$0.value.isEmpty } != opened.filter { !$0.value.isEmpty }
+    }
 }
 
 /// The one draft file, sealed with a key derived from the vault's local key:
@@ -67,6 +74,8 @@ final class EditorDraftStore {
 
     /// `<Application Support>/editor-draft.bin`, in the app's private container. nil: no container.
     nonisolated static func location() -> URL? {
+        // Sub-plan 08 (ruling T4b): a duress session's draft lives in the second vault's own folder.
+        if DuressSession.shared.isOpen { return PhoneDuress.shared()?.files.dir.appendingPathComponent(fileName, isDirectory: false) }
         guard let dir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                      appropriateFor: nil, create: true) else { return nil }
         return dir.appendingPathComponent(fileName, isDirectory: false)

@@ -144,7 +144,7 @@ fun GeneratorSheet(model: GeneratorModel, onCancel: () -> Unit, onUse: (String) 
 }
 
 /**
- * Password | Passphrase, then regenerate and copy, on one row when the picker's labels fit beside the buttons, else the
+ * Password | Passphrase | Answer, then regenerate and copy, on one row when the picker's labels fit beside the buttons, else the
  * picker above the centred buttons (the iPhone's ViewThatFits), so a large text size never cuts a label.
  */
 @Composable
@@ -195,7 +195,7 @@ private fun HeroCard(state: GeneratorModel.State, strength: GeneratorStrength.Le
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(if (state.options.mode == Mode.PASSWORD) R.string.generator_password else R.string.generator_passphrase),
+                stringResource(modeTitle(state.options.mode)),
                 color = c.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
             )
             Text(
@@ -263,15 +263,24 @@ fun StrengthMeter(level: GeneratorStrength.Level, modifier: Modifier = Modifier)
     }
 }
 
-/** Password | Passphrase as a glass capsule; the selected side gets the accent pill. */
+private fun modeTitle(mode: Mode): Int = when (mode) {
+    Mode.PASSWORD -> R.string.generator_password
+    Mode.PASSPHRASE -> R.string.generator_passphrase
+    Mode.ANSWER -> R.string.generator_mode_answer
+}
+
+/**
+ * Password | Passphrase | Answer as a glass capsule; the selected side gets the accent pill. When the three labels do
+ * not fit on one line (large text sizes), the choices are listed one under the other instead, so no label is cut off.
+ */
 @Composable
 private fun ModePicker(mode: Mode, onSelect: (Mode) -> Unit, modifier: Modifier = Modifier) {
     val c = LgkTheme.colors
-    Row(modifier.heightIn(min = 48.dp).lgkGlass(CircleShape).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        for ((m, title) in listOf(Mode.PASSWORD to R.string.generator_password, Mode.PASSPHRASE to R.string.generator_passphrase)) {
+    val tabs: @Composable () -> Unit = {
+        for (m in Mode.entries) {
             val selected = mode == m
             Box(
-                Modifier.weight(1f).clip(CircleShape)
+                Modifier.clip(CircleShape)
                     .background(if (selected) c.accent.copy(alpha = 0.18f) else Color.Transparent)
                     .selectable(selected, role = Role.Tab, onClick = { onSelect(m) })
                     .testTag("generator-mode-${m.raw}")
@@ -279,9 +288,34 @@ private fun ModePicker(mode: Mode, onSelect: (Mode) -> Unit, modifier: Modifier 
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    stringResource(title), color = if (selected) c.accentText else c.text, style = MaterialTheme.typography.bodyMedium,
+                    stringResource(modeTitle(m)), color = if (selected) c.accentText else c.text, style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
+            }
+        }
+    }
+    Layout(tabs, modifier.heightIn(min = 48.dp).lgkGlass(RoundedCornerShape(24.dp)).padding(4.dp)) { measurables, constraints ->
+        val gap = 4.dp.roundToPx()
+        val natural = measurables.map { it.maxIntrinsicWidth(constraints.maxHeight) }
+        // Unbounded (the screen asking how wide the picker wants to be): equal cells as wide as the widest label.
+        val width = if (constraints.hasBoundedWidth) constraints.maxWidth
+            else (natural.maxOrNull() ?: 0) * measurables.size + gap * (measurables.size - 1).coerceAtLeast(0)
+        val cell = if (measurables.isEmpty()) 0 else (width - gap * (measurables.size - 1)) / measurables.size
+        if (natural.all { it <= cell }) {
+            // One line: equal thirds, as before.
+            val placeables = measurables.map { it.measure(Constraints.fixed(cell, it.minIntrinsicHeight(cell))) }
+            val h = maxOf(placeables.maxOfOrNull { it.height } ?: 0, constraints.minHeight)
+            layout(width, h) {
+                var x = 0
+                placeables.forEach { p -> p.placeRelative(x, (h - p.height) / 2); x += cell + gap }
+            }
+        } else {
+            // Stacked: each choice on its own full-width line.
+            val placeables = measurables.map { it.measure(Constraints(minWidth = width, maxWidth = width)) }
+            val h = placeables.sumOf { it.height } + gap * (placeables.size - 1)
+            layout(width, h) {
+                var y = 0
+                placeables.forEach { p -> p.placeRelative(0, y); y += p.height + gap }
             }
         }
     }
@@ -316,8 +350,10 @@ private fun OptionsCard(o: GeneratorOptions, model: GeneratorModel) {
             ToggleRow(stringResource(R.string.generator_avoid_ambiguous), Icons.Filled.VisibilityOff, o.avoidAmbiguous) { v ->
                 set { it.copy(avoidAmbiguous = v) }
             }
+        } else if (o.mode == Mode.ANSWER) {
+            WordsRow(o.answerWords, PasswordGenerator.ANSWER_WORDS_RANGE) { n -> model.update { it.copy(answerWords = n) } }
         } else {
-            WordsRow(o.words, model)
+            WordsRow(o.words, PasswordGenerator.WORDS_RANGE) { n -> model.update { it.copy(words = n) } }
             Divider()
             SeparatorRow(o.separator) { s -> set { it.copy(separator = s) } }
             Divider()
@@ -398,9 +434,8 @@ private fun LengthRow(length: Int, model: GeneratorModel) {
 }
 
 @Composable
-private fun WordsRow(words: Int, model: GeneratorModel) {
+private fun WordsRow(words: Int, range: IntRange, onChange: (Int) -> Unit) {
     val c = LgkTheme.colors
-    val range = PasswordGenerator.WORDS_RANGE
     val wordsLabel = stringResource(R.string.generator_words)
     val wordsState = pluralStringResource(R.plurals.generator_word_count, words, words)
     Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
@@ -412,7 +447,7 @@ private fun WordsRow(words: Int, model: GeneratorModel) {
         }
         Slider(
             value = GeneratorSlider.position(words, range),
-            onValueChange = { v -> GeneratorSlider.moved(v, words, range)?.let { n -> model.update { it.copy(words = n) } } },
+            onValueChange = { v -> GeneratorSlider.moved(v, words, range)?.let(onChange) },
             valueRange = range.first.toFloat()..range.last.toFloat(),
             steps = range.last - range.first - 1,
             colors = SliderDefaults.colors(

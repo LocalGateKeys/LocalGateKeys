@@ -245,18 +245,31 @@ def _profile(root: Path) -> Path:
     profile.mkdir(parents=True)
     session = create_vault(profile / "vault.json", MASTER, kdf_overrides=TEST_KDF)
     session.upsert_web(origin="https://example.test", username="synthetic-user", password=SECRET_MARKER)
-    session.set_scheduled_backup_password(BACKUP_PASSWORD)
+    session.set_scheduled_backup_key(_record())
     session.lock()
     atomic_write_json(profile / "settings.json", {})
     return profile
+
+
+def _record(password: str = BACKUP_PASSWORD, *, now: int = 1793000000, set_by: str = "set",
+            previous: dict | None = None) -> dict:
+    from localvault.backup_key import build_record, derive_backup_key, new_kdf
+
+    key = derive_backup_key(password, new_kdf(parameters=backup_module.BACKUP_KDF))
+    try:
+        return build_record(key, now=now, set_by=set_by, reset_authority=None, previous=previous)
+    finally:
+        key.wipe()
 
 
 def test_full_backup_is_encrypted_restorable_and_mirrored_without_plaintext(workspace_tmp: Path) -> None:
     profile = _profile(workspace_tmp)
     mirror = workspace_tmp / "cloud"
     mirror.mkdir()
-    make, verify = bs.full_backup_functions(profile_dir=profile, profile_name="Synthetic",
-                                            backup_password=BACKUP_PASSWORD)
+    session = unlock_vault(profile / "vault.json", MASTER)
+    record = session.scheduled_backup_key()
+    session.lock()
+    make, verify = bs.full_backup_functions(profile_dir=profile, profile_name="Synthetic", record=record)
     result = bs.run_scheduled_backup(directory=profile / "Backups" / bs.SCHEDULED_DIR_NAME, tag=TAG, keep=2,
                                      when=datetime(2026, 10, 15, 9), make_backup=make, verify=verify,
                                      mirror_dir=str(mirror))
@@ -273,25 +286,29 @@ def test_full_backup_is_encrypted_restorable_and_mirrored_without_plaintext(work
     assert not list((profile / "Backups" / bs.SCHEDULED_DIR_NAME).glob(".lgk-*"))
 
 
-# --- backup password lives inside the encrypted vault -------------------------
+# --- only the public backup key record lives inside the encrypted vault -----
 
-def test_backup_password_stored_only_in_encrypted_vault(workspace_tmp: Path) -> None:
+def test_backup_key_record_stored_only_in_encrypted_vault(workspace_tmp: Path) -> None:
     path = workspace_tmp / "vault.json"
     session = create_vault(path, MASTER, kdf_overrides=TEST_KDF)
-    assert session.scheduled_backup_password() == ""
-    with pytest.raises(VaultError):
-        session.set_scheduled_backup_password("short")
-    session.set_scheduled_backup_password(BACKUP_PASSWORD)
-    assert BACKUP_PASSWORD.encode() not in path.read_bytes()
+    assert session.scheduled_backup_key() is None
+    record = _record()
+    session.set_scheduled_backup_key(record)
+    assert record["public_key"].encode() not in path.read_bytes()
     session.lock()
     with pytest.raises(VaultError):
-        session.scheduled_backup_password()
+        session.scheduled_backup_key()
     reopened = unlock_vault(path, MASTER)
-    assert reopened.scheduled_backup_password() == BACKUP_PASSWORD
-    reopened.set_scheduled_backup_password(None)
-    assert not reopened.has_scheduled_backup_password()
+    assert reopened.scheduled_backup_key() == record
+    # Only a successor (change, reset or re-bind) replaces a key.
+    with pytest.raises(VaultError):
+        reopened.set_scheduled_backup_key(_record("another backup password"))
+    reopened.set_scheduled_backup_key(_record("another backup password", now=1793000100, set_by="changed",
+                                              previous=record))
+    reopened.set_scheduled_backup_key(None)
+    assert not reopened.has_scheduled_backup_key()
     reopened.lock()
-    assert not unlock_vault(path, MASTER).has_scheduled_backup_password()
+    assert not unlock_vault(path, MASTER).has_scheduled_backup_key()
 
 
 # --- settings -----------------------------------------------------------------

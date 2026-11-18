@@ -67,6 +67,9 @@ struct MacSafariReviewSheet: View {
                 Text(OriginLabel.friendly(item.origin)).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.text)
                 Text(item.username).font(.system(size: 12)).foregroundStyle(theme.textMuted).lineLimit(1)
                 Text(SafariReviewCopy.detail(item)).font(.system(size: 11)).foregroundStyle(theme.textFaint).lineLimit(2)
+                if let warning = item.warning {
+                    Label(warning, systemImage: "exclamationmark.triangle.fill").font(.system(size: 11)).foregroundStyle(theme.danger)
+                }
             }
             Spacer(minLength: 0)
         }

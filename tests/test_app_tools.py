@@ -89,6 +89,13 @@ def test_generator_copy_message(env):
     assert controller.clipboard.value == "abc-123"
 
 
+def test_generator_copy_reports_clear_seconds(env):
+    controller, _saved = env
+    assert GeneratorService(controller).copy("abc")["clear_seconds"] == 30
+    controller.clipboard.timeout_seconds = 0
+    assert GeneratorService(controller).copy("abc")["clear_seconds"] == 0
+
+
 def test_username_word(env):
     controller, _saved = env
     assert GeneratorService(controller).username("word")["value"]
@@ -102,6 +109,15 @@ def test_palette_ranking_and_prefixes(env):
     actions = palette.query(">lock", "everything")["rows"]
     assert actions and all(r["kind"] == "command" for r in actions)
     assert actions[0]["command_id"] == "lock-now"
+
+
+def test_palette_shows_the_current_vault_name(env):
+    """Sub-plan 12 Task 3: with several vaults the palette says which one it searches."""
+    controller, _saved = env
+    active = controller.profiles.active_profile()
+    controller.profiles.update_profile(active.id, name="Work")
+    result = PaletteService(controller).query("", "everything")
+    assert result["vault"] == "Work"
 
 
 def test_palette_run_lock_and_navigate(env):
@@ -136,3 +152,12 @@ def test_palette_routes_security_commands(env, monkeypatch):
     assert palette.run("backup-now") == {"navigate": "recovery", "initial": "create"}
     palette.run("emergency-lock")
     assert not controller.is_unlocked() and marks
+
+
+def test_generator_answer_mode(env):
+    controller, saved = env
+    result = GeneratorService(controller).generate({"mode": "answer", "answer_words": 4})
+    words = result["value"].split(" ")
+    assert len(words) == 4 and all(w.isalpha() and w.islower() for w in words)
+    assert result["health"].startswith("4 randomly selected words")
+    assert saved[-1]["mode"] == "answer" and saved[-1]["answer_words"] == 4

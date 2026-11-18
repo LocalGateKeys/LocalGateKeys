@@ -22,6 +22,10 @@ export function fakeKv() {
       data.set(key, value);
       if (options?.metadata) meta.set(key, options.metadata);
     },
+    async delete(key) {
+      data.delete(key);
+      meta.delete(key);
+    },
   };
 }
 
@@ -30,6 +34,7 @@ export function makeStoreEnv(extra = {}) {
     LICENSES: fakeKv(),
     CLAIMS: fakeD1(),
     LICENSE_PRIVATE_KEY: PK,
+    LICENSE_KEY_ID_OVERRIDE: "1fb2572acef33ca2", // the test key; production pins 9f76e21ed03c0482
     PRODUCT_IDS: "pro_1",
     PROVIDER: "paddle",
     APPSTORE_BUNDLE_IDS: "app.localgatekeys.app",

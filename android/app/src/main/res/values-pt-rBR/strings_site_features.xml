@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_cat_http">Não é HTTPS</string>
+    <string name="security_expl_http">Estes logins usam um endereço sem criptografia. Confira e mude para https:// se o site oferecer suporte.</string>
+    <string name="security_cat_passkey">Chave de acesso disponível</string>
+    <string name="security_expl_passkey">Estes sites aceitam chaves de acesso, um jeito mais seguro de entrar. Salve uma para cada um.</string>
+</resources>

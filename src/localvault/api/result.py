@@ -11,6 +11,7 @@ F = TypeVar("F", bound=Callable[..., dict[str, Any]])
 # for a failure or notice carrying ``error_log: true``; it never guesses from the (translated) wording.
 ERROR_LOG_KEYS: tuple[str, ...] = (
     "error.internal",
+    "backupKey.relockFailed",
     "controller.localgatekeysCouldNotReadOr",
     "connections.repairFailedDetailsAreIn",
     "schedule.scheduledBackupFailedThePrevious",

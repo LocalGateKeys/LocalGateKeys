@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wi-Fi QR and the answer generator (Quick Wins Task 10). -->
+<resources>
+    <string name="detail_wifi_show_qr">QR 보기</string>
+    <string name="detail_wifi_qr_hint">이 이미지에는 Wi-Fi 비밀번호가 들어 있습니다. 연결을 허용할 사람에게만 보여 주세요.</string>
+    <string name="detail_wifi_enterprise_no_qr">엔터프라이즈 네트워크는 QR 코드로 공유할 수 없습니다.</string>
+    <string name="generator_mode_answer">답변</string>
+</resources>

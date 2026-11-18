@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .config import EXTENSION_ID, NATIVE_HOST_NAME, install_config_path, read_json
+from .config import EXTENSION_ORIGINS, NATIVE_HOST_NAME, install_config_path, read_json
 from .version import APP_VERSION, PROTOCOL_VERSION
 
 
@@ -41,7 +41,9 @@ def collect(*, extension_version: str = '', extension_seen: float = 0) -> dict[s
         pass
     if os.name == 'nt':
         import winreg
-        for browser, subkey in [('Chrome', 'Google\\Chrome'), ('Edge', 'Microsoft\\Edge')]:
+        from .native_host import FIREFOX_EXTENSION_ID
+
+        for browser, subkey in [('Chrome', 'Google\\Chrome'), ('Edge', 'Microsoft\\Edge'), ('Firefox', 'Mozilla')]:
             status = 'not_registered'
             try:
                 keypath = f'Software\\{subkey}\\NativeMessagingHosts\\{NATIVE_HOST_NAME}'
@@ -50,7 +52,9 @@ def collect(*, extension_version: str = '', extension_seen: float = 0) -> dict[s
                 data = read_json(manifest)
                 if not Path(str(data.get('path', ''))).is_file():
                     status = 'launcher_missing'
-                elif data.get('name') != NATIVE_HOST_NAME or f'chrome-extension://{EXTENSION_ID}/' not in data.get('allowed_origins', []):
+                elif data.get('name') != NATIVE_HOST_NAME or not (
+                        FIREFOX_EXTENSION_ID in data.get('allowed_extensions', []) if browser == 'Firefox'
+                        else any(origin in data.get('allowed_origins', []) for origin in EXTENSION_ORIGINS)):
                     status = 'manifest_mismatch'
                 else:
                     status = 'ready'

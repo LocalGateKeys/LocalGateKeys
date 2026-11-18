@@ -27,9 +27,15 @@ final class SecurityCheckModelTests: XCTestCase {
 
     private func settings() -> AppSettings { AppSettings(defaults: UserDefaults(suiteName: "security-\(UUID().uuidString)")!) }
 
+    /// Every test login lives on <id>.example.com, a site that offers 2FA codes (a one-rule suffix list: ".com").
+    private let exampleOffersTotp = SiteFeatures(
+        sites: ["example.com": ["totp"], "other.test": ["passkey"]],
+        matcher: URLMatcher(rules: PublicSuffixRules.parse(lines: ["com", "test"])))
+
     private func model(_ records: [JSONValue], settings: AppSettings) -> SecurityCheckModel {
+        let features = exampleOffersTotp
         let m = SecurityCheckModel(store: MemoryStore(snapshot(records)), settings: settings,
-                                   clock: { Date(timeIntervalSince1970: 1_800_000_000) })
+                                   clock: { Date(timeIntervalSince1970: 1_800_000_000) }, features: { features })
         m.refresh()
         return m
     }
@@ -45,6 +51,24 @@ final class SecurityCheckModelTests: XCTestCase {
         XCTAssertEqual(m.ids(.breached), [])
         // The same score as the Mac (VaultHealth): 4 logins, a, b and c need attention.
         XCTAssertEqual(m.score, 25)
+    }
+
+    func testHttpAndPasskeyRowsReadUrlsAndPasskeyItems() {
+        func at(_ id: String, _ origin: String) -> JSONValue {
+            guard case .object(var o) = login(id, "Unique-Lantern-Quartz-9921") else { return .null }
+            o["scope"] = rec(["origin": .string(origin)])
+            return .object(o)
+        }
+        let passkey: JSONValue = .object(["id": .string("p"), "kind": .string("passkey"), "label": .string("Key"),
+                                          "payload": rec(["relying_party_id": .string("accounts.other.test")])])
+        let m = model([at("a", "http://a.example.com"), at("b", "https://www.other.test"),
+                       at("c", "http://localhost:3000"), at("d", "https://d.example.com"), passkey], settings: settings())
+        XCTAssertEqual(m.ids(.http), ["a"])
+        // other.test already has a passkey (saved for a subdomain of the same registrable domain); example.com offers none.
+        XCTAssertEqual(m.ids(.passkey), [])
+        // Without the passkey item, other.test offers one.
+        let without = model([at("b", "https://www.other.test"), at("d", "https://d.example.com")], settings: settings())
+        XCTAssertEqual(without.ids(.passkey), ["b"])
     }
 
     func testDismissHidesOneItemFromOneRowAndPersists() {

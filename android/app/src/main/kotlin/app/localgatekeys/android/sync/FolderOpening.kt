@@ -20,6 +20,12 @@ fun interface FolderOpening {
      */
     fun keepOnly(uri: String?) {}
 
+    /**
+     * Gives up every folder permission except those of [uris] (the personal folder and the shared collections' folders,
+     * sub-plan 07). Never throws. The default gives up nothing.
+     */
+    fun keepOnlyAll(uris: Set<String>) {}
+
     companion object {
         /** No folder can be opened: every open fails as "folder-missing". */
         val UNAVAILABLE = FolderOpening { throw FolderAccessException(FolderAccessException.Kind.IO, "the chosen folder is no longer available") }

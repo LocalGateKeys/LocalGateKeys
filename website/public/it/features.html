@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Funzionalità | LocalGateKeys</title>
-  <meta name="description" content="Cosa fa LocalGateKeys, edizione per edizione: cassaforte cifrata, compilazione nel browser e sul desktop, passkey, Windows Hello, codici a due fattori, importazioni, backup e sincronizzazione tra dispositivi.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Funzioni: compilazione automatica, passkey, codici 2FA</title>
+  <meta name="description" content="Cassaforte cifrata, compilazione nel browser, passkey, codici a due fattori, condivisione sicura, importazione, backup e sincronizzazione tra dispositivi.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/it/features">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/features">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Funzioni: compilazione automatica, passkey, codici 2FA">
+  <meta property="og:description" content="Cassaforte cifrata, compilazione nel browser, passkey, codici a due fattori, condivisione sicura, importazione, backup e sincronizzazione tra dispositivi.">
+  <meta property="og:url" content="https://localgatekeys.app/it/features">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Il logo di LocalGateKeys: un password manager per Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Funzioni: compilazione automatica, passkey, codici 2FA">
+  <meta name="twitter:description" content="Cassaforte cifrata, compilazione nel browser, passkey, codici a due fattori, condivisione sicura, importazione, backup e sincronizzazione tra dispositivi.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,32 +44,49 @@
   <a class="skip" href="#main">Vai al contenuto</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../it/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../it/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Principale">
+      <nav class="nav-wide" aria-label="Principale">
         <ul class="nav">
-          <li><a href="../it/features.html" aria-current="page">Funzionalità</a></li>
-          <li><a href="../it/pricing.html">Prezzi</a></li>
-          <li><a href="../it/security.html">Sicurezza</a></li>
-          <li><a href="../it/get-started.html">Per iniziare</a></li>
-          <li><a href="../it/help.html">Guida</a></li>
-          <li><a href="../it/download.html">Download</a></li>
-          <li><a href="../it/support.html">Supporto</a></li>
-          <li><a href="../buy.html">Acquista Pro</a></li>
+          <li><a href="../it/features" aria-current="page">Funzionalità</a></li>
+          <li><a href="../it/get-started">Per iniziare</a></li>
+          <li><a href="../it/help">Guida</a></li>
+          <li><a href="../it/security">Sicurezza</a></li>
+          <li><a href="../it/pricing">Prezzi</a></li>
+          <li><a href="../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../it/download">Download</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principale">
+          <ul class="nav nav-stack">
+            <li><a href="../it/features" aria-current="page">Funzionalità</a></li>
+          <li><a href="../it/get-started">Per iniziare</a></li>
+          <li><a href="../it/help">Guida</a></li>
+          <li><a href="../it/security">Sicurezza</a></li>
+          <li><a href="../it/pricing">Prezzi</a></li>
+          <li><a href="../it/support">Supporto</a></li>
+          <li><a class="nav-cta" href="../it/download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Lingua</span></summary>
+        <ul class="lang-menu-list"><li><a href="../features" hreflang="en" lang="en">English</a></li><li><a href="../es/features" hreflang="es" lang="es">Español</a></li><li><a href="../it/features" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/features" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/features" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/features" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
   <main id="main">
 <div class="wrap page-head">
   <h1>Tutto quello che fa, e dove lo fa</h1>
-  <p class="lead">Tutto avviene sui tuoi dispositivi. Free contiene fino a 4 elementi; <a href="../it/pricing.html">Pro</a> rimuove il limite e aggiunge sincronizzazione, codici a due fattori e documenti.</p>
+  <p class="lead">Tutto questo funziona sui tuoi dispositivi: l'app per Windows, l'estensione del browser e l'app per iPhone. Free contiene fino a 7 elementi; <a href="../it/pricing">Pro</a> toglie il limite e aggiunge sincronizzazione, codici a due fattori e documenti.</p>
 </div>
 <div class="wrap">
-  <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="La pagina Home di LocalGateKeys: stato delle password, promemoria in arrivo, una scheda di codici monouso con codici a due fattori in tempo reale e un elenco di accessi con i logo dei siti." loading="lazy" decoding="async"></picture><figcaption>Home: stato delle password, promemoria, codici a due fattori in tempo reale e i tuoi elementi. Cassaforte demo con account inventati.</figcaption></figure>
+  <figure class="shot"><img src="../screenshots/home-vault-dark.webp" srcset="../screenshots/home-vault-dark-w720.webp 720w, ../screenshots/home-vault-dark-w1440.webp 1440w, ../screenshots/home-vault-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="La pagina Home di LocalGateKeys: stato delle password, promemoria in arrivo, una scheda di codici monouso con codici a due fattori in tempo reale e un elenco di accessi con i logo dei siti." loading="lazy" decoding="async"><figcaption>Home: stato delle password, promemoria, codici a due fattori in tempo reale e i tuoi elementi. Cassaforte demo con account inventati.</figcaption></figure>
 </div>
 
 <div class="wrap page-body">
@@ -64,28 +95,31 @@
     <dl>
       <div><dt>Cifrata sul tuo disco</dt><dd>Tutto ciò che salvi è cifrato con una chiave protetta dalla tua password principale, usando Argon2id e AES-256-GCM. Anche nomi, nomi utente e siti web sono cifrati, non solo le password.</dd></div>
       <div><dt>Più delle sole password</dt><dd>Accessi a siti web e ad app desktop, passkey, carte di pagamento, conti bancari, identità, note sicure, documenti, chiavi SSH, chiavi API, reti Wi-Fi, segnalibri, licenze software, abbonamenti, garanzie e acquisti, ciascuno con i propri campi.</dd></div>
-      <div><dt>Documenti (Pro)</dt><dd>Conserva nella cassaforte file come documenti scansionati, fino a 25 MB ciascuno. Ogni file è cifrato con una chiave propria. Puoi visualizzare un documento in anteprima, salvarne una copia o aprirlo in un'altra app.</dd></div>
+      <div><dt>Documenti (Pro)</dt><dd>Conserva nella cassaforte file come documenti scansionati, fino a 25 MB ciascuno. Ogni file è cifrato con una chiave propria. Puoi visualizzare un documento in anteprima, salvarne una copia o aprirlo in un'altra app. Con la sincronizzazione, i file raggiungono i tuoi altri dispositivi, sempre cifrati.</dd></div>
       <div><dt>Codici a due fattori (Pro)</dt><dd>Salva la chiave di configurazione di un sito e LocalGateKeys mostra il codice attuale in cima all'accesso e in una scheda Codici monouso nella pagina Home. I codici seguono lo standard TOTP (RFC 6238): da 6 a 8 cifre, da 15 a 120 secondi, SHA-1, SHA-256 o SHA-512.</dd></div>
-      <div><dt>Aggiungi un codice da un codice QR</dt><dd>Cattura il codice QR nella pagina di configurazione a due fattori del sito con Win+Maiusc+S e incollalo, oppure mostralo alla webcam. Funziona anche un codice QR di esportazione di Google Authenticator. L'immagine viene letta sul tuo PC e non viene mai salvata.</dd></div>
+      <div><dt>Codici su Apple Watch (Pro)</dt><dd>Mostra sul tuo Apple Watch i codici a due fattori che scegli, fino a 10. L'orologio mostra solo codici, mai password, e continuano a funzionare anche senza l'iPhone vicino.</dd></div>
+      <div><dt>Scansiona un codice QR</dt><dd>Scegli Scansiona codice QR e incolla una cattura del codice QR a due fattori del sito (Win+Maiusc+S), trascina un'immagine oppure mostralo alla webcam. Funzionano anche i codici QR di esportazione di Google Authenticator. L'immagine viene letta sul tuo PC e non viene mai salvata.</dd></div>
       <div><dt>Generatore di password</dt><dd>Password casuali da 8 a 256 caratteri, o passphrase da 3 a 16 parole.</dd></div>
       <div><dt>Stato delle password</dt><dd>Vedi quali password salvate sono deboli, riutilizzate, vecchie di oltre un anno o prive di codice a due fattori. I controlli delle violazioni con Have I Been Pwned sono disattivati finché non li attivi, partono solo quando li avvii e inviano solo cinque caratteri di un hash, mai la password.</dd></div>
       <div><dt>Logo dei siti e icone per tipo</dt><dd>Ogni elemento mostra l'icona del sito, un logo integrato per i siti più noti o un'icona per il suo tipo, così lo riconosci a colpo d'occhio.</dd></div>
-      <div><dt>Ricerca e raccolte</dt><dd>Trova gli elementi con una palette di comandi (Ctrl+K), filtri rapidi, preferiti e raccolte personali. I tasti freccia, Invio e Ctrl+C funzionano nell'elenco degli elementi direttamente dal campo di ricerca.</dd></div>
+      <div><dt>Ricerca, ordinamento e raccolte</dt><dd>Trova gli elementi con una palette di comandi (Ctrl+K), filtri rapidi, preferiti e raccolte personali. Ordina l'elenco per titolo, data di modifica o data di creazione, con i preferiti per primi. I tasti freccia, Invio e Ctrl+C funzionano nell'elenco direttamente dal campo di ricerca.</dd></div>
       <div><dt>Cestino e annulla</dt><dd>Gli elementi eliminati vanno nel cestino, e il messaggio di conferma ha un pulsante Annulla. Il cestino si svuota da solo dopo 30 giorni, oppure conserva tutto finché non lo svuoti.</dd></div>
-      <div><dt>Cronologia delle password</dt><dd>Quando la password di un accesso cambia, le ultime cinque vecchie password restano nella sua cronologia cifrata.</dd></div>
+      <div><dt>Cronologia delle password</dt><dd>Quando la password di un accesso cambia, fino a 10 vecchie password restano per un anno nella sua cronologia cifrata. Copiane una o ripristinala.</dd></div>
+      <div><dt>Sito verificato</dt><dd>L'estensione del browser contrassegna un sito salvato come sito verificato e ti avvisa prima di accedere o salvare su un indirizzo simile, per esempio con una lettera scambiata. Il controllo avviene sul tuo dispositivo e i siti salvati non lasciano mai l'app. Safari conserva solo un elenco sigillato di nomi di siti. Su Android, la richiesta di salvataggio della compilazione automatica mostra lo stesso esito e chiede conferma prima di salvare su un indirizzo simile.</dd></div>
     </dl>
     <div class="shots">
-      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="Un accesso GitHub aperto in LocalGateKeys, con il codice a due fattori attuale in cima, poi nome utente, password nascosta, sito web, note e codici di recupero." loading="lazy" decoding="async"></picture><figcaption>Il codice a due fattori attuale è in cima all'accesso.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="../screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/generator-dark.webp" width="2880" height="1800" alt="Il generatore di password con una password casuale di 20 caratteri e opzioni per lunghezza, lettere, cifre e simboli." loading="lazy" decoding="async"></picture><figcaption>Il generatore crea password casuali o passphrase.</figcaption></figure>
-      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="Il Centro sicurezza con un punteggio di 77 su 100, con password deboli, riutilizzate, senza due fattori e vecchie da rivedere, e controlli di sblocco e backup." loading="lazy" decoding="async"></picture><figcaption>Il Centro sicurezza elenca cosa sistemare per primo.</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/item-2fa-code-light.webp" srcset="../screenshots/item-2fa-code-light-w720.webp 720w, ../screenshots/item-2fa-code-light-w1440.webp 1440w, ../screenshots/item-2fa-code-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Un accesso GitHub aperto in LocalGateKeys, con il codice a due fattori attuale in cima, poi nome utente, password nascosta, sito web, note e codici di recupero." loading="lazy" decoding="async"><figcaption>Il codice a due fattori attuale è in cima all'accesso.</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/generator-light.webp" srcset="../screenshots/generator-light-w720.webp 720w, ../screenshots/generator-light-w1440.webp 1440w, ../screenshots/generator-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Il generatore di password con una password casuale di 20 caratteri e opzioni per lunghezza, lettere, cifre e simboli." loading="lazy" decoding="async"><figcaption>Il generatore crea password casuali o passphrase.</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/security-center-dark.webp" srcset="../screenshots/security-center-dark-w720.webp 720w, ../screenshots/security-center-dark-w1440.webp 1440w, ../screenshots/security-center-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="Il Centro sicurezza con un punteggio di 77 su 100, con password deboli, riutilizzate, senza due fattori e vecchie da rivedere, e controlli di sblocco e backup." loading="lazy" decoding="async"><figcaption>Il Centro sicurezza elenca cosa sistemare per primo.</figcaption></figure>
     </div>
   </section>
 
   <section class="feature-group" aria-labelledby="f-move">
     <h2 id="f-move">Importare ed esportare</h2>
     <dl>
-      <div><dt>Importa da altri gestori di password</dt><dd>Importa le esportazioni di 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass e KeePassXC (anche i file <code>.kdbx</code>), Chrome, Edge, Brave, Firefox e Safari, o di qualsiasi altro file CSV. Controlli ogni elemento prima che venga scritto qualcosa, e l'importazione non va mai online.</dd></div>
+      <div><dt>Importa da altri gestori di password</dt><dd>Importa le esportazioni di 1Password, Bitwarden, LastPass, Dashlane, Proton Pass, KeePass e KeePassXC (anche i file <code>.kdbx</code>), Chrome, Edge, Brave, Firefox e Safari, o di qualsiasi altro file CSV. Controlli ogni elemento prima che venga scritto qualcosa, e l'importazione non va mai online. Su iPhone importi accessi, codici a due fattori e passkey direttamente da Password di Apple (iOS 26 e successivi), oppure importi un file da molti gestori di password e app di autenticazione.</dd></div>
       <div><dt>Esporta</dt><dd>Esporta in un file KeePass KDBX 4 cifrato, oppure in CSV o JSON compatibile con Bitwarden, o in XML di KeePass. Ogni esportazione chiede prima la tua password principale.</dd></div>
+      <div><dt>Condividi un elemento in sicurezza</dt><dd>Invia un accesso o una nota come file <code>.lgkshare</code> o come codice QR, protetto da un codice di sei parole che comunichi all'altra persona in un altro modo. Si apre una sola volta, e tre codici sbagliati lo distruggono. Passkey, documenti ed elementi con un file allegato non si possono condividere.</dd></div>
     </dl>
   </section>
 
@@ -120,24 +154,67 @@
       <div><dt>Backup cifrati pianificati</dt><dd>Ogni giorno o ogni settimana, all'ora che imposti. Ogni backup è un file cifrato completo, controllato dopo la scrittura, con gli allegati inclusi.</dd></div>
       <div><dt>Copia aggiuntiva in una cartella a tua scelta</dt><dd>Fai copiare ogni backup in una cartella di OneDrive, Google Drive, Dropbox o Proton Drive, o in qualsiasi altro posto. Vengono copiati solo i file di backup cifrati, mai la cassaforte in uso.</dd></div>
       <div><dt>Pacchetti di trasferimento cifrati</dt><dd>Sposta gli elementi selezionati in un'altra cassaforte con un file cifrato protetto da una password propria.</dd></div>
+      <div><dt>Backup del telefono</dt><dd>Le app per iPhone e Android salvano un backup cifrato .lgkm con una password a tua scelta. Ripristinalo su qualsiasi iPhone, telefono Android, Mac o PC: viene unito come una sincronizzazione e non cancella mai la tua cassaforte.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-emergency">
+    <h2 id="f-emergency">Accesso di emergenza e password di coercizione (Pro)</h2>
+    <dl>
+      <div><dt>Accesso di emergenza</dt><dd>Dividi la tua frase di recupero in al massimo cinque frammenti per persone di fiducia. Un numero a tua scelta (da due a cinque) basta per rientrare. Ognuno riceve un file firmato, un codice QR o un foglio stampato. Non ci sono account né server: condividi con loro una cartella, come una cartella cloud o una chiavetta USB.</dd></div>
+      <div><dt>Attesa e veto</dt><dd>Chi ha bisogno di accesso lo chiede dal proprio LocalGateKeys. Dopo l'attesa che hai scelto (da 1 a 30 giorni) l'app apre una copia del tuo ultimo backup cifrato. Fino ad allora, ognuno dei tuoi dispositivi può dire No. Puoi anche concedere l'accesso subito. Sul telefono la procedura termina mostrando la tua frase di recupero; apri il backup su un computer.</dd></div>
+      <div><dt>Il limite</dt><dd>Nulla fuori dalle app impone l'attesa o il tuo No. Qualsiasi gruppo di titolari con abbastanza frammenti, se agisce insieme, può aprire subito il tuo backup. Scegli persone che non agirebbero insieme e tieni i frammenti separati. Sostituire la frase di recupero rende inutili i frammenti vecchi.</dd></div>
+      <div><dt>Password di coercizione</dt><dd>Una seconda password apre una cassaforte credibile con elementi di esempio e non rivela nulla di quella vera. Finché è aperta, la cassaforte vera resta bloccata per le ore che scegli e nulla si sincronizza. Nasconde la tua cassaforte a chi guarda da sopra la tua spalla o ti costringe ad aprire l'app. Non nasconde l'esistenza della funzione a chi esamina i tuoi file. Su Windows, Mac, iPhone e Android.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-power">
+    <h2 id="f-power">Strumenti avanzati</h2>
+    <dl>
+      <div><dt>Test di ripristino dei backup</dt><dd>Una volta a settimana LocalGateKeys ripristina il backup più recente in una cartella temporanea, verifica che si apra ed elimina la copia. Ti avvisa se il backup usa una vecchia password.</dd></div>
+      <div><dt>Assistente per il cambio password</dt><dd>Apre la pagina in cui si cambia la password di un sito: da un elenco curato, dall'indirizzo standard /.well-known/change-password o dalla pagina di accesso. Non compila mai siti di terze parti.</dd></div>
+      <div><dt>Più casseforti (Pro)</dt><dd>Tieni casseforti separate, come Lavoro e Personale. Il piano gratuito include una cassaforte. Il limite gratuito di 7 elementi vale per tutte le casseforti insieme.</dd></div>
+      <div><dt>Rapporto sullo stato della cassaforte stampabile</dt><dd>Un rapporto di una pagina da stampare. Non contiene password né nomi degli elementi.</dd></div>
+      <div><dt>Condivisioni a scadenza e revocabili</dt><dd>Le condivisioni possono scadere dopo 1 ora o 1 giorno, funzionare una sola volta ed essere revocate. È un impegno al meglio delle possibilità.</dd></div>
+      <div><dt>Modello del pacchetto successorio</dt><dd>Un modello per gli esecutori, accanto all'accesso di emergenza.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-dev">
+    <h2 id="f-dev">Per sviluppatori e agenti IA</h2>
+    <dl>
+      <div><dt>Gli agenti IA accedono, le tue password restano sul tuo PC (Pro)</dt><dd>Claude Code e altri agenti MCP possono chiedere a LocalGateKeys di accedere a un sito. Approvi ogni richiesta, l'estensione del browser compila il modulo e l'agente non vede mai la password. Su Windows: claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp (l'app Microsoft Store esegue anche la riga di comando lgk come LocalGateKeysNativeHost.exe lgk). <a href="../it/news/2026-11-ai-agents">Gli agenti IA accedono, le tue password restano sul tuo PC</a></dd></div>
+      <div><dt>Registro degli accessi a prova di manomissione</dt><dd>Ogni voce di attività è collegata alla precedente tramite un hash, quindi il controllo di sicurezza mostra se il registro è stato modificato, accorciato o svuotato.</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-sync">
     <h2 id="f-sync">Sincronizzazione tra i tuoi dispositivi (Pro)</h2>
     <dl>
-      <div><dt>Tramite il Wi-Fi di casa</dt><dd>Associa un PC una volta con un codice QR monouso (tra PC incolli il suo testo). Quando entrambi sono sbloccati sulla stessa rete, si scambiano le modifiche direttamente tramite una connessione autenticata e cifrata. Nulla passa da Internet.</dd></div>
-      <div><dt>Tramite la tua cartella cloud</dt><dd>Se i tuoi PC sono raramente sulla stessa rete, sincronizza tramite una cartella OneDrive, Dropbox, Google Drive o iCloud Drive che già usi, protetta da una password di sincronizzazione. Il provider conserva solo file cifrati. Puoi usare entrambi i percorsi.</dd></div>
-      <div><dt>Cosa si sincronizza</dt><dd>Accessi a siti web e ad app desktop, e altri elementi come note e segnalibri. Raccolte, documenti e allegati non si sincronizzano ancora. Le modifiche fatte su due PC contemporaneamente mantengono entrambe le versioni, e un'eliminazione sposta l'elemento nel cestino sugli altri PC.</dd></div>
-      <div><dt>iPhone</dt><dd>L'app per iPhone si sincronizza con il tuo PC Windows. <a href="https://apps.apple.com/app/id6825488435">Scaricala dall'App Store</a>.</dd></div>
+      <div><dt>Tramite il Wi-Fi di casa</dt><dd>Abbina un PC o un iPhone una volta con un codice QR monouso (tra PC incolli il suo testo). Quando entrambi sono sbloccati sulla stessa rete, si scambiano le modifiche direttamente tramite una connessione autenticata e cifrata. Nulla passa da Internet. Se l'indirizzo di un PC cambia, Cerca di nuovo ristabilisce la connessione, e ogni dispositivo mostra quando si è sincronizzato l'ultima volta.</dd></div>
+      <div><dt>Tramite la tua cartella cloud</dt><dd>Se i tuoi dispositivi sono raramente sulla stessa rete, sincronizza tramite una cartella cloud che già usi, come Dropbox o iCloud Drive, protetta da una password di sincronizzazione. Il provider conserva solo file cifrati. Puoi usare entrambi i percorsi.</dd></div>
+      <div><dt>Cosa si sincronizza</dt><dd>Accessi, note, carte e gli altri elementi, e i documenti allegati con i loro file. Le raccolte restano su ciascun dispositivo. Le modifiche fatte su due dispositivi contemporaneamente mantengono entrambe le versioni, e un'eliminazione sposta l'elemento nel cestino sugli altri. Se un dispositivo riporta una copia più vecchia della cassaforte, l'app per Windows ti avvisa invece di accettarla.</dd></div>
+      <div><dt>iPhone</dt><dd>L'app per iPhone si sincronizza con il tuo PC Windows e il tuo Mac. Un PC gratuito abbinato a un iPhone con Pro riceve la licenza tramite la sincronizzazione e diventa Pro. <a href="https://apps.apple.com/app/id6825488435">Scaricala da App Store</a>.</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-iphone">
+    <h2 id="f-iphone">Su iPhone</h2>
+    <dl>
+      <div><dt>AutoFill in Safari e nelle app</dt><dd>Compila gli accessi in Safari e in altre app, con suggerimenti nella barra QuickType, e usa LocalGateKeys per le passkey. Da iOS 18 compila anche carte, indirizzi e altri dati in qualsiasi campo di testo. L'estensione di Safari propone di salvare un nuovo accesso dopo che lo hai effettuato.</dd></div>
+      <div><dt>Face ID, Touch ID o una password dell'app</dt><dd>La cassaforte si apre con Face ID, Touch ID o il codice del tuo iPhone, senza password da creare. Se altri conoscono il tuo codice, aggiungi una password dell'app facoltativa, protetta da una frase di recupero di 24 parole.</dd></div>
+      <div><dt>Controllo di sicurezza</dt><dd>La scheda Sicurezza dà un punteggio alla tua cassaforte ed elenca le password deboli, riutilizzate e vecchie, e gli accessi che potrebbero usare i codici a due fattori. I controlli delle violazioni restano disattivati finché non li attivi.</dd></div>
+      <div><dt>Eliminati di recente, cronologia e promemoria</dt><dd>Gli elementi eliminati restano 30 giorni in Eliminati di recente, e Annulla ne riporta uno indietro subito. Ogni accesso conserva la cronologia delle password, e puoi ricevere un promemoria prima che scada una carta, un passaporto o una licenza.</dd></div>
+      <div><dt>File allegati (Pro)</dt><dd>Allega documenti e foto alla tua cassaforte, conservati cifrati e sincronizzati con i tuoi altri dispositivi.</dd></div>
+      <div><dt>Dieci lingue</dt><dd>L'app per iPhone parla inglese, tedesco, spagnolo, italiano, giapponese, coreano, olandese, polacco, portoghese brasiliano e cinese semplificato.</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-privacy">
     <h2 id="f-privacy">Privacy</h2>
     <dl>
-      <div><dt>Nessun account</dt><dd>Non ti registri e non accedi mai. Una licenza Pro è una chiave che conservi tu, verificata sul tuo PC.</dd></div>
-      <div><dt>Nessuna telemetria</dt><dd>L'app non invia dati di utilizzo, rapporti sugli arresti anomali né dati di analisi.</dd></div>
+      <div><dt>Nessun account</dt><dd>Non ti registri e non accedi mai. Una licenza Pro è una chiave che conservi tu e che viene verificata sul tuo dispositivo. Su iPhone, Pro è un acquisto su App Store, e l'app invia al nostro server di licenze solo la ricevuta di App Store.</dd></div>
+      <div><dt>Nessuna telemetria</dt><dd>Le app non inviano dati di utilizzo, rapporti sui crash né analisi.</dd></div>
       <div><dt>Modalità offline rigorosa</dt><dd>Attiva per impostazione predefinita. Blocca le richieste Internet in background e i controlli delle violazioni, e prima di cercare aggiornamenti ti chiede conferma.</dd></div>
       <div><dt>Icone dei siti, a tua scelta</dt><dd>Per mostrare l'icona di un sito, l'app la scarica da quel sito. Questo comunica al sito che hai un account lì, e nient'altro. È disattivato per impostazione predefinita: attiva "Mostra le icone dei siti web" nelle Impostazioni (la modalità offline rigorosa deve essere disattivata).</dd></div>
       <div><dt>Controlli degli aggiornamenti che avvii tu</dt><dd>Il controllo degli aggiornamenti scarica un solo piccolo file firmato. L'app non scarica né installa mai nulla da sola.</dd></div>
@@ -149,43 +226,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Un gestore di password per Windows che tiene la tua cassaforte sui tuoi dispositivi.</p>
-        <p class="quiet">Questo sito non imposta cookie, non usa strumenti di analisi e non carica nulla da altre aziende.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Un gestore di password per Windows, Mac e iPhone che tiene la tua cassaforte sui tuoi dispositivi.</p>
+        <p class="quiet">Questo sito conta le visite con Cloudflare Web Analytics, che non usa cookie. Non usa tracker pubblicitari e non imposta cookie.</p>
       </div>
       <nav aria-label="Prodotto">
         <h2>Prodotto</h2>
         <ul>
-          <li><a href="../it/features.html">Funzionalità</a></li>
-          <li><a href="../it/pricing.html">Prezzi</a></li>
-          <li><a href="../it/download.html">Download</a></li>
-          <li><a href="../it/licence.html">La tua licenza Pro</a></li>
+          <li><a href="../it/features">Funzionalità</a></li>
+          <li><a href="../it/pricing">Prezzi</a></li>
+          <li><a href="../it/download">Download</a></li>
+          <li><a href="../it/get-started">Per iniziare</a></li>
+          <li><a href="../it/switch/">Cambia</a></li>
+          <li><a href="../buy">Acquista Pro</a></li>
+          <li><a href="../it/licence">La tua licenza Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recupera la licenza</a></li>
         </ul>
       </nav>
       <nav aria-label="Aiuto">
         <h2>Aiuto</h2>
         <ul>
-          <li><a href="../it/help.html">Guida utente</a></li>
-          <li><a href="../it/support.html">Supporto e FAQ</a></li>
-          <li><a href="../it/security.html">Sicurezza</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Segnala una vulnerabilità</a></li>
+          <li><a href="../it/help">Guida utente</a></li>
+          <li><a href="../it/support">Supporto e FAQ</a></li>
+          <li><a href="../it/security">Sicurezza</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Segnala una vulnerabilità</a></li>
         </ul>
       </nav>
       <nav aria-label="Note legali">
         <h2>Note legali</h2>
         <p class="quiet">Questi documenti sono in inglese, e si applica la versione inglese, che è quella vincolante.</p>
         <ul>
-          <li><a href="../legal/eula.html">Contratto di licenza</a></li>
-          <li><a href="../legal/privacy.html">Informativa sulla privacy</a></li>
-          <li><a href="../legal/terms-of-sale.html">Condizioni di vendita</a></li>
-          <li><a href="../legal/refunds.html">Politica di rimborso</a></li>
+          <li><a href="../legal/eula">Contratto di licenza</a></li>
+          <li><a href="../legal/privacy">Informativa sulla privacy</a></li>
+          <li><a href="../legal/terms-of-sale">Condizioni di vendita</a></li>
+          <li><a href="../legal/refunds">Politica di rimborso</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contatto: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows è un marchio del gruppo di società Microsoft. Chrome è un marchio di Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Lingua"><a href="../features.html" hreflang="en" lang="en">English</a> · <a href="../es/features.html" hreflang="es" lang="es">Español</a> · <a href="../it/features.html" hreflang="it" lang="it" aria-current="true">Italiano</a> · <a href="../pl/features.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/features.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/features.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows è un marchio del gruppo di società Microsoft. Chrome è un marchio di Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari sono marchi di Apple Inc., registrati negli Stati Uniti e in altri paesi.</p>
+      <nav class="lang-switch" aria-label="Lingua"><ul><li><a href="../features" hreflang="en" lang="en">English</a></li><li><a href="../es/features" hreflang="es" lang="es">Español</a></li><li><a href="../it/features" hreflang="it" lang="it" aria-current="true">Italiano</a></li><li><a href="../pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/features" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/features" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/features" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

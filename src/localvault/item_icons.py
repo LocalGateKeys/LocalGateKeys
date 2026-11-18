@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from . import net_ledger
 from .origin import OriginError, canonicalize_origin
 
 MAX_CACHED_SOURCES = 128
@@ -460,7 +461,8 @@ def fetch_website_icon(origin: str, *, cancel_event: threading.Event | None = No
         try:
             sock = socket.socket(family, socket.SOCK_STREAM)
             sock.settimeout(max(0.01, deadline - _monotonic()))
-            sock.connect((address, port))
+            # Recorded under the site name for this run only (net_ledger.SITE_PURPOSES); never the address.
+            net_ledger.connect(sock, (address, port), purpose=net_ledger.WEBSITE_ICON, host=host)
             context = ssl.create_default_context()
             wrapped = context.wrap_socket(sock, server_hostname=host)
             sock = None

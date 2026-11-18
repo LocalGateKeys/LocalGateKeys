@@ -44,8 +44,10 @@ interface LanTransporting {
     ): List<ItemState> = exchangeViews(peer, identity, groupKey, localStates, ownCounter)
 
     /**
-     * [exchangeViewsFindingHost] with rollback witnesses (`LanClient.exchange`): [publish] null sends nothing extra. The
-     * default (test fakes) publishes nothing and observes nothing.
+     * [exchangeViewsFindingHost] with rollback witnesses (`LanClient.exchange`): [publish] null sends nothing extra. With
+     * [askFeatures] (a peer not yet known to read collection states, sub-plan 07) one `features` message goes after the
+     * views and before the witness; its answer is [LanExchange.collections]. The default (test fakes) publishes nothing,
+     * observes nothing and learns nothing.
      */
     fun exchangeWitnessing(
         peer: PinnedPeer,
@@ -54,6 +56,7 @@ interface LanTransporting {
         localStates: List<ItemState>,
         ownCounter: Long,
         publish: LanPublish?,
+        askFeatures: Boolean = false,
         onMoved: (LanEndpoint) -> Unit,
     ): LanExchange = LanExchange(exchangeViewsFindingHost(peer, identity, groupKey, localStates, ownCounter, onMoved))
 
@@ -62,6 +65,14 @@ interface LanTransporting {
      * connection is up (the screen then stops offering Cancel). Throws [LanSocketException] when the dial fails.
      */
     fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit): ByteArray
+
+    /**
+     * [enroll] with the inviter's interim reveal frame (`LGKENROLLRV1\n`, a version-2 offer, `LAN_SYNC_V3.md` 3.3): a
+     * reveal that arrives first goes to [onInterim] (which may throw to abort), then the final reply is read and
+     * returned. The default (test fakes, older transports) passes no interim frame.
+     */
+    fun enroll(endpoint: LanEndpoint, request: ByteArray, onConnected: () -> Unit, onInterim: (ByteArray) -> Unit): ByteArray =
+        enroll(endpoint, request, onConnected)
 
     /**
      * After an exchange, the attachment files [refs] from [peer] (`LanClient.fetchBlobs`); with no refs and [probe], one
@@ -74,6 +85,13 @@ interface LanTransporting {
         refs: List<AttachmentRef>,
         probe: Boolean,
     ): BlobFetch = BlobFetch()
+
+    /**
+     * After an exchange with a peer not yet known to read the emergency access plan, one `heir-hello`
+     * (`LanClient.probeHeir`): true when it does, false when it refused the message, null when nothing told. The
+     * default (test fakes, older transports) learns nothing.
+     */
+    fun probeHeir(peer: PinnedPeer, identity: DeviceIdentity, groupKey: GroupKey): Boolean? = null
 
     companion object {
         /** Until Task 11: nothing can be reached. */

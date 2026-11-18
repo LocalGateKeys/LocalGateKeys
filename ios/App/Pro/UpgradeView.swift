@@ -39,8 +39,8 @@ struct UpgradeView: View {
                 .shadow(color: Palette.glowBlue.opacity(0.45), radius: 24, y: 8)
                 .accessibilityHidden(true)
             Text("LocalGateKeys Pro").font(.largeTitle.bold()).foregroundStyle(Palette.text)
-            Text(pro.isPro ? String(localized: "Everything is unlocked on this iPhone.")
-                           : String(localized: "Pay once for unlimited items and two\u{2011}factor codes."))
+            Text(pro.isPro ? (DeviceText.isPad ? String(localized: "ipad.upgradeView.everythingUnlocked", defaultValue: "Everything is unlocked on this iPad.") : String(localized: "Everything is unlocked on this iPhone."))
+                           : String(localized: "Pay once for unlimited items, sync, two\u{2011}factor codes and attachments."))
                 .font(.title3).foregroundStyle(Palette.secondaryText).multilineTextAlignment(.center)
         }
     }
@@ -52,7 +52,7 @@ struct UpgradeView: View {
             Benefit(symbol: "number.square.fill", title: String(localized: "Two-factor codes"),
                     detail: String(localized: "Add and change 2FA codes. Codes you already saved keep working without Pro."))
             Benefit(symbol: "checkmark.seal.fill", title: String(localized: "One payment"),
-                    detail: String(localized: "No subscription and no account. Restore it on another iPhone with the same Apple Account."))
+                    detail: (DeviceText.isPad ? String(localized: "ipad.upgradeView.noSubscriptionAndNo", defaultValue: "No subscription and no account. Restore it on another iPad with the same Apple Account.") : String(localized: "No subscription and no account. Restore it on another iPhone with the same Apple Account.")))
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -77,7 +77,7 @@ struct UpgradeView: View {
                 }
                 .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint(Palette.accent).foregroundStyle(Palette.onAccent)
                 .disabled(pro.busy || !pro.canBuy)
-                Text("One-time purchase, no subscription.")
+                Text("One payment. Every update, forever, free. No subscription.")
                     .font(.footnote).foregroundStyle(Palette.secondaryText)
                 Button("Restore purchases") {
                     Task { await pro.restore(); if pro.isPro { dismiss() } }
@@ -105,11 +105,14 @@ private struct Benefit: View {
     let symbol: String
     let title: String
     let detail: String
+    /// The tile grows with Dynamic Type (review 2026-11-15, UX 3).
+    @ScaledMetric(relativeTo: .headline) var iconSize: CGFloat = 18
+    @ScaledMetric(relativeTo: .headline) var tileSize: CGFloat = 40
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            Image(systemName: symbol).font(.system(size: 18, weight: .semibold)).foregroundStyle(Palette.accentText)
-                .frame(width: 40, height: 40)
+            Image(systemName: symbol).font(.system(size: iconSize, weight: .semibold)).foregroundStyle(Palette.accentText)
+                .frame(width: tileSize, height: tileSize)
                 .background(Palette.accent.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
@@ -122,28 +125,31 @@ private struct Benefit: View {
     }
 }
 
-/// The free plan's slots, one tile each, filled for every item saved (all filled once Pro is active), then the
-/// wider unlimited tile. With no count, the slots are drawn empty and the caption gives the free limit.
+/// The free plan's slots, one tile each in rows of five so they fit a narrow phone, filled for every item saved (all
+/// filled once Pro is active), then a full-width unlimited tile. With no count, the slots are drawn empty and the
+/// caption gives the free limit.
 private struct CapacityStrip: View {
     let used: Int?
     let isPro: Bool
+    @ScaledMetric(relativeTo: .title3) var infinitySize: CGFloat = 20
+    @ScaledMetric(relativeTo: .title3) var infinityHeight: CGFloat = 36
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 8) {
+        VStack(spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: ItemLimit.freeItems), spacing: 6) {
                 ForEach(0..<ItemLimit.freeItems, id: \.self) { slot in
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(filled(slot) ? Palette.accent.opacity(0.85) : Palette.groupSurface)
-                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .strokeBorder(Palette.accent.opacity(filled(slot) ? 0 : 0.35), lineWidth: 1.5))
-                        .frame(width: 46, height: 46)
+                        .frame(height: 28)
                 }
-                Image(systemName: "infinity").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, minHeight: 46)
-                    .background(LinearGradient(colors: [Palette.accent, Palette.glowBlue], startPoint: .leading,
-                                               endPoint: .trailing),
-                                in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
+            Image(systemName: "infinity").font(.system(size: infinitySize, weight: .bold)).foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: infinityHeight)
+                .background(LinearGradient(colors: [Palette.accent, Palette.glowBlue], startPoint: .leading,
+                                           endPoint: .trailing),
+                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             Text(caption).font(.footnote.weight(.medium)).foregroundStyle(Palette.secondaryText)
         }
         .accessibilityElement(children: .ignore)

@@ -68,8 +68,21 @@ struct StoreKitEntitlement: ProEntitlementChecking {
 /// Republishes the AutoFill identities from a committed snapshot (`IdentityStoreSync.refresh`).
 protocol PasskeyIdentityRefreshing: Sendable {
     func refresh(_ snapshot: StoreSnapshot) async
+    /// `refresh`, also leaving out `hidden` (the iPhone extension: travel-hidden items and logins whose access rules
+    /// refuse autofill, which the extension's own publisher cannot read from the app).
+    func refresh(_ snapshot: StoreSnapshot, alsoOmitting hidden: Set<String>) async
 }
-extension IdentityStoreSync: PasskeyIdentityRefreshing {}
+extension PasskeyIdentityRefreshing {
+    func refresh(_ snapshot: StoreSnapshot, alsoOmitting hidden: Set<String>) async { await refresh(snapshot) }
+}
+extension IdentityStoreSync: PasskeyIdentityRefreshing {
+    func refresh(_ snapshot: StoreSnapshot, alsoOmitting hidden: Set<String>) async {
+        var copy = self
+        let own = omit
+        copy.omit = { own($0).union(hidden) }
+        await copy.refresh(snapshot)
+    }
+}
 
 /// Why a passkey request is refused (iPhone `PasskeyFlow.Failure`, Mac `MacAutoFillModel`).
 enum PasskeyFailure: Error, Equatable {
@@ -100,14 +113,15 @@ enum PasskeyVault {
     }
 
     static func live(_ snapshot: StoreSnapshot, _ id: String) -> PasskeyRecord? {
-        guard snapshot.meta[id]?.deleted != true, let item = snapshot.records[id] else { return nil }
+        guard snapshot.meta[id]?.deleted != true, let item = snapshot.records[id],
+              !CollectionStates.isReserved(id, item) else { return nil }
         return PasskeyRecord.from(item, id: id)
     }
 
     /// Usable passkeys for `rpID`, ordered by item id. An empty `allowed` list (discoverable sign-in) offers
     /// every one of them; otherwise only those whose credential id is listed.
     static func candidates(_ s: StoreSnapshot, rpID: String, allowed: [Data]) -> [PasskeyCandidate] {
-        s.records.keys.sorted(by: Scalars.less).compactMap { id in
+        s.itemRecords.keys.sorted(by: Scalars.less).compactMap { id in
             guard let r = live(s, id), r.key != nil, matches(r, rpID: rpID) else { return nil }
             guard allowed.isEmpty || allowed.contains(Data(r.credentialID)) else { return nil }
             return PasskeyCandidate(itemID: r.itemID, title: r.title, rpID: r.rpID, userName: r.userName,
@@ -229,12 +243,15 @@ final class PasskeyFlow {
 
     /// Usable passkeys for `rpID` (`PasskeyVault.candidates`).
     func candidates(rpID: String, allowed: [Data]) async throws -> [PasskeyCandidate] {
-        PasskeyVault.candidates(try await unlock(reason: Self.signInReason), rpID: rpID, allowed: allowed)
+        let s = try await unlock(reason: Self.signInReason)
+        // Travel mode (feature pack §2): a hidden passkey is not offered on this device.
+        return PasskeyVault.candidates(s, rpID: rpID, allowed: allowed).filter { !credentials.omitted.contains($0.itemID) }
     }
 
     /// Signs with the item's key (`PasskeyVault.assert`).
     func assert(recordID: String, rpID: String, clientDataHash: Data, userVerified: Bool) async throws -> PasskeyAssertion {
         let s = try await unlock(reason: Self.signInReason)
+        guard !credentials.omitted.contains(recordID) else { throw PasskeyFailure.notFound }
         return try PasskeyVault.assert(s, recordID: recordID, rpID: rpID, clientDataHash: clientDataHash, userVerified: userVerified)
     }
 
@@ -267,8 +284,10 @@ final class PasskeyFlow {
                 // "Erase this iPhone's vault" may have started during Face ID or a retry: never write into it.
                 if credentials.settings.erasePending { credentials.reset(); throw CredentialFlow.Failure.erasePending }
             })
+        // Travel mode and access rules (feature pack §2 and §4) for the republished identities, read before the reset.
+        let hidden = AutoFillGate.omitted(out.committed, travel: credentials.travel(store), today: RecordDigest.today())
         credentials.reset()   // the pre-commit snapshot is out of date
-        if let identities { await identities.refresh(out.committed) }
+        if let identities { await identities.refresh(out.committed, alsoOmitting: hidden) }
         return (out.credentialID, out.attestationObject)
     }
 

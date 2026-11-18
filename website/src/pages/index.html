@@ -3,172 +3,238 @@ title: [[t:index.title]]
 description: [[t:index.description]]
 body_class: home
 ---
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <h1>[[t:index.a-password-manager-that.1]]</h1>
-      <p class="promise">[[t:index.a-password-manager-that.2]]</p>
-      <ul class="no-list" aria-label="[[t:index.a-password-manager-that.3]]">
-        <li>[[t:index.a-password-manager-that.4]]</li>
-        <li>[[t:index.a-password-manager-that.5]]</li>
-        <li>[[t:index.a-password-manager-that.6]]</li>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="wrap">
+    <h1 id="hero-title">[[t:index.a-password-manager-that.1]]</h1>
+    <p class="lead">[[t:index.a-password-manager-that.2]]</p>
+    <ul class="hero-get" aria-label="[[t:index.v2.get_label]]">
+      <li><!-- if:MS_STORE_LIVE --><a class="get-tile" href="{{MS_STORE_URL}}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.windows]]</span><span class="get-store">[[t:index.v2.store.microsoft]]</span></span></a><!-- else --><a class="get-tile" href="[[home]]download.html"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.windows]]</span><span class="get-store">[[t:nav.download]]</span></span></a><!-- /if --></li>
+      <li><!-- if:MAC_APP_URL --><a class="get-tile" href="{{MAC_APP_URL}}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.mac]]</span><span class="get-store">[[t:index.v2.store.mac]]</span></span></a><!-- else --><span class="get-tile is-soon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.mac]]</span><span class="get-store">[[t:index.v2.coming_soon]]</span></span></span><!-- /if --></li>
+      <li><!-- if:IPHONE_APP_URL --><a class="get-tile" href="{{IPHONE_APP_URL}}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.iphone]]</span><span class="get-store">[[t:index.v2.store.apple]]</span></span></a><!-- else --><span class="get-tile is-soon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.iphone]]</span><span class="get-store">[[t:index.v2.coming_soon]]</span></span></span><!-- /if --></li>
+      <li><!-- if:ANDROID_APP_URL --><a class="get-tile" href="{{ANDROID_APP_URL}}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M4.5 18a7.5 7.5 0 0 1 15 0zM8.1 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0zM13.8 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0z"/><path d="M8 11.6 6.3 8.7M16 11.6l1.7-2.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.android]]</span><span class="get-store">[[t:index.v2.store.play]]</span></span></a><!-- else --><span class="get-tile is-soon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M4.5 18a7.5 7.5 0 0 1 15 0zM8.1 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0zM13.8 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0z"/><path d="M8 11.6 6.3 8.7M16 11.6l1.7-2.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="get-text"><span class="get-os">[[t:index.v2.platform.android]]</span><span class="get-store">[[t:index.v2.coming_soon]]</span></span></span><!-- /if --></li>
+    </ul>
+    <p class="hero-price">[[t:hero.price_line]]</p>
+    <p class="hero-ext">
+      <span class="hero-ext-label">[[t:index.v2.extension]]</span>
+      <!-- if:EDGE_ADDONS_URL --><a href="{{EDGE_ADDONS_URL}}">[[t:index.v2.add_edge]]</a><!-- /if -->
+      <!-- if:CHROME_STORE_URL --><a href="{{CHROME_STORE_URL}}">[[t:index.v2.add_chrome]]</a><!-- /if -->
+      <!-- if:FIREFOX_ADDON_URL --><a href="{{FIREFOX_ADDON_URL}}">[[t:download.extension-for-mozilla-firefox.3]]</a><!-- /if -->
+      <a href="[[home]]download.html">[[t:index.v3.see_downloads]]</a>
+    </p>
+    <ul class="facts" aria-label="[[t:index.a-password-manager-that.3]]">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>[[t:index.a-password-manager-that.4]]</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>[[t:index.a-password-manager-that.5]]</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>[[t:index.a-password-manager-that.6]]</li>
+    </ul>
+  </div>
+</section>
+
+<section class="gallery" aria-labelledby="gallery-title">
+  <h2 id="gallery-title" class="visually-hidden">[[t:index.v2.showcase_label]]</h2>
+  <nav aria-label="[[t:index.v2.switch_legend]]">
+    <ul class="dock glass">
+      <li><a href="#shots-win"><span class="<!-- if:MS_STORE_LIVE -->dot<!-- else -->dot ring<!-- /if -->" aria-hidden="true"></span>[[t:index.v2.platform.windows]]</a></li>
+      <li><a href="#shots-mac"><span class="<!-- if:MAC_APP_URL -->dot<!-- else -->dot ring<!-- /if -->" aria-hidden="true"></span>[[t:index.v2.platform.mac]]</a></li>
+      <li><a href="#shots-ios"><span class="<!-- if:IPHONE_APP_URL -->dot<!-- else -->dot ring<!-- /if -->" aria-hidden="true"></span>[[t:index.v2.platform.iphone]]</a></li>
+      <li><a href="#shots-ipad"><span class="<!-- if:IPHONE_APP_URL -->dot<!-- else -->dot ring<!-- /if -->" aria-hidden="true"></span>[[t:index.v2.platform.ipad]]</a></li>
+      <li><a href="#shots-android"><span class="<!-- if:ANDROID_APP_URL -->dot<!-- else -->dot ring<!-- /if -->" aria-hidden="true"></span>[[t:index.v2.platform.android]]</a></li>
+    </ul>
+  </nav>
+
+  <div class="film">
+    <div class="strip" role="region" aria-label="[[t:index.v2.showcase_label]]" data-viewer-label="[[t:index.v4.viewer_label]]" data-count="[[t:index.v4.counter]]" tabindex="0">
+      <div class="track">
+
+        <div class="group" id="shots-win" role="group" aria-label="[[t:index.v2.region.windows]]">
+          <div class="divider glass">
+            <h3>[[t:index.v2.platform.windows]]</h3>
+            <p><span class="state"><!-- if:MS_STORE_LIVE -->[[t:index.v2.store.microsoft]]<!-- else -->[[t:index.v2.coming_soon]]<!-- /if --></span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="[[root]]screenshots/home-vault-dark.webp" width="2880" height="1800" fetchpriority="high" decoding="async" alt="[[t:index.a-password-manager-that.25]]"><figcaption>[[t:index.v2.win.1.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/item-2fa-code-light.webp" width="2880" height="1800" loading="lazy" decoding="async" alt="[[t:index.two-factor-codes-built.4]]"><figcaption>[[t:index.two-factor-codes-built.5]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" loading="lazy" decoding="async" alt="[[t:index.checks-your-passwords.3]]"><figcaption>[[t:index.checks-your-passwords.4]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/generator-light.webp" width="2880" height="1800" loading="lazy" decoding="async" alt="[[t:index.v2.win.4.alt]]"><figcaption>[[t:index.v2.win.4.caption]]</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-mac" role="group" aria-label="[[t:index.v2.region.mac]]">
+          <div class="divider glass">
+            <h3>[[t:index.v2.platform.mac]]</h3>
+            <p><span class="state"><!-- if:MAC_APP_URL -->[[t:index.v2.store.mac]]<!-- else -->[[t:index.v2.coming_soon]]<!-- /if --></span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/mac-01-vault.webp" width="1600" height="1031" loading="lazy" decoding="async" alt="[[t:index.v2.mac.5.alt]]"><figcaption>[[t:index.v2.mac.5.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/mac-03-sync.webp" width="1600" height="1031" loading="lazy" decoding="async" alt="[[t:index.v2.mac.2.alt]]"><figcaption>[[t:index.v2.mac.2.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/mac-04-security.webp" width="1600" height="1031" loading="lazy" decoding="async" alt="[[t:index.v2.mac.3.alt]]"><figcaption>[[t:index.v2.mac.3.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/mac-05-settings.webp" width="1600" height="1031" loading="lazy" decoding="async" alt="[[t:index.v2.mac.4.alt]]"><figcaption>[[t:index.v2.mac.4.caption]]</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-ios" role="group" aria-label="[[t:index.v2.region.iphone]]">
+          <div class="divider glass">
+            <h3>[[t:index.v2.platform.iphone]]</h3>
+            <p><span class="state"><!-- if:IPHONE_APP_URL -->[[t:index.v2.store.apple]]<!-- else -->[[t:index.v2.coming_soon]]<!-- /if --></span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/ios-01-vault.webp" width="640" height="1391" loading="lazy" decoding="async" alt="[[t:index.v2.ios.5.alt]]"><figcaption>[[t:index.v2.ios.5.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/ios-02-edit.webp" width="640" height="1391" loading="lazy" decoding="async" alt="[[t:index.v2.ios.1.alt]]"><figcaption>[[t:index.v2.ios.1.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/ios-03-sync.webp" width="640" height="1391" loading="lazy" decoding="async" alt="[[t:index.v2.ios.2.alt]]"><figcaption>[[t:index.v2.ios.2.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/ios-04-security.webp" width="640" height="1391" loading="lazy" decoding="async" alt="[[t:index.v2.ios.3.alt]]"><figcaption>[[t:index.v2.ios.3.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/ios-05-settings.webp" width="640" height="1391" loading="lazy" decoding="async" alt="[[t:index.v2.ios.4.alt]]"><figcaption>[[t:index.v2.ios.4.caption]]</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-ipad" role="group" aria-label="[[t:index.v2.region.ipad]]">
+          <div class="divider glass">
+            <h3>[[t:index.v2.platform.ipad]]</h3>
+            <p><span class="state"><!-- if:IPHONE_APP_URL -->[[t:index.v2.store.apple]]<!-- else -->[[t:index.v2.coming_soon]]<!-- /if --></span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/ipad-01-items.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="[[t:index.v2.ipad.5.alt]]"><figcaption>[[t:index.v2.ipad.5.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/ipad-02-edit.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="[[t:index.v2.ipad.1.alt]]"><figcaption>[[t:index.v2.ipad.1.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/ipad-03-sync.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="[[t:index.v2.ipad.2.alt]]"><figcaption>[[t:index.v2.ipad.2.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/ipad-04-security.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="[[t:index.v2.ipad.3.alt]]"><figcaption>[[t:index.v2.ipad.3.caption]]</figcaption></figure>
+          <figure class="frame wide"><img src="[[root]]screenshots/platforms/ipad-05-settings.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="[[t:index.v2.ipad.4.alt]]"><figcaption>[[t:index.v2.ipad.4.caption]]</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-android" role="group" aria-label="[[t:index.v2.region.android]]">
+          <div class="divider glass">
+            <h3>[[t:index.v2.platform.android]]</h3>
+            <p><span class="state"><!-- if:ANDROID_APP_URL -->[[t:index.v2.store.play]]<!-- else -->[[t:index.v2.coming_soon]]<!-- /if --></span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/android-vault.webp" width="640" height="1422" loading="lazy" decoding="async" alt="[[t:index.v2.android.2.alt]]"><figcaption>[[t:index.v2.android.2.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/android-detail.webp" width="640" height="1422" loading="lazy" decoding="async" alt="[[t:index.v2.android.3.alt]]"><figcaption>[[t:index.v2.android.3.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/android-generator.webp" width="640" height="1422" loading="lazy" decoding="async" alt="[[t:index.v2.android.4.alt]]"><figcaption>[[t:index.v2.android.4.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/android-sync.webp" width="640" height="1422" loading="lazy" decoding="async" alt="[[t:index.v2.android.5.alt]]"><figcaption>[[t:index.v2.android.5.caption]]</figcaption></figure>
+          <figure class="frame tall"><img src="[[root]]screenshots/platforms/android-settings.webp" width="640" height="1422" loading="lazy" decoding="async" alt="[[t:index.v2.android.1.alt]]"><figcaption>[[t:index.v2.android.1.caption]]</figcaption></figure>
+        </div>
+
+      </div>
+    </div>
+    <div class="controls">
+      <button class="arrow prev" type="button" aria-label="[[t:index.v4.prev_shot]]"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="arrow next" type="button" aria-label="[[t:index.v4.next_shot]]"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+  <p class="demo-note">[[t:index.v2.demo_note]]</p>
+  <p class="showcase-more"><a class="text-link" href="[[home]]get-started.html">[[t:index.see-it-in-light.9]]</a></p>
+</section>
+
+<section class="section" id="sync" aria-labelledby="routes-title">
+  <div class="wrap split">
+    <div class="split-head">
+      <h2 id="routes-title">[[t:index.you-decide-where-encrypted.1]]</h2>
+      <p>[[t:index.you-decide-where-encrypted.2]]</p>
+    </div>
+    <div class="split-body">
+      <ul class="routes">
+        <li>
+          <div><h3>[[t:index.you-decide-where-encrypted.3]]</h3><span class="when">[[t:index.you-decide-where-encrypted.4]]</span></div>
+          <p>[[t:index.you-decide-where-encrypted.5]]</p>
+        </li>
+        <li>
+          <div><h3>[[t:index.you-decide-where-encrypted.6]]</h3><span class="when">[[t:index.you-decide-where-encrypted.7]]</span></div>
+          <p>[[t:index.you-decide-where-encrypted.8]]</p>
+        </li>
+        <li>
+          <div><h3>[[t:index.you-decide-where-encrypted.9]]</h3><span class="when">[[t:index.you-decide-where-encrypted.10]]</span></div>
+          <p>[[t:index.you-decide-where-encrypted.11]]</p>
+        </li>
       </ul>
-      <div class="actions">
-        <!-- if:MS_STORE_LIVE --><a class="button primary store-button" href="{{MS_STORE_URL}}"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>[[t:index.a-password-manager-that.7]]</span></a>
-        <a class="button" href="[[home]]download.html">[[t:index.a-password-manager-that.8]]</a><!-- else --><a class="button primary" href="[[home]]download.html">[[t:index.a-password-manager-that.9]]</a><!-- /if -->
-        <!-- if:IPHONE_APP_URL --><a class="button store-button" href="{{IPHONE_APP_URL}}"><svg class="apple-logo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span>[[t:index.a-password-manager-that.10]]</span></a>
-        <!-- /if --><a class="button" href="[[home]]pricing.html">[[t:index.a-password-manager-that.11]]</a>
-      </div>
     </div>
-
-    <svg class="rings" viewBox="0 0 520 520" role="img" aria-labelledby="rings-title rings-desc">
-      <title id="rings-title">[[t:index.a-password-manager-that.12]]</title>
-      <desc id="rings-desc">[[t:index.a-password-manager-that.13]]</desc>
-      <defs>
-        <linearGradient id="hero-arc" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#67E8F9"/>
-          <stop offset=".55" stop-color="#3B82F6"/>
-          <stop offset="1" stop-color="#1D3FBF"/>
-        </linearGradient>
-      </defs>
-
-      <circle class="ring ring-dash" cx="260" cy="260" r="215"/>
-      <circle class="ring" cx="260" cy="260" r="140"/>
-      <circle class="arc" cx="260" cy="260" r="140" transform="rotate(-200 260 260)"/>
-
-      <circle class="core" cx="260" cy="260" r="62"/>
-      <g class="core-ink" transform="translate(260 256) scale(.5)"><circle cx="0" cy="-36" r="40"/><path d="M-24 -8 H24 L40 94 H-40 Z"/></g>
-      <text class="label halo" x="260" y="348" text-anchor="middle">[[t:index.a-password-manager-that.14]]</text>
-      <text class="sub keep halo" x="260" y="368" text-anchor="middle">[[t:index.a-password-manager-that.15]]</text>
-
-      <text class="sub keep halo" x="260" y="408" text-anchor="middle">[[t:index.a-password-manager-that.16]]</text>
-
-      <circle class="node" cx="392" cy="212" r="20"/>
-      <path class="glyph" d="M381 204 h22 v14 h-22 z M388 223 h8 M392 218 v5"/>
-      <text class="label halo" x="420" y="208">[[t:index.a-password-manager-that.17]]</text>
-      <text class="sub halo" x="420" y="225">[[t:index.a-password-manager-that.18]]</text>
-
-      <circle class="node" cx="180" cy="375" r="20"/>
-      <path class="glyph" d="M174 364 h12 a2 2 0 0 1 2 2 v18 a2 2 0 0 1 -2 2 h-12 a2 2 0 0 1 -2 -2 v-18 a2 2 0 0 1 2 -2 z M178 382 h4"/>
-      <text class="label halo" x="152" y="380" text-anchor="end">[[t:index.a-password-manager-that.19]]</text>
-      <text class="sub halo" x="152" y="397" text-anchor="end">[[t:index.a-password-manager-that.20]]</text>
-
-      <circle class="node node-cloud" cx="84" cy="137" r="20"/>
-      <path class="glyph glyph-cloud" d="M73 131 h8 l3 3 h11 v12 h-22 z"/>
-      <text class="label halo" x="30" y="92">[[t:index.a-password-manager-that.21]]</text>
-      <text class="sub halo" x="30" y="109">[[t:index.a-password-manager-that.22]]</text>
-
-      <circle class="ring ring-dash" cx="486" cy="490" r="14"/>
-      <line class="strike" x1="476" y1="500" x2="496" y2="480"/>
-      <text class="outside halo" x="462" y="487" text-anchor="end">[[t:index.a-password-manager-that.23]]</text>
-      <text class="sub keep halo" x="462" y="508" text-anchor="end">[[t:index.a-password-manager-that.24]]</text>
-    </svg>
   </div>
 </section>
-<section class="shot-band">
+
+<section class="section" id="features" aria-labelledby="features-title">
   <div class="wrap">
-    <figure class="shot"><picture><source srcset="[[root]]screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/home-vault-dark.webp" width="2880" height="1800" alt="[[t:index.a-password-manager-that.25]]" loading="lazy" decoding="async"></picture><figcaption>[[t:index.a-password-manager-that.26]]</figcaption></figure>
+    <h2 id="features-title">[[t:index.v2.features_title]]</h2>
+    <ul class="features">
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8.5h18M6 6.3h.01M8.5 6.3h.01M7 14h4M14.5 12.5v3"/></svg>
+        <div>
+          <h3>[[t:index.fills-sign-ins-in.1]]</h3>
+          <p>[[t:index.fills-sign-ins-in.2]]</p>
+          <p>[[t:index.fills-sign-ins-in.3]]</p>
+          <p class="feature-note">[[t:index.fills-sign-ins-in.4]]</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 10.5h6M16 10.5h1.5"/></svg>
+        <div>
+          <h3>[[t:index.and-in-windows-apps.1]]</h3>
+          <p>[[t:index.and-in-windows-apps.2]]</p>
+          <p class="feature-note">[[t:index.and-in-windows-apps.3]]</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2.5h4"/></svg>
+        <div>
+          <h3>[[t:index.two-factor-codes-built.1]] <span class="pro-mark">[[t:index.you-decide-where-encrypted.7]]</span></h3>
+          <p>[[t:index.two-factor-codes-built.2]]</p>
+          <p class="feature-note">[[t:index.two-factor-codes-built.3]]</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6L12 3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+        <div>
+          <h3>[[t:index.checks-your-passwords.1]]</h3>
+          <p>[[t:index.checks-your-passwords.2]]</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+        <div>
+          <h3>[[t:index.v2.iphone.title]]</h3>
+          <p>[[t:index.v2.iphone.body]]</p>
+          <p class="feature-note">[[t:index.v2.iphone.note]]</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M14 14h2.5v2.5H14zM18.5 18.5H20.5M14 20.5h2.5M20.5 14v2"/></svg>
+        <div>
+          <h3>[[t:index.v2.share.title]]</h3>
+          <p>[[t:index.v2.share.body]]</p>
+          <p class="feature-note">[[t:index.v2.share.note]]</p>
+        </div>
+      </li>
+    </ul>
   </div>
 </section>
 
-<section class="band">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>[[t:index.see-it-in-light.1]]</h2>
-      <p>[[t:index.see-it-in-light.2]]</p>
-    </div>
-    <div class="gallery">
-      <figure><a href="[[root]]screenshots/campaign-generator-light.webp"><img src="[[root]]screenshots/campaign-generator-light.webp" width="1920" height="1080" alt="[[t:index.see-it-in-light.3]]" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="[[root]]screenshots/campaign-security-dark.webp"><img src="[[root]]screenshots/campaign-security-dark.webp" width="1920" height="1080" alt="[[t:index.see-it-in-light.4]]" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="[[root]]screenshots/campaign-two-factor-light.webp"><img src="[[root]]screenshots/campaign-two-factor-light.webp" width="1920" height="1080" alt="[[t:index.see-it-in-light.5]]" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="[[root]]screenshots/campaign-autofill-dark.webp"><img src="[[root]]screenshots/campaign-autofill-dark.webp" width="1920" height="1080" alt="[[t:index.see-it-in-light.6]]" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="[[root]]screenshots/campaign-one-vault-light.webp"><img src="[[root]]screenshots/campaign-one-vault-light.webp" width="1920" height="1080" alt="[[t:index.see-it-in-light.7]]" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="[[root]]screenshots/campaign-light-or-dark.webp"><img src="[[root]]screenshots/campaign-light-or-dark.webp" width="1920" height="1080" alt="[[t:index.see-it-in-light.8]]" loading="lazy" decoding="async"></a></figure>
-    </div>
-    <p class="actions"><a class="button" href="[[home]]get-started.html">[[t:index.see-it-in-light.9]]</a></p>
-  </div>
-</section>
-
-<section class="band band-tint">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>[[t:index.you-decide-where-encrypted.1]]</h2>
-      <p class="lead">[[t:index.you-decide-where-encrypted.2]]</p>
-    </div>
-    <div class="routes">
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="r" cx="32" cy="32" r="29"/><circle class="r" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>[[t:index.you-decide-where-encrypted.3]]</h3>
-        <p class="who">[[t:index.you-decide-where-encrypted.4]]</p>
-        <p>[[t:index.you-decide-where-encrypted.5]]</p>
-      </div>
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="r" cx="32" cy="32" r="29"/><circle class="on" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>[[t:index.you-decide-where-encrypted.6]]</h3>
-        <p class="who">[[t:index.you-decide-where-encrypted.7]]</p>
-        <p>[[t:index.you-decide-where-encrypted.8]]</p>
-      </div>
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="on" cx="32" cy="32" r="29"/><circle class="r" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>[[t:index.you-decide-where-encrypted.9]]</h3>
-        <p class="who">[[t:index.you-decide-where-encrypted.10]]</p>
-        <p>[[t:index.you-decide-where-encrypted.11]]</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="band">
+<section class="section band" id="price" aria-labelledby="price-title">
   <div class="wrap split">
-    <div>
-      <h2>[[t:index.fills-sign-ins-in.1]]</h2>
-      <p>[[t:index.fills-sign-ins-in.2]]</p>
-      <p>[[t:index.fills-sign-ins-in.3]]</p>
-      <p>[[t:index.fills-sign-ins-in.4]]</p>
-      <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="[[t:index.fills-sign-ins-in.5]]" loading="lazy" decoding="async"><figcaption>[[t:index.fills-sign-ins-in.6]]</figcaption></figure>
-    </div>
-    <div>
-      <h2>[[t:index.and-in-windows-apps.1]]</h2>
-      <p>[[t:index.and-in-windows-apps.2]]</p>
-      <p>[[t:index.and-in-windows-apps.3]]</p>
-    </div>
-  </div>
-</section>
-
-<section class="band band-tint">
-  <div class="wrap split">
-    <div>
-      <h2>[[t:index.two-factor-codes-built.1]]</h2>
-      <p>[[t:index.two-factor-codes-built.2]]</p>
-      <p>[[t:index.two-factor-codes-built.3]]</p>
-      <figure class="shot"><picture><source srcset="[[root]]screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="[[t:index.two-factor-codes-built.4]]" loading="lazy" decoding="async"></picture><figcaption>[[t:index.two-factor-codes-built.5]]</figcaption></figure>
-    </div>
-    <div>
-      <h2>[[t:index.checks-your-passwords.1]]</h2>
-      <p>[[t:index.checks-your-passwords.2]]</p>
-      <figure class="shot"><picture><source srcset="[[root]]screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="[[t:index.checks-your-passwords.3]]" loading="lazy" decoding="async"></picture><figcaption>[[t:index.checks-your-passwords.4]]</figcaption></figure>
-    </div>
-  </div>
-</section>
-
-<section class="band">
-  <div class="wrap split">
-    <div>
-      <h2>[[t:index.free-for-your-first.1]]</h2>
+    <div class="split-head">
+      <h2 id="price-title">[[t:index.free-for-your-first.1]]</h2>
       <p>[[t:index.free-for-your-first.2]]</p>
-      <p>[[t:index.free-for-your-first.3]]</p>
-      <div class="actions">
-        <!-- if:BUY_URL --><a class="button primary" href="{{BUY_URL}}">[[t:index.free-for-your-first.4]]</a>
-        <!-- /if --><a class="button" href="[[home]]pricing.html">[[t:index.free-for-your-first.5]]</a>
-        <a class="button" href="[[home]]features.html">[[t:index.free-for-your-first.6]]</a>
+    </div>
+    <div class="split-body">
+      <div class="price-card glass">
+        <p class="plate-label">[[t:index.v2.price_label]]</p>
+        <p class="price">[[t:index.v2.price]]</p>
+        <p class="price-terms">[[t:index.v2.price_note]]</p>
+        <div class="actions">
+          <!-- if:BUY_URL --><a class="button primary" href="{{BUY_URL}}">[[t:index.free-for-your-first.4]]</a>
+          <!-- /if --><a class="text-link" href="[[home]]pricing.html">[[t:index.free-for-your-first.5]]</a>
+          <a class="text-link" href="[[home]]features.html">[[t:index.free-for-your-first.6]]</a>
+        </div>
       </div>
     </div>
-    <div>
-      <h2>[[t:index.honest-about-security.1]]</h2>
+  </div>
+</section>
+
+<section class="section" id="security" aria-labelledby="security-title">
+  <div class="wrap split">
+    <div class="split-head">
+      <h2 id="security-title">[[t:index.honest-about-security.1]]</h2>
       <p>[[t:index.honest-about-security.2]]</p>
       <div class="actions">
         <a class="button" href="[[home]]security.html">[[t:index.honest-about-security.3]]</a>
       </div>
     </div>
+    <div class="split-body">
+      <dl class="spec-rows glass">
+        <div><dt>[[t:index.v2.spec.kdf]]</dt><dd>Argon2id</dd></div>
+        <div><dt>[[t:index.v2.spec.cipher]]</dt><dd>AES-256-GCM</dd></div>
+        <div><dt>[[t:index.v2.spec.account]]</dt><dd>[[t:index.v2.spec.account_value]]</dd></div>
+        <div><dt>[[t:index.v2.spec.where]]</dt><dd>[[t:index.v2.spec.where_value]]</dd></div>
+      </dl>
+    </div>
   </div>
 </section>
+
+<script src="[[root]]hero.js"></script>

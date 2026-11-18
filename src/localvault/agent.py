@@ -105,6 +105,9 @@ def main() -> None:
 
     from .ui_assets import enable_dpi_awareness
 
+    # Opening a file from Explorer starts the app in that file's folder. Never let a
+    # bare program name resolve to something planted there.
+    os.environ["NoDefaultCurrentDirectoryInExePath"] = "1"
     enable_dpi_awareness()
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--background", action="store_true")

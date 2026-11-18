@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Sito verificato</string>
+    <string name="autofill_site_related">Sito correlato</string>
+    <string name="autofill_site_lookalike">Sito imitazione</string>
+    <string name="autofill_site_new">Nuovo sito</string>
+    <string name="autofill_guard_title">È il sito giusto?</string>
+    <string name="autofill_guard_body">%1$s somiglia a %2$s, dove è salvato il tuo accesso, ma è un sito diverso. Continua solo se ne sei sicuro.</string>
+    <string name="autofill_guard_body_mixed">%1$s mescola lettere di alfabeti diversi, un trucco di phishing comune. Continua solo se ne sei sicuro.</string>
+    <string name="autofill_guard_continue">Continua su %1$s</string>
+    <string name="autofill_guard_go_back">Torna indietro</string>
+    <string name="autofill_same_account_title">È lo stesso account di %1$s?</string>
+    <string name="autofill_same_account_body">%1$s ha lo stesso nome di %2$s, dove è salvato il tuo accesso, ma un’estensione diversa. Continua solo se è la stessa azienda.</string>
+    <string name="autofill_same_account_yes">Stesso account</string>
+    <string name="autofill_pick_other_site_body">Questo accesso è salvato per %2$s, non per %1$s. Compilalo su %1$s solo se sei sicuro che sia il sito giusto.</string>
+    <string name="autofill_pick_no_site_body">Questo accesso non ha un sito web salvato. Compilalo su %1$s solo se sei sicuro che sia il sito giusto.</string>
+    <string name="autofill_pick_scheme_unknown_body">Il browser non ha indicato se %1$s è una pagina sicura (https). Compilalo solo se ne sei sicuro.</string>
+</resources>

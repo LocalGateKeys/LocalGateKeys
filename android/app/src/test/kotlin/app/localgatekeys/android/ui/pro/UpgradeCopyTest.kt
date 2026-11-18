@@ -15,10 +15,10 @@ class UpgradeCopyTest {
     @Test fun capacity_strip_caption() {
         assertEquals("No limit on items", CapacityStrip.caption(used = 2, isPro = true, txt = txt))
         assertEquals("No limit on items", CapacityStrip.caption(used = null, isPro = true, txt = txt))
-        assertEquals("Free: 4 items. Pro: no limit.", CapacityStrip.caption(used = null, isPro = false, txt = txt))
-        assertEquals("0 of 4 free items used. Pro: no limit.", CapacityStrip.caption(used = 0, isPro = false, txt = txt))
-        assertEquals("3 of 4 free items used. Pro: no limit.", CapacityStrip.caption(used = 3, isPro = false, txt = txt))
-        assertEquals("over the limit still reads 4 of 4", "4 of 4 free items used. Pro: no limit.", CapacityStrip.caption(used = 9, isPro = false, txt = txt))
+        assertEquals("Free: 7 items. Pro: no limit.", CapacityStrip.caption(used = null, isPro = false, txt = txt))
+        assertEquals("0 of 7 free items used. Pro: no limit.", CapacityStrip.caption(used = 0, isPro = false, txt = txt))
+        assertEquals("3 of 7 free items used. Pro: no limit.", CapacityStrip.caption(used = 3, isPro = false, txt = txt))
+        assertEquals("over the limit still reads 7 of 7", "7 of 7 free items used. Pro: no limit.", CapacityStrip.caption(used = 20, isPro = false, txt = txt))
     }
 
     @Test fun capacity_strip_slots() {
@@ -28,22 +28,29 @@ class UpgradeCopyTest {
         assertEquals(listOf(true, true, true, true), (0 until 4).map { CapacityStrip.filled(it, used = 0, isPro = true) })
     }
 
+    @Test fun capacity_strip_fits_the_free_slots_in_one_row() {
+        val rows = CapacityStrip.rows()
+        assertEquals(1, rows.size)
+        assertTrue(rows.all { it.size == CapacityStrip.PER_ROW })
+        assertEquals((0 until app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS).toList(), rows.flatten())
+    }
+
     @Test fun sheet_copy() {
         assertEquals("LocalGateKeys Pro", txt.s(UpgradeCopy.TITLE))
         assertEquals("Everything is unlocked on this phone.", txt.s(UpgradeCopy.subtitle(isPro = true)))
-        assertEquals("Pay once for unlimited items and two‑factor codes.", txt.s(UpgradeCopy.subtitle(isPro = false)))
+        assertEquals("Pay once for unlimited items, sync, two‑factor codes and attachments.", txt.s(UpgradeCopy.subtitle(isPro = false)))
         assertEquals("Buy for $4.99", UpgradeCopy.buyLabel("$4.99", txt))
         assertEquals("Buy Pro", UpgradeCopy.buyLabel(null, txt))
         assertEquals(
             listOf(
-                "Unlimited items" to "Logins, cards, notes and everything else, past the free 4.",
+                "Unlimited items" to "Logins, cards, notes and everything else, past the free 7.",
                 "Two-factor codes" to "Add and change 2FA codes. Codes you already saved keep working without Pro.",
                 "One payment" to "No subscription and no account. Restore it on another phone with the same Google account.",
             ),
             benefits(),
         )
-        assertEquals("Sync with your PC needs Pro on the PC as well.", txt.s(UpgradeCopy.SYNC_FOOTER))
-        assertEquals("One-time purchase, no subscription.", txt.s(UpgradeCopy.ONE_TIME))
+        assertEquals("Also unlocks Windows: pair your PC", txt.s(UpgradeCopy.SYNC_FOOTER))
+        assertEquals("One payment. Every update, forever, free. No subscription.", txt.s(UpgradeCopy.ONE_TIME))
         assertEquals("Pro is active", txt.s(UpgradeCopy.ACTIVE))
         assertEquals("Restore purchases", txt.s(UpgradeCopy.RESTORE))
         assertEquals("Close", txt.s(UpgradeCopy.CLOSE))

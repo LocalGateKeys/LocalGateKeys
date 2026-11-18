@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone Wi-Fi host mode (2026-11-13): the Mac's HostPairingModel / SyncPage wording, "this phone" for "this Mac". -->
+<resources>
+    <string name="sync_host_show_qr">Mostrar código QR</string>
+    <string name="sync_host_copy_code">Copiar texto del código</string>
+    <string name="sync_host_code">Código: %1$s</string>
+    <string name="sync_host_expires_in">Caduca en %1$s</string>
+    <string name="sync_host_expired">Caducado</string>
+    <string name="sync_host_accept_hint">Elige Aceptar solo si el otro dispositivo muestra este mismo código.</string>
+    <string name="sync_host_decline_hint">De lo contrario, elige Rechazar.</string>
+    <string name="sync_host_undo_hint">Si no la reconoces, elige Deshacer.</string>
+    <string name="sync_host_other_pc_hint">En otro PC, usa Unirse con un código y pega el texto del código en su lugar.</string>
+    <string name="sync_host_copied">Texto del código copiado.</string>
+    <string name="sync_host_closed">Este código de emparejamiento se ha cerrado.</string>
+    <string name="sync_host_not_waiting">Esa solicitud ya no está en espera. Muestra un código nuevo para intentarlo de nuevo.</string>
+    <string name="sync_host_declined">Rechazado. No se añadió el dispositivo. Muestra un código nuevo para intentarlo de nuevo.</string>
+    <string name="sync_host_not_listening">Activa primero la sincronización por Wi-Fi.</string>
+    <string name="sync_host_confirm">%1$s quiere unirse. Elige Aceptar solo si muestra el código %2$s.</string>
+    <string name="sync_host_adding">Añadiendo %1$s…</string>
+    <string name="sync_host_adding_button">Añadiendo…</string>
+    <string name="sync_host_paired_key">Emparejado: %1$s (clave %2$s). %3$s</string>
+    <string name="sync_host_paired_plain">Emparejado: %1$s. %2$s</string>
+    <string name="sync_host_paired_title">Emparejado: %1$s</string>
+    <string name="sync_host_declines_in">Se rechaza solo en %1$d s.</string>
+    <string name="sync_host_stopped">La sincronización por Wi-Fi se detuvo. Comprueba la red y vuelve a activarla.</string>
+    <string name="sync_host_accept">Aceptar</string>
+    <string name="sync_host_decline">Rechazar</string>
+    <string name="sync_host_undo">Deshacer</string>
+    <string name="sync_host_keep">Conservar</string>
+    <string name="sync_host_followed">Escuchando ahora en %1$s (la dirección cambió).</string>
+    <string name="sync_host_scan_title">Escanea este código con LocalGateKeys en el otro dispositivo</string>
+    <string name="sync_host_qr_description">Código QR de emparejamiento</string>
+    <string name="sync_host_add_named">¿Añadir %1$s?</string>
+    <string name="sync_host_add_device">¿Añadir este dispositivo?</string>
+    <string name="sync_host_fingerprint">Huella de la clave: %1$s</string>
+    <string name="sync_host_paired_heading">Dispositivos emparejados</string>
+    <string name="sync_host_no_peers">Aún no hay dispositivos emparejados.</string>
+    <string name="sync_host_remove">Quitar…</string>
+    <string name="sync_host_toggle">Alojar la sincronización por Wi-Fi en este teléfono</string>
+    <string name="sync_host_intro">Otros dispositivos de la misma red Wi-Fi pueden vincularse con este teléfono y sincronizarse con él mientras LocalGateKeys esté abierto y desbloqueado aquí.</string>
+    <string name="sync_host_listens">Este teléfono escucha en %1$s.</string>
+    <string name="sync_host_free">En el plan gratuito, este teléfono solo escucha mientras se muestra un código de vinculación y durante 2 minutos después de Sincronizar ahora.</string>
+    <string name="sync_host_no_wifi">Conecta este teléfono a una red Wi-Fi para alojar la sincronización por Wi-Fi.</string>
+    <string name="sync_host_pair_hint">Ambos dispositivos deben estar en la misma red Wi-Fi.</string>
+    <string name="sync_host_this_phone">Este teléfono</string>
+    <string name="sync_host_remove_confirm">¿Quitar %1$s de la sincronización por Wi-Fi? Dejará de sincronizarse con este teléfono, pero conservará lo que ya tiene.</string>
+    <string name="sync_host_could_not_listen">No se pudo iniciar la sincronización por Wi-Fi en este teléfono. Comprueba la red e inténtalo de nuevo.</string>
+</resources>

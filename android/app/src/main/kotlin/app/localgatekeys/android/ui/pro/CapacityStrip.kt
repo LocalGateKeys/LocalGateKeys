@@ -33,8 +33,8 @@ import app.localgatekeys.android.pro.ItemLimit
 import app.localgatekeys.android.ui.theme.LgkTheme
 
 /**
- * The free plan's slots, one tile each, filled for every item saved (all filled once Pro is active), then the wider
- * unlimited tile. With no count ([used] null), the slots are drawn empty and the caption gives the free limit.
+ * The free plan's slots, one tile each in rows of [CapacityStrip.PER_ROW] so they fit a narrow phone, filled for every
+ * item saved (all filled once Pro is active), then a full-width unlimited tile. With no count ([used] null), the slots are drawn empty and the caption gives the free limit.
  */
 @Composable
 fun CapacityStrip(used: Int?, isPro: Boolean, modifier: Modifier = Modifier) {
@@ -44,22 +44,24 @@ fun CapacityStrip(used: Int?, isPro: Boolean, modifier: Modifier = Modifier) {
     Column(
         modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = caption }.testTag("capacity"),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (slot in 0 until ItemLimit.FREE_ITEMS) {
-                val filled = CapacityStrip.filled(slot, used, isPro)
-                Box(
-                    Modifier.size(46.dp)
-                        .background(if (filled) c.accent.copy(alpha = 0.85f) else c.groupSurface, shape)
-                        .border(1.5.dp, c.accent.copy(alpha = if (filled) 0f else 0.35f), shape),
-                )
+        for (row in CapacityStrip.rows()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                for (slot in row) {
+                    val filled = CapacityStrip.filled(slot, used, isPro)
+                    Box(
+                        Modifier.weight(1f).height(28.dp)
+                            .background(if (filled) c.accent.copy(alpha = 0.85f) else c.groupSurface, shape)
+                            .border(1.5.dp, c.accent.copy(alpha = if (filled) 0f else 0.35f), shape),
+                    )
+                }
             }
-            Box(
-                Modifier.weight(1f).height(46.dp).background(Brush.horizontalGradient(listOf(c.accent, c.glowBlue)), shape),
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Filled.AllInclusive, null, tint = Color.White, modifier = Modifier.size(24.dp)) }
         }
+        Box(
+            Modifier.fillMaxWidth().height(36.dp).background(Brush.horizontalGradient(listOf(c.accent, c.glowBlue)), shape),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Filled.AllInclusive, null, tint = Color.White, modifier = Modifier.size(24.dp)) }
         Text(
             caption, color = c.secondaryText, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
@@ -69,6 +71,11 @@ fun CapacityStrip(used: Int?, isPro: Boolean, modifier: Modifier = Modifier) {
 
 /** The strip's rules, for tests. */
 object CapacityStrip {
+    const val PER_ROW = 7
+
+    /** Slot indexes, row by row. */
+    fun rows(): List<List<Int>> = (0 until ItemLimit.FREE_ITEMS).chunked(PER_ROW)
+
     fun filled(slot: Int, used: Int?, isPro: Boolean): Boolean = isPro || slot < minOf(used ?: 0, ItemLimit.FREE_ITEMS)
 
     fun caption(used: Int?, isPro: Boolean, txt: Txt): String {

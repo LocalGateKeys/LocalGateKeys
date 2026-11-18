@@ -3,6 +3,7 @@ package app.localgatekeys.android.vault
 import app.localgatekeys.android.i18n.EnglishTxt
 import app.localgatekeys.android.editor.EditorKind
 import app.localgatekeys.android.pro.ItemLimit
+import app.localgatekeys.android.editor.numberedNotes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -25,6 +26,12 @@ class QuickActionsTest {
             actions.map { it.kind },
         )
         assertEquals(listOf("Username copied", "Password copied", "Code copied", null), actions.map { c -> c.confirmation?.let { EnglishTxt().s(it) } })
+    }
+
+    @Test fun a_view_only_login_offers_no_copy_at_all() {
+        val scope = (webLogin.fields["scope"] as app.localgatekeys.core.json.JsonValue.Obj).fields
+        val viewOnly = itemsOf(app.localgatekeys.core.json.JsonValue.Obj(webLogin.fields + ("scope" to app.localgatekeys.core.json.JsonValue.Obj(scope + ("access" to rec("phones" to s("view"))))))).single()
+        assertEquals(listOf(QuickAction.Kind.OPEN_WEBSITE), QuickActions.forItem(viewOnly).map { it.kind })
     }
 
     @Test fun actions_only_appear_when_there_is_something_to_copy_or_open() {
@@ -57,8 +64,8 @@ class QuickActionsTest {
     }
 
     @Test fun creating_needs_a_free_slot_or_pro() {
-        val full = snapshot(listOf(webLogin, deskLogin, note, card))
-        val three = snapshot(listOf(webLogin, deskLogin, note))
+        val full = snapshot(listOf(webLogin, deskLogin, note, card) + numberedNotes(ItemLimit.FREE_ITEMS - 4))
+        val three = snapshot(listOf(webLogin, deskLogin, note) + numberedNotes(ItemLimit.FREE_ITEMS - 4))
         assertEquals(NewItemGate.Decision.OPEN_EDITOR, NewItemGate.decide(three, isPro = false))
         assertEquals(NewItemGate.Decision.UPGRADE, NewItemGate.decide(full, isPro = false))
         assertEquals(NewItemGate.Decision.OPEN_EDITOR, NewItemGate.decide(full, isPro = true))

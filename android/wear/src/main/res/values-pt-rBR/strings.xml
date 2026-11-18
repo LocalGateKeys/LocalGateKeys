@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">Códigos fixados</string>
+    <string name="tile_description">Seus códigos de dois fatores fixados no LocalGateKeys do celular.</string>
+    <string name="tile_no_data">Abra o LocalGateKeys no celular</string>
+    <string name="tile_locked">Desbloqueie o LocalGateKeys no celular para ver os códigos</string>
+    <string name="tile_locked_immediately">Defina o bloqueio automático do celular para 1 minuto ou mais para ver os códigos aqui</string>
+    <string name="tile_empty">Fixe um código no LocalGateKeys</string>
+    <string name="tile_watch_locked">Desbloqueie o relógio para ver os códigos</string>
+    <string name="tile_updated_now">Atualizado agora</string>
+    <string name="tile_updated_minutes">Atualizado há %1$d min</string>
+    <string name="tile_updated_hours">Atualizado há %1$d h</string>
+    <string name="tile_updated_days">Atualizado há %1$d d</string>
+</resources>

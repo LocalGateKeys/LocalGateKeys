@@ -14,10 +14,12 @@ from __future__ import annotations
 
 import ctypes as ct
 import re
+import struct
 import sys
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 
 from .i18n import t
 
@@ -33,7 +35,12 @@ NTE_INVALID_PARAMETER = 0x80090027
 # Some Passport providers (for example TPM 1.2 backed keys) refuse OAEP with
 # SHA-256 as an invalid parameter; OAEP with SHA-1 is still sound for wrapping
 # a random 32-byte secret.
-OAEP_HASHES = ("SHA256", "SHA1")
+# "PKCS1" is the last resort for providers that refuse OAEP outright. It only wraps a
+# random 32-byte secret, and every private-key use needs a fresh Hello gesture, so a
+# padding oracle cannot be driven at any useful rate.
+OAEP_HASHES = ("SHA256", "SHA1", "PKCS1")
+NCRYPT_PAD_PKCS1_FLAG = 0x02
+RSA_PUBLIC_MAGIC = 0x31415352  # "RSA1", BCRYPT_RSAPUBLIC_MAGIC
 CACHE_PROPERTIES = ("NgcCacheType", "NgcCacheTypeProperty")
 _NATIVE_OPERATION = threading.Lock()
 
@@ -109,6 +116,7 @@ class WindowsHello:
             "NCryptFreeObject": [HANDLE],
             "NCryptEncrypt": [HANDLE, PVOID, DWORD, PVOID, PVOID, DWORD, ct.POINTER(DWORD), DWORD],
             "NCryptDecrypt": [HANDLE, PVOID, DWORD, PVOID, PVOID, DWORD, ct.POINTER(DWORD), DWORD],
+            "NCryptExportKey": [HANDLE, HANDLE, ct.c_wchar_p, PVOID, PVOID, DWORD, ct.POINTER(DWORD), DWORD],
         }
         for name, arguments in signatures.items():
             function = getattr(self.dll, name)
@@ -154,11 +162,14 @@ class WindowsHello:
             self.dll.NCryptFreeObject(handle)
 
     @contextmanager
-    def _key(self, record_id: str) -> Iterator[HANDLE]:
+    def _key(self, record_id: str, *, silent: bool = True) -> Iterator[HANDLE]:
+        # The Passport provider keeps NCRYPT_SILENT_FLAG for the handle's lifetime: a key
+        # opened silently answers every later decrypt with NTE_SILENT_CONTEXT and never
+        # shows the Hello prompt. Open it with UI allowed when a prompt must follow.
         with self._provider() as provider:
             key = HANDLE()
             self._check(self.dll.NCryptOpenKey(provider, ct.byref(key), self._name(record_id),
-                                               0, NCRYPT_SILENT_FLAG), "opening the local key")
+                                               0, NCRYPT_SILENT_FLAG if silent else 0), "opening the local key")
             try:
                 yield key
             finally:
@@ -221,11 +232,15 @@ class WindowsHello:
         source = (ct.c_ubyte * len(data)).from_buffer_copy(data)
         target = (ct.c_ubyte * RSA_BYTES)()
         size = DWORD()
-        padding = OAEPInfo(oaep_hash, None, 0)
-        flags = NCRYPT_PAD_OAEP_FLAG | (NCRYPT_SILENT_FLAG if silent else 0)
+        if oaep_hash == "PKCS1":
+            padding_info, pad_flag = None, NCRYPT_PAD_PKCS1_FLAG
+        else:
+            padding = OAEPInfo(oaep_hash, None, 0)
+            padding_info, pad_flag = ct.byref(padding), NCRYPT_PAD_OAEP_FLAG
+        flags = pad_flag | (NCRYPT_SILENT_FLAG if silent else 0)
         function = self.dll.NCryptDecrypt if decrypt else self.dll.NCryptEncrypt
         try:
-            self._check(function(key, source, len(data), ct.byref(padding), target,
+            self._check(function(key, source, len(data), padding_info, target,
                                  len(target), ct.byref(size), flags), "decrypting" if decrypt else "encrypting")
             expected = 32 if decrypt else RSA_BYTES
             if size.value != expected:
@@ -261,13 +276,52 @@ class WindowsHello:
                 else:
                     self.dll.NCryptFreeObject(key)
 
+    def _public_key(self, key: HANDLE) -> Any:
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        size = DWORD()
+        self._check(self.dll.NCryptExportKey(key, None, "RSAPUBLICBLOB", None, None, 0, ct.byref(size),
+                                             NCRYPT_SILENT_FLAG), "reading the public key")
+        if not 24 < size.value <= 4096:
+            raise HelloError(t("hello.error.invalidKeyMaterial"))
+        blob = (ct.c_ubyte * size.value)()
+        self._check(self.dll.NCryptExportKey(key, None, "RSAPUBLICBLOB", None, blob, size.value,
+                                             ct.byref(size), NCRYPT_SILENT_FLAG), "reading the public key")
+        raw = bytes(blob[:size.value])
+        magic, bits, exp_len, mod_len = struct.unpack_from("<4I", raw)
+        if (magic != RSA_PUBLIC_MAGIC or bits != RSA_BITS or mod_len != RSA_BYTES
+                or not 0 < exp_len <= 8 or len(raw) < 24 + exp_len + mod_len):
+            raise HelloError(t("hello.error.invalidKeyMaterial"))
+        exponent = int.from_bytes(raw[24:24 + exp_len], "big")
+        modulus = int.from_bytes(raw[24 + exp_len:24 + exp_len + mod_len], "big")
+        return rsa.RSAPublicNumbers(exponent, modulus).public_key()
+
     def wrap(self, record_id: str, secret: bytearray, oaep_hash: str = "SHA256") -> bytes:
+        """Encrypt with the key's public half in software.
+
+        Some Passport providers reject NCryptEncrypt parameters (0x80090027) even
+        though the public operation needs no hardware; doing it here avoids that.
+        """
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding
+        if oaep_hash not in OAEP_HASHES:
+            raise HelloError(t("hello.error.damaged"))
+        if len(secret) != 32:
+            raise HelloError(t("hello.error.keyLength"))
         with self._key(record_id) as key:
             self._policy(key)
-            return bytes(self._crypt(key, secret, decrypt=False, silent=True, oaep_hash=oaep_hash))
+            public = self._public_key(key)
+        if oaep_hash == "PKCS1":
+            scheme = padding.PKCS1v15()
+        else:
+            algorithm = hashes.SHA256() if oaep_hash == "SHA256" else hashes.SHA1()  # noqa: S303 - OAEP-SHA1 is sound for key wrapping
+            scheme = padding.OAEP(mgf=padding.MGF1(algorithm), algorithm=algorithm, label=None)
+        wrapped = public.encrypt(bytes(secret), scheme)
+        if len(wrapped) != RSA_BYTES:
+            raise HelloError(t("hello.error.invalidKeyMaterial"))
+        return wrapped
 
     def unwrap(self, record_id: str, wrapped: bytes, hwnd: int, oaep_hash: str = "SHA256") -> bytearray:
-        with self._key(record_id) as key:
+        with self._key(record_id, silent=False) as key:
             self._policy(key)
             self._context(key, hwnd, t("hello.prompt.unlock"))
             self._set(key, "PinCacheIsGestureRequired", DWORD(1))
@@ -282,7 +336,15 @@ class WindowsHello:
                 wipe(unguarded)
                 raise HelloError(t("hello.error.noFreshDecrypt"))
             self._set(key, "PinCacheIsGestureRequired", DWORD(1))
-            return self._crypt(key, wrapped, decrypt=True, oaep_hash=oaep_hash)
+            if oaep_hash != "PKCS1":
+                return self._crypt(key, wrapped, decrypt=True, oaep_hash=oaep_hash)
+            try:
+                return self._crypt(key, wrapped, decrypt=True, oaep_hash=oaep_hash)
+            except HelloCancelled:
+                raise
+            except HelloError:
+                # One message for every PKCS#1 v1.5 failure: no padding/length oracle.
+                raise HelloError(t("hello.error.invalidKeyMaterial")) from None
 
     def delete(self, record_id: str) -> None:
         """Delete this app's random key only, never the Windows Hello container."""

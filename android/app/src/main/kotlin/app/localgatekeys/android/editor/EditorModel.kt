@@ -1,6 +1,7 @@
 package app.localgatekeys.android.editor
 
 import app.localgatekeys.android.R
+import app.localgatekeys.android.collections.CollectionsModel
 import app.localgatekeys.android.i18n.Txt
 import androidx.annotation.StringRes
 import app.localgatekeys.android.pro.ItemLimit
@@ -18,7 +19,11 @@ import app.localgatekeys.core.records.NormaliseException
 import app.localgatekeys.core.records.PasswordHistory
 import app.localgatekeys.core.records.SyncMeta
 import app.localgatekeys.core.records.Wrapper
+import app.localgatekeys.core.sync.CollectionCatalog
+import app.localgatekeys.core.sync.CollectionCatalogException
+import app.localgatekeys.core.sync.CollectionStates
 import app.localgatekeys.core.sync.ItemStore
+import app.localgatekeys.core.sync.ReadOnlyCollectionException
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.totp.Totp
 import app.localgatekeys.core.totp.TotpConfig
@@ -54,6 +59,25 @@ data class EditorState(
 }
 
 /**
+ * The editor's Collections row (sub-plan 07): the catalog and the item's memberships as the picker shows them, read once
+ * by [EditorModel.loadCollections]. [isReadOnly]: the item is in a collection shared with this vault as view only, so
+ * every save or delete is refused.
+ */
+data class EditorCollections(
+    val collections: List<CollectionCatalog.Collection> = emptyList(),
+    /** View only here: the picker shows them locked. */
+    val readOnly: Set<String> = emptySet(),
+    /** The picked collection ids (ids this phone does not know included, untouched). */
+    val picked: Set<String> = emptySet(),
+    val isReadOnly: Boolean = false,
+) {
+    /** The picked collections' names, in catalog order; ids this phone does not know are not shown. */
+    val pickedNames: List<String> get() = collections.filter { it.id in picked }.map { it.name }
+
+    override fun toString(): String = "EditorCollections(collections=${collections.size}, picked=${picked.size}, isReadOnly=$isReadOnly)"
+}
+
+/**
  * Create, edit and delete one record. Records go through core `Normalise.normalForm` and `Wrapper.make` and are
  * committed through the store; deletes write a `SyncMeta` tombstone. Port of `EditorModel` in
  * `ios/App/Editor/EditorModel.swift`. [save] and [delete] read and write the store: call them off the main thread.
@@ -78,6 +102,15 @@ class EditorModel(
     /** The record as stored, untouched, so an unchanged save writes nothing. */
     private val original: Map<String, JsonValue>? = existing?.record
 
+    /**
+     * A login that is view only on phones (or has a rule this phone does not know): its secrets stay masked in the
+     * editor, so they can be replaced but not revealed or selected and copied (access rules, scan A-H3).
+     */
+    val secretsViewOnly: Boolean = existing?.takeIf { it.isLogin }?.let {
+        val e = app.localgatekeys.android.access.AccessGate.effective(it.record)
+        e.phoneView || e.unknownRule
+    } ?: false
+
     private val _state = MutableStateFlow(
         EditorState(initialValues ?: original?.let { values(it, this.kind) } ?: this.kind.defaults()),
     )
@@ -94,6 +127,42 @@ class EditorModel(
     val alreadyRemoved: Boolean get() = _state.value.alreadyRemoved
 
     val titleKey: String get() = if (kind == EditorKind.WEB) "label" else "title"
+
+    private val _collections = MutableStateFlow(EditorCollections())
+
+    /** The Collections row ([loadCollections]); a save writes the memberships in the same commit as the record. */
+    val collections: StateFlow<EditorCollections> = _collections.asStateFlow()
+    private var collectionsLoaded = false
+    private var originalMemberships: Set<String> = emptySet()
+
+    /** Typed items only: logins (and documents, which have no editor here) never get a collection. */
+    val offersCollections: Boolean get() = CollectionsModel.offersPicker(kind.raw)
+
+    private val membershipsChanged: Boolean get() = _collections.value.picked != originalMemberships
+
+    /**
+     * Reads the collections and this item's memberships once (a second call keeps what was picked), and whether the
+     * item is read-only here. Blocking: call off the main thread.
+     */
+    fun loadCollections() {
+        if (collectionsLoaded) return
+        val snap = try { store.load() } catch (e: Exception) { return }
+        collectionsLoaded = true
+        val current = id?.let { CollectionCatalog.memberships(it, snap).toSet() } ?: emptySet()
+        originalMemberships = current
+        _collections.value = EditorCollections(
+            CollectionCatalog.collections(snap), CollectionsModel.readOnlyCollectionIds(snap), current,
+            id != null && CollectionsModel.itemIsReadOnly(id, snap),
+        )
+    }
+
+    /** The picker's choice (at most 20; view-only collections are neither added nor removed here). */
+    fun setPicked(ids: Set<String>) {
+        val c = _collections.value
+        val kept = ids.filter { it !in c.readOnly }.toSet() + c.picked.filter { it in c.readOnly }
+        if (kept.size > CollectionStates.MAX_MEMBERSHIPS) return
+        _collections.value = c.copy(picked = kept)
+    }
 
     /** Free plan: an existing 2FA code stays (and can be cleared); adding or changing one needs Pro. */
     val totpNeedsPro: Boolean get() = kind == EditorKind.WEB && !isPro()
@@ -213,36 +282,62 @@ class EditorModel(
         }
         // Unchanged: leave the stored bytes alone so the version vector is not bumped.
         val original = original
-        if (original != null && same(JsonValue.Obj(edited), JsonValue.Obj(original))) return SaveResult.UNCHANGED
-        if (totpNeedsPro && ProFeatures.totpChangeNeedsPro(edited["totp"], original?.get("totp"))) {
+        var recordUnchanged = false
+        if (original != null && same(JsonValue.Obj(edited), JsonValue.Obj(original))) {
+            if (!membershipsChanged) return SaveResult.UNCHANGED
+            recordUnchanged = true
+        }
+        if (!recordUnchanged && totpNeedsPro && ProFeatures.totpChangeNeedsPro(edited["totp"], original?.get("totp"))) {
             return fail(SaveResult.NEEDS_PRO) {
                 it.copy(totpError = ProFeatures.totpMessage(t), totpErrorIsPro = true, error = t.s(R.string.editor_totp_needs_pro), showUpgrade = true)
             }
         }
         return try {
             val snap = store.load()
+            // A view-only shared item never changes here, whatever the editor shows (sub-plan 07).
+            if (id != null && CollectionsModel.itemIsReadOnly(id, snap)) return refuseReadOnly()
             if (isNew && !ItemLimit.allows(ItemLimit.Action.CREATE, snap, isPro())) {
                 return fail(SaveResult.NEEDS_PRO) { it.copy(showUpgrade = true) }
             }
-            if (original != null) {
+            if (!recordUnchanged && original != null) {
                 val before = normalOrNull(JsonValue.Obj(original))
                 val after = normalOrNull(JsonValue.Obj(edited))
-                if (before != null && after != null && same(withoutStamp(before), withoutStamp(after))) return SaveResult.UNCHANGED
+                if (before != null && after != null && same(withoutStamp(before), withoutStamp(after))) {
+                    if (!membershipsChanged) return SaveResult.UNCHANGED
+                    recordUnchanged = true
+                }
             }
-            val stamped = LinkedHashMap(edited)
-            val now = clock.now
-            stamped["updated_at"] = JsonValue.Int(now)
-            val created = stamped["created_at"]
-            if (created is JsonValue.Int && created.v > now) stamped["created_at"] = JsonValue.Int(now)
-            val record = Normalise.normalForm(kind.ns, JsonValue.Obj(stamped))
-            val rid = ((record as? JsonValue.Obj)?.fields?.get("id") as? JsonValue.Str)?.v
-                ?: return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
-            if (id != null && rid != id) return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
-            if (isNew && snap.records[rid] != null) return fail(SaveResult.FAILED) { it.copy(error = t.s(R.string.editor_cannot_save)) }
-            val records = LinkedHashMap(snap.records)
-            records[rid] = Wrapper.make(kind.ns, record)
+            var records: Map<String, JsonValue> = LinkedHashMap(snap.records)
+            val rid: String
+            if (recordUnchanged && id != null) {
+                rid = id
+            } else {
+                val stamped = LinkedHashMap(edited)
+                val now = clock.now
+                stamped["updated_at"] = JsonValue.Int(now)
+                val created = stamped["created_at"]
+                if (created is JsonValue.Int && created.v > now) stamped["created_at"] = JsonValue.Int(now)
+                val record = Normalise.normalForm(kind.ns, JsonValue.Obj(stamped))
+                rid = ((record as? JsonValue.Obj)?.fields?.get("id") as? JsonValue.Str)?.v
+                    ?: return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
+                if (id != null && rid != id) return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.editor_cannot_save)) }
+                if (isNew && snap.records[rid] != null) return fail(SaveResult.FAILED) { it.copy(error = t.s(R.string.editor_cannot_save)) }
+                records = LinkedHashMap(records).apply { put(rid, Wrapper.make(kind.ns, record)) }
+            }
+            if (membershipsChanged) {
+                val moved = CollectionCatalog.setMemberships(
+                    rid, kind.raw, _collections.value.picked.toList(), snap.copy(records = records),
+                    CollectionsModel.readOnlyCollectionIds(snap),
+                )
+                if (moved != null) records = moved.records
+            }
             store.commit(StoreChange(snap.revision, records, snap.meta, snap.sync))
+            originalMemberships = _collections.value.picked
             SaveResult.SAVED
+        } catch (e: CollectionCatalogException) {
+            fail(SaveResult.INVALID) { it.copy(error = CollectionsModel.text(e, t)) }
+        } catch (e: ReadOnlyCollectionException) {
+            fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.collections_read_only)) }
         } catch (e: NormaliseException) {
             when (e.kind) {
                 NormaliseException.Kind.NEEDS_PUNYCODE ->
@@ -271,10 +366,16 @@ class EditorModel(
      * the next sync publishes the delete. With no sync state (meta kept after Leave) there is no device to bump with;
      * the meta is left for `SyncMeta.localView`, which tombstones a meta whose record is gone with exactly one bump on
      * the next join. Writing an unbumped tomb here would lose the delete.
+     *
+     * With [move] (Recently deleted, `PhoneTrash.mover`) the item is kept on this phone first; the trash then writes the
+     * same tombstone.
      */
-    fun delete(): SaveResult {
+    fun delete(move: ((String) -> SaveResult)? = null): SaveResult {
         val id = id ?: return SaveResult.FAILED
-        val r = delete(id, store, clock)
+        val snap = try { store.load() } catch (e: Exception) { null }
+        if (snap != null && CollectionsModel.itemIsReadOnly(id, snap)) return refuseReadOnly()
+        val r = move?.invoke(id) ?: delete(id, store, clock)
+        if (r == SaveResult.INVALID) return refuseReadOnly()
         _state.update {
             it.copy(
                 error = if (r == SaveResult.FAILED) t.s(R.string.editor_delete_failed) else it.error,
@@ -285,6 +386,12 @@ class EditorModel(
     }
 
     fun clearAlreadyRemoved() = _state.update { it.copy(alreadyRemoved = false) }
+
+    /** A view-only shared item: nothing is written and the editor says why. */
+    private fun refuseReadOnly(): SaveResult {
+        _collections.update { it.copy(isReadOnly = true) }
+        return fail(SaveResult.INVALID) { it.copy(error = t.s(R.string.collections_read_only_item)) }
+    }
 
     private fun normalOrNull(r: JsonValue): JsonValue? = try {
         Normalise.normalForm(kind.ns, r)
@@ -401,13 +508,19 @@ class EditorModel(
 
         private fun withoutStamp(r: JsonValue): JsonValue = (r as? JsonValue.Obj)?.let { JsonValue.Obj(it.fields - "updated_at") } ?: r
 
-        /** [EditorModel.delete] for any item id (the passkey screen and delete-only kinds share it). */
+        /**
+         * [EditorModel.delete] for any item id (the passkey screen and delete-only kinds share it). A collection state is
+         * never deleted here (UNCHANGED), and an item in a view-only shared collection is refused (INVALID); the item's
+         * membership goes with it (a Recently deleted row keeps it: `CollectionCatalog.trashRecord`).
+         */
         fun delete(id: String, store: ItemStore, clock: UnixClock): SaveResult = try {
             val snap = store.load()
-            if (id !in snap.records) {
+            if (CollectionStates.isStateId(id) || id !in snap.records) {
                 SaveResult.UNCHANGED
+            } else if (CollectionsModel.itemIsReadOnly(id, snap)) {
+                SaveResult.INVALID
             } else {
-                val records = LinkedHashMap(snap.records).apply { remove(id) }
+                val records = LinkedHashMap(CollectionCatalog.withoutMembership(id, snap.records)).apply { remove(id) }
                 val meta = LinkedHashMap(snap.meta)
                 val m = meta[id]
                 val device = snap.sync?.deviceId

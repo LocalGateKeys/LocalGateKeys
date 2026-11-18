@@ -193,6 +193,19 @@ def test_reauth_uses_hello_then_falls_back_to_password(env, monkeypatch):
     assert env.port.asked == ["Confirm to reveal"]
 
 
+def test_fresh_reauth_skips_the_routine_grace(env, monkeypatch):
+    """P-02: a passkey ceremony (fresh=True) asks again even inside another action's grace window."""
+    secrets = SecretService(env.controller, env.port)
+    env.controller.hello_reauth = lambda title, lease: False  # Hello declined: the password prompt shows
+    lease = env.controller.guard.lease()
+    env.controller.routine_reauth = (env.controller.guard.stamp(), env.controller._clock() + 3600)
+    secrets.reauthenticate("Confirm to reveal", lease, allow_hello=True)
+    assert env.port.asked == []  # routine actions keep the grace
+    env.port.passwords = [MASTER]
+    secrets.reauthenticate("Confirm passkey for example.com", lease, allow_hello=True, fresh=True)
+    assert env.port.asked == ["Confirm passkey for example.com"]
+
+
 def test_reauth_skips_hello_under_the_marker(env, monkeypatch):
     secrets = SecretService(env.controller, env.port)
     env.controller.hello_reauth = env.hello.reauthenticate

@@ -44,9 +44,10 @@ class GeneratorService:
     def _health(value: str, options: Any) -> str:
         estimate = estimate_strength(value)
         label = strength_label(estimate.score)
-        if options.mode == "passphrase":
-            bits = round(options.words * math.log2(max(2, len(load_wordlist()))))
-            return t("generator.healthPassphrase", words=options.words, bits=bits, label=label,
+        if options.mode in ("passphrase", "answer"):
+            words = options.words if options.mode == "passphrase" else options.answer_words
+            bits = round(words * math.log2(max(2, len(load_wordlist()))))
+            return t("generator.healthPassphrase", words=words, bits=bits, label=label,
                      time=estimate.crack_time_display)
         return t("generator.healthRandom", label=label, time=estimate.crack_time_display)
 
@@ -59,7 +60,9 @@ class GeneratorService:
     def copy(self, value: str) -> dict[str, Any]:
         clipboard = self._controller.clipboard
         clipboard.copy(str(value))
-        return clipboard_result(t("generator.copied"), clipboard)
+        # The generator shows a live "clears in N s" countdown from this (0 = auto-clear is off).
+        return {**clipboard_result(t("generator.copied"), clipboard),
+                "clear_seconds": int(getattr(clipboard, "timeout_seconds", 0) or 0)}
 
 
 # Commands the classic window has but this window has no page for.
@@ -105,21 +108,28 @@ class PaletteService:
             needle = text[1:].strip().casefold()
             scope, text = "items", ""
             try:
-                collection_ids = {str(c["id"]) for c in controller.session.collections.list()
+                from ..travel import visible_collections
+
+                collection_ids = {str(c["id"]) for c in visible_collections(
+                                      controller.session, controller.session.collections.list())
                                   if needle in str(c.get("name", "")).casefold()}
             except Exception:  # noqa: BLE001
                 collection_ids = set()
         summaries: list[Any] = []
         if unlocked:
             try:
-                summaries = list(controller.session.item_service.all_metadata_summaries())
+                from ..travel import hidden_id_set
+
+                hidden = hidden_id_set(controller.session)
+                summaries = [s for s in controller.session.item_service.all_metadata_summaries()
+                             if str(s.id) not in hidden]
             except Exception:  # noqa: BLE001
                 summaries = []
         if collection_ids is not None:
             matched = [s for s in summaries if set(map(str, getattr(s, "collection_ids", ()) or ())) & collection_ids]
             rows = [{"kind": "item", "title": str(getattr(s, "title", "")), "subtitle": "", "group": group_label("Items"),
                      "ref": self._ref(s)} for s in matched[:12]]
-            return {"rows": rows}
+            return {"rows": rows, "vault": self._vault_name()}
         out = []
         for row in palette_results(text, summaries, unlocked=unlocked, scope=scope):
             if row.kind != "item" and row.ref.id in NOT_IN_WINDOW:
@@ -130,7 +140,15 @@ class PaletteService:
             else:
                 entry["command_id"] = row.ref.id
             out.append(entry)
-        return {"rows": out}
+        return {"rows": out, "vault": self._vault_name()}
+
+    def _vault_name(self) -> str:
+        """The open vault's (profile's) name, shown in the palette so several vaults are not mixed up."""
+        try:
+            active = self._controller.profiles.active_profile()
+        except Exception:  # noqa: BLE001 - a label only
+            return ""
+        return str(getattr(active, "name", "") or "")
 
     @staticmethod
     def _ref(summary: Any) -> dict[str, str]:

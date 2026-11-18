@@ -52,9 +52,9 @@ class EditorModelTest {
     // MARK: limit
 
     @Test fun over_limit_keeps_items_usable() {
-        // Seven synced items on the free plan: everything existing stays editable, deletable and fillable.
-        val store = CountingStore(snapshot(numberedNotes(6) + webLogin))
-        assertEquals(7, ItemLimit.liveCount(store.snapshot))
+        // One more synced item than the free plan holds: everything existing stays editable, deletable and fillable.
+        val store = CountingStore(snapshot(numberedNotes(ItemLimit.FREE_ITEMS) + webLogin))
+        assertEquals(ItemLimit.FREE_ITEMS + 1, ItemLimit.liveCount(store.snapshot))
         assertFalse(ItemLimit.allows(ItemLimit.Action.CREATE, store.snapshot, isPro = false))
         assertFalse(ItemLimit.allows(ItemLimit.Action.RESTORE, store.snapshot, isPro = false))
         for (a in listOf(ItemLimit.Action.EDIT, ItemLimit.Action.DELETE, ItemLimit.Action.AUTOFILL)) {
@@ -66,39 +66,39 @@ class EditorModelTest {
             assertEquals("${item.id}: ${e.error}", SaveResult.SAVED, e.save())
             assertFalse(e.showUpgrade)
         }
-        assertEquals(7, store.commits)
+        assertEquals(ItemLimit.FREE_ITEMS + 1, store.commits)
         assertTrue(items(store).all { it.title.endsWith(" edited") })
         val victim = items(store)[0]
         assertEquals(SaveResult.SAVED, ed(store, victim, EditorKind.of(victim.kind)!!).delete())
-        assertEquals(6, ItemLimit.liveCount(store.snapshot))
-        // Still over the limit: a new item is refused without writing anything.
+        assertEquals(ItemLimit.FREE_ITEMS, ItemLimit.liveCount(store.snapshot))
+        // Still at the limit: a new item is refused without writing anything.
         val n = ed(store)
-        n.set("title", "Eighth"); n.set("body", "x")
+        n.set("title", "One too many"); n.set("body", "x")
         assertEquals(SaveResult.NEEDS_PRO, n.save())
         assertTrue(n.showUpgrade)
-        assertEquals(8, store.commits)
+        assertEquals(ItemLimit.FREE_ITEMS + 2, store.commits)
     }
 
-    @Test fun fifth_item_needs_pro() {
-        val store = CountingStore(snapshot(numberedNotes(3)))
+    @Test fun sixteenth_item_needs_pro() {
+        val store = CountingStore(snapshot(numberedNotes(ItemLimit.FREE_ITEMS - 1)))
         var pro = false
         val fourth = ed(store, isPro = { pro })
         fourth.set("title", "Fourth"); fourth.set("body", "b")
         assertEquals(SaveResult.SAVED, fourth.save())
-        assertEquals(4, ItemLimit.liveCount(store.snapshot))
+        assertEquals(ItemLimit.FREE_ITEMS, ItemLimit.liveCount(store.snapshot))
 
         val fifth = ed(store, isPro = { pro })
         fifth.set("title", "Fifth"); fifth.set("body", "b")
         assertEquals(SaveResult.NEEDS_PRO, fifth.save())
         assertTrue(fifth.showUpgrade)
-        assertEquals(4, ItemLimit.liveCount(store.snapshot))
+        assertEquals(ItemLimit.FREE_ITEMS, ItemLimit.liveCount(store.snapshot))
         fifth.dismissUpgrade()
         assertFalse(fifth.showUpgrade)
 
         // Bought (Task 13 provides the purchase): the same editor now saves.
         pro = true
         assertEquals(SaveResult.SAVED, fifth.save())
-        assertEquals(5, ItemLimit.liveCount(store.snapshot))
+        assertEquals(ItemLimit.FREE_ITEMS + 1, ItemLimit.liveCount(store.snapshot))
     }
 
     private val repo = File(System.getProperty("lgk.repoRoot") ?: error("lgk.repoRoot not set"))

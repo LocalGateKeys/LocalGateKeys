@@ -17,6 +17,7 @@ import ShareSheet from './ShareSheet.svelte';
 import IncomingSheet from './IncomingSheet.svelte';
 import ImportExportMenu from './ImportExportMenu.svelte';
 import PasswordModal from './PasswordModal.svelte';
+import PasskeyModal from './PasskeyModal.svelte';
 import CameraView from './CameraView.svelte';
 import PhraseCard from './PhraseCard.svelte';
 import WorkspacePages from './WorkspacePages.svelte';
@@ -122,6 +123,26 @@ describe('Modal', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Deny' }));
     await fireEvent.keyDown(window, { key: 'Escape' });
     expect(onanswer.mock.calls).toEqual([[false], [false]]);
+  });
+});
+
+describe('PasskeyModal', () => {
+  const request = (browserLabel) => ({ mode: 'create', accounts: [],
+    text: { title: 'Save a passkey?', body: 'Site: example.com', approve_label: 'Save in LocalGateKeys',
+      browser_label: browserLabel, cancel_label: 'Cancel' } });
+
+  it('a system request without browser_label renders two buttons', async () => {
+    const onanswer = vi.fn();
+    render(PasskeyModal, { request: request(''), onanswer });
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Use browser or another device' })).toBeNull();
+    await fireEvent.click(screen.getByRole('button', { name: 'Save in LocalGateKeys' }));
+    expect(onanswer).toHaveBeenCalledWith({ choice: 'approve', item_id: null });
+  });
+
+  it('a browser request keeps the browser button', () => {
+    render(PasskeyModal, { request: request('Use browser or another device'), onanswer: vi.fn() });
+    expect(screen.getAllByRole('button')).toHaveLength(3);
   });
 });
 

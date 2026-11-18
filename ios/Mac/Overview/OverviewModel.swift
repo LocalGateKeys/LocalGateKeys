@@ -57,6 +57,13 @@ final class OverviewModel {
     nonisolated static let codesCollapsed = 4
     nonisolated static let comingUpDays = 90
     nonisolated static let expiringDays = 30
+    /// UserDefaults key: the "One-time codes" section is folded to its header (default false, expanded).
+    nonisolated static let codesFoldedKey = "overview.codesFolded"
+
+    /// Whether the codes section starts folded, as stored by `@AppStorage(codesFoldedKey)`.
+    nonisolated static func codesFolded(in defaults: UserDefaults) -> Bool {
+        defaults.bool(forKey: codesFoldedKey)
+    }
 
     /// The vault's live items; setting them recomputes health in the background.
     var items: [VaultItem] = [] { didSet { if items != oldValue { scheduleHealth() } } }
@@ -69,11 +76,15 @@ final class OverviewModel {
 
     @ObservationIgnored private let cache: StrengthCache
     @ObservationIgnored private let now: () -> Date
+    /// Which sites offer TOTP and passkeys, read once on first use (the bundled `site_features.json`).
+    @ObservationIgnored private let featuresSource: () -> SiteFeatures
+    @ObservationIgnored private var loadedFeatures: SiteFeatures?
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var pending: Task<Void, Never>?
 
-    init(cache: StrengthCache, now: @escaping () -> Date = Date.init) {
-        self.cache = cache; self.now = now
+    init(cache: StrengthCache, now: @escaping () -> Date = Date.init,
+         features: @escaping () -> SiteFeatures = { SiteFeatures.bundled() }) {
+        self.cache = cache; self.now = now; self.featuresSource = features
     }
 
     // MARK: health
@@ -96,8 +107,13 @@ final class OverviewModel {
         generation += 1
         let mine = generation
         let logins = Self.healthLogins(items), breached = breached, cache = cache, date = now()
+        let features = loadedFeatures ?? featuresSource()
+        loadedFeatures = features
+        let passkeys = features.passkeyDomains(relyingPartyIDs: items.filter { $0.kind == "passkey" }.compactMap {
+            $0.record["payload"]?.objectValue?["relying_party_id"]?.stringValue
+        })
         let result = await Task.detached(priority: .utility) {
-            VaultHealth.compute(logins, breached: breached, now: date, cache: cache)
+            VaultHealth.compute(logins, breached: breached, now: date, cache: cache, features: features, passkeyDomains: passkeys)
         }.value
         guard mine == generation, !Task.isCancelled else { return }
         health = result
@@ -110,7 +126,8 @@ final class OverviewModel {
         items.filter { $0.isLogin && !$0.tags.contains(TwoFactorScanModel.needsPasswordTag) }.map { item in
             HealthLogin(id: item.id, title: item.title, password: item.record["password"]?.stringValue ?? "",
                         hasTOTP: item.record["totp"]?.objectValue?["secret"]?.stringValue?.isEmpty == false,
-                        updatedAt: item.updatedAt > 0 ? Date(timeIntervalSince1970: TimeInterval(item.updatedAt)) : nil)
+                        updatedAt: item.updatedAt > 0 ? Date(timeIntervalSince1970: TimeInterval(item.updatedAt)) : nil,
+                        urls: URLMatcher.entryURLs(item.record).map(\.url))
         }
     }
 
@@ -258,7 +275,8 @@ final class OverviewModel {
         items.compactMap { item -> CodeEntry? in
             guard item.isLogin, let t = item.record["totp"]?.objectValue,
                   let secret = t["secret"]?.stringValue, !secret.isEmpty else { return nil }
-            let strict = item.record["policy"]?.objectValue?["require_master_password"] == .bool(true)
+            // `require_master_password`, or an expired or newer-version access rule (feature pack §4).
+            let strict = MacAccess.requiresMasterPassword(item.record)
             func int(_ k: String, _ d: Int) -> Int { if case .int(let n)? = t[k] { return Int(n) }; return d }
             let setup: CodeEntry.Setup = strict ? .hidden
                 : .live(secret: secret, algorithm: t["algorithm"]?.stringValue ?? "SHA1", digits: int("digits", 6), period: int("period", 30))

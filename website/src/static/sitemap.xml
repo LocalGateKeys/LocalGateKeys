@@ -3,12 +3,33 @@
   <url><loc>https://{{DOMAIN}}/</loc></url>
   <url><loc>https://{{DOMAIN}}/features</loc></url>
   <url><loc>https://{{DOMAIN}}/pricing</loc></url>
+  <url><loc>https://{{DOMAIN}}/compare</loc></url>
   <url><loc>https://{{DOMAIN}}/security</loc></url>
   <url><loc>https://{{DOMAIN}}/get-started</loc></url>
   <url><loc>https://{{DOMAIN}}/help</loc></url>
+  <url><loc>https://{{DOMAIN}}/guide/windows</loc></url>
+  <url><loc>https://{{DOMAIN}}/guide/mac</loc></url>
+  <url><loc>https://{{DOMAIN}}/guide/iphone</loc></url>
+  <url><loc>https://{{DOMAIN}}/guide/android</loc></url>
+  <url><loc>https://{{DOMAIN}}/guide/extension</loc></url>
   <url><loc>https://{{DOMAIN}}/download</loc></url>
   <url><loc>https://{{DOMAIN}}/support</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/1password</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/bitwarden</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/lastpass</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/dashlane</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/enpass</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/keepass</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/proton-pass</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/nordpass</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/apple-passwords</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/google</loc></url>
+  <url><loc>https://{{DOMAIN}}/switch/microsoft-authenticator</loc></url>
   <url><loc>https://{{DOMAIN}}/licence</loc></url>
+  <url><loc>https://{{DOMAIN}}/news/2026-11-pricing</loc></url>
+  <url><loc>https://{{DOMAIN}}/news/2026-11-ai-agents</loc></url>
+  <url><loc>https://{{DOMAIN}}/news/2026-11-mac-iphone-1-3</loc></url>
   <url><loc>https://{{DOMAIN}}/legal/</loc></url>
   <url><loc>https://{{DOMAIN}}/legal/eula</loc></url>
   <url><loc>https://{{DOMAIN}}/legal/privacy</loc></url>

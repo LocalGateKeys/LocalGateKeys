@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">固定したコード</string>
+    <string name="tile_description">スマートフォンの LocalGateKeys で固定した2段階認証コード。</string>
+    <string name="tile_no_data">スマートフォンで LocalGateKeys を開いてください</string>
+    <string name="tile_locked">コードを表示するには、スマートフォンで LocalGateKeys のロックを解除してください</string>
+    <string name="tile_locked_immediately">ここにコードを表示するには、スマートフォンの自動ロックを1分以上に設定してください</string>
+    <string name="tile_empty">LocalGateKeysでコードを固定してください</string>
+    <string name="tile_watch_locked">コードを表示するには、ウォッチのロックを解除してください</string>
+    <string name="tile_updated_now">たった今更新</string>
+    <string name="tile_updated_minutes">%1$d 分前に更新</string>
+    <string name="tile_updated_hours">%1$d 時間前に更新</string>
+    <string name="tile_updated_days">%1$d 日前に更新</string>
+</resources>

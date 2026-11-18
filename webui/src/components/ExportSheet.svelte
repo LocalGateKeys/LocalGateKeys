@@ -1,5 +1,6 @@
 <script>
-  /** Export to a file: format, optional 2FA secrets, the classic warnings; KDBX needs its own password. */
+  /** Export to a file: format, optional 2FA secrets, the classic warnings; KDBX needs its own password.
+      CXF writes only the items ticked here (logins, notes, passkeys). */
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { formatNumber, t } from '../lib/i18n.svelte.js';
   import { call } from '../lib/api.js';
@@ -15,18 +16,43 @@
   let pw2 = $state('');
   let error = $state('');
   let busy = $state(false);
+  let items = $state(null);
+  let picked = $state(new Set());
+  let coverage = $state([]);
 
   async function load() {
     const r = await call('export_formats', fmt, totp);
     if (okOrToast(r, t('exportSheet.couldNotOpen'))) info = r;
   }
   $effect(() => { fmt; totp; load(); });
+  // Per item kind: what an export of the whole vault leaves out or carries without its file (shown before exporting).
+  async function loadCoverage() {
+    const r = await call('export_coverage');
+    if (r && r.ok) coverage = r.lines || [];
+  }
+  loadCoverage();
+  $effect(() => { if (fmt === 'cxf' && items === null) loadItems(); });
+
+  async function loadItems() {
+    items = [];
+    const r = await call('export_items');
+    if (okOrToast(r, t('exportSheet.couldNotOpen'))) items = r.items;
+  }
+  function toggle(id) {
+    const next = new Set(picked);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    picked = next;
+  }
+  function toggleAll() {
+    picked = picked.size === items.length ? new Set() : new Set(items.map((i) => i.id));
+  }
   $effect(() => () => { pw = ''; pw2 = ''; });
 
   async function run() {
     if (busy) return;
     busy = true; error = '';
-    const r = await call('export_run', fmt, totp, pw, pw2);
+    const r = fmt === 'cxf' ? await call('export_run', fmt, totp, '', '', [...picked])
+      : await call('export_run', fmt, totp, pw, pw2);
     busy = false;
     pw = ''; pw2 = '';
     if (r.ok) { toast(r.title, r.message); onclose(); return; }
@@ -47,7 +73,25 @@
       </label>
       <label class="row"><input type="checkbox" bind:checked={totp} /> {t('exportSheet.includeTotp')}</label>
     </div>
+    {#if fmt === 'cxf' && items}
+      <div class="group picks" role="group" aria-label={t('exportSheet.items')}>
+        {#if items.length}
+          <label class="row"><input type="checkbox" checked={picked.size === items.length} onchange={toggleAll} /> {t('exportSheet.selectAll')}</label>
+          {#each items as item (item.id)}
+            <label class="row"><input type="checkbox" checked={picked.has(item.id)} onchange={() => toggle(item.id)} /> {item.title} <em>{item.kind}</em></label>
+          {/each}
+        {:else}
+          <p class="muted row">{t('exportSheet.noItems')}</p>
+        {/if}
+      </div>
+    {/if}
     {#each info.warnings as w (w)}<p class="warn">{w}</p>{/each}
+    {#if fmt !== 'cxf' && coverage.length}
+      <div class="group coverage" role="group" aria-label={t('exportSheet.coverageHeading')}>
+        <p class="row"><strong>{t('exportSheet.coverageHeading')}</strong></p>
+        {#each coverage as line (line)}<p class="row">{line}</p>{/each}
+      </div>
+    {/if}
     {#if fmt === 'kdbx'}
       <div class="group">
         <Field label={t('exportSheet.kdbxPassword', { min: formatNumber(info.min_password) })} type="password" bind:value={pw} autocomplete="new-password" />
@@ -57,7 +101,8 @@
     {#if error}<p class="error" role="alert">{error}<ErrorLogLink text={error} /></p>{/if}
     <footer>
       <Button label={t('common.cancel')} onclick={onclose} />
-      <Button label={t('exportSheet.export')} variant="primary" busy={busy} busyLabel={t('exportSheet.exporting')} onclick={run} />
+      <Button label={t('exportSheet.export')} variant="primary" busy={busy} busyLabel={t('exportSheet.exporting')} onclick={run}
+        disabled={fmt === 'cxf' && picked.size === 0} />
     </footer>
   {/if}
 </div>
@@ -73,6 +118,9 @@
   .row + .row { border-top: 1px solid var(--separator); }
   .row span { width: 80px; color: var(--text-muted); }
   select { flex: 1; background: var(--group); color: var(--text); border: 1px solid var(--separator); border-radius: 8px; padding: 5px; }
+  .picks { max-height: 220px; overflow-y: auto; }
+  .row em { margin-left: auto; color: var(--text-muted); font-style: normal; font-size: 12px; }
+  .coverage p { margin: 0; }
   .warn { margin: 0; color: var(--warning); font-size: 12.5px; }
   .error { color: var(--danger); margin: 0; }
   footer { display: flex; justify-content: flex-end; gap: 8px; }

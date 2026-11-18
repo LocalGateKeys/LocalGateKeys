@@ -59,6 +59,9 @@ struct SyncStatusSheet: View {
                                 Image(systemName: "iphone").frame(width: 26).foregroundStyle(Palette.accentText)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(SyncStatusSummary.thisDevice).foregroundStyle(Palette.text)
+                                    if let label = summary.thisDeviceLabel {
+                                        Text(label).font(.footnote).foregroundStyle(Palette.secondaryText)
+                                    }
                                     Text(summary.pill).font(.footnote).foregroundStyle(Palette.secondaryText)
                                 }
                                 Spacer()
@@ -84,11 +87,11 @@ struct SyncStatusSheet: View {
                             .listRowBackground(Palette.groupSurface)
                         }
                     } else {
-                        Text("Sync is not set up on this iPhone.").foregroundStyle(Palette.secondaryText)
+                        Text(DeviceText.isPad ? String(localized: "ipad.sync.notSetUp", defaultValue: "Sync is not set up on this iPad.") : String(localized: "Sync is not set up on this iPhone.")).foregroundStyle(Palette.secondaryText)
                             .listRowBackground(Palette.groupSurface)
                     }
                     Section {
-                        Button(SyncStatusSummary.syncNow) { Task { await sync.sync(.manual) } }
+                        Button(SyncStatusSummary.syncNow) { Task { await sync.syncNow() } }
                             .disabled(sync.phase != .idle || !sync.membership.joined)
                             .foregroundStyle(Palette.accentText)
                         Button(SyncStatusSummary.openSettings) { dismiss(); openSettings() }

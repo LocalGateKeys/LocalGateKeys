@@ -8,6 +8,8 @@ import app.localgatekeys.android.vault.VaultItem
 import app.localgatekeys.core.importing.ImportFormat
 import app.localgatekeys.core.importing.ImportSource
 import app.localgatekeys.core.json.JsonValue
+import app.localgatekeys.core.sync.CollectionCatalog
+import app.localgatekeys.core.sync.CollectionStates
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -103,14 +105,16 @@ class ImportReviewTest {
     }
 
     @Test fun the_free_plan_limit_is_respected() {
-        val store = CountingStore()
+        // Four free slots left: the seven-item fixture does not fit.
+        val store = CountingStore(app.localgatekeys.android.vault.snapshot(
+            app.localgatekeys.android.editor.numberedNotes(app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS - 4)))
         val r = review(store, "bitwarden.json", ImportFormat.BITWARDEN, pro = false)
         assertEquals(4, r.freeSlots)
         assertTrue(r.rows.count { it.limited } > 0)
         assertTrue(r.limitNote.contains("need Pro"))
         val out = r.commit(store)
         assertTrue(out.limited > 0)
-        assertEquals(4, store.snapshot.records.size)
+        assertEquals(app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS, store.snapshot.records.size)
         // Full now: a further import adds nothing.
         val more = review(store, "firefox.csv", ImportFormat.FIREFOX, pro = false)
         assertEquals(0, more.freeSlots)
@@ -167,6 +171,45 @@ class ImportReviewTest {
         assertEquals(ImportReviewException.Kind.TARGET_REVISION_CHANGED, (e as ImportReviewException).kind)
     }
 
+    @Test fun a_view_only_item_is_never_replaced() {
+        // Sub-plan 07 (5l review): as Windows `check_writable`, an item in a collection shared as view only is not
+        // changed by an import, also when it became view-only after the review.
+        fun note(body: String) = """{"encrypted":false,"folders":[],"items":[{"type":2,"name":"Alarm code","notes":"$body","secureNote":{"type":0},"favorite":false}]}""".toByteArray()
+        fun reviewNote(store: CountingStore, body: String) =
+            ImportReview(ImportSource.candidates(note(body), ImportFormat.BITWARDEN), store.load(), true, TestClock(now), CountingRandom(), EnglishTxt())
+        val store = CountingStore()
+        reviewNote(store, "4321").commit(store)
+        val noteId = store.snapshot.records.entries.single { (_, w) ->
+            str(((w as JsonValue.Obj).fields["record"] as JsonValue.Obj).fields, "title") == "Alarm code"
+        }.key
+        val (made, cid) = CollectionCatalog.create("Family", snapshot = store.snapshot, now = now)
+        var snap = store.snapshot.copy(records = made.records)
+        snap = snap.copy(records = checkNotNull(CollectionCatalog.setMemberships(noteId, "note", listOf(cid), snap)).records)
+        store.snapshot = snap
+        val reviewed = reviewNote(store, "9999")
+        assertEquals(ImportRowStatus.CONFLICT, reviewed.rows.single().base)
+        assertFalse(reviewed.rows.single().readOnly)
+        reviewed.set(ImportDecision.REPLACE, reviewed.rows.single().id)
+        assertEquals(ImportDecision.REPLACE, reviewed.rows.single().decision)
+        // Another of this person's devices is a member of a view-only share of that collection (a share link).
+        val link = CollectionStates.wrapper(CollectionStates.link(cid, "read", "member"))
+        store.snapshot = store.snapshot.copy(records = store.snapshot.records + (CollectionStates.LINK_PREFIX + cid to link))
+        val commits = store.commits
+        val e = runCatching { reviewed.commit(store) }.exceptionOrNull()
+        assertTrue(e.toString(), e is ImportReviewException)
+        assertEquals(ImportReviewException.Kind.READ_ONLY, (e as ImportReviewException).kind)
+        assertEquals("This item is in a collection shared with you as view only, so it can't be changed on this device.", e.text(EnglishTxt()))
+        assertEquals(commits, store.commits)
+        // Reviewed now: Skip and Keep both only.
+        val again = reviewNote(store, "9999")
+        val row = again.rows.single()
+        assertTrue(row.readOnly)
+        assertFalse(ImportDecision.REPLACE in row.choices)
+        again.set(ImportDecision.REPLACE, row.id)
+        again.setAllExisting(ImportDecision.REPLACE)
+        assertEquals(ImportDecision.SKIP, again.rows.single().decision)
+    }
+
     private fun flow(store: CountingStore, changed: () -> Unit = {}) =
         ImportFlow({ store }, { true }, TestClock(now), CountingRandom(), Dispatchers.Unconfined, EnglishTxt(), onChanged = changed)
 
@@ -190,6 +233,41 @@ class ImportReviewTest {
         assertEquals(1, changed)
         assertEquals(1, store.commits)
         assertFalse(f.toString().contains("fixture export password"))
+    }
+
+    @Test fun undo_stays_reachable_after_leaving_done_for_seven_days() = runBlocking {
+        val store = CountingStore()
+        val local = app.localgatekeys.android.trash.InMemoryLocalData()
+        val clock = TestClock(now)
+        fun open() = ImportFlow({ store }, { true }, clock, CountingRandom(), Dispatchers.Unconfined, EnglishTxt(), local = local)
+        val first = open()
+        assertFalse("nothing imported yet", first.state.value.canUndo)
+        first.chose(fixture("bitwarden.csv"), "bitwarden.csv")
+        assertTrue(first.commit())
+        assertTrue(first.state.value.canUndo)
+        first.reset()
+        assertEquals(ImportFlow.Step.CHOOSE, first.state.value.step)
+        assertTrue("leaving Done keeps the undo", first.state.value.canUndo)
+        // The page opened again later (a new flow): still offered within 7 days.
+        clock.now = now + app.localgatekeys.core.importing.ImportUndo.MAX_AGE_SECONDS
+        val later = open()
+        assertTrue(later.state.value.canUndo)
+        // Past 7 days: gone after a refresh, and an undo then does nothing.
+        clock.now = now + app.localgatekeys.core.importing.ImportUndo.MAX_AGE_SECONDS + 1
+        later.refreshUndo()
+        assertFalse(later.state.value.canUndo)
+        val commits = store.commits
+        later.undo()
+        assertEquals(commits, store.commits)
+        // Within the window an undo from the start page works and is then gone (one level).
+        clock.now = now + 60
+        val again = open()
+        assertTrue(again.state.value.canUndo)
+        again.undo()
+        assertFalse(again.state.value.canUndo)
+        assertNotNull(again.state.value.undone)
+        assertNull(local.localData?.lastImport)
+        assertFalse(open().state.value.canUndo)
     }
 
     @Test fun flow_refuses_oversize_unknown_and_pc_only_files() = runBlocking {

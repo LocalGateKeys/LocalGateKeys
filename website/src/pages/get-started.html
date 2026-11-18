@@ -1,108 +1,133 @@
 ---
 title: [[t:get_started.title]]
 description: [[t:get_started.description]]
+body_class: get-started
 ---
 <div class="wrap page-head">
   <h1>[[t:get_started.get-started.1]]</h1>
   <p class="lead">[[t:get_started.get-started.2]]</p>
-  <nav class="toc" aria-label="[[t:get_started.get-started.3]]">
-    <a href="#install">[[t:get_started.get-started.4]]</a>
-    <a href="#vault">[[t:get_started.get-started.5]]</a>
-    <a href="#extension">[[t:get_started.get-started.6]]</a>
-    <a href="#import">[[t:get_started.get-started.7]]</a>
-    <a href="#apps">[[t:get_started.get-started.8]]</a>
-    <a href="#pro">[[t:get_started.get-started.9]]</a>
-    <a href="#phones">[[t:get_started.get-started.10]]</a>
-  </nav>
 </div>
 
-<div class="wrap page-body guide">
+<div class="wrap page-body gs-layout">
+  <nav class="toc gs-rail glass" aria-label="[[t:get_started.get-started.3]]">
+    <ol>
+      <li><a href="#install">[[t:get_started.get-started.4]]</a></li>
+      <li><a href="#vault">[[t:get_started.get-started.5]]</a></li>
+      <li><a href="#extension">[[t:get_started.get-started.6]]</a></li>
+      <li><a href="#import">[[t:get_started.get-started.7]]</a></li>
+      <li><a href="#apps">[[t:get_started.get-started.8]]</a></li>
+      <li><a href="#pro">[[t:get_started.get-started.9]]</a></li>
+      <li><a href="#phones">[[t:get_started.get-started.10]]</a></li>
+    </ol>
+  </nav>
 
-  <section class="step" id="install">
-    <h2>[[t:get_started.1-install-the-windows.1]]</h2>
-    <div class="prose">
-      <p>[[t:get_started.1-install-the-windows.2]]</p>
-      <ul>
-        <li>[[t:get_started.1-install-the-windows.3]]</li>
-        <li>[[t:get_started.1-install-the-windows.4]]</li>
-      </ul>
-      <p>[[t:get_started.1-install-the-windows.5]]</p>
-    </div>
-    <!-- if:MS_STORE_LIVE --><p class="actions"><a class="button primary store-button" href="{{MS_STORE_URL}}"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>[[t:get_started.1-install-the-windows.6]]</span></a> <a class="button" href="[[home]]download.html">[[t:get_started.1-install-the-windows.7]]</a></p><!-- /if -->
-  </section>
+  <div class="guide">
 
-  <section class="step" id="vault">
-    <h2>[[t:get_started.2-create-your-vault.1]]</h2>
-    <div class="prose">
-      <ol>
-        <li>[[t:get_started.2-create-your-vault.2]]</li>
-        <li>[[t:get_started.2-create-your-vault.3]]</li>
-        <li>[[t:get_started.2-create-your-vault.4]]</li>
-        <li>[[t:get_started.2-create-your-vault.5]]</li>
-        <li>[[t:get_started.2-create-your-vault.6]]</li>
-      </ol>
-    </div>
-    <figure class="shot">
-      <picture>
-        <source srcset="[[root]]screenshots/security-center-light.webp" media="(prefers-color-scheme: light)">
-        <img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="[[t:get_started.2-create-your-vault.7]]" loading="lazy" decoding="async">
-      </picture>
-      <figcaption>[[t:get_started.2-create-your-vault.8]]</figcaption>
-    </figure>
-  </section>
-
-  <section class="step" id="extension">
-    <h2>[[t:get_started.3-add-the-browser.1]]</h2>
-    <div class="prose">
-      <p>[[t:get_started.3-add-the-browser.2]]</p>
-      <ol>
-        <li>[[t:get_started.3-add-the-browser.3]]
+    <section class="step" id="install">
+      <h2>[[t:get_started.1-install-the-windows.1]]</h2>
+      <div class="step-body">
+        <div class="prose">
+          <p>[[t:get_started.1-install-the-windows.2]]</p>
           <ul>
-            <li>[[t:get_started.3-add-the-browser.4]]</li>
-            <li>[[t:get_started.3-add-the-browser.5]]</li>
+            <li>[[t:get_started.1-install-the-windows.3]]</li>
+            <li>[[t:get_started.1-install-the-windows.4]]</li>
           </ul>
-        </li>
-        <li>[[t:get_started.3-add-the-browser.6]]</li>
-        <li>[[t:get_started.3-add-the-browser.7]]</li>
-        <li>[[t:get_started.3-add-the-browser.8]]</li>
-      </ol>
-      <p>[[t:get_started.3-add-the-browser.9]]</p>
-    </div>
-    <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="[[t:get_started.3-add-the-browser.10]]" loading="lazy" decoding="async"><figcaption>[[t:get_started.3-add-the-browser.11]]</figcaption></figure>
-  </section>
+        </div>
+        <!-- if:MS_STORE_LIVE --><p class="actions"><a class="button primary store-button" href="{{MS_STORE_URL}}"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>[[t:get_started.1-install-the-windows.6]]</span></a> <a class="button" href="[[home]]download.html">[[t:get_started.1-install-the-windows.7]]</a></p><!-- /if -->
+      </div>
+    </section>
 
-  <section class="step" id="import">
-    <h2>[[t:get_started.4-bring-your-passwords.1]]</h2>
-    <div class="prose">
-      <p>[[t:get_started.4-bring-your-passwords.2]]</p>
-      <p>[[t:get_started.4-bring-your-passwords.3]]</p>
-    </div>
-  </section>
+    <section class="step" id="vault">
+      <h2>[[t:get_started.2-create-your-vault.1]]</h2>
+      <div class="step-body">
+        <div class="prose">
+          <ol>
+            <li>[[t:get_started.2-create-your-vault.2]]</li>
+            <li>[[t:get_started.2-create-your-vault.3]]</li>
+            <li>[[t:get_started.2-create-your-vault.4]]</li>
+            <li>[[t:get_started.2-create-your-vault.5]]</li>
+            <li>[[t:get_started.2-create-your-vault.6]]</li>
+          </ol>
+        </div>
+        <figure class="shot">
+          <img src="[[root]]screenshots/security-center-dark.webp" width="2880" height="1800" alt="[[t:get_started.2-create-your-vault.7]]" loading="lazy" decoding="async">
+          <figcaption>[[t:get_started.2-create-your-vault.8]]</figcaption>
+        </figure>
+      </div>
+    </section>
 
-  <section class="step" id="apps">
-    <h2>[[t:get_started.5-fill-windows-apps.1]]</h2>
-    <div class="prose">
-      <p>[[t:get_started.5-fill-windows-apps.2]]</p>
-    </div>
-  </section>
+    <section class="step" id="extension">
+      <h2>[[t:get_started.3-add-the-browser.1]]</h2>
+      <div class="step-body step-split">
+        <div class="prose">
+          <p>[[t:get_started.3-add-the-browser.2]]</p>
+          <ol>
+            <li>[[t:get_started.3-add-the-browser.3]]
+              <ul>
+                <li>[[t:get_started.3-add-the-browser.4]]</li>
+                <li>[[t:get_started.3-add-the-browser.5]]</li><!-- if:FIREFOX_ADDON_URL -->
+                <li>[[t:get_started.3-add-the-browser.12]]</li><!-- /if -->
+              </ul>
+            </li>
+            <li>[[t:get_started.3-add-the-browser.6]]</li>
+            <li>[[t:get_started.3-add-the-browser.7]]</li>
+            <li>[[t:get_started.3-add-the-browser.8]]</li>
+          </ol>
+          <p class="step-hint">[[t:get_started.3-add-the-browser.9]]</p>
+        </div>
+        <figure class="shot shot-small"><img src="[[root]]screenshots/browser-fill.webp" width="480" height="540" alt="[[t:get_started.3-add-the-browser.10]]" loading="lazy" decoding="async"><figcaption>[[t:get_started.3-add-the-browser.11]]</figcaption></figure>
+      </div>
+    </section>
 
-  <section class="step" id="pro">
-    <h2>[[t:get_started.6-turn-on-pro.1]]</h2>
-    <div class="prose">
-      <p>[[t:get_started.6-turn-on-pro.2]]</p>
-    </div>
-  </section>
+    <section class="step" id="import">
+      <h2>[[t:get_started.4-bring-your-passwords.1]]</h2>
+      <div class="step-body">
+        <div class="prose">
+          <p>[[t:get_started.4-bring-your-passwords.2]]</p>
+          <p>[[t:get_started.4-bring-your-passwords.3]]</p>
+        </div>
+      </div>
+    </section>
 
-  <section class="step" id="phones">
-    <h2>[[t:get_started.iphone-and-android.1]]</h2>
-    <div class="prose">
-      <p>[[t:get_started.iphone-and-android.2]]</p>
-      <p>[[t:get_started.iphone-and-android.3]]</p>
-      <p>[[t:get_started.iphone-and-android.4]]</p>
-    </div>
-  </section>
+    <section class="step" id="apps">
+      <h2>[[t:get_started.5-fill-windows-apps.1]]</h2>
+      <div class="step-body">
+        <div class="prose">
+          <p>[[t:get_started.5-fill-windows-apps.2]]</p>
+        </div>
+      </div>
+    </section>
 
-  <div class="prose">
-    <p>[[t:get_started.iphone-and-android.5]]</p>
+    <section class="step" id="pro">
+      <h2>[[t:get_started.6-turn-on-pro.1]]</h2>
+      <div class="step-body">
+        <div class="prose">
+          <p>[[t:get_started.6-turn-on-pro.2]]</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="phones">
+      <h2>[[t:get_started.v2.iphone.title]]</h2>
+      <div class="step-body">
+        <div class="prose">
+          <p>[[t:get_started.v2.iphone.intro]]</p>
+          <ol>
+            <li>[[t:get_started.v2.iphone.1]]</li>
+            <li>[[t:get_started.v2.iphone.2]]</li>
+            <li>[[t:get_started.v2.iphone.3]]</li>
+            <li>[[t:get_started.v2.iphone.4]]</li>
+            <li>[[t:get_started.v2.iphone.5]]</li>
+          </ol>
+          <p>[[t:get_started.v2.iphone.note]]</p>
+          <p class="step-hint"><!-- if:MAC_APP_URL -->[[t:get_started.android-only]]<!-- else -->[[t:get_started.iphone-and-android.3]]<!-- /if --></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="prose gs-stuck glass">
+      <p>[[t:get_started.iphone-and-android.5]]</p>
+    </div>
   </div>
 </div>
+<script src="[[root]]guide.js"></script>

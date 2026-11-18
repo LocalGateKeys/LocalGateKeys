@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">集合</string>
+    <string name="collections_none">还没有集合。</string>
+    <string name="collections_footer">笔记、卡片和其他类型的项目可以添加到集合。登录信息不能。</string>
+    <string name="collections_add_starters">添加初始集合</string>
+    <string name="collections_new">新建集合</string>
+    <string name="collections_name">名称</string>
+    <string name="collections_create">创建</string>
+    <string name="collections_delete_title">删除集合？</string>
+    <string name="collections_delete_message">其中的项目会保留。</string>
+    <string name="collections_view_only">仅查看</string>
+    <string name="collections_shared">已共享</string>
+    <string name="collections_picker_footer">一个项目最多可以属于 20 个集合。</string>
+    <string name="collections_all_items">所有项目</string>
+    <string name="collections_manage">管理集合</string>
+    <string name="collections_filter">集合：%1$s</string>
+    <string name="collections_filter_clear">显示所有项目</string>
+    <string name="collections_filter_empty">此集合中没有项目。</string>
+    <string name="collections_read_only_item">此项目位于以仅查看方式共享给你的集合中，因此无法在此设备上更改。</string>
+    <string name="collections_read_only">此集合以仅查看方式共享给你，因此无法在此设备上更改。</string>
+    <string name="collections_shared_delete">共享集合无法删除。请先停止共享或退出该集合。</string>
+    <string name="collections_limit">你最多可以有 500 个集合。</string>
+    <string name="collections_not_member">登录信息和文档无法添加到集合。</string>
+    <string name="collections_bad_name">无法使用此名称。</string>
+    <string name="collections_gone">该集合已不存在。</string>
+    <string name="collections_failed">无法更改该集合。</string>
+    <string name="collections_empty_name">请输入集合的名称。</string>
+    <string name="collections_long_name">集合名称最多 100 个字符。</string>
+    <string name="collections_duplicate">已存在同名的集合。</string>
+    <string name="collections_too_many">一个项目最多只能属于 20 个集合。</string>
+    <string name="collections_read_failed">无法在此设备上读取保管库。</string>
+    <string name="collection_starter_personal">个人</string>
+    <string name="collection_starter_work">工作</string>
+    <string name="collection_starter_travel">旅行</string>
+    <string name="collection_starter_emergency">紧急</string>
+</resources>

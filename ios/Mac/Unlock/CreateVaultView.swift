@@ -3,6 +3,7 @@ import SwiftUI
 /// First run: choose the master password (twice) and optionally Touch ID.
 struct CreateVaultView: View {
     @Bindable var model: MacLockModel
+    @Bindable var session: MacProfileSession
     let touchIDAvailable: Bool
     @Environment(\.macTheme) private var theme
     @State private var password = ""
@@ -11,6 +12,7 @@ struct CreateVaultView: View {
 
     var body: some View {
         LockPanel(title: String(localized: "Create your vault"), subtitle: String(localized: "Choose a master password. It opens your vault on this Mac.")) {
+            ProfileHeader(session: session)
             SecureField("Master password", text: $password).glassField().disabled(model.isBusy)
             SecureField("Confirm master password", text: $confirm).glassField().disabled(model.isBusy)
                 .onSubmit(submit)
@@ -28,6 +30,7 @@ struct CreateVaultView: View {
             .buttonStyle(AccentButtonStyle())
             .keyboardShortcut(.defaultAction)
             .disabled(model.isBusy || password.isEmpty || confirm.isEmpty)
+            LockScreenLinks(session: session)
         }
     }
 

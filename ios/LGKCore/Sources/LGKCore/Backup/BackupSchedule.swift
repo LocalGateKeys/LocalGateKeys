@@ -97,9 +97,13 @@ public enum BackupSchedule {
     }
 
     /// `write_last_success`: `{"version": 1, "last_success": <timestamp>}` written atomically (a time, never a secret).
-    public static func writeLastSuccess(_ directory: URL, _ when: Date) throws {
+    /// `sha256` (design 9.1 step 4): the published file's lowercase hex SHA-256, kept as `last_sha256`.
+    public static func writeLastSuccess(_ directory: URL, _ when: Date, sha256: String? = nil) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let text = "{\"version\": 1, \"last_success\": \(when.timeIntervalSince1970)}"
+        let digest = sha256.flatMap { s in s.utf8.count == 64 && s.utf8.allSatisfy({ (0x30...0x39).contains($0) || (0x61...0x66).contains($0) }) ? s : nil }
+        var text = "{\"version\": 1, \"last_success\": \(when.timeIntervalSince1970)"
+        if let digest { text += ", \"last_sha256\": \"" + digest + "\"" }
+        text += "}"
         try Data(text.utf8).write(to: stateURL(directory), options: .atomic)
     }
 
@@ -161,13 +165,16 @@ public enum BackupSchedule {
 
     /// `prune`: deletes this profile's scheduled backups beyond `keep` (at least 1), never `protect`, which counts as
     /// kept. Each deleted backup's own `.sha256.json` goes with it (the Mac writes one beside every backup).
+    /// `protectOld` (owner decision Q3, design section 16): file names never pruned and not counted against `keep`
+    /// (the newest old-format backup at the move to public-key backups, kept until the person deletes it).
     @discardableResult
-    public static func prune(in directory: URL, tag: String, keep: Int, protect: URL?) -> [URL] {
+    public static func prune(in directory: URL, tag: String, keep: Int, protect: URL?, protectOld: Set<String> = []) -> [URL] {
         let keep = max(1, keep)
         var kept = protect == nil ? 0 : 1
         var removed: [URL] = []
         for url in ownedBackups(in: directory, tag: tag) {
             if let protect, url.lastPathComponent == protect.lastPathComponent { continue }
+            if protectOld.contains(url.lastPathComponent) { continue }
             if kept < keep { kept += 1; continue }
             guard (try? FileManager.default.removeItem(at: url)) != nil else { continue }
             removed.append(url)

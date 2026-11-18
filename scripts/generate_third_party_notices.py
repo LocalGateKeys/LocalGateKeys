@@ -61,6 +61,68 @@ NOTES = {
 }
 
 
+def _psl_version() -> str:
+    text = (ROOT / "src" / "localvault" / "assets" / "public_suffix_list.dat").read_text(encoding="utf-8")
+    match = re.search(r"^// VERSION: (\S+)", text, re.MULTILINE)
+    return match.group(1) if match else "unknown"
+
+
+# Bundled data (not packages): src/localvault/assets/site_features.json, built by scripts/build_site_features.py.
+DATA_SOURCES = (
+    (
+        "2FA Directory TOTP list (MIT)",
+        """The list of sites that offer two-factor codes (TOTP) in src/localvault/assets/site_features.json comes
+from 2FA Directory (https://2fa.directory), by 2factorauth.
+Source: https://api.2fa.directory/v3/totp.json
+Licence: MIT, https://github.com/2factorauth/twofactorauth/blob/master/LICENSE.md
+Data reduced to registrable domains.
+
+MIT License
+
+Copyright (c) 2factorauth
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.""",
+    ),
+    (
+        "Passkeys.2FA.Directory passkey list (CC BY 4.0)",
+        """The list of sites that support passkeys in src/localvault/assets/site_features.json comes from
+Passkeys.2FA.Directory (https://passkeys.2fa.directory), by 2factorauth.
+Source: https://passkeys.2fa.directory
+Licence: Creative Commons Attribution 4.0 International (CC BY 4.0),
+https://creativecommons.org/licenses/by/4.0/ (data licence file:
+https://github.com/2factorauth/passkeys/blob/master/LICENSE.md)
+Changes: data reduced to registrable domains and the two flags (passkey, totp) per domain.""",
+    ),
+    (
+        "Public Suffix List (MPL-2.0)",
+        """src/localvault/assets/public_suffix_list.dat is the Public Suffix List by the Mozilla Foundation and
+its contributors (https://publicsuffix.org). browser-extension/psl-min.json holds the same rules,
+reduced by scripts/build_psl.py.
+Source: https://publicsuffix.org/list/public_suffix_list.dat (version """
+        + _psl_version()
+        + """, the VERSION line in
+the bundled file). The source form of this file is that bundled copy.
+Licence: Mozilla Public License, v. 2.0, full text below.
+
+"""
+        + (Path(__file__).resolve().parent / "licences" / "MPL-2.0.txt").read_text(encoding="utf-8").strip(),
+    ),
+)
+
+
 def locked_packages(lock: Path) -> list[tuple[str, str]]:
     packages = []
     for line in lock.read_text(encoding="utf-8").splitlines():
@@ -151,8 +213,10 @@ def build(lock: Path) -> str:
         "under any licence (the bootloader exception):\n"
         "https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt",
     ))
+    summary.extend(title for title, _ in DATA_SOURCES)
     parts.append("Summary\n\n" + "\n".join(f"  {line}" for line in summary) + "\n\n")
     parts.extend(bodies)
+    parts.extend(section(title, body) for title, body in DATA_SOURCES)
     return "".join(parts).rstrip("\n") + "\n"
 
 

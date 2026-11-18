@@ -1,11 +1,11 @@
 package app.localgatekeys.android.ui.share
+import app.localgatekeys.android.ui.theme.lgkSwitchColors
 import app.localgatekeys.android.R
 import androidx.compose.ui.res.stringResource
 
 import app.localgatekeys.android.i18n.Txt
 import app.localgatekeys.android.i18n.rememberTxt
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,6 +26,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Switch
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -42,8 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -63,6 +63,7 @@ import app.localgatekeys.android.share.ItemSharing
 import app.localgatekeys.android.share.OutgoingShare
 import app.localgatekeys.android.share.ShareInbox
 import app.localgatekeys.android.share.ShareText
+import app.localgatekeys.android.ui.common.qrBitmap
 import app.localgatekeys.android.ui.detail.DocumentSeams
 import app.localgatekeys.android.ui.sync.QrScanner
 import app.localgatekeys.android.ui.sync.QrScannerScreen
@@ -73,10 +74,6 @@ import app.localgatekeys.core.primitives.UnixClock
 import app.localgatekeys.core.share.OpenedShare
 import app.localgatekeys.core.share.Share
 import app.localgatekeys.core.share.ShareException
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
-import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -97,16 +94,6 @@ class ShareSeams(
     val save: suspend (OpenedShare) -> ItemSharing.SaveOutcome,
 ) {
     override fun toString(): String = "ShareSeams"
-}
-
-/** A QR bitmap of [text] (byte mode, error correction L, so a 2048-byte package still fits). */
-internal fun qrBitmap(text: String, size: Int = 720): ImageBitmap? = try {
-    val hints = mapOf(EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.L, EncodeHintType.MARGIN to 2, EncodeHintType.CHARACTER_SET to "UTF-8")
-    val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size, hints)
-    val px = IntArray(m.width * m.height) { i -> if (m.get(i % m.width, i / m.width)) 0xFF000000.toInt() else 0xFFFFFFFF.toInt() }
-    Bitmap.createBitmap(px, m.width, m.height, Bitmap.Config.ARGB_8888).asImageBitmap()
-} catch (e: Exception) {
-    null
 }
 
 @Composable
@@ -140,9 +127,16 @@ fun ShareItemScreen(item: VaultItem, seams: ShareSeams, onClose: () -> Unit) {
     var error by remember(item) { mutableStateOf<String?>(null) }
     var showQr by remember(item) { mutableStateOf(false) }
     var shared by remember { mutableStateOf<File?>(null) }
-    LaunchedEffect(item) {
+    var lifetime by remember(item) { mutableStateOf(ItemSharing.Lifetime.DAY) }
+    var oneUse by remember(item) { mutableStateOf(false) }
+    // A new choice seals again under a fresh code (the old package is never shown again).
+    LaunchedEffect(item, lifetime, oneUse) {
+        outgoing = null
+        showQr = false
         try {
-            outgoing = withContext(Dispatchers.Default) { ItemSharing.prepare(item, seams.clock, seams.random) }
+            outgoing = withContext(Dispatchers.Default) {
+                ItemSharing.prepare(item, seams.clock, seams.random, lifetime = lifetime, oneUse = oneUse)
+            }
         } catch (e: ShareException) {
             error = if (e.reason == "not-shareable") txt.s(ShareText.NOT_SHAREABLE) else txt.s(ShareText.FAILED)
         } catch (e: Exception) {
@@ -157,6 +151,26 @@ fun ShareItemScreen(item: VaultItem, seams: ShareSeams, onClose: () -> Unit) {
     Page(txt.s(ShareText.SHEET_TITLE), onClose) {
         Text(item.title.ifEmpty { item.kindLabel(txt) }, color = c.secondaryText, style = MaterialTheme.typography.bodyLarge)
         error?.let { Text(it, color = c.danger, modifier = Modifier.testTag("share-error")) }
+        if (error == null) {
+            Text(stringResource(R.string.share_expires_in), color = c.text, style = MaterialTheme.typography.titleSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(ItemSharing.Lifetime.HOUR to R.string.share_expires_hour, ItemSharing.Lifetime.DAY to R.string.share_expires_day)
+                    .forEach { (value, label) ->
+                        FilterChip(
+                            selected = lifetime == value, onClick = { lifetime = value },
+                            label = { Text(stringResource(label)) },
+                            modifier = Modifier.testTag("share-expires-${value.name.lowercase()}"),
+                        )
+                    }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.share_one_use), color = c.text)
+                    Text(stringResource(R.string.share_one_use_hint), color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(oneUse, { oneUse = it }, Modifier.testTag("share-one-use"), colors = lgkSwitchColors())
+            }
+        }
         val qrDescription = txt.s(R.string.share_qr_description)
         val out = outgoing
         if (out == null && error == null) Text(stringResource(R.string.share_preparing), color = c.secondaryText)
@@ -231,6 +245,10 @@ fun ReceiveShareScreen(seams: ShareSeams, files: ImportDocuments?, onUpgrade: ()
     var message by remember { mutableStateOf<String?>(null) }
     var opened by remember { mutableStateOf<OpenedShare?>(null) }
     var working by remember { mutableStateOf(false) }
+    val refused by seams.inbox.refused.collectAsState()
+    LaunchedEffect(refused) {
+        refused?.let { message = refusalText(it, txt); seams.inbox.clearRefusal() }
+    }
     val accept: (ByteArray, Boolean) -> Unit = { bytes, keep ->
         scope.launch {
             message = try {

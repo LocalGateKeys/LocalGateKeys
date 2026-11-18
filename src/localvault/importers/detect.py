@@ -38,12 +38,12 @@ SUPPORTED_FORMATS: dict[str, str] = {
     "chrome-csv": "Chrome / Edge / Brave passwords CSV",
     "firefox-csv": "Firefox logins CSV",
     "safari-csv": "Safari passwords CSV",
+    "cxf": "Credential Exchange (CXF)",
     "csv": "Generic CSV (choose columns)",
 }
 PASSWORD_FORMATS = frozenset({"kdbx", "bitwarden-encrypted-json"})
 CSV_FORMATS = frozenset({"keepass-csv", "1password-csv", "bitwarden-csv", "lastpass-csv", "dashlane-csv",
                          "protonpass-csv", "chrome-csv", "firefox-csv", "safari-csv", "csv"})
-FILE_DIALOG_PATTERNS = "*.kdbx *.1pux *.zip *.json *.csv *.xml"
 DAMAGED_MESSAGE = ("detect.couldNotBeReadThe")
 _PGP_ARMOR = b"-----BEGIN PGP MESSAGE-----"
 _DASHLANE_ZIP_FILES = frozenset({"credentials.csv", "securenotes.csv", "payments.csv", "ids.csv", "personalinfo.csv"})
@@ -107,6 +107,19 @@ def _detect_csv(text: str) -> Detection:
     return Detection("csv", False, "low", "Unrecognised CSV header; column mapping required", fields)
 
 
+def _is_cxf(document: dict[str, Any]) -> bool:
+    """A CXF account: an ``items`` list whose entries carry ``credentials`` objects with a ``type``."""
+    items = document.get("items")
+    if not isinstance(items, list):
+        return False
+    for item in items[:50]:
+        credentials = item.get("credentials") if isinstance(item, dict) else None
+        if isinstance(credentials, list) and any(isinstance(c, dict) and isinstance(c.get("type"), str)
+                                                 for c in credentials[:20]):
+            return True
+    return False
+
+
 def _detect_json(text: str, path: Path) -> Detection:
     try:
         document = json.loads(text)
@@ -125,6 +138,8 @@ def _detect_json(text: str, path: Path) -> Detection:
             raise ImportFormatError(t(ACCOUNT_RESTRICTED_MESSAGE))
         if "data" in document:
             return Detection("bitwarden-encrypted-json", True, "high", "Bitwarden encrypted envelope")
+    if _is_cxf(document):
+        return Detection("cxf", False, "high", "Credential Exchange account items with typed credentials")
     if isinstance(document.get("items"), list):
         return Detection("bitwarden-json", False, "high", "Bitwarden items list")
     if isinstance(document.get("accounts"), list):
@@ -245,6 +260,9 @@ def _load(path: Path, source_format: str, *, password: str | None, keyfile: byte
     if source_format == "protonpass-csv":
         from .protonpass import load_protonpass_csv
         return load_protonpass_csv(path)
+    if source_format == "cxf":
+        from .cxf import import_cxf
+        return import_cxf(path)
     if source_format == "dashlane-zip":
         from .dashlane import load_dashlane_zip
         return load_dashlane_zip(path)
@@ -277,5 +295,5 @@ def describe(value: Any) -> str:
     return SUPPORTED_FORMATS.get(str(value), str(value))
 
 
-__all__ = ["CSV_FORMATS", "DAMAGED_MESSAGE", "Detection", "FILE_DIALOG_PATTERNS", "PASSWORD_FORMATS", "SUPPORTED_FORMATS", "csv_header",
+__all__ = ["CSV_FORMATS", "DAMAGED_MESSAGE", "Detection", "PASSWORD_FORMATS", "SUPPORTED_FORMATS", "csv_header",
            "describe", "detect_format", "load_records"]

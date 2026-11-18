@@ -128,3 +128,63 @@ test("queryAll walks nested open shadow roots and onTop sees through shadow host
   closedHost.attachShadow({ mode: "closed" }).innerHTML = `<input id="secret" type="password">`;
   assert.equal(s.queryAll("input").some(i => i.id === "secret"), false);
 });
+
+// Design decision 2026-11-12 (Firefox and Safari have no IntersectionObserver v2): a page element in the top layer
+// paints above the panel host even with pointer-events:none, which elementFromPoint does not see. topLayerCover
+// finds such elements in the document, open shadow roots and, where the browser lets an extension open them,
+// closed shadow roots; one whose box overlaps, or whose ::backdrop paints anything, covers the host. An active
+// view transition (its snapshot paints above everything) counts too.
+test("topLayerCover: overlapping or backdrop-painting top-layer elements, also in closed roots", () => {
+  const p = page(`<div id="ours"></div><div id="toast"></div><div id="far"></div>`);
+  const { window: w, document: d, S, setRect } = p;
+  const top = new Set();
+  const realMatches = w.Element.prototype.matches;
+  w.Element.prototype.matches = function (selector) {
+    if (selector === ":popover-open") return top.has(this);
+    if (selector === "dialog:modal" || selector === ":fullscreen") return false;
+    if (selector === ":active-view-transition") throw new Error("unsupported");
+    return realMatches.call(this, selector);
+  };
+  const clear = { length: 5, display: "block", backgroundColor: "rgba(0, 0, 0, 0)", backgroundImage: "none", backdropFilter: "none", filter: "none", boxShadow: "none", borderTopStyle: "none", borderRightStyle: "none", borderBottomStyle: "none", borderLeftStyle: "none", outlineStyle: "none" };
+  const backdrop = new Map();
+  const gcs = w.getComputedStyle;
+  w.getComputedStyle = (el, pseudo) => pseudo === "::backdrop" ? (backdrop.get(el) || clear) : gcs(el, pseudo);
+  const ours = d.getElementById("ours"), toast = d.getElementById("toast"), far = d.getElementById("far");
+  const rect = { left: 100, top: 100, right: 400, bottom: 300 };
+  setRect(ours, { left: 100, top: 100, width: 300, height: 200 });
+  setRect(toast, { left: 150, top: 150, width: 50, height: 50 });
+  setRect(far, { left: 700, top: 600, width: 50, height: 50 });
+  const s = S();
+  const mine = new Set([ours]);
+  top.add(ours);
+  assert.equal(s.topLayerCover(rect, mine), false, "our own host is not a cover");
+  top.add(far);
+  assert.equal(s.topLayerCover(rect, mine), false, "a far popover with a transparent backdrop");
+  backdrop.set(far, { ...clear, backgroundColor: "rgba(255, 255, 255, 0.02)" });
+  assert.equal(s.topLayerCover(rect, mine), true, "a far popover whose backdrop paints the viewport");
+  backdrop.set(far, { ...clear, backdropFilter: "blur(2px)" });
+  assert.equal(s.topLayerCover(rect, mine), true, "a backdrop filter");
+  backdrop.set(far, { ...clear, display: "none" });
+  assert.equal(s.topLayerCover(rect, mine), false, "no backdrop at all");
+  backdrop.set(far, { length: 0 });
+  assert.equal(s.topLayerCover(rect, mine), true, "an unreadable backdrop fails closed");
+  top.delete(far);
+  top.add(toast);
+  assert.equal(s.topLayerCover(rect, mine), true, "an overlapping popover");
+  top.delete(toast);
+  // A popover inside a closed shadow root: found through openOrClosedShadowRoot (Firefox content scripts).
+  const host = d.createElement("div"); d.body.append(host);
+  const closed = host.attachShadow({ mode: "closed" });
+  closed.innerHTML = `<div id="hidden-cover"></div>`;
+  const cover = closed.getElementById("hidden-cover");
+  setRect(cover, { left: 100, top: 100, width: 300, height: 200 });
+  top.add(cover);
+  assert.equal(s.topLayerCover(rect, mine), false, "not reachable without the extension API");
+  Object.defineProperty(host, "openOrClosedShadowRoot", { get: () => closed, configurable: true });
+  assert.equal(s.topLayerCover(rect, mine), true, "found in the closed root");
+  top.delete(cover);
+  assert.equal(s.topLayerCover(rect, mine), false);
+  // An active view transition paints its snapshot above the top layer.
+  Object.defineProperty(d, "activeViewTransition", { value: {}, configurable: true });
+  assert.equal(s.topLayerCover(rect, mine), true, "an active view transition");
+});

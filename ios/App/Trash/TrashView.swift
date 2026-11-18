@@ -55,7 +55,7 @@ struct TrashView: View {
                 Button("Empty Recently deleted", role: .destructive) { confirmEmpty = true }
                     .disabled(trash.rows.isEmpty)
             } footer: {
-                Text("Deleted items stay encrypted on this iPhone and are removed for good after this time. They don't count toward the free plan's items. Older backups may still contain them.")
+                Text(DeviceText.isPad ? String(localized: "ipad.trashView.deletedItemsStayEncrypted", defaultValue: "Deleted items stay encrypted on this iPad and are removed for good after this time. They don't count toward the free plan's items. Older backups may still contain them.") : String(localized: "Deleted items stay encrypted on this iPhone and are removed for good after this time. They don't count toward the free plan's items. Older backups may still contain them."))
             }
             .listRowBackground(Palette.groupSurface)
         }

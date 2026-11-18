@@ -9,7 +9,7 @@ import crypto from "node:crypto";
 
 import { handle } from "../src/index.js";
 import { parsePaddle } from "../src/providers.js";
-import { fallbackTokenForOrder, licenseIdForOrder } from "../src/sign.js";
+import { LICENSE_KEY_ID, fallbackTokenForOrder, issueBundle, licenseIdForOrder } from "../src/sign.js";
 import { revocationIds } from "../scripts/revocation-list.mjs";
 import { fakeD1 } from "./fake-d1.mjs";
 
@@ -56,6 +56,7 @@ function makeEnv(kvMode, extra = {}) {
     LICENSES: fakeKv(kvMode),
     CLAIMS: fakeD1(),
     LICENSE_PRIVATE_KEY: PK,
+    LICENSE_KEY_ID_OVERRIDE: "1fb2572acef33ca2", // the test key; production pins 9f76e21ed03c0482
     WEBHOOK_SECRET: SECRET,
     PADDLE_API_KEY: "pdl_test",
     PRODUCT_IDS: "pro_1",
@@ -231,12 +232,12 @@ test("F8: /recover does the same KV reads for an unknown order as for a known on
     const unknownTxn = await readsFor("txn_unknown");
     assert.equal(await readsFor("txn_known"), unknownTxn);
     assert.equal(await readsFor("txn_legacy"), unknownTxn);
-    // One throttle read plus three per provider tried.
-    assert.equal(unknownTxn, 1 + 3);
+    // Three throttle reads (pair, email, order) plus three per provider tried.
+    assert.equal(unknownTxn, 3 + 3);
     if (provider === undefined) {
       // Non-txn ids try both providers: 2 x 3 reads whether known or not.
       const unknownOther = await readsFor("9999");
-      assert.equal(unknownOther, 1 + 6);
+      assert.equal(unknownOther, 3 + 6);
       assert.equal(await readsFor("2002"), unknownOther);
     }
   }
@@ -328,26 +329,27 @@ test("L-2: without the D1 binding, or with D1 failing, no claim is bound and the
 
 // --- R-6 ---------------------------------------------------------------------
 
-test("R-6: /recover allows 5 attempts per email per hour, keyed by an HMAC of the email", async () => {
+test("R-6: /recover allows 5 attempts per email and order id per hour, keyed by an HMAC of the pair", async () => {
   const env = makeEnv();
   await webhook(env, transaction("txn_r", "ctm_victim", CLAIM));
   const statuses = [];
   for (let i = 0; i < 5; i++) {
-    statuses.push((await recoverRequest(env, { order: `txn_guess${i}`, email: "Victim@Example.com" })).status);
+    statuses.push((await recoverRequest(env, { order: "txn_guess", email: "Victim@Example.com" })).status);
   }
   assert.deepEqual(statuses, [404, 404, 404, 404, 404]);
-  // Over the limit even the right pair is refused, and the answer says nothing about it.
-  const blocked = await recoverRequest(env, { order: "txn_r", email: "victim@example.com" });
-  assert.equal(blocked.status, 429);
-  assert.equal(blocked.headers.get("Location"), null);
-  assert.equal(blocked.headers.get("Retry-After"), "3600");
-  const wrong = await recoverRequest(env, { order: "txn_nope", email: "victim@example.com" });
+  // Over the limit, that pair is refused.
+  const wrong = await recoverRequest(env, { order: "txn_guess", email: "victim@example.com" });
   assert.equal(wrong.status, 429);
-  assert.equal(await blocked.text(), await wrong.text());
+  assert.equal(wrong.headers.get("Retry-After"), "3600");
+  // Bogus attempts against the email do not lock the real owner out (audit low finding).
+  const owner = await recoverRequest(env, { order: "txn_r", email: "victim@example.com" });
+  assert.equal(owner.status, 303);
+  // Malformed order ids are not counted at all.
+  for (let i = 0; i < 10; i++) await recoverRequest(env, { order: "../bogus", email: "victim@example.com" });
   // Other emails are unaffected; no key or value holds the address.
   assert.equal((await recoverRequest(env, { order: "txn_r", email: "other@example.com" })).status, 404);
   const throttleKeys = [...env.LICENSES.data.keys()].filter((k) => k.startsWith("recover-throttle:"));
-  assert.equal(throttleKeys.length, 2);
+  assert.equal(throttleKeys.length, 3);
   for (const key of throttleKeys) {
     assert.match(key, /^recover-throttle:[A-Za-z0-9_-]{43}$/);
     assert.doesNotMatch(env.LICENSES.data.get(key), /@/);
@@ -356,12 +358,57 @@ test("R-6: /recover allows 5 attempts per email per hour, keyed by an HMAC of th
   const saved = deps;
   deps = { ...deps, now: NOW + 3600 * 1000 };
   try {
-    const later = await recoverRequest(env, { order: "txn_r", email: "victim@example.com" });
-    assert.equal(later.status, 303);
-    assert.equal(later.headers.get("Location"), `/license/${await fallbackTokenForOrder("order:paddle:txn_r", PK)}`);
+    assert.equal((await recoverRequest(env, { order: "txn_guess", email: "victim@example.com" })).status, 404);
   } finally {
     deps = saved;
   }
+});
+
+test("R-6: one email cannot be tried against many guessed order ids", async () => {
+  const env = makeEnv();
+  await webhook(env, transaction("txn_mine", "ctm_victim", CLAIM));
+  const statuses = [];
+  for (let i = 0; i < 16; i++) {
+    statuses.push((await recoverRequest(env, { order: `txn_guess${i}`, email: "victim@example.com" })).status);
+  }
+  // Fresh order ids each time, yet the email cap stops the 16th.
+  assert.deepEqual(statuses, [...Array(15).fill(404), 429]);
+  assert.equal((await recoverRequest(env, { order: "txn_mine", email: "victim@example.com" })).status, 429);
+  // Other emails are unaffected, and the cap lifts after the window.
+  assert.equal((await recoverRequest(env, { order: "txn_mine", email: "other@example.com" })).status, 404);
+  const saved = deps;
+  deps = { ...deps, now: NOW + 3600 * 1000 };
+  try {
+    assert.equal((await recoverRequest(env, { order: "txn_mine", email: "victim@example.com" })).status, 303);
+  } finally {
+    deps = saved;
+  }
+});
+
+test("R-6: one order id cannot be tried against many guessed emails", async () => {
+  const env = makeEnv();
+  await webhook(env, transaction("txn_mine", "ctm_victim", CLAIM));
+  const statuses = [];
+  for (let i = 0; i < 16; i++) {
+    statuses.push((await recoverRequest(env, { order: "txn_mine", email: `guess${i}@example.com` })).status);
+  }
+  assert.deepEqual(statuses, [...Array(15).fill(404), 429]);
+  // Other order ids are unaffected.
+  assert.equal((await recoverRequest(env, { order: "txn_other", email: "guess0@example.com" })).status, 404);
+});
+
+test("R-6: a buyer mistyping a few times is not locked out", async () => {
+  const env = makeEnv();
+  await webhook(env, transaction("txn_mine", "ctm_victim", CLAIM));
+  for (const [order, email] of [
+    ["txn_mien", "victim@example.com"],
+    ["txn_mine", "victim@exmaple.com"],
+    ["txn_mine", "vicitm@example.com"],
+    ["txn_mien", "victim@example.com"],
+  ]) {
+    assert.equal((await recoverRequest(env, { order, email })).status, 404);
+  }
+  assert.equal((await recoverRequest(env, { order: "txn_mine", email: "victim@example.com" })).status, 303);
 });
 
 test("R-6: a hit and a miss make the same KV reads; malformed emails are not counted", async () => {
@@ -381,7 +428,7 @@ test("R-6: a hit and a miss make the same KV reads; malformed emails are not cou
   const hit = await shape({ order: "txn_t", email: "victim@example.com" });
   const wrongEmail = await shape({ order: "txn_t", email: "nobody@example.com" });
   const miss = await shape({ order: "txn_missing", email: "victim@example.com" });
-  assert.equal(hit, "recover-throttle,order,license,license");
+  assert.equal(hit, "recover-throttle,recover-email-throttle,recover-order-throttle,order,license,license");
   assert.equal(wrongEmail, hit);
   assert.equal(miss, hit);
   const before = env.LICENSES.data.size;
@@ -423,6 +470,38 @@ test("L-3: adjustment.updated overwrites the record; pending, partial and reject
   assert.equal(JSON.parse(env.LICENSES.data.get("adjustment:paddle:adj_3")).revoke, false);
 });
 
+test("L-3: an older adjustment event delivered late does not overwrite a newer one", async () => {
+  const env = makeEnv();
+  const licenseId = await issued(env);
+  await webhook(env, adjustmentEvent("adj_o", "txn_paid", { eventType: "adjustment.updated", occurredAt: "2026-10-25T00:00:00Z" }));
+  await webhook(env, adjustmentEvent("adj_o", "txn_paid", { status: "pending_approval", occurredAt: "2026-10-24T00:00:00Z" }));
+  const record = JSON.parse(env.LICENSES.data.get(`revoke:${licenseId}:adj_o`));
+  assert.equal(record.status, "approved");
+  assert.equal(record.revoke, true);
+  // On a tie the terminal status stays.
+  await webhook(env, adjustmentEvent("adj_o", "txn_paid", { status: "pending_approval", occurredAt: "2026-10-25T00:00:00Z" }));
+  assert.equal(JSON.parse(env.LICENSES.data.get("adjustment:paddle:adj_o")).status, "approved");
+  // A newer event still replaces it.
+  await webhook(env, adjustmentEvent("adj_o", "txn_paid", { status: "reversed", occurredAt: "2026-10-26T00:00:00Z" }));
+  assert.equal(JSON.parse(env.LICENSES.data.get("adjustment:paddle:adj_o")).status, "reversed");
+});
+
+test("the Worker signs only with the pinned licence key id", async () => {
+  const license = { format: 1, license_id: "lgk_" + "0".repeat(26) };
+  assert.equal(LICENSE_KEY_ID, "9f76e21ed03c0482");
+  // No override: the test key (1fb2572acef33ca2) is refused.
+  await assert.rejects(issueBundle(license, PK), /not the pinned licence key/);
+  await assert.rejects(issueBundle(license, PK, { LICENSE_KEY_ID_OVERRIDE: "0123456789abcdef" }), /not the pinned/);
+  // The release key id can never be named as the override.
+  await assert.rejects(issueBundle(license, PK, { LICENSE_KEY_ID_OVERRIDE: "6a892769c82386b3" }), /refused/);
+  const bundle = await issueBundle(license, PK, { LICENSE_KEY_ID_OVERRIDE: "1fb2572acef33ca2" });
+  assert.equal(bundle.signature.key_id, "1fb2572acef33ca2");
+  // A webhook with no override issues nothing (the order stays retryable).
+  const env = makeEnv(undefined, { LICENSE_KEY_ID_OVERRIDE: undefined });
+  assert.equal((await webhook(env, transaction("txn_pin", "ctm_victim", CLAIM))).status, 503);
+  assert.equal(env.LICENSES.data.get("order:paddle:txn_pin"), undefined);
+});
+
 test("L-3: chargebacks revoke and reversed chargebacks reinstate; the list script follows the newest", async () => {
   const env = makeEnv();
   const licenseId = await issued(env);
@@ -443,10 +522,8 @@ test("L-3: chargebacks revoke and reversed chargebacks reinstate; the list scrip
   assert.deepEqual(second.reinstated, [licenseId]);
 });
 
-test("L-3: adjustments for unknown orders or with a bad signature store nothing", async () => {
+test("L-3: adjustments with a bad signature or a bad id store nothing", async () => {
   const env = makeEnv();
-  assert.equal((await webhook(env, adjustmentEvent("adj_x", "txn_unknown"))).status, 200);
-  assert.equal(env.LICENSES.data.size, 0);
   await issued(env);
   const size = env.LICENSES.data.size;
   assert.equal((await webhook(env, adjustmentEvent("adj_y", "txn_paid"), { sign: false })).status, 401);
@@ -493,4 +570,270 @@ test("a pending licence page has no install link", async () => {
   const env = makeEnv();
   const html = await (await handle(new Request(`https://licenses.example/license/${CLAIM}`), env, deps)).text();
   assert.ok(!html.includes("localgatekeys://"));
+});
+
+test("F07-1: a refund that arrives before the licence is issued is recorded under the order's licence id", async () => {
+  const env = makeEnv();
+  assert.equal((await webhook(env, adjustmentEvent("adj_early", "txn_late"))).status, 200);
+  const expected = await licenseIdForOrder("order:paddle:txn_late");
+  assert.equal(JSON.parse(env.LICENSES.data.get(`revoke:${expected}:adj_early`)).revoke, true);
+  assert.equal(await issued(env, "txn_late"), expected);
+});
+
+test("F07-5: a body without Content-Length is cut off at the cap", async () => {
+  const env = makeEnv();
+  const chunk = new TextEncoder().encode("x".repeat(4096));
+  let sent = 0;
+  const body = new ReadableStream({
+    pull(controller) {
+      sent += 1;
+      if (sent > 1000) controller.close();
+      else controller.enqueue(chunk);
+    },
+  });
+  const request = new Request("https://licenses.example/recover", { method: "POST", body, duplex: "half" });
+  assert.equal(request.headers.get("Content-Length"), null);
+  assert.equal((await handle(request, env, deps)).status, 413);
+  assert.ok(sent < 50, `stopped reading early (${sent} chunks)`);
+});
+
+// --- Sales alerts (src/sales-alert.js) ---------------------------------------
+
+// Runs `fn` with a fetch that answers Paddle customer lookups and records ntfy pushes.
+async function withAlerts(fn) {
+  const sent = [];
+  const before = deps;
+  deps = {
+    ...deps,
+    fetch: async (url, init) => {
+      if (!url.startsWith("https://ntfy.sh/")) return fakeFetch(url);
+      sent.push({ url, title: init.headers.Title, body: init.body });
+      return new Response("ok");
+    },
+  };
+  try {
+    await fn(sent);
+  } finally {
+    deps = before;
+  }
+}
+
+function paidTransaction(id, total, currency) {
+  const event = JSON.parse(transaction(id, "ctm_victim", CLAIM));
+  event.data.currency_code = currency;
+  event.data.details = { totals: { total } };
+  return JSON.stringify(event);
+}
+
+test("a Paddle sale sends one sales alert with the total, and a retry sends none", async () => {
+  await withAlerts(async (sent) => {
+    const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "lgk-sales-test" });
+    assert.equal((await webhook(env, paidTransaction("txn_sale", "2999", "USD"))).status, 200);
+    assert.equal((await webhook(env, paidTransaction("txn_sale", "2999", "USD"))).status, 200);
+    assert.deepEqual(sent, [{ url: "https://ntfy.sh/lgk-sales-test", title: "LocalGateKeys Pro sold", body: "Paddle: 29.99 USD" }]);
+    assert.equal((await webhook(env, paidTransaction("txn_yen", "4500", "JPY"))).status, 200);
+    assert.equal(sent[1].body, "Paddle: 4500 JPY");
+    assert.equal((await webhook(env, transaction("txn_bare", "ctm_victim", CLAIM))).status, 200);
+    assert.equal(sent[2].body, "Paddle: new purchase");
+  });
+});
+
+test("a Paddle refund of an issued licence alerts once; pending, unknown-order and repeated ones do not", async () => {
+  await withAlerts(async (sent) => {
+    const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+    await webhook(env, transaction("txn_r", "ctm_victim", CLAIM));
+    sent.length = 0;
+    await webhook(env, adjustmentEvent("adj_r", "txn_r", { status: "pending_approval" }));
+    await webhook(env, adjustmentEvent("adj_other", "txn_other_product"));
+    assert.equal(sent.length, 0);
+    const approved = adjustmentEvent("adj_r", "txn_r", { eventType: "adjustment.updated", occurredAt: "2026-10-24T14:00:00Z" });
+    assert.equal((await webhook(env, approved)).status, 200);
+    assert.equal((await webhook(env, approved)).status, 200);
+    assert.deepEqual(sent, [{ url: "https://ntfy.sh/t", title: "LocalGateKeys Pro refunded", body: "Paddle: order txn_r refunded" }]);
+    await webhook(env, adjustmentEvent("adj_cb", "txn_r", { action: "chargeback" }));
+    assert.equal(sent[1].title, "LocalGateKeys Pro charged back");
+  });
+});
+
+test("no topic means no Paddle alert, and a failed alert does not fail the webhook", async () => {
+  await withAlerts(async (sent) => {
+    assert.equal((await webhook(makeEnv(), paidTransaction("txn_quiet", "2999", "USD"))).status, 200);
+    assert.equal(sent.length, 0);
+  });
+  const before = deps;
+  deps = { ...deps, fetch: async (url) => { if (url.startsWith("https://ntfy.sh/")) throw new Error("down"); return fakeFetch(url); } };
+  try {
+    const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+    assert.equal((await webhook(env, paidTransaction("txn_down", "2999", "USD"))).status, 200);
+    assert.match(tokenOf(env, "order:paddle:txn_down"), TOKEN);
+  } finally {
+    deps = before;
+  }
+});
+
+test("concurrent deliveries of one Paddle sale push one alert (W5)", async () => {
+  await withAlerts(async (sent) => {
+    const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+    const body = paidTransaction("txn_race", "2999", "USD");
+    const [a, b] = await Promise.all([webhook(env, body), webhook(env, body)]);
+    assert.equal(a.status, 200);
+    assert.equal(b.status, 200);
+    assert.equal(sent.length, 1);
+  });
+});
+
+test("alerts go through ctx.waitUntil and never hold the webhook response (W4)", async () => {
+  const pending = [];
+  const ctx = { waitUntil: (p) => pending.push(p) };
+  const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+  const before = deps;
+  deps = { ...deps, ctx, fetch: (url) => (url.startsWith("https://ntfy.sh/") ? new Promise(() => {}) : fakeFetch(url)) };
+  try {
+    const r = await webhook(env, paidTransaction("txn_wait", "2999", "USD"));
+    assert.equal(r.status, 200);
+    assert.equal(pending.length, 1);
+  } finally {
+    deps = before;
+  }
+});
+
+test("an exception inside the Worker answers 503 with Retry-After, not Cloudflare's error page (L1)", async () => {
+  const env = makeEnv();
+  env.LICENSES.get = async () => {
+    throw new Error("KV down");
+  };
+  const r = await handle(new Request("https://licenses.example/license/" + "a".repeat(43)), env, deps);
+  assert.equal(r.status, 503);
+  assert.equal(r.headers.get("Retry-After"), "30");
+  assert.equal(r.headers.get("Cache-Control"), "no-store");
+});
+
+// --- Scan 2026-11-15 F4: a refunded web order's key is no longer handed out ---
+
+const pageOf = (env, token, suffix = "") => handle(new Request(`https://licenses.example/license/${token}${suffix}`), env, deps);
+
+test("F4: after a full refund the licence page, the file and /recover answer 'refunded' instead of the key", async () => {
+  const env = makeEnv(undefined, { SUPPORT_EMAIL: "help@example.com" });
+  await issued(env, "txn_ref");
+  const token = tokenOf(env, "order:paddle:txn_ref");
+  assert.equal((await pageOf(env, token)).status, 200);
+  // A pending or partial refund changes nothing.
+  await webhook(env, adjustmentEvent("adj_p", "txn_ref", { status: "pending_approval" }));
+  await webhook(env, adjustmentEvent("adj_part", "txn_ref", { type: "partial" }));
+  assert.equal(await pageHolder(env, token), "Victim V (victim@example.com)");
+  await webhook(env, adjustmentEvent("adj_p", "txn_ref", { eventType: "adjustment.updated", occurredAt: "2026-10-24T14:00:00Z" }));
+  for (const t of [token, await fallbackTokenForOrder("order:paddle:txn_ref", PK)]) {
+    const page = await pageOf(env, t);
+    assert.equal(page.status, 403);
+    const html = await page.text();
+    assert.match(html, /This licence was refunded/);
+    assert.match(html, /help@example\.com/);
+    assert.doesNotMatch(html, /LGK1-|install-licence|lgklicense/);
+    const file = await pageOf(env, t, "/file");
+    assert.equal(file.status, 403);
+    assert.equal(await file.text(), "Revoked\n");
+  }
+  // /recover still finds the order, and leads to the same answer.
+  const found = await recoverRequest(env, { order: "txn_ref", email: "victim@example.com" });
+  assert.equal(found.status, 303);
+  assert.equal((await handle(new Request(`https://licenses.example${found.headers.get("Location")}`), env, deps)).status, 403);
+  // Another order is untouched.
+  await issued(env, "txn_kept");
+  assert.equal((await pageOf(env, tokenOf(env, "order:paddle:txn_kept"))).status, 200);
+});
+
+test("F4: a refund recorded before issue, and a reversed refund or chargeback, follow the newest event", async () => {
+  const env = makeEnv();
+  await webhook(env, adjustmentEvent("adj_early", "txn_early"));
+  await issued(env, "txn_early");
+  assert.equal((await pageOf(env, tokenOf(env, "order:paddle:txn_early"))).status, 403);
+  // Reversed later: the key is served again.
+  await webhook(env, adjustmentEvent("adj_early", "txn_early", { status: "reversed", eventType: "adjustment.updated", occurredAt: "2026-10-25T00:00:00Z" }));
+  assert.equal((await pageOf(env, tokenOf(env, "order:paddle:txn_early"))).status, 200);
+  // A chargeback revokes; its reversal (a separate adjustment) reinstates.
+  await webhook(env, adjustmentEvent("adj_cb", "txn_early", { action: "chargeback", occurredAt: "2026-10-26T00:00:00Z" }));
+  assert.equal((await pageOf(env, tokenOf(env, "order:paddle:txn_early"))).status, 403);
+  await webhook(env, adjustmentEvent("adj_cbr", "txn_early", { action: "chargeback_reverse", occurredAt: "2026-10-27T00:00:00Z" }));
+  assert.equal((await pageOf(env, tokenOf(env, "order:paddle:txn_early"))).status, 200);
+});
+
+test("F4: a Lemon Squeezy refund hides the key the same way", async () => {
+  const env = makeEnv(undefined, { PROVIDER: "lemonsqueezy" });
+  const order = JSON.stringify({
+    meta: { event_name: "order_created", custom_data: { lgk_claim: CLAIM } },
+    data: { id: "7007", attributes: { status: "paid", user_email: "victim@example.com", user_name: "Victim V", first_order_item: { product_id: "pro_1" } } },
+  });
+  assert.equal((await webhook(env, order, { provider: "lemonsqueezy" })).status, 200);
+  const token = tokenOf(env, "order:lemonsqueezy:7007");
+  assert.equal((await pageOf(env, token)).status, 200);
+  const refund = JSON.stringify({ meta: { event_name: "order_refunded" }, data: { id: "7007", attributes: { status: "refunded", refunded_at: "2026-10-24T13:00:00Z" } } });
+  assert.equal((await webhook(env, refund, { provider: "lemonsqueezy" })).status, 200);
+  assert.equal((await pageOf(env, token)).status, 403);
+});
+
+// --- Scan 2026-11-15 F6: webhook size cap -----------------------------------
+
+function paddedTransaction(id, bytes) {
+  const event = JSON.parse(transaction(id, "ctm_victim", CLAIM));
+  event.data.padding = "x".repeat(bytes);
+  return JSON.stringify(event);
+}
+
+test("F6: a Paddle webhook up to 256 KiB issues; a larger one is 413 and alerts once a day", async () => {
+  await withAlerts(async (sent) => {
+    const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+    const big = paddedTransaction("txn_big", 200 * 1024);
+    assert.ok(big.length > 64 * 1024);
+    assert.equal((await webhook(env, big)).status, 200);
+    assert.ok(tokenOf(env, "order:paddle:txn_big"), "issued");
+    sent.length = 0;
+    const huge = paddedTransaction("txn_huge", 257 * 1024);
+    assert.equal((await webhook(env, huge)).status, 413);
+    assert.equal((await webhook(env, huge)).status, 413);
+    assert.equal(tokenOf(env, "order:paddle:txn_huge"), undefined);
+    assert.deepEqual(sent.map((s) => s.title), ["LocalGateKeys webhook refused"]);
+    // Other routes keep their own, smaller caps.
+    const form = new Request("https://licenses.example/recover", { method: "POST", body: "x".repeat(8 * 1024) });
+    assert.equal((await handle(form, env, deps)).status, 413);
+  });
+});
+
+test("final review L4: a burst of unsigned oversize webhooks pushes once, even while KV reads lag", async () => {
+  await withAlerts(async (sent) => {
+    const env = makeEnv("stale", { SALES_NTFY_TOPIC: "t" });
+    const huge = paddedTransaction("txn_flood", 257 * 1024);
+    const statuses = await Promise.all(Array.from({ length: 6 }, () => webhook(env, huge, { sign: false })));
+    assert.deepEqual(statuses.map((r) => r.status), Array(6).fill(413));
+    assert.deepEqual(sent.map((s) => s.title), ["LocalGateKeys webhook refused"]);
+    assert.ok(env.LICENSES.data.has(`alerted:webhook-too-large:paddle:${new Date(NOW).toISOString().slice(0, 10)}`), "marker written");
+    // Another isolate (its own binding object) that sees the marker sends nothing either.
+    const other = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+    for (const [k, v] of env.LICENSES.data) other.LICENSES.data.set(k, v);
+    assert.equal((await webhook(other, huge, { sign: false })).status, 413);
+    assert.equal(sent.length, 1);
+  });
+});
+
+test("final review L5: a retry after a delivery that bound the claim and then failed still sends the sale alert, once", async () => {
+  await withAlerts(async (sent) => {
+    const env = makeEnv(undefined, { SALES_NTFY_TOPIC: "t" });
+    const put = env.LICENSES.put.bind(env.LICENSES);
+    let failed = false;
+    env.LICENSES.put = async (key, value, options) => {
+      if (!failed && key.startsWith("order-license:")) {
+        failed = true;
+        throw new Error("KV 503");
+      }
+      return put(key, value, options);
+    };
+    const body = paidTransaction("txn_retry", "2999", "USD");
+    assert.equal((await webhook(env, body)).status, 503, "the first delivery fails after binding the claim");
+    assert.equal(env.CLAIMS.rows.get(CLAIM).order_key, "order:paddle:txn_retry");
+    assert.equal(sent.length, 0);
+    assert.equal((await webhook(env, body)).status, 200, "the provider's retry finishes the issue");
+    assert.equal(tokenOf(env, "order:paddle:txn_retry"), CLAIM);
+    assert.equal(sent.length, 1, "the sale alert is sent by the retry");
+    assert.equal((await webhook(env, body)).status, 200);
+    assert.equal(sent.length, 1, "and only once per order");
+  });
 });

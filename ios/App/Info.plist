@@ -33,18 +33,38 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>$(BUNDLE_PREFIX).otpauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>otpauth</string>
+				<string>otpauth-migration</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LGKAppGroup</key>
 	<string>$(LGK_APP_GROUP)</string>
 	<key>LGKAppKeychainGroup</key>
 	<string>$(LGK_APP_KEYCHAIN_GROUP)</string>
+	<key>LGKCodesKeychainGroup</key>
+	<string>$(LGK_CODES_KEYCHAIN_GROUP)</string>
 	<key>LGKKeychainGroup</key>
 	<string>$(LGK_KEYCHAIN_GROUP)</string>
+	<key>LGKSafariAppGroup</key>
+	<string>$(LGK_SAFARI_APP_GROUP)</string>
 	<key>LGKSafariKeychainGroup</key>
 	<string>$(LGK_SAFARI_KEYCHAIN_GROUP)</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
+	<key>NFCReaderUsageDescription</key>
+	<string>Read your YubiKey to unlock your vault.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_lgksync._tcp</string>
@@ -54,13 +74,20 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock your vault with Face ID.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Sync with the PC you paired, over your home Wi-Fi.</string>
+	<string>Sync with your other devices over your home Wi-Fi.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>ASCredentialExchangeActivity</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -85,6 +112,11 @@
 				</array>
 			</dict>
 		</dict>
+	</array>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A000000527200101</string>
+		<string>A0000005272001</string>
 	</array>
 </dict>
 </plist>

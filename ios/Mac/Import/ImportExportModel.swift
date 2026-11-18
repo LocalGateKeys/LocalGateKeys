@@ -6,8 +6,9 @@ import AppSharedMac
 /// `ImportExportView`): a picked file is detected, asks for its password or its columns when it needs them,
 /// then opens the review (`ImportReviewModel`); nothing is written until the review is accepted. A phone
 /// backup (`.lgkm`) merges through the same sheet (sync rules: version vectors and tombstones kept, never a
-/// wipe). Export writes an encrypted `.lgkm` or an Apple Passwords CSV to the file chosen in the save panel;
-/// both ask for the master password first, and the CSV only after its plain-text warning.
+/// wipe). Export writes an encrypted `.lgkm`, an Apple Passwords CSV or a CXF file of the chosen items to the
+/// file chosen in the save panel; each asks for the master password first, the CSV and the CXF file only after
+/// their plain-text warning (passkey private keys are read only once the master password was right).
 @MainActor @Observable
 final class ImportExportModel {
     // MARK: copy
@@ -23,6 +24,11 @@ final class ImportExportModel {
     /// Windows `ExportWarning.PLAINTEXT`, `SPREADSHEET` and `DELETE_AFTER` ("Bin" on the Mac).
     nonisolated static let csvWarning = String(localized: "This export stores every password, note and one-time password secret as plain text. Anyone who can read the file can read your passwords.\n\nDo not open the CSV in a spreadsheet application; values beginning with =, +, - or @ can be interpreted as formulas and the file may be cached in temporary locations.\n\nImport the file into the destination application right away, then delete it and empty the Bin. Cloud-synced folders and backups may keep copies.")
     nonisolated static let exportGateTitle = String(localized: "Exporting passwords")
+    nonisolated static let cxfHelp = String(localized: "Writes the items you choose to a Credential Exchange (CXF) file that other password managers can import. The file is not encrypted.")
+    /// The iPhone's CSV warning; the CXF file is plain text too.
+    nonisolated static let cxfWarning = String(localized: "This file is not encrypted. Anyone who gets it can read every password in it.")
+    nonisolated static let cxfPasskeyWarning = String(localized: "Passkey private keys are written as plain text too: anyone who can read the file can sign in with your passkeys.")
+    nonisolated static let cxfDeleteAfter = String(localized: "Import the file into the destination app right away, then delete it. Cloud-synced folders and backups may keep copies.")
     nonisolated static let unknownFormatMessage = ImportError.unknownFormat.message
     nonisolated static let unreadableFile = String(localized: "That file could not be read.")
     nonisolated static let backupPasswordPrompt = String(localized: "Enter the backup password (it is used once and not stored):")
@@ -84,6 +90,10 @@ final class ImportExportModel {
     var passwordRequest: PasswordRequest?
     var mappingRequest: MappingRequest?
     private(set) var restore: RestorePreview?
+    /// What the last import wrote (feature pack §6.1), shown on the Import card until closed.
+    private(set) var report: ImportReport?
+    /// Recently deleted, for undoing an import (the window sets it; nil: no Undo).
+    @ObservationIgnored var moveToTrash: (([String]) -> [String])?
     /// The last import or restore notice (or why it failed).
     var message: String?
     /// The last export notice (or why it failed).
@@ -91,6 +101,12 @@ final class ImportExportModel {
     private(set) var busy = false
     /// The CSV plain-text warning on screen.
     var confirmingCSV = false
+    /// The CXF warnings and item list on screen.
+    var choosingCXF = false
+    /// What a CXF file can hold (titles only), loaded when its sheet opens.
+    private(set) var cxfChoices: [VaultExporter.CXFChoice] = []
+    /// Why the chosen CXF items cannot be exported (shown in its sheet).
+    var cxfMessage: String?
     /// The running export (tests wait on it).
     @ObservationIgnored private(set) var exportTask: Task<Bool, Never>?
     /// Credential Exchange token handed over by the Passwords app (memory only).
@@ -102,6 +118,8 @@ final class ImportExportModel {
     @ObservationIgnored private var csvAuthorised = false
     /// Set only by the master password, used by one encrypted export.
     @ObservationIgnored private var encryptedAuthorised = false
+    /// Set only by the CXF warnings plus the master password, used by one CXF export.
+    @ObservationIgnored private var cxfAuthorised = false
     /// Recently deleted: items a restored phone backup deletes land here (nil only in tests without local data).
     @ObservationIgnored private let local: (any LocalDataHosting)?
 
@@ -116,6 +134,9 @@ final class ImportExportModel {
     @ObservationIgnored private let exchangeFetch: CredentialExchangeModel.Fetch?
     /// This Mac's attachment files: a backup carries its documents' files, a restore stores the backup's (format 2).
     @ObservationIgnored private let blobs: (any AttachmentBlobStore)?
+    /// The removal watch file next to the vault (`SyncDependencies.watchFileURL`): a restored phone backup forgets it,
+    /// as Leave does, so a removal notice for the vault as it was never erases the restored one (nil: none, tests).
+    @ObservationIgnored private let removalWatch: URL?
     /// Runs after each write (reload the list, refresh Pro from the store).
     @ObservationIgnored var afterChange: () -> Void = {}
 
@@ -123,9 +144,10 @@ final class ImportExportModel {
          fallbackDeviceID: @escaping () throws -> String, appVersion: String = ImportExportModel.bundleVersion(),
          licenseKeys: [String: [UInt8]] = LicenseKeys.production, now: @escaping () -> Date = Date.init,
          random: any RandomSource = SystemRandomSource(), exchangeFetch: CredentialExchangeModel.Fetch? = nil,
-         local: (any LocalDataHosting)? = nil, blobs: (any AttachmentBlobStore)? = nil) {
+         local: (any LocalDataHosting)? = nil, blobs: (any AttachmentBlobStore)? = nil, removalWatch: URL? = nil) {
         self.local = local
         self.blobs = blobs
+        self.removalWatch = removalWatch
         self.store = store; self.isPro = isPro; self.gate = gate; self.fallbackDeviceID = fallbackDeviceID
         self.appVersion = appVersion; self.licenseKeys = licenseKeys; self.now = now; self.random = random
         self.exchangeFetch = exchangeFetch
@@ -139,14 +161,25 @@ final class ImportExportModel {
     }
 
     private var exporter: VaultExporter {
-        VaultExporter(store: store, isPro: isPro, appVersion: appVersion, fallbackDeviceID: fallbackDeviceID,
-                      now: now, random: random, blobs: blobs)
+        var exporter = VaultExporter(store: store, isPro: isPro, appVersion: appVersion, fallbackDeviceID: fallbackDeviceID,
+                                     now: now, random: random, blobs: blobs)
+        // Travel mode (feature pack §2): hidden items stay out of the unencrypted CSV and CXF files.
+        exporter.leftOut = MacAccess.exportLeftOut
+        return exporter
+    }
+
+    /// The line an unencrypted export adds while travel mode hides items; nil otherwise.
+    private func travelNote() -> String? {
+        guard let snap = try? store.load() else { return nil }
+        let hidden = MacAccess.exportLeftOut(snap).count
+        return hidden > 0 ? String(localized: "Travel mode is on: \(hidden) hidden items were left out of this file.") : nil
     }
 
     /// Drops everything held in memory (files, passwords asked for, the review): on lock and on Cancel.
     func reset() {
         pending = nil; backup = nil; review = nil; reviewSource = ""; passwordRequest = nil; mappingRequest = nil
         restore = nil; csvAuthorised = false; encryptedAuthorised = false; confirmingCSV = false
+        cxfAuthorised = false; choosingCXF = false; cxfChoices = []; cxfMessage = nil
     }
 
     // MARK: import
@@ -247,6 +280,7 @@ final class ImportExportModel {
                                        freeSlots: ImportReviewModel.freeSlots(snapshot: snap, isPro: isPro()),
                                        now: now, random: random)
             reviewSource = source
+            review?.source = source.lowercased()
         } catch {
             message = String(localized: "The vault could not be read for the import.")
         }
@@ -263,6 +297,9 @@ final class ImportExportModel {
             self.review = nil
             reviewSource = ""
             message = Self.summary(out, limitNote: review.limitNote)
+            if let journal = review.journal { saveJournal(journal) }
+            report = ImportUndo.report(review.journal, committed: (try? store.load()) ?? StoreSnapshot(),
+                                       skipped: review.skipReasons, now: Int64(now().timeIntervalSince1970))
             afterChange()
             return out
         } catch let e as ImportReviewError {
@@ -276,6 +313,38 @@ final class ImportExportModel {
     }
 
     func cancelReview() { reset() }
+
+    // MARK: Import report and undo (feature pack §6.1)
+
+    func closeReport() { report = nil }
+
+    /// Keeps the journal of the last import (one level: it replaces the one before) in the Mac-local data.
+    private func saveJournal(_ journal: ImportJournal) {
+        guard let local, var data = local.localData else { return }
+        data.lastImport = journal
+        try? local.commitLocalData(data)
+    }
+
+    /// The last import while it can still be undone (7 days) and Recently deleted is there to take its items.
+    var undoableImport: ImportJournal? {
+        guard moveToTrash != nil, let j = local?.localData?.lastImport,
+              j.isUndoable(now: Int64(now().timeIntervalSince1970)) else { return nil }
+        return j
+    }
+
+    /// Undoes the last import: what it added moves to Recently deleted, what it replaced gets its earlier version
+    /// back, and anything changed since is kept. The journal is removed afterwards.
+    func undoLastImport() {
+        guard let local, let journal = undoableImport, let moveToTrash, !busy else { return }
+        let outcome = ImportUndo.undo(journal, store: store, now: Int64(now().timeIntervalSince1970), moveToTrash: moveToTrash)
+        if !outcome.failed, var data = local.localData {
+            data.lastImport = nil
+            try? local.commitLocalData(data)
+        }
+        if outcome.trashed + outcome.restored > 0 { afterChange() }
+        report = nil
+        message = ImportUndo.message(outcome)
+    }
 
     /// Windows `import_summary_text`, shortened.
     nonisolated static func summary(_ o: ImportOutcome, limitNote: String) -> String {
@@ -403,6 +472,7 @@ final class ImportExportModel {
                     p = try plan(withoutFiles, snapshot: snap)
                 }
                 if p.changes { try commitMovingDeletionsToTrash(snap, p) }
+                if let removalWatch { try? FileManager.default.removeItem(at: removalWatch) }   // the next folder run writes it again
                 reset()
                 var text = Self.restoredMessage + " " + Self.previewLines(p, done: true).joined(separator: " · ") + "."
                 text += Self.fileLines(stored: stored, refused: refused, missing: max(0, p.filesMissing - refused))
@@ -563,12 +633,77 @@ final class ImportExportModel {
         csvAuthorised = false
         do {
             try write(Data(try exporter.csvText().utf8), to: url)
-            exportMessage = String(localized: "Saved \(url.lastPathComponent). The file is plain text: import it into the destination now, then delete it.")
+            let saved = String(localized: "Saved \(url.lastPathComponent). The file is plain text: import it into the destination now, then delete it.")
+            exportMessage = ([saved] + [travelNote()].compactMap { $0 }).joined(separator: "\n")
             return true
         } catch {
             exportMessage = String(localized: "The CSV file could not be created.")
             return false
         }
+    }
+
+    /// Lists the logins, notes and passkeys a CXF file can hold and shows the CXF warnings with that list.
+    func requestCXFExport() {
+        exportMessage = nil
+        cxfMessage = nil
+        do { cxfChoices = try exporter.cxfChoices() } catch {
+            cxfChoices = []
+            exportMessage = VaultExporter.cxfFailedMessage
+            return
+        }
+        choosingCXF = true
+    }
+
+    /// The sheet's Export: true when `ids` hold something a CXF file can carry, else `cxfMessage` says why
+    /// (checked before the master password is asked; no private key is read).
+    func checkCXFSelection(_ ids: [String]) -> Bool {
+        cxfMessage = nil
+        do {
+            try exporter.cxfCheck(ids: ids)
+            return true
+        } catch let e as CXFExport.Failure {
+            cxfMessage = VaultExporter.cxfFailure(e)
+        } catch {
+            cxfMessage = VaultExporter.cxfFailedMessage
+        }
+        return false
+    }
+
+    /// Once the sheet has closed: the master password, then the save panel, then the export of `ids` only.
+    /// A wrong or cancelled master password (or a cancelled panel) writes nothing.
+    func acceptCXFSelection(_ ids: [String], choose: @escaping @MainActor () -> URL?) {
+        choosingCXF = false
+        let asked = gate.confirmMasterPassword(title: Self.exportGateTitle, action: String(localized: "Export to a CXF file")) { [weak self] in
+            guard let self, let url = choose() else { return }
+            self.cxfAuthorised = true
+            self.exportTask = Task { await self.exportCXF(to: url, ids: ids) }
+        }
+        if !asked { exportMessage = Self.promptBusyMessage }
+    }
+
+    /// Writes the CXF file of `ids`; refused unless the warnings and the master password came first (once).
+    /// Passkey private keys are read only here.
+    @discardableResult
+    func exportCXF(to url: URL, ids: [String]) async -> Bool {
+        guard cxfAuthorised else {
+            exportMessage = String(localized: "Confirm your master password first.")
+            return false
+        }
+        cxfAuthorised = false
+        exportMessage = nil
+        do {
+            let result = try exporter.cxfData(ids: ids)
+            try write(result.data, to: url)
+            let saved = String(localized: "Saved \(url.lastPathComponent). The file is plain text: import it into the destination now, then delete it.")
+            exportMessage = ([saved] + result.diagnostics.map { VaultExporter.cxfDiagnostic($0) } + [travelNote()].compactMap { $0 })
+                .joined(separator: "\n")
+            return true
+        } catch let e as CXFExport.Failure {
+            exportMessage = VaultExporter.cxfFailure(e)
+        } catch {
+            exportMessage = VaultExporter.cxfFailedMessage
+        }
+        return false
     }
 
     private func write(_ data: Data, to url: URL) throws {
@@ -577,6 +712,8 @@ final class ImportExportModel {
         try data.write(to: url, options: .atomic)
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
+
+    static func cxfFileName(date: Date = Date()) -> String { VaultExporter.cxfFileName(date) }
 
     static func exportFileName(csv: Bool, date: Date = Date()) -> String {
         csv ? "LocalGateKeys-Export-\(VaultExporter.day(date)).csv" : "LocalGateKeys-Backup-\(VaultExporter.day(date)).lgkm"

@@ -12,7 +12,11 @@ afterEach(() => { delete window.pywebview; });
 const CENTER = {
   ok: true, score: 72, label: 'Good', headline: 'Good overall. Fixing the flagged logins below would bring you to 100.',
   issues: [{ key: 'weak', count: 1, title: 'Weak passwords', description: 'Alpha', tone: 'warning',
-    action: { label: 'Review 1', route: 'health', params: { filter: 'weak' } } }],
+    action: { label: 'Review 1', route: 'health', params: { filter: 'weak' } } },
+  { key: 'http', count: 2, title: 'Saved with a plain http:// address', description: 'These logins use an unencrypted address.',
+    tone: 'accent', action: { label: 'Review addresses', route: 'health', params: { filter: 'http' } } },
+  { key: 'passkey', count: 1, title: 'Passkey available', description: 'These sites support passkeys.',
+    tone: 'accent', action: { label: 'Review sites', route: 'health', params: { filter: 'passkey' } } }],
   panels: [{ title: 'Privacy', rows: [{ label: 'Breach checks', meta: 'Off', meta_tone: 'neutral',
     action: { label: 'Turn on', route: 'set', params: { key: 'breach_check_enabled', value: true } } }] }],
   footnote: 'Breach checks send only the first 5 characters of a password hash.',
@@ -20,7 +24,8 @@ const CENTER = {
 const REPORT = {
   ok: true, summary: '2 logins · 1 weak · 0 reused · 2 without 2FA · 0 older than a year',
   subtitle: 'Local pattern checks are guidance, not a guarantee.', footer: 'No check is performed automatically.',
-  filters: [{ label: 'All', key: null }, { label: 'Weak', key: 'weak' }],
+  filters: [{ label: 'All', key: null }, { label: 'Weak', key: 'weak' },
+    { label: 'Not HTTPS', key: 'http' }, { label: 'Passkey available', key: 'passkey' }],
   rows: [{ id: 'a1', label: 'Alpha', username: 'ann', score: 1, categories: ['weak'], findings: 'Weak', breach: 'Not checked' }],
   running: false,
 };
@@ -32,8 +37,54 @@ describe('SecurityPage', () => {
     render(SecurityPage, { onclose: vi.fn(), onroute });
     await fireEvent.click(await screen.findByRole('button', { name: 'Review 1' }));
     expect(onroute).toHaveBeenCalledWith('health', { filter: 'weak' });
+    await fireEvent.click(screen.getByRole('button', { name: 'Review addresses' }));
+    expect(onroute).toHaveBeenCalledWith('health', { filter: 'http' });
+    await fireEvent.click(screen.getByRole('button', { name: 'Review sites' }));
+    expect(onroute).toHaveBeenCalledWith('health', { filter: 'passkey' });
     await fireEvent.click(screen.getByRole('button', { name: 'Turn on' }));
     await waitFor(() => expect(api.security_set).toHaveBeenCalledWith('breach_check_enabled', true));
+  });
+});
+
+describe('Network activity', () => {
+  it('lists each connection with what for, host and result, and links to the privacy switches', async () => {
+    fakeApi({
+      security_center: vi.fn().mockResolvedValue(CENTER),
+      network_activity: vi.fn().mockResolvedValue({ ok: true, entries: [
+        { at: '2026-11-12T09:41:00Z', purpose: 'website_icon', host: 'alpha.test', result: 'ok' },
+        { at: '2026-11-12T09:12:00Z', purpose: 'breach_range', host: 'api.pwnedpasswords.com', result: 'http_503' },
+        { at: '2026-11-12T08:30:00Z', purpose: 'lan_sync', host: '', result: 'timeout' },
+      ], earlier: [{ purpose: 'website_icon', count: 4 }] }),
+    });
+    const onroute = vi.fn();
+    render(SecurityPage, { onclose: vi.fn(), onroute });
+    expect(await screen.findByText('Network activity')).toBeTruthy();
+    const rows = await screen.findAllByTestId('network-entry');
+    expect(rows).toHaveLength(3);
+    expect(rows[0].textContent).toContain('Website icon');
+    expect(rows[0].textContent).toContain('alpha.test');
+    expect(rows[1].textContent).toContain('Server answered 503');
+    expect(rows[2].textContent).toContain('Local network');
+    expect(rows[2].textContent).toContain('Timed out');
+    expect(screen.getByText(/Website icon: 4 in earlier sessions/)).toBeTruthy();
+    await fireEvent.click(screen.getByRole('button', { name: 'Open Privacy settings' }));
+    expect(onroute).toHaveBeenCalledWith('settings', { section: 'privacy' });
+  });
+
+  it('says so when nothing connected yet', async () => {
+    fakeApi({ security_center: vi.fn().mockResolvedValue(CENTER) });
+    render(SecurityPage, { onclose: vi.fn(), onroute: vi.fn() });
+    expect(await screen.findByText('No connections yet.')).toBeTruthy();
+  });
+
+  it('reloads when the Security center is shown again after Password health', async () => {
+    const api = fakeApi({ security_center: vi.fn().mockResolvedValue(CENTER),
+      network_activity: vi.fn().mockResolvedValue({ ok: true, entries: [], earlier: [] }) });
+    const view = render(SecurityPage, { onclose: vi.fn(), onroute: vi.fn(), active: true });
+    await waitFor(() => expect(api.network_activity).toHaveBeenCalledTimes(1));
+    await view.rerender({ active: false });
+    await view.rerender({ active: true });
+    await waitFor(() => expect(api.network_activity).toHaveBeenCalledTimes(2));
   });
 });
 
@@ -48,6 +99,36 @@ describe('HealthPage', () => {
     emit('job.progress', { job: 'health', text: 'Checking… 1 of 1 unique passwords' });
     expect(await screen.findByText('Checking… 1 of 1 unique passwords')).toBeInTheDocument();
     emit('job.done', { job: 'health', ok: true, message: 'Checked 1 unique passwords · 0 logins exposed · 0 errors.' });
+    await waitFor(() => expect(api.health_report).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe('HealthPage exposed to an AI agent', () => {
+  const AGENT = {
+    ...REPORT, filters: [...REPORT.filters, { label: 'Exposed to an AI agent', key: 'agent' }],
+    rows: [{ id: 'a1', kind: 'web', label: 'Alpha', username: 'ann', score: 3, categories: [], findings: '',
+      breach: 'Not checked', agent_exposure: 'Seen by Claude Code on 2026-11-12' },
+    { id: 's1', kind: 'api_key', label: 'Stripe', username: '', score: null, categories: [], findings: '', breach: '',
+      agent_exposure: 'Seen by Cursor on 2026-11-11' }],
+  };
+
+  it('lists logins and secrets with the agent, opens secrets in their editor and dismisses', async () => {
+    const api = fakeApi({ health_report: vi.fn().mockResolvedValue(AGENT), health_cancel: vi.fn().mockResolvedValue({ ok: true }),
+      agent_exposure_dismiss: vi.fn().mockResolvedValue({ ok: true, exposed: false }) });
+    const onopen = vi.fn();
+    const onchangepassword = vi.fn();
+    render(HealthPage, { filter: 'agent', onclose: vi.fn(), onopen, onchangepassword });
+    expect(await screen.findByText('Seen by Claude Code on 2026-11-12')).toBeInTheDocument();
+    expect(api.health_report).toHaveBeenCalledWith('agent');
+    await fireEvent.click(screen.getByText('Stripe'));
+    expect(screen.getByRole('button', { name: 'Change password' })).toBeDisabled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Open entry' }));
+    expect(onopen).toHaveBeenCalledWith('s1', 'api_key');
+    await fireEvent.click(screen.getByText('Alpha'));
+    await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
+    expect(onchangepassword).toHaveBeenCalledWith('a1');
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(api.agent_exposure_dismiss).toHaveBeenCalledWith('a1');
     await waitFor(() => expect(api.health_report).toHaveBeenCalledTimes(2));
   });
 });

@@ -337,12 +337,15 @@ def test_bridge_exposes_the_scan_sheet_calls():
     assert not {"qr_sheet_open", "qr_sheet_add", "qr_sheet_discard"} & bridge._NO_VAULT_LOCK
 
 
-def test_scan_entry_points_in_tools_and_the_palette():
+def test_scan_entry_points_in_import_export_and_the_palette():
+    from pathlib import Path
+
     from localvault.shell.commands import COMMANDS
     from localvault.shell.nav import TOOLS_ENTRIES
 
-    scan = next(e for e in TOOLS_ENTRIES if e.label == "Scan QR code")
-    assert scan.action == "scan_qr_clicked"
+    assert any(e.action == "import_export_clicked" for e in TOOLS_ENTRIES)
+    menu = Path(__file__).resolve().parents[1] / "webui/src/components/ImportExportMenu.svelte"
+    assert "route: 'scan-qr'" in menu.read_text(encoding="utf-8")
     command = next(c for c in COMMANDS if c.id == "scan-qr")
     assert command.title == "Scan QR code" and "2fa" in command.keywords
 

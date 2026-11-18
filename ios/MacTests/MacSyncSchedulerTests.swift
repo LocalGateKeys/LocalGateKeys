@@ -224,11 +224,16 @@ final class MacSyncSchedulerTests: XCTestCase {
         try localEdit(lock, 1); try localEdit(lock, 2)
         let (keep, _) = note(1), (gone, _) = note(2)
         var data = try XCTUnwrap(lock.localData)
-        data.ensureStarterCollections(now: 1_800_000_000)
-        let collection = try XCTUnwrap(data.collections.first).id
         data.reminders = [keep, gone].map { LocalData.Reminder(id: UUID().uuidString.lowercased(), itemID: $0, dueDate: "2030-01-01") }
-        data.memberships = [keep: [collection], gone: [collection]]
         try lock.commitLocalData(data)
+        // Both notes are in a collection (sub-plan 07: in the store).
+        let made = try CollectionCatalog.create(name: "Bills", in: try store.load(), now: 1_800_000_000)
+        try store.commit(made.change)
+        let collection = made.id
+        for id in [keep, gone] {
+            try store.commit(try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: id, kind: "note", to: [collection],
+                                                                                in: try store.load())))
+        }
 
         // A peer's merge (a sync commit) deletes item 2.
         let source = SyncSourceStore(base: try XCTUnwrap(store as? PublishingItemStore), local: lock)
@@ -241,16 +246,19 @@ final class MacSyncSchedulerTests: XCTestCase {
 
         let list = VaultListModel(store: store)
         let reminders = RemindersModel(local: lock, notifier: nil, activity: nil)
-        let collections = CollectionsModel(local: lock, activity: nil)
+        let collections = MacCollectionsModel(store: store, local: lock, activity: nil)
         var proSnapshots: [StoreSnapshot] = []
         MainWindow.afterSync(store: store, list: list, reminders: reminders, collections: collections,
                              updatePro: { proSnapshots.append($0) })
         XCTAssertEqual(list.items.map(\.id), [keep])
         XCTAssertEqual(lock.localData?.reminders.map(\.itemID), [keep])
-        // The synced delete moved item 2 to Recently deleted, so (as for a local delete) its collection
-        // membership is kept for a restore; only items gone from both are pruned.
-        XCTAssertEqual(lock.localData?.trash.count, 1)
-        XCTAssertEqual(lock.localData?.memberships, [keep: [collection], gone: [collection]])
+        // The synced delete moved item 2 to Recently deleted with its collection (restored with it, as for a local
+        // delete); the collections now list only the live note.
+        let trash = try XCTUnwrap(lock.localData?.trash)
+        XCTAssertEqual(trash.count, 1)
+        XCTAssertEqual(try trash[0].record().objectValue?["collection_ids"], .array([.string(collection)]))
+        XCTAssertEqual(collections.memberships, [keep: [collection]])
+        XCTAssertEqual(collections.count(of: collection), 1)
         XCTAssertEqual(proSnapshots.map(\.revision), [try store.load().revision], "Pro is re-read from the synced store")
         lock.lock()
     }

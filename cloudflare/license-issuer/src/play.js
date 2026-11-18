@@ -172,32 +172,79 @@ export async function verifyGoogleOidc(authHeader, audience, account, fetchImpl,
 }
 
 export const VOIDED_CURSOR_KEY = "play:voided:cursor";
+// Where a run that stopped early left off: {start, token, newest} (scan F5).
+export const VOIDED_RESUME_KEY = "play:voided:resume";
 export const PLAY_ORDER_ID = /^[A-Za-z0-9._-]{1,64}$/;
 // The Voided Purchases API looks back at most 30 days.
 const VOIDED_LOOKBACK_MS = 30 * 24 * 3600 * 1000;
+// Per run: a cron invocation has 15 minutes of wall time and a CPU limit, and
+// every entry costs a few D1 and KV writes. A bigger backlog resumes next run.
 const VOIDED_MAX_PAGES = 20;
+const VOIDED_BUDGET_MS = 5 * 60 * 1000;
 
 // One adjustment id per order, so a push and the cron overwrite the same record.
 export function revokePlayOrder(env, orderId, occurredAt, now = Date.now()) {
   return revokeStoreClaim(env, "play_claims", orderId, { adjustmentId: `void-${orderId}`, action: "refund", occurredAt }, now);
 }
 
+function readResume(text) {
+  try {
+    const value = JSON.parse(text ?? "null");
+    if (
+      value !== null &&
+      Number.isFinite(value.start) &&
+      Number.isFinite(value.newest) &&
+      typeof value.token === "string" &&
+      value.token !== ""
+    ) {
+      return value;
+    }
+  } catch {
+    // unreadable: start over from the cursor
+  }
+  return null;
+}
+
 // Daily backstop for missed pushes: reads voided purchases since the stored
 // cursor, revokes each order (claimed or not), and advances the cursor to the
-// newest voided time seen. Returns the number of voided purchases handled.
-export async function syncVoided(env, fetchImpl, now = Date.now()) {
+// newest voided time seen. A run stops after `maxPages` pages or `budgetMs` of
+// wall time; it then keeps the cursor, saves the next page token (and the
+// query's start time) in VOIDED_RESUME_KEY, calls `onIncomplete(resume)`, and the
+// next run goes on from that page, so no entry is skipped (scan F5). The saved
+// start time may by then be past the 30-day lookback; if Google refuses the saved
+// token, the run starts the query again from its first page, at the saved start
+// or the lookback limit, whichever is later (revoking is idempotent). Returns the number of voided purchases handled.
+export async function syncVoided(env, fetchImpl, now = Date.now(), options = {}) {
+  const { maxPages = VOIDED_MAX_PAGES, budgetMs = VOIDED_BUDGET_MS, clock = Date.now, onIncomplete = null } = options;
+  const began = clock();
+  const floor = now - VOIDED_LOOKBACK_MS + 60000;
   const stored = Number(await env.LICENSES.get(VOIDED_CURSOR_KEY));
-  const start = Math.max(Number.isFinite(stored) && stored > 0 ? stored : 0, now - VOIDED_LOOKBACK_MS + 60000);
+  const resumeText = await env.LICENSES.get(VOIDED_RESUME_KEY);
+  const resume = readResume(resumeText);
+  let start = resume ? resume.start : Math.max(Number.isFinite(stored) && stored > 0 ? stored : 0, floor);
   const accessToken = await playAccessToken(env, fetchImpl, now);
-  let newest = start;
+  let newest = resume ? Math.max(resume.newest, start) : start;
   let handled = 0;
-  let pageToken = null;
-  for (let page = 0; page < VOIDED_MAX_PAGES; page++) {
+  let pageToken = resume ? resume.token : null;
+  let resumed = pageToken !== null;
+  for (let page = 0; ; page++) {
+    if (page >= maxPages || clock() - began >= budgetMs) break;
     const params = new URLSearchParams({ startTime: String(start), type: "0" });
     if (pageToken) params.set("token", pageToken);
-    const result = await call(fetchImpl, `${PLAY_API}/purchases/voidedpurchases?${params}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    let result;
+    try {
+      result = await call(fetchImpl, `${PLAY_API}/purchases/voidedpurchases?${params}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    } catch (error) {
+      if (!(resumed && error instanceof PlayError && error.code === "invalid")) throw error;
+      console.warn("license-issuer: saved Play voided-purchases page token refused; restarting that query");
+      resumed = false;
+      pageToken = null;
+      start = Math.max(start, floor);
+      continue;
+    }
+    resumed = false;
     for (const voided of result.voidedPurchases ?? []) {
       if (typeof voided.orderId !== "string" || !PLAY_ORDER_ID.test(voided.orderId)) continue;
       const at = Number(voided.voidedTimeMillis);
@@ -208,6 +255,15 @@ export async function syncVoided(env, fetchImpl, now = Date.now()) {
     pageToken = result.tokenPagination?.nextPageToken ?? null;
     if (!pageToken) break;
   }
+  if (pageToken) {
+    // Stopped early: the cursor stays, so nothing on the pages not read yet is lost.
+    const next = { start, token: pageToken, newest };
+    await env.LICENSES.put(VOIDED_RESUME_KEY, JSON.stringify(next));
+    console.error(`license-issuer: Play voided-purchases run stopped early after ${handled} entries; the next run continues`);
+    if (onIncomplete) await onIncomplete(next);
+    return handled;
+  }
   await env.LICENSES.put(VOIDED_CURSOR_KEY, String(newest));
+  if (resumeText !== null) await env.LICENSES.delete(VOIDED_RESUME_KEY);
   return handled;
 }

@@ -10,21 +10,52 @@ enum MacAppEnvironment {
         #if DEBUG
         // Debug builds only: point the app at a throwaway vault (screenshots, manual checks).
         if let path = ProcessInfo.processInfo.environment["LGK_MAC_VAULT_DIR"], !path.isEmpty {
+            // A relative path sits in the app's own temporary folder: the sandboxed UI test runner cannot hand the
+            // app a folder of its own (MacUITests).
+            if !path.hasPrefix("/") { return FileManager.default.temporaryDirectory.appendingPathComponent(path, isDirectory: true) }
             return URL(fileURLWithPath: path, isDirectory: true)
         }
         #endif
-        if let dir = try? AppGroup.vaultDirectory() { return dir }
+        if let registry = ProfileRegistry.shared() { return registry.vaultDirectory(for: ProfileScope.currentID) }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("LocalGateKeys/Vault", isDirectory: true)
     }
 
+    /// The active profile's Touch ID item.
+    static func biometricStore() -> SystemBiometricKeyStore {
+        SystemBiometricKeyStore(accessGroup: AppGroup.keychainAccessGroup, accountPrefix: ProfileScope.keychainPrefix)
+    }
+
+    /// The one-time erased notice was read: it and the kept-backups paths it showed go.
+    static func dismissRemovalNotice() {
+        AppSettings.shared.syncRemovalErasedAt = nil
+        AppSettings.shared.syncRemovalKeptBackups = nil
+    }
+
     static func makeLockModel() -> MacLockModel {
-        let vault = MacVault(directory: vaultDirectory(), keychain: MacSyncEnvironment.keychain,
-                             biometric: SystemBiometricKeyStore(accessGroup: AppGroup.keychainAccessGroup))
-        let model = MacLockModel(vault: vault, settings: .shared, events: MacSystemEvents())
+        let vault = MacVault(directory: vaultDirectory(), keychain: MacSyncEnvironment.keychain, biometric: biometricStore())
+        // Duress password (sub-plan 08): the hold and the session marker are mirrored into the Safari group for the
+        // Safari extension; this profile's state is what it sees from now on (also after a profile switch).
+        vault.duressMirror = SafariSaveFiles.duressMirror()
+        vault.makeDuress().syncMirror()
+        let model = MacLockModel(vault: vault, settings: .shared, events: MacSystemEvents(), yubiKeyPrompt: .shared)
+        // A duress unlock opened the second vault: nothing of the real vault may show or wait for the window. Its
+        // reminder notifications go (the next real unlock schedules them again), opened document copies are deleted,
+        // and menu bar and Settings requests made before the unlock are dropped.
+        model.onUnlock.append { [weak model] in
+            guard let model, model.isSecondSession else { return }
+            Task { await notifier.removeAll() }
+            MacDocumentOpen.sweep()
+            QuickAccessBridge.shared.pending = nil
+            QuickAccessBridge.shared.pendingPage = nil
+        }
         // Locking clears a copied secret, if the pasteboard still holds it; a pending strict-login release is
         // dropped by the window's gate (MainWindow) and verifyPassword refuses across a lock.
         model.onLock.append { MacClipboard.shared.clearIfOurs() }
+        // Documents opened in other apps (MacDocumentOpen) are deleted at the latest when the vault locks.
+        model.onLock.append { MacDocumentOpen.sweep() }
+        // Settings › Backups › Automatic backups to keep: a copy after each save (MacAutomaticBackups).
+        MacAutomaticBackups.wire(lock: model)
         // Breach results are memory-only and dropped on lock; a running check is cancelled.
         security.clear(on: model)
         // Revealed recovery codes, hidden custom field values and previous passwords are hidden again.
@@ -36,18 +67,38 @@ enum MacAppEnvironment {
         model.identities = identities
         wireReminderReset(model: model) { await identities.removeAll() }
         // Safari: the index follows every commit; the inbox is reviewed after each unlock (MainWindow).
-        model.safariIndex = SafariIndexPublisher(keychain: safariKeychain)
+        // Travel mode (feature pack §2.3): hidden items are left out of the index the extension reads.
+        model.safariIndex = MacTravelSafariIndex(base: SafariIndexPublisher(keychain: safariKeychain))
         model.onLock.append { safari.locked() }
         // Sync: at unlock, every 5 minutes and 10 s after an edit; shut down (listener stopped) on lock.
         syncScheduler = MacSyncScheduler(lock: model, settings: .shared)
         syncScheduler?.hostingAllowed = { pro.isPro }   // hosting needs Pro; joining is free
+        // Item history keeps more versions with Pro (feature pack §1).
+        model.historyIsPro = { pro.isPro }
         // Scheduled backups: at unlock, on wake and every 15 minutes while unlocked; the secret and the folders sit in
         // the app-only Keychain group (none in a build without it: scheduled backups are unavailable then).
         let schedule = BackupScheduleModel(keychain: MacSyncEnvironment.syncKeychain,
                                            secrets: { [weak model] in model?.scheduleSecrets }, passwords: model)
         backupSchedule = schedule
         backupScheduler = MacBackupScheduler.live(lock: model, model: schedule)
+        // Removal from sync: a verified signed notice erases this Mac ("Erase this device if it is removed from
+        // sync", default on), checked at launch, every 5 minutes (also while locked) and after a sync run.
+        let removal = MacRemovalGuard(lock: model, settings: .shared, keychain: MacSyncEnvironment.syncKeychain,
+                                      eraser: .live(directory: model.vaultDirectory))
+        removal.currentCoordinator = { syncScheduler?.coordinator }
+        removalGuard = removal
+        removal.start()
+        // Received shared items: verified revoke notices in the sync folder (best effort; empty without sync).
+        shareInbox.revokedIDs = { [weak model] in
+            guard let model, !model.isSecondSession else { return [] }   // the second vault does not sync
+            return ShareRevokedReader.read(watchURL: SyncDependencies.watchFileURL(in: model.vaultDirectory),
+                                           keychain: MacSyncEnvironment.syncKeychain)
+        }
         lockState = model
+        // Settings › Developer › SSH agent (off by default): the socket runs while it is on, also while locked.
+        MacSSHAgent.shared.applySetting()
+        // Settings › Developer › Allow AI agents (off by default): `lgk mcp` and the Safari fill sockets.
+        MacAgentGate.shared.applySetting()
         return model
     }
 
@@ -68,6 +119,8 @@ enum MacAppEnvironment {
     /// Scheduled backups for the whole app (settings, status and the runner).
     static var backupSchedule: BackupScheduleModel?
     static var backupScheduler: MacBackupScheduler?
+    /// The removal check and erase for the whole app.
+    static var removalGuard: MacRemovalGuard?
     /// The lock model the Security centre checks before any request.
     nonisolated(unsafe) static weak var lockState: MacLockModel?
 
@@ -86,12 +139,13 @@ enum MacAppEnvironment {
     /// Reminder notifications through the real notification centre (scheduling starts at the first unlock).
     static let notifier = ReminderNotifier(centre: SystemNotificationCentre(), settings: .shared)
 
-    static var touchIDAvailable: Bool { SystemBiometricKeyStore(accessGroup: AppGroup.keychainAccessGroup).isAvailable }
+    static var touchIDAvailable: Bool { biometricStore().isAvailable }
 }
 
 /// Switches between the create, lock and unlocked screens; any key or mouse event in the app counts as activity.
 struct MacRootView: View {
     @Bindable var model: MacLockModel
+    @Bindable var session: MacProfileSession
     @State private var monitor: Any?
 
     var body: some View {
@@ -125,6 +179,11 @@ struct MacRootView: View {
         }
         // A purchase, or a desktop licence received through sync: Wi-Fi hosting may start (or stop).
         .onChange(of: MacAppEnvironment.pro.isPro) { _, _ in MacAppEnvironment.syncScheduler?.proChanged() }
+        // Once, after this Mac erased itself because another device removed it from sync.
+        .alert(DeviceRemoval.erasedTitle, isPresented: Binding(get: { model.state == .noVault && AppSettings.shared.syncRemovalErasedAt != nil },
+                                                               set: { if !$0 { MacAppEnvironment.dismissRemovalNotice() } })) {
+            Button("OK") { MacAppEnvironment.dismissRemovalNotice() }
+        } message: { Text(DeviceRemoval.erasedMessage(keptFolders: AppSettings.shared.syncRemovalKeptBackups)) }
         .onAppear {
             monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown, .scrollWheel, .mouseMoved]) { event in
                 MainActor.assumeIsolated { model.noteActivity() }
@@ -146,15 +205,18 @@ struct MacRootView: View {
 
     @ViewBuilder private var screen: some View {
         switch model.state {
-        case .noVault: CreateVaultView(model: model, touchIDAvailable: MacAppEnvironment.touchIDAvailable)
+        case .noVault: CreateVaultView(model: model, session: session, touchIDAvailable: MacAppEnvironment.touchIDAvailable)
                 .frame(minWidth: 720, minHeight: 480)
-        case .locked: UnlockView(model: model).frame(minWidth: 720, minHeight: 480)
+        case .locked: UnlockView(model: model, session: session).frame(minWidth: 720, minHeight: 480)
         case .unlocked:
             if let store = model.store {
+                // Inside a duress session (sub-plan 08): no reminder notifications, no Safari inbox review (it holds
+                // logins saved for the real vault) and no scheduled backups (they back up the real vault).
                 MainWindow(store: store, passwords: model, strengthCache: model.strengthCache,
-                           reminders: model.localData?.reminders ?? [], local: model, activity: model.activity, notifier: MacAppEnvironment.notifier,
-                           safari: MacAppEnvironment.safari, sync: MacAppEnvironment.syncScheduler,
-                           profile: model.desktopProfile, schedule: MacAppEnvironment.backupSchedule,
+                           reminders: model.localData?.reminders ?? [], local: model, activity: model.activity,
+                           notifier: model.isSecondSession ? nil : MacAppEnvironment.notifier,
+                           safari: model.isSecondSession ? nil : MacAppEnvironment.safari, sync: MacAppEnvironment.syncScheduler,
+                           profile: model.desktopProfile, schedule: model.isSecondSession ? nil : MacAppEnvironment.backupSchedule,
                            isUnlocked: { model.state == .unlocked },
                            autoLockRemaining: { model.autoLockRemaining }, onLock: { model.lock() })
                     .overlay(alignment: .top) {
@@ -178,8 +240,23 @@ struct MacRootView: View {
                                 .frame(maxWidth: 640)
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
+                            if let notice = model.factorNotice {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "touchid")
+                                    Text(notice).font(.callout).fixedSize(horizontal: false, vertical: true)
+                                    Button("OK") { model.factorNotice = nil }
+                                }
+                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .frame(maxWidth: 640)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            }
                         }
                         .padding(.top, 44)
+                    }
+                    // A password check that needs the YubiKey (Settings, a strict login, a backup) shows its touch
+                    // prompt here, below any sheet.
+                    .overlay(alignment: .bottom) {
+                        YubiKeyTouchBanner(prompt: model.yubiKeyPrompt).frame(maxWidth: 460).padding(16)
                     }
             }
         }
@@ -211,22 +288,28 @@ enum MacShellPreview {
     /// Recently deleted and activity in memory; `LGK_MAC_TRASH=<title>,<title>` deletes those demo items first.
     static let local: InMemoryLocalData = {
         let local = InMemoryLocalData()
-        // `LGK_MAC_COLLECTIONS=1` adds the starter collections, puts demo items in Personal and Travel and tags them.
-        if let store, ProcessInfo.processInfo.environment["LGK_MAC_COLLECTIONS"] == "1", var data = local.localData {
-            data.ensureStarterCollections(now: Int64(Date().timeIntervalSince1970))
-            let byName = Dictionary(uniqueKeysWithValues: data.collections.map { ($0.name, $0.id) })
+        // `LGK_MAC_COLLECTIONS=1` adds the starter collections to the store, puts demo items in Personal and Travel and
+        // tags them.
+        if let store, ProcessInfo.processInfo.environment["LGK_MAC_COLLECTIONS"] == "1",
+           let snap = try? store.load(), let made = try? CollectionCatalog.starters(in: snap, now: Int64(Date().timeIntervalSince1970)) {
+            if let change = made.change { try? store.commit(change) }
+            let current = (try? store.load()) ?? StoreSnapshot()
+            let byName = Dictionary(CollectionCatalog.collections(in: current).map { ($0.name, $0.id) }, uniquingKeysWith: { a, _ in a })
             let plan: [(String, [String], [String])] = [
                 ("Wi-Fi at home", ["Personal"], ["home", "network"]), ("Home Wi-Fi", ["Personal"], ["home"]),
                 ("Door code", ["Personal"], ["home"]), ("Passport", ["Travel", "Personal"], ["documents"]),
                 ("Driving licence", ["Travel"], ["documents"]),
             ]
-            let items = VaultItem.items(from: (try? store.load()) ?? StoreSnapshot())
+            let items = VaultItem.items(from: current)
             for (title, names, tags) in plan {
                 guard let item = items.first(where: { $0.title == title }) else { continue }
-                data.memberships[item.id] = names.compactMap { byName[$0] }
                 edit(title: title, in: store) { $0["tags"] = .array(tags.map(JSONValue.string)) }
+                if let now = try? store.load(),
+                   let change = try? CollectionCatalog.setMemberships(itemID: item.id, kind: item.kind,
+                                                                      to: names.compactMap { byName[$0] }, in: now) {
+                    try? store.commit(change)
+                }
             }
-            try? local.commitLocalData(data)
         }
         // `LGK_MAC_REMINDERS=1` adds reminders to the first typed demo items (overdue, today, upcoming, snoozed).
         if let store, ProcessInfo.processInfo.environment["LGK_MAC_REMINDERS"] == "1", var data = local.localData {
@@ -297,7 +380,7 @@ enum MacShellPreview {
     private static func edit(title: String, in store: any ItemStore, _ change: (inout [String: JSONValue]) -> Void) {
         guard var snap = try? store.load() else { return }
         for (id, w) in snap.records {
-            guard case .object(var wrapper) = w, case .string(let nsRaw)? = wrapper["ns"], let ns = Namespace(rawValue: nsRaw),
+            guard case .object(var wrapper) = w, case .string(let nsRaw)? = wrapper["ns"], let ns = Namespace(rawValue: nsRaw), ns != .heir,
                   case .object(var record)? = wrapper["record"], VaultItem(id: id, record: record)?.title == title else { continue }
             change(&record)
             guard let normal = try? Normalise.normalForm(ns: ns, record: .object(record)) else { return }

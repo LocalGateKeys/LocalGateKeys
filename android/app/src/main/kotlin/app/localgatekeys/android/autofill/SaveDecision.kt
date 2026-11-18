@@ -4,19 +4,20 @@ import app.localgatekeys.android.R
 import app.localgatekeys.android.i18n.Txt
 import androidx.annotation.StringRes
 import app.localgatekeys.android.editor.EditorModel
+import app.localgatekeys.android.editor.WebsiteInput
 import app.localgatekeys.android.pro.ItemLimit
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Casefold
 import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.records.Namespace
 import app.localgatekeys.core.records.Normalise
-import app.localgatekeys.core.records.Origin
 import app.localgatekeys.core.records.PasswordHistory
 import app.localgatekeys.core.records.PyStrip
 import app.localgatekeys.core.records.UrlMatcher
 import app.localgatekeys.core.records.Wrapper
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
+import app.localgatekeys.core.sync.itemRecords
 
 /** What the save sheet offers for a login the person just typed. */
 sealed interface SaveDecision {
@@ -37,7 +38,7 @@ sealed interface SaveDecision {
 
         private fun sameUser(a: String, b: String): Boolean = Casefold.fold(PyStrip.strip(a)) == Casefold.fold(PyStrip.strip(b))
 
-        private fun live(s: StoreSnapshot): List<Pair<String, Map<String, JsonValue>>> = s.records.entries.mapNotNull { (id, w) ->
+        private fun live(s: StoreSnapshot): List<Pair<String, Map<String, JsonValue>>> = s.itemRecords.entries.mapNotNull { (id, w) ->
             if (s.meta[id]?.deleted == true) return@mapNotNull null
             val f = (w as? JsonValue.Obj)?.fields ?: return@mapNotNull null
             if (f["ns"] != JsonValue.Str(Namespace.ENTRY.wire)) return@mapNotNull null
@@ -74,7 +75,8 @@ sealed interface SaveDecision {
 
         /** A new web login in normal form (throws `NormaliseException` / `OriginException` for a bad website). */
         fun newRecord(website: String, username: String, password: String, now: Long, random: RandomSource): JsonValue {
-            val origin = Origin.canonicalize(Origin.originOf(PyStrip.strip(website)))
+            // The item editor's rules: a bare "shop.example.com" gets https://, as the user expects.
+            val origin = WebsiteInput.origin(website)
             val r = LinkedHashMap(EditorModel.newRecord(app.localgatekeys.android.editor.EditorKind.WEB, now, random))
             r["label"] = JsonValue.Str(titleFor(origin))
             r["username"] = JsonValue.Str(username)

@@ -61,7 +61,7 @@ def test_page_has_every_section_in_classic_order(env):
     service, *_ = env
     page = service.page()
     assert [s["key"] for s in page["sections"]] == ["locking", "unlocking", "privacy", "autofill", "appearance",
-                                                    "backups", "plan", "help"]
+                                                    "backups", "plan", "developer", "help"]
     locking = page["sections"][0]
     first = locking["rows"][0]
     assert first["type"] == "choice" and first["key"] == "auto_lock_seconds"
@@ -115,7 +115,11 @@ def test_start_with_windows_and_appearance_side_effects(env):
     assert ("appearance", {"appearance": target}) in bus.events
 
 
-def test_backup_password_set_and_clear(env):
+def test_backup_password_set_and_remove(env, monkeypatch):
+    import localvault.backup as backup_module
+
+    monkeypatch.setattr(backup_module, "BACKUP_KDF", {**backup_module.BACKUP_KDF, "time_cost": 1,
+                                                      "memory_cost_kib": 8192, "parallelism": 1})
     service, controller, port, _bus, _saved, _ = env
     with pytest.raises(ApiError) as short:
         service.backup_password("short", "short")
@@ -123,14 +127,25 @@ def test_backup_password_set_and_clear(env):
     with pytest.raises(ApiError) as mismatch:
         service.backup_password("long enough pw 1", "long enough pw 2")
     assert mismatch.value.message == "The backup passwords do not match."
-    assert service.backup_password("long enough pw 1", "long enough pw 1")["message"] == \
-        "Backup password saved inside the encrypted vault."
-    assert controller.session.has_scheduled_backup_password()
+    with pytest.raises(ApiError):  # the master password is not a backup password
+        service.backup_password(MASTER, MASTER)
+    assert service.backup_password("long enough pw 1", "long enough pw 1")["message"].startswith(
+        "Backup password set.")
+    record = controller.session.scheduled_backup_key()
+    assert record is not None and record["set_by"] == "set"
+    assert "scheduled_backup_password" not in controller.session._require_payload()["preferences"]
     page = json.dumps(service.page())
     assert "long enough pw 1" not in page
-    assert service.clear_backup_password()["message"] == "Backup password cleared. Scheduled backups are off."
-    assert port.asked == ["Clear backup password?"]
-    assert not controller.session.has_scheduled_backup_password()
+    # A second set over an existing key is refused: only a change (old password) or a reset (phrase) replaces it.
+    with pytest.raises(ApiError):
+        service.backup_password("another long pw 2", "another long pw 2")
+    with pytest.raises(ApiError):  # removing needs proof
+        service.remove_backup_key(None, None)
+    with pytest.raises(ApiError):
+        service.remove_backup_key("wrong backup pw!", None)
+    assert service.remove_backup_key("long enough pw 1", None)["message"].startswith("Backup password removed.")
+    assert "Remove backup password?" in port.asked
+    assert not controller.session.has_scheduled_backup_key()
 
 
 def test_a_failed_save_is_an_error_not_a_crash(env, monkeypatch):

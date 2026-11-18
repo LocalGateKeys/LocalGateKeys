@@ -45,7 +45,8 @@ final class MemoryStore: ItemStore, @unchecked Sendable {
         guard change.baseRevision == snapshot.revision else {
             throw LocalStoreError.stale(expected: change.baseRevision, actual: snapshot.revision)
         }
-        snapshot = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: snapshot.revision + 1)
+        snapshot = StoreSnapshot(records: change.records, meta: change.meta, sync: change.sync, revision: snapshot.revision + 1,
+                                 keptIdentity: change.keptIdentity(after: snapshot.keptIdentity))
         commits += 1
     }
 }

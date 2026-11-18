@@ -17,7 +17,8 @@ internal object KeyringJoin {
      * [ring] (authenticated under [gk]) plus [identity] and its wrap; `prev_mac` carried over.
      * Written as format 2: the new entry lists this device's signing key and proof, a format-1
      * member gets null `signing_public` / `signing_proof`. Draws the device wrap (eph 32, nonce 12),
-     * then the name nonce (12); the proof (Ed25519) draws nothing.
+     * then the name nonce (12); the proof (Ed25519) draws nothing. [replace]: the index of this device's own entry,
+     * rewritten in place instead of a new entry added (a rejoin with the same keys).
      */
     private fun withMember(
         ring: JsonValue,
@@ -26,6 +27,7 @@ internal object KeyringJoin {
         name: String,
         random: RandomSource,
         now: UnixClock,
+        replace: Int? = null,
     ): JsonValue {
         val addedAt = now.now
         if (addedAt < 0 || addedAt > Keyring.MAX_INT) throw KeyringException("bad-fields", "added_at")
@@ -44,8 +46,10 @@ internal object KeyringJoin {
                 "added_at" to JsonValue.Int(addedAt),
             ),
         )
-        body["format"] = JsonValue.Int(Keyring.FORMAT) // a format-1 keyring is written back as format 2
-        body["members"] = JsonValue.Arr(arr(body["members"]).map(::asFormat2) + entry)
+        // A format-1 keyring is written back as format 2; a share v2 keyring (format 3) stays format 3.
+        body["format"] = JsonValue.Int(maxOf(Keyring.FORMAT, int(obj(ring)["format"]) ?: Keyring.FORMAT))
+        val members = arr(body["members"]).map(::asFormat2)
+        body["members"] = JsonValue.Arr(if (replace == null) members + entry else members.toMutableList().also { it[replace] = entry })
         val wraps = LinkedHashMap(obj(body["device_wraps"]))
         wraps[identity.deviceId] = wrap
         body["device_wraps"] = JsonValue.Obj(wraps)
@@ -66,8 +70,50 @@ internal object KeyringJoin {
         }
     }
 
-    /** The password key is derived only after the cheap checks. */
+    /**
+     * The password key is derived only after the cheap checks. [share]: [ring] may be a share keyring; its metadata
+     * and owner signature are carried unchanged (the new member stays unapproved until the owner signs again).
+     */
     fun join(
+        ring: JsonValue,
+        identity: DeviceIdentity,
+        name: String,
+        random: RandomSource,
+        now: UnixClock,
+        share: Boolean = false,
+        passwordKey: () -> ByteArray,
+    ): Pair<JsonValue, GroupKey> {
+        KeyringParse.verifyStructure(ring, share)
+        checkIdentity(identity)
+        MemberNames.checkName(name)
+        val members = arr(obj(ring)["members"])
+        if (members.any { str(obj(it)["device_id"]) == identity.deviceId }) {
+            throw KeyringException("already-member", "device is already a member")
+        }
+        if (members.size >= Keyring.MAX_MEMBERS) throw KeyringException("too-many-members", "the group already has 16 devices")
+        val gk = Keyring.unwrap(ring, passwordKey())
+        if (!Keyring.macOk(ring, gk)) throw KeyringException("tampered", "keyring MAC does not verify under the group key")
+        return Pair(withMember(ring, gk, identity, name, random, now), gk)
+    }
+
+    /**
+     * True when [member] (a keyring member entry) is [identity]'s own: the same exchange key, and the same signing key
+     * when the entry lists one (a format-1 entry lists none).
+     */
+    fun sameKeys(member: JsonValue, identity: DeviceIdentity): Boolean {
+        val m = obj(member)
+        if (str(m["exchange_public"]) != Base64Std.encode(identity.exchangePublicKey)) return false
+        val signing = m["signing_public"]
+        return signing == null || signing == JsonValue.Null || str(signing) == Base64Std.encode(identity.signingPublicKey)
+    }
+
+    /**
+     * A device that left the group joins it again with its kept [identity] (design 2026-11-17, rule 6): its entry, still
+     * listed with the same keys ([sameKeys]), is rewritten in place as [join] writes a new one (wrap, name, proof), so the
+     * group keeps one member for it. Another device under this id is `already-member`. The password key is derived only
+     * after the cheap checks; draws as [join].
+     */
+    fun rejoin(
         ring: JsonValue,
         identity: DeviceIdentity,
         name: String,
@@ -79,13 +125,13 @@ internal object KeyringJoin {
         checkIdentity(identity)
         MemberNames.checkName(name)
         val members = arr(obj(ring)["members"])
-        if (members.any { str(obj(it)["device_id"]) == identity.deviceId }) {
-            throw KeyringException("already-member", "device is already a member")
+        val index = members.indexOfFirst { str(obj(it)["device_id"]) == identity.deviceId }
+        if (index < 0 || !sameKeys(members[index], identity)) {
+            throw KeyringException("already-member", "another device is listed under this device id")
         }
-        if (members.size >= Keyring.MAX_MEMBERS) throw KeyringException("too-many-members", "the group already has 16 devices")
         val gk = Keyring.unwrap(ring, passwordKey())
         if (!Keyring.macOk(ring, gk)) throw KeyringException("tampered", "keyring MAC does not verify under the group key")
-        return Pair(withMember(ring, gk, identity, name, random, now), gk)
+        return Pair(withMember(ring, gk, identity, name, random, now, replace = index), gk)
     }
 
     fun attach(

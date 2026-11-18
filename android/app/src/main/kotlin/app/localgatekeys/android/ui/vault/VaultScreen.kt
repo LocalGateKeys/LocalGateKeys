@@ -5,16 +5,33 @@ import androidx.compose.ui.res.stringResource
 
 import app.localgatekeys.android.i18n.rememberTxt
 import androidx.compose.foundation.layout.Arrangement
+import app.localgatekeys.android.ui.theme.lgkGlass
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.ui.unit.Dp
 import app.localgatekeys.android.sync.SyncStatusSummary
-import app.localgatekeys.android.ui.onboarding.SetupCard
+import app.localgatekeys.android.ui.onboarding.SetupChip
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import app.localgatekeys.android.ui.sync.SyncStatusPill
 import app.localgatekeys.android.ui.shell.FloatingTabBarBottomGap
 import app.localgatekeys.android.ui.shell.FloatingTabBarHeight
@@ -104,6 +121,16 @@ data class VaultSeams(
     val commands: List<app.localgatekeys.android.vault.SearchCommand> = emptyList(),
     /** Runs a listed action (RootScaffold). */
     val onCommand: (app.localgatekeys.android.vault.SearchCommand) -> Unit = {},
+    /** Sub-plan 07: the Collections filter's "Manage collections" (Vault › Collections). Null: not offered. */
+    val onOpenCollections: (() -> Unit)? = null,
+    /** The "Search your vault" field under the title: opens the search page (RootScaffold). */
+    val onSearch: () -> Unit = {},
+    /** Review 2026-11-15 UX 3: the "Autofill is off" banner shows ([settings.AutofillBanner]). */
+    val autofillBanner: Boolean = false,
+    /** The banner's Turn on: the system's autofill service picker. */
+    val onTurnOnAutofill: () -> Unit = {},
+    /** The banner's Not now: hides it on this phone. */
+    val onDismissAutofillBanner: () -> Unit = {},
 )
 
 /** The rows' favorite action over [VaultSeams.onSetFavorite] (null when there is none). */
@@ -116,7 +143,7 @@ internal fun tabBarClearance(): Dp =
     FloatingTabBarHeight + FloatingTabBarBottomGap + 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
 /** The Vault tab: a pinned Codes row, then grouped solid sections. The title and the plus and avatar buttons are in the scaffold header. */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams) {
     val txt = rememberTxt()
@@ -128,7 +155,12 @@ fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams)
     LaunchedEffect(model) { withContext(Dispatchers.IO) { model.reload() } }
     val codeItems = remember(items, showCodesRow) { CodesRow.items(items, showCodesRow, txt) }
     val sort by model.sort.collectAsStateWithLifecycle()
-    val groups = remember(items, sort) { VaultGroup.groups(items, sort) }
+    // Sub-plan 07: the Collections filter (the Codes row above stays every code).
+    val collections by model.collections.collectAsStateWithLifecycle()
+    val collectionFilter by model.collectionFilter.collectAsStateWithLifecycle()
+    val collectionIds by model.collectionItemIds.collectAsStateWithLifecycle()
+    val listed = remember(items, collectionIds) { VaultListModel.inCollection(items, collectionIds) }
+    val groups = remember(listed, sort) { VaultGroup.groups(listed, sort) }
     val toggleFavorite = seams.favoriteToggle(scope)
     val tick = rememberSecondTick(seams.clock)
     var importCard by remember(seams) { mutableStateOf(seams.showImportCard()) }
@@ -157,19 +189,41 @@ fun VaultScreen(model: VaultListModel, showCodesRow: Boolean, seams: VaultSeams)
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = tabBarClearance()),
         ) {
             loadError?.let { item { Text(it, color = c.danger, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)) } }
-            seams.syncStatus?.let { s ->
-                item(key = "sync-pill") {
-                    Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.CenterStart) {
-                        SyncStatusPill(s, seams.onOpenSyncStatus)
+            // UX refresh §4, as on the iPhone: the search field under the title, then the sync status and the setup
+            // progress on one line. Sort and Collections are in the header's "more" menu.
+            item(key = "search-field") { SearchField(seams.onSearch) }
+            if (seams.syncStatus != null || seams.setupCardText != null) {
+                item(key = "status-line") {
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        seams.syncStatus?.let { SyncStatusPill(it, seams.onOpenSyncStatus) }
+                        seams.setupCardText?.let { SetupChip(it, seams.onOpenSetup, seams.onHideSetup) }
                     }
                 }
             }
-            seams.setupCardText?.let { text ->
-                item(key = "setup-card") { SetupCard(text, seams.onOpenSetup, seams.onHideSetup) }
+            if (seams.autofillBanner) {
+                item(key = "autofill-banner") { AutofillBannerCard(seams.onTurnOnAutofill, seams.onDismissAutofillBanner) }
             }
-            if (items.isNotEmpty()) {
-                item(key = "sort") {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) { SortMenu(sort, model::setSort) }
+            val filterName = collectionFilter?.let { id -> collections.firstOrNull { it.id == id }?.name }
+            if (filterName != null) {
+                item(key = "collection-filter") {
+                    // The Collections filter in use: a tap shows All items again.
+                    TextButton({ model.setCollectionFilter(null) }, modifier = Modifier.testTag("collection-filter-chip")) {
+                        Icon(Icons.Filled.Cancel, stringResource(R.string.collections_filter_clear), Modifier.size(18.dp), tint = c.accentText)
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(R.string.collections_filter, app.localgatekeys.android.collections.collectionDisplayName(filterName)), color = c.accentText, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                if (listed.isEmpty() && items.isNotEmpty()) {
+                    item(key = "collection-empty") {
+                        Text(
+                            stringResource(R.string.collections_filter_empty), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("collection-empty"),
+                        )
+                    }
                 }
             }
             if (codeItems.isNotEmpty()) {
@@ -236,7 +290,45 @@ private fun ImportCard(onImport: () -> Unit, onNotNow: () -> Unit) {
     }
 }
 
+/** "Autofill is off" with Turn on (the system picker) and Not now (review 2026-11-15 UX 3). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AutofillBannerCard(onTurnOn: () -> Unit, onNotNow: () -> Unit) {
+    val c = LgkTheme.colors
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).lgkGroupSurface().padding(16.dp).testTag("autofill-banner")) {
+        Text(stringResource(R.string.vault_autofill_banner_title), color = c.text, style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.vault_autofill_banner_text), color = c.secondaryText, style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 4.dp))
+        FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onTurnOn, modifier = Modifier.testTag("autofill-banner-turn-on")) {
+                Text(stringResource(R.string.vault_autofill_banner_action), color = c.accentText)
+            }
+            TextButton(onNotNow, modifier = Modifier.testTag("autofill-banner-not-now")) {
+                Text(stringResource(R.string.common_not_now), color = c.secondaryText)
+            }
+        }
+    }
+}
+
 @StringRes val IMPORT_CARD_TITLE = R.string.vault_import_card_title
 @StringRes val IMPORT_CARD_TEXT = R.string.vault_import_card_text
 @StringRes val EMPTY_VAULT = R.string.vault_empty
 @StringRes val RESTORE_FROM_BACKUP = R.string.vault_restore_from_backup
+
+/** A field-shaped button that opens the search page (its filters and `>` actions are unchanged). */
+@Composable
+private fun SearchField(onSearch: () -> Unit) {
+    val c = LgkTheme.colors
+    val label = stringResource(R.string.search_hint)
+    Row(
+        Modifier.fillMaxWidth().padding(top = 4.dp).heightIn(min = 48.dp).lgkGlass(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button, onClick = onSearch)
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .testTag("vault-search-button").padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Search, null, Modifier.size(20.dp), tint = c.secondaryText)
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(R.string.vault_search_field), color = c.secondaryText, style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+    }
+}

@@ -67,12 +67,23 @@ struct PasswordHistoryView: View {
                                 .textSelection(.disabled)
                                 .accessibilityLabel(revealed ? entry.password : String(localized: "Hidden password"))
                             Spacer()
-                            Button {
-                                SecretClipboard.shared.copy(entry.password)
-                                CopyToast.shared.show(String(localized: "Old password copied"))
-                            } label: { Image(systemName: "doc.on.doc") }
-                                .buttonStyle(.borderless)
-                                .accessibilityLabel("Copy old password")
+                            // Feature pack §4: old passwords follow the login's access rules (view only on phones
+                            // hides copying; re-authenticate and copy once ask the owner).
+                            if !PhoneFeaturePack.rules(item).refusesCopy(on: .phone) {
+                                Button {
+                                    Task {
+                                        guard await AccessGate.shared.mayCopy(item) else { return }
+                                        if let limit = AccessGate.shared.copyLimit(item) {
+                                            SecretClipboard.shared.copy(entry.password, clearAfterAtMost: limit)
+                                        } else {
+                                            SecretClipboard.shared.copy(entry.password)
+                                        }
+                                        CopyToast.shared.show(String(localized: "Old password copied"))
+                                    }
+                                } label: { Image(systemName: "doc.on.doc") }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityLabel("Copy old password")
+                            }
                         }
                         HStack {
                             Text(entry.changedAt > 0
@@ -134,11 +145,8 @@ struct PasswordHistoryView: View {
         }
     }
 
-    /// Face ID, Touch ID or the passcode, as for revealing on the Mac.
+    /// Face ID, Touch ID or the passcode, as for revealing on the Mac; with the app password on, `AppPasswordGate`.
     static func confirmOwner() async -> Bool {
-        let context = LAContext()
-        var error: NSError?
-        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else { return false }
-        return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: String(localized: "Show earlier passwords"))) ?? false
+        await AppPasswordGate.confirmOwner(String(localized: "Show earlier passwords"))
     }
 }

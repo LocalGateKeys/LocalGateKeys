@@ -8,6 +8,27 @@ import pytest
 from localvault.web import window as web_window
 
 
+def test_save_dialog_starts_in_the_test_data_folder_when_the_data_dir_is_overridden(tmp_path, monkeypatch):
+    import types
+
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path))
+    calls = []
+
+    class Window:
+        def create_file_dialog(self, kind, **kwargs):
+            calls.append(kwargs)
+            return None
+
+    monkeypatch.setitem(sys.modules, "webview", types.SimpleNamespace(FileDialog=types.SimpleNamespace(SAVE="save")))
+    assert web_window.FileDialogs(Window()).save_file("Export", "x.lgk") is None
+    assert calls == [{"save_filename": "x.lgk", "directory": str(tmp_path.resolve())}]
+
+
+def test_save_dialog_keeps_the_windows_default_without_an_override(monkeypatch):
+    monkeypatch.delenv("LOCALGATEKEYS_DATA_DIR", raising=False)
+    assert web_window.initial_save_directory() is None
+
+
 def test_is_app_url_accepts_only_the_app_origin():
     origin = "http://127.0.0.1:51234"
     assert web_window.is_app_url("http://127.0.0.1:51234/index.html", origin)
@@ -132,3 +153,26 @@ def test_capture_protection_uses_the_native_handle(monkeypatch):
     assert popup.set_capture_protection(False)
     assert popup.hide_from_capture is False
     assert seen == [(77, True), (77, False)]
+
+
+def test_the_palette_is_centred_in_the_work_area_a_little_high():
+    from localvault.web.window import centered_in
+
+    assert centered_in((0, 0, 1920, 1040), 640, 420) == (640, 206)
+    assert centered_in((1920, 0, 3840, 1080), 640, 420) == (2560, 220)
+    assert centered_in((0, 0, 300, 200), 640, 420) == (0, 0)
+
+
+def test_the_palette_window_is_not_shown_when_disabled():
+    from localvault.web.window import PaletteWindow
+
+    class Win:
+        shown = False
+
+        def show(self):
+            self.shown = True
+
+    win = Win()
+    palette = PaletteWindow(win)
+    palette.disabled = True
+    assert palette.show_centered() is False and not win.shown

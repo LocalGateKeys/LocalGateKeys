@@ -99,6 +99,49 @@ final class ImportReviewModelTests: XCTestCase {
         XCTAssertEqual(merged["password"], .string("newer"))
     }
 
+    /// Sub-plan 07 (5l review): as Windows `check_writable`, an item in a collection shared as view only is never
+    /// replaced or merged by an import, also when it became view-only after the review (iPhone and Mac alike).
+    func testAViewOnlyItemIsNeverReplacedOrMerged() async throws {
+        let store = ReviewMemoryStore()
+        let note = { (body: String) in ImportCandidate(title: "Alarm code", kind: .note(NoteFields(notes: body))) }
+        try await seed(store, [note("4321")])
+        let noteID = try XCTUnwrap(store.snapshot.itemRecords.first {
+            $0.value.objectValue?["record"]?.objectValue?["title"] == .string("Alarm code")
+        }?.key)
+        let made = try CollectionCatalog.create(name: "Family", in: store.snapshot, now: 1_800_000_000)
+        try store.commit(made.change)
+        let moved = try XCTUnwrap(try CollectionCatalog.setMemberships(itemID: noteID, kind: "note", to: [made.id], in: store.snapshot))
+        try store.commit(moved)
+        let reviewed = try model([note("9999")], store: store)
+        XCTAssertEqual(reviewed.rows[0].status, .conflict)
+        XCTAssertFalse(reviewed.rows[0].readOnly)
+        reviewed.set(.replace(noteID), for: reviewed.rows[0].id)
+        XCTAssertEqual(reviewed.rows[0].decision, .replace(noteID))
+        // Another of this person's devices is a member of a view-only share of Family (a share link).
+        var snap = store.snapshot
+        snap.records[CollectionStates.linkPrefix + made.id] =
+            CollectionStates.wrapper(CollectionStates.link(collectionID: made.id, mode: "read", role: "member"))
+        store.snapshot = snap
+        let commits = store.commits
+        do {
+            _ = try await reviewed.commit(to: store)
+            XCTFail("a view-only item was replaced")
+        } catch {
+            XCTAssertEqual(error as? ImportReviewError, .readOnly)
+        }
+        XCTAssertEqual(store.commits, commits)
+        XCTAssertEqual(ImportReviewError.readOnly.message,
+                       "This item is in a collection shared with you as view only, so it can't be changed on this device.")
+        // Reviewed now: Skip and Keep both only.
+        let again = try model([note("9999")], store: store)
+        XCTAssertTrue(again.rows[0].readOnly)
+        again.set(.replace(noteID), for: again.rows[0].id)
+        again.set(.merge(noteID), for: again.rows[0].id)
+        XCTAssertEqual(again.rows[0].decision, .skip)
+        again.set(.keepBoth, for: again.rows[0].id)
+        XCTAssertEqual(again.rows[0].decision, .keepBoth)
+    }
+
     func testFreePlanMarksRowsBeyondSlotsLimited() async throws {
         let store = ReviewMemoryStore()
         let m = try model((1...5).map { login("site\($0).com") }, store: store, freeSlots: 2)
@@ -129,11 +172,11 @@ final class ImportReviewModelTests: XCTestCase {
         let store = ReviewMemoryStore()
         let rows = (0..<2000).map { login("site\($0 % 1500).com") }
         let first = try model(rows, store: store, freeSlots: ImportReviewModel.freeSlots(snapshot: store.snapshot, isPro: false))
-        XCTAssertEqual(first.rows.filter { $0.status == .limited }.count, 1496)
+        XCTAssertEqual(first.rows.filter { $0.status == .limited }.count, 1500 - ItemLimit.freeItems)
         XCTAssertEqual(first.rows.filter { $0.status == .duplicate }.count, 500)
         let outcome = try await first.commit(to: store)
         XCTAssertEqual(outcome.created, ItemLimit.freeItems)
-        XCTAssertEqual(outcome.limited, 1496)
+        XCTAssertEqual(outcome.limited, 1500 - ItemLimit.freeItems)
         let second = try model(rows, store: store, freeSlots: ImportReviewModel.freeSlots(snapshot: store.snapshot, isPro: false))
         let again = try await second.commit(to: store)
         XCTAssertEqual(again.created, 0)

@@ -8,6 +8,11 @@
   format-1 view of the current epoch, signed like a view (``attachments/<device_id>.lgkcap.lgksig``).
   It counts only when it decodes under the group key, names that device, and its signature
   verifies with the key this device trusts for it.  Anything else is "not capable".
+* Personal collections (sub-plan 07 Task 4), same gating: ``attachments/<device_id>.lgkcol`` (+
+  ``.lgkcol.lgksig``), the same zero-record signed view but with counter 1, so a document
+  capability file copied under the collections name never counts.
+* Emergency access (sub-plan 08): the same kind of file under ``attachments/<device_id>.lgkheircap`` advertises the ``heir``
+  feature: that device reads the emergency access plan namespace (``feature="heir"``).
 * ``publish_folder_blobs``: before the own view is written, the blob of every own document that
   is not in the folder yet is written (content addressed, never rewritten).
 """
@@ -26,13 +31,31 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from ..attachments import AttachmentError, AttachmentStore
 from .attachment_sync import BLOBS_DIR_NAME, MAX_ATTACHMENTS, AttachmentRef, BlobFolder
 from .engine import ItemState
-from .group import MAX_SIG_BYTES, GroupKey, decode_view, encode_view, sign_view, verify_view_signature
+from .group import (
+    MAX_SIG_BYTES,
+    GroupKey,
+    decode_view,
+    encode_view,
+    sign_view,
+    verify_view_signature,
+)
 from .runner import SyncIssue
 from .vault_bridge import _check_lease, document_refs, remember_blob, sync_only_save
 
 CAP_SUFFIX = ".lgkcap"
 CAP_SIG_SUFFIX = ".lgkcap.lgksig"
+COLLECTIONS_CAP_SUFFIX = ".lgkcol"
+COLLECTIONS_CAP_SIG_SUFFIX = ".lgkcol.lgksig"
+#: Feature -> (capability file suffix, its signature's suffix).
+CAP_FEATURES = {"documents": (CAP_SUFFIX, CAP_SIG_SUFFIX),
+                "collections": (COLLECTIONS_CAP_SUFFIX, COLLECTIONS_CAP_SIG_SUFFIX),
+                "heir": (".lgkheircap", ".lgkheircap.lgksig")}
 MAX_CAP_BYTES = 4096
+#: The view ``counter`` a capability file carries, per feature (review M1), so a file copied under another
+#: feature's name never counts. The heir file's is the largest view counter (2**53 - 1), which no real view,
+#: heartbeat or documents capability ever carries (those start at 0 or 1 and count up), so a copy of another
+#: signed file of the device does not pass as the heir capability.
+CAP_COUNTERS = {"documents": 0, "collections": 1, "heir": 2**53 - 1}
 
 
 def _present(store: AttachmentStore) -> set[str]:
@@ -100,10 +123,11 @@ def own_blob(session: Any, ref: AttachmentRef) -> bytes | None:
 # --- folder --------------------------------------------------------------------------------
 
 
-def _cap_paths(sync_dir: Path, device_id: str) -> tuple[Path, Path]:
+def _cap_paths(sync_dir: Path, device_id: str, feature: str = "documents") -> tuple[Path, Path]:
+    suffix, sig_suffix = CAP_FEATURES[feature]
     folder = Path(sync_dir) / BLOBS_DIR_NAME
-    cap, sig = folder / f"{device_id}{CAP_SUFFIX}", folder / f"{device_id}{CAP_SIG_SUFFIX}"
-    if cap.parent != folder or sig.parent != folder or cap.name != f"{device_id}{CAP_SUFFIX}":
+    cap, sig = folder / f"{device_id}{suffix}", folder / f"{device_id}{sig_suffix}"
+    if cap.parent != folder or sig.parent != folder or cap.name != f"{device_id}{suffix}":
         raise ValueError("capability file escapes the attachments folder")
     return cap, sig
 
@@ -117,12 +141,14 @@ def _read_small(path: Path, limit: int) -> bytes | None:
         return None
 
 
-def folder_capable(sync_dir: Path, gk: GroupKey, device_id: str, signer: str | None) -> bool:
-    """Whether *device_id* published a valid signed capability file under *gk* (see the module docstring)."""
+def folder_capable(sync_dir: Path, gk: GroupKey, device_id: str, signer: str | None, *,
+                   feature: str = "documents") -> bool:
+    """Whether *device_id* published a valid signed capability file for *feature* under *gk* (see the module
+    docstring)."""
     if signer is None:
         return False
     try:
-        cap_path, sig_path = _cap_paths(sync_dir, device_id)
+        cap_path, sig_path = _cap_paths(sync_dir, device_id, feature)
     except ValueError:
         return False
     raw, sig = _read_small(cap_path, MAX_CAP_BYTES), _read_small(sig_path, MAX_SIG_BYTES)
@@ -133,7 +159,12 @@ def folder_capable(sync_dir: Path, gk: GroupKey, device_id: str, signer: str | N
         public = base64.b64encode(verify_view_signature(sig, raw, view.header)).decode("ascii")
     except ValueError:
         return False
-    return public == signer
+    return public == signer and view.header.get("counter") == CAP_COUNTERS[feature]
+
+
+def collections_capable(sync_dir: Path, gk: GroupKey, device_id: str, signer: str | None) -> bool:
+    """Whether *device_id* reads personal collection states (its signed ``.lgkcol`` file)."""
+    return folder_capable(sync_dir, gk, device_id, signer, feature="collections")
 
 
 def _atomic(path: Path, data: bytes) -> None:
@@ -149,16 +180,22 @@ def _atomic(path: Path, data: bytes) -> None:
 
 
 def write_capability(sync_dir: Path, gk: GroupKey, device_id: str, signing_key: ed25519.Ed25519PrivateKey,
-                     signer: str, *, now: int) -> bool:
-    """Write this device's capability file unless a valid one is there; whether it wrote."""
-    if folder_capable(sync_dir, gk, device_id, signer):
+                     signer: str, *, now: int, feature: str = "documents") -> bool:
+    """Write this device's capability file for *feature* unless a valid one is there; whether it wrote."""
+    if folder_capable(sync_dir, gk, device_id, signer, feature=feature):
         return False
-    cap_path, sig_path = _cap_paths(sync_dir, device_id)
-    raw = encode_view(gk, device_id, 0, (), now)
+    cap_path, sig_path = _cap_paths(sync_dir, device_id, feature)
+    raw = encode_view(gk, device_id, CAP_COUNTERS[feature], (), now)
     cap_path.parent.mkdir(parents=True, exist_ok=True)
     _atomic(cap_path, raw)
     _atomic(sig_path, sign_view(raw, signing_key))
     return True
+
+
+def write_collections_capability(sync_dir: Path, gk: GroupKey, device_id: str,
+                                 signing_key: ed25519.Ed25519PrivateKey, signer: str, *, now: int) -> bool:
+    """Write this device's ``.lgkcol`` capability file unless a valid one is there; whether it wrote."""
+    return write_capability(sync_dir, gk, device_id, signing_key, signer, now=now, feature="collections")
 
 
 def publish_folder_blobs(session: Any, folder: BlobFolder, own_states: Iterable[ItemState], *,

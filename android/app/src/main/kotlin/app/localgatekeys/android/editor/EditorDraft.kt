@@ -12,6 +12,10 @@ import app.localgatekeys.core.primitives.RandomSource
 import app.localgatekeys.core.primitives.UnixClock
 import java.io.File
 import java.security.MessageDigest
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 /**
  * One unsaved editor form (Task 6 of docs/TESTER_FEEDBACK_PLAN_2026-10-29.md): written when the app leaves the screen
@@ -34,6 +38,17 @@ data class EditorDraft(
         return if (recordHash(item.record) == baseHash) Status.SAME_ITEM else Status.ITEM_CHANGED
     }
 
+    /**
+     * Whether this draft is the form of an editor that reopens by itself after the activity was recreated (dark mode,
+     * language, font size) or the process was killed: a new item of [newKind], or the same, unchanged [item]. Anything
+     * else is offered with the usual prompt instead.
+     */
+    fun resumes(newKind: EditorKind?, item: VaultItem?): Boolean = when {
+        newKind != null -> itemId == null && kind == newKind
+        item != null -> itemId == item.id && baseHash != null && recordHash(item.record) == baseHash
+        else -> false
+    }
+
     override fun toString(): String = "EditorDraft(kind=$kind, isNew=${itemId == null}, fields=${values.keys.sorted()})"
 
     companion object {
@@ -54,8 +69,10 @@ data class EditorDraft(
  * preferences, never logged.
  *
  * [localKey] is the open vault's own array (UnlockedVault.localKey): read at each call, so after a lock (which zeroes
- * it) nothing is written or read. Main thread or IO: the operations are tiny and synchronous (an ON_STOP save must
- * finish before the process ON_STOP lock zeroes the key).
+ * it) nothing is written or read. [saveLater] (the editor's ON_STOP) derives the key and takes the (immutable) form
+ * on the caller's thread, before the process ON_STOP lock can zero the key, and leaves the sealing and the file write to one
+ * background lane; [load] and [delete] wait for that write first, so a reopened editor reads the newest draft and a
+ * Save or Discard never leaves a stale one behind.
  */
 class EditorDraftStore(
     val file: File,
@@ -65,33 +82,68 @@ class EditorDraftStore(
 ) {
     /** Replaces the draft (there is only ever one). False when nothing could be written; the old one is gone then too. */
     fun save(draft: EditorDraft): Boolean {
+        awaitPending()
         val key = subkey() ?: return false
-        return try {
-            val plain = encode(draft)
-            try {
-                val nonce = random.bytes(NONCE_BYTES)
-                val blob = nonce + CryptoBox.sealGcm(key, nonce, plain, AAD)
-                val tmp = File(file.parentFile, file.name + ".tmp")
-                file.parentFile?.mkdirs()
-                tmp.writeBytes(blob)
-                if (!tmp.renameTo(file)) {
-                    file.delete()
-                    if (!tmp.renameTo(file)) { tmp.delete(); return false }
-                }
-                true
-            } finally {
-                plain.fill(0)
-            }
+        return write(key, draft)
+    }
+
+    /**
+     * [save] without blocking the caller on the encryption and the disk: the key and the form are taken now, the write
+     * runs on the background lane. False when the vault is locked (nothing is written).
+     */
+    fun saveLater(draft: EditorDraft): Boolean {
+        val key = subkey() ?: return false
+        val task = try {
+            LANE.submit { write(key, draft) }
         } catch (_: Exception) {
-            delete()
-            false
+            return write(key, draft) // the lane is gone (never in practice): write here
+        }
+        synchronized(LANE) { pending = task }
+        return true
+    }
+
+    /** Seals and writes [draft] with [key], then zeroes the key. */
+    private fun write(key: ByteArray, draft: EditorDraft): Boolean = try {
+        val plain = encode(draft)
+        try {
+            val nonce = random.bytes(NONCE_BYTES)
+            val blob = nonce + CryptoBox.sealGcm(key, nonce, plain, AAD)
+            val tmp = File(file.parentFile, file.name + ".tmp")
+            file.parentFile?.mkdirs()
+            tmp.writeBytes(blob)
+            if (!tmp.renameTo(file)) {
+                file.delete()
+                if (!tmp.renameTo(file)) {
+                    tmp.delete()
+                    false
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
         } finally {
-            key.fill(0)
+            plain.fill(0)
+        }
+    } catch (_: Exception) {
+        deleteFile(file)
+        false
+    } finally {
+        key.fill(0)
+    }
+
+    /** Waits (bounded) for a [saveLater] write still in flight. */
+    private fun awaitPending() {
+        val task = synchronized(LANE) { pending } ?: return
+        try {
+            task.get(PENDING_WAIT_MS, TimeUnit.MILLISECONDS)
+        } catch (_: Exception) {
         }
     }
 
     /** The draft, or null. One that is expired (7 days), unreadable or sealed with another key is deleted. */
     fun load(): EditorDraft? {
+        awaitPending()
         if (!file.exists()) return null
         val key = subkey() ?: return null // locked: leave it for the next unlock
         try {
@@ -110,7 +162,10 @@ class EditorDraftStore(
         }
     }
 
-    fun delete() = deleteFile(file)
+    fun delete(): Boolean {
+        awaitPending()
+        return deleteFile(file)
+    }
 
     /** The derived key, or null when the vault's key is gone (zeroed by a lock). The caller zeroes it. */
     private fun subkey(): ByteArray? {
@@ -126,6 +181,15 @@ class EditorDraftStore(
         private const val NONCE_BYTES = 12
         private val INFO = "localgatekeys|editor-draft|v1".toByteArray(Charsets.UTF_8)
         private val AAD = "lgk-editor-draft-v1".toByteArray(Charsets.UTF_8)
+        private const val PENDING_WAIT_MS = 2_000L
+
+        /** One background thread for every draft write, so writes land in order. */
+        private val LANE: ExecutorService = Executors.newSingleThreadExecutor { r ->
+            Thread(r, "lgk-editor-draft").apply { isDaemon = true }
+        }
+
+        /** The last write handed to [LANE] (shared: a recreated activity's store waits for the old one's write). */
+        private var pending: Future<*>? = null
 
         /** Where the draft lives: the app's noBackupFilesDir. */
         fun file(noBackupDir: File): File = File(noBackupDir, FILE_NAME)

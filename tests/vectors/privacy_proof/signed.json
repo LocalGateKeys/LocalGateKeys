@@ -1,0 +1,138 @@
+{
+  "device": "A (tests/vectors/sync/identities.json)",
+  "device_id": "a1111111-0000-4000-8000-00000000000a",
+  "expected_result": "valid",
+  "fingerprint": "5c64391564d6f930",
+  "signature": {
+    "alg": "Ed25519",
+    "device_id": "a1111111-0000-4000-8000-00000000000a",
+    "public_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+    "value": "8PeENVADYWIn589OupkZuTdfFPoUOmeBrr3tNpisKTm2JvCOYigwRo3WYbmx0p7krLdzMq19cO/ZcIH9eIXUAA=="
+  },
+  "signed_body": {
+    "app": {
+      "platform": "windows",
+      "version": "0.5.0"
+    },
+    "claims": [
+      "connections_listed",
+      "no_item_content_sent"
+    ],
+    "facts": {
+      "breach_checks": false,
+      "devices": 2,
+      "items": 120,
+      "shares": 0,
+      "strict_offline": true,
+      "sync": "folder",
+      "update_check": true
+    },
+    "format": "lgk-privacy-proof",
+    "generated_at": "2026-11-15T10:00:00Z",
+    "network": {
+      "available": true,
+      "counts": {
+        "lan_sync": 30,
+        "website_icon": 14
+      },
+      "entries": [
+        {
+          "at": "2026-11-14T09:30:00Z",
+          "host": "example.invalid",
+          "purpose": "update_check",
+          "result": "ok"
+        }
+      ],
+      "since": "2026-11-01T08:00:00Z"
+    },
+    "signature": {
+      "alg": "Ed25519",
+      "device_id": "a1111111-0000-4000-8000-00000000000a",
+      "public_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU="
+    },
+    "version": 2
+  },
+  "signed_bytes_hex": "6c6f63616c676174656b6579737c707269766163792d70726f6f667c76327c7b22617070223a7b22706c6174666f726d223a2277696e646f7773222c2276657273696f6e223a22302e352e30227d2c22636c61696d73223a5b22636f6e6e656374696f6e735f6c6973746564222c226e6f5f6974656d5f636f6e74656e745f73656e74225d2c226661637473223a7b226272656163685f636865636b73223a66616c73652c2264657669636573223a322c226974656d73223a3132302c22736861726573223a302c227374726963745f6f66666c696e65223a747275652c2273796e63223a22666f6c646572222c227570646174655f636865636b223a747275657d2c22666f726d6174223a226c676b2d707269766163792d70726f6f66222c2267656e6572617465645f6174223a22323032362d31312d31355431303a30303a30305a222c226e6574776f726b223a7b22617661696c61626c65223a747275652c22636f756e7473223a7b226c616e5f73796e63223a33302c22776562736974655f69636f6e223a31347d2c22656e7472696573223a5b7b226174223a22323032362d31312d31345430393a33303a30305a222c22686f7374223a226578616d706c652e696e76616c6964222c22707572706f7365223a227570646174655f636865636b222c22726573756c74223a226f6b227d5d2c2273696e6365223a22323032362d31312d30315430383a30303a30305a227d2c227369676e6174757265223a7b22616c67223a2245643235353139222c226465766963655f6964223a2261313131313131312d303030302d343030302d383030302d303030303030303030303061222c227075626c69635f6b6579223a223943414571675251584d616c314f316e2b74714d667178396964496d75333469736658664a63652b4952553d227d2c2276657273696f6e223a327d",
+  "signed_document": {
+    "app": {
+      "platform": "windows",
+      "version": "0.5.0"
+    },
+    "claims": [
+      "connections_listed",
+      "no_item_content_sent"
+    ],
+    "facts": {
+      "breach_checks": false,
+      "devices": 2,
+      "items": 120,
+      "shares": 0,
+      "strict_offline": true,
+      "sync": "folder",
+      "update_check": true
+    },
+    "format": "lgk-privacy-proof",
+    "generated_at": "2026-11-15T10:00:00Z",
+    "network": {
+      "available": true,
+      "counts": {
+        "lan_sync": 30,
+        "website_icon": 14
+      },
+      "entries": [
+        {
+          "at": "2026-11-14T09:30:00Z",
+          "host": "example.invalid",
+          "purpose": "update_check",
+          "result": "ok"
+        }
+      ],
+      "since": "2026-11-01T08:00:00Z"
+    },
+    "signature": {
+      "alg": "Ed25519",
+      "device_id": "a1111111-0000-4000-8000-00000000000a",
+      "public_key": "9CAEqgRQXMal1O1n+tqMfqx9idImu34isfXfJce+IRU=",
+      "value": "8PeENVADYWIn589OupkZuTdfFPoUOmeBrr3tNpisKTm2JvCOYigwRo3WYbmx0p7krLdzMq19cO/ZcIH9eIXUAA=="
+    },
+    "version": 2
+  },
+  "unsigned_document": {
+    "app": {
+      "platform": "windows",
+      "version": "0.5.0"
+    },
+    "claims": [
+      "connections_listed",
+      "no_item_content_sent"
+    ],
+    "facts": {
+      "breach_checks": false,
+      "devices": 2,
+      "items": 120,
+      "shares": 0,
+      "strict_offline": true,
+      "sync": "folder",
+      "update_check": true
+    },
+    "format": "lgk-privacy-proof",
+    "generated_at": "2026-11-15T10:00:00Z",
+    "network": {
+      "available": true,
+      "counts": {
+        "lan_sync": 30,
+        "website_icon": 14
+      },
+      "entries": [
+        {
+          "at": "2026-11-14T09:30:00Z",
+          "host": "example.invalid",
+          "purpose": "update_check",
+          "result": "ok"
+        }
+      ],
+      "since": "2026-11-01T08:00:00Z"
+    },
+    "version": 2
+  }
+}

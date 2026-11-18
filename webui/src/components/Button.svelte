@@ -9,6 +9,7 @@
     disabled = false,
     icon = '',
     onclick = undefined,
+    ariaLabel = undefined, // when the visible label alone is ambiguous, e.g. several "Copy" buttons
   } = $props();
 </script>
 
@@ -17,6 +18,7 @@
   {type}
   disabled={disabled || busy}
   aria-busy={busy}
+  aria-label={ariaLabel}
   onclick={onclick}
 >
   {#if icon}<span class="icon" aria-hidden="true">{icon}</span>{/if}

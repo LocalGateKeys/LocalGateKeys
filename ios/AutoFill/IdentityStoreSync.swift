@@ -11,8 +11,8 @@ import AppShared
 enum IdentityEntry: Equatable, Sendable {
     case password(domain: String, username: String, recordID: String)
     case passkey(rpID: String, userName: String, credentialID: Data, userHandle: Data, recordID: String)
-    /// A login's two-factor code (`ASOneTimeCodeCredentialIdentity`, iOS 18 / macOS 15): published by the
-    /// Mac app only; `label` is the login's title.
+    /// A login's two-factor code (`ASOneTimeCodeCredentialIdentity`, iOS 18 / macOS 15); `label` is the login's
+    /// title.
     case oneTimeCode(domain: String, label: String, recordID: String)
 
     init(domain: String, username: String, recordID: String) {
@@ -72,8 +72,15 @@ struct IdentityStoreSync: Sendable {
     /// "Show logins in the QuickType bar": when off, nothing is published and existing identities are removed.
     /// "Include exact-site logins" widens `domains` to exact-origin and host rows.
     let settings: AppSettings
-    /// Also publish a one-time-code identity per TOTP login and domain (the Mac app on macOS 15 and later).
+    /// Also publish a one-time-code identity per TOTP login and domain (iOS 18 and macOS 15 and later).
     let oneTimeCodes: Bool
+    /// Whether this system takes one-time-code identities (iOS 18, macOS 15 and later).
+    static var platformOneTimeCodes: Bool {
+        if #available(iOS 18.0, macOS 15.0, *) { true } else { false }
+    }
+    /// Items never published (iPhone: travel mode and logins whose access rules refuse autofill, feature pack §2 and
+    /// §4). Empty by default.
+    var omit: @Sendable (StoreSnapshot) -> Set<String> = { _ in [] }
 
     init(identityStore: any CredentialIdentityStoring = SystemCredentialIdentityStore(),
          matcher: URLMatcher = AutoFillMatcher.bundled().matcher, settings: AppSettings = .shared,
@@ -139,8 +146,9 @@ struct IdentityStoreSync: Sendable {
     /// ordered by item id. Empty when "Offer passkeys" is off.
     func passkeyIdentities(_ snapshot: StoreSnapshot) -> [IdentityEntry] {
         guard settings.offerPasskeys else { return [] }
-        return snapshot.records.keys.sorted(by: Scalars.less).compactMap { id in
-            guard snapshot.meta[id]?.deleted != true, let item = snapshot.records[id],
+        let records = snapshot.itemRecords   // never a collection state
+        return records.keys.sorted(by: Scalars.less).compactMap { id in
+            guard snapshot.meta[id]?.deleted != true, let item = records[id],
                   let pk = PasskeyRecord.from(item, id: id), pk.key != nil, !pk.rpID.isEmpty else { return nil }
             return .passkey(rpID: pk.rpID, userName: pk.userName, credentialID: Data(pk.credentialID),
                             userHandle: Data(pk.userHandle), recordID: pk.itemID)
@@ -155,9 +163,14 @@ struct IdentityStoreSync: Sendable {
         if settings.identityRemovalPending, await identityStore.isEnabled() {
             if (try? await identityStore.removeAll()) != nil { settings.identityRemovalPending = false }
         }
-        guard settings.showInQuickType else { return await removeAll() }
-        guard await identityStore.isEnabled() else { return }
-        let all = identities(snapshot) + passkeyIdentities(snapshot) + oneTimeCodeIdentities(snapshot)
+        guard settings.showInQuickType else {
+            AutoFillTrace.log("identities.skip quickTypeOff")
+            return await removeAll()
+        }
+        guard await identityStore.isEnabled() else { return AutoFillTrace.log("identities.skip autoFillDisabled") }
+        let skip = omit(snapshot)
+        let all = (identities(snapshot) + passkeyIdentities(snapshot) + oneTimeCodeIdentities(snapshot))
+            .filter { !skip.contains($0.recordID) }
         do { try await identityStore.replace(all) }
         catch {
             AutoFillTrace.log("identities.replace failed error=\(error: error)")

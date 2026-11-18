@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys Mac 版ユーザーガイド</title>
+  <meta name="description" content="Mac で LocalGateKeys を使う方法：保管庫、自動入力、パスキー、2 要素認証コード、インポート、バックアップ、同期。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ja/guide/mac">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/mac">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/mac">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/mac">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/mac">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/mac">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/mac">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/mac">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/mac">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/mac">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/mac">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/mac">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/mac">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys Mac 版ユーザーガイド">
+  <meta property="og:description" content="Mac で LocalGateKeys を使う方法：保管庫、自動入力、パスキー、2 要素認証コード、インポート、バックアップ、同期。">
+  <meta property="og:url" content="https://localgatekeys.app/ja/guide/mac">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys のロゴ: Windows・Mac・iPhone 用のパスワード管理アプリ。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys Mac 版ユーザーガイド">
+  <meta name="twitter:description" content="Mac で LocalGateKeys を使う方法：保管庫、自動入力、パスキー、2 要素認証コード、インポート、バックアップ、同期。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">コンテンツへスキップ</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../ja/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="メイン">
+        <ul class="nav">
+          <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/help">ガイド</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../../ja/download">ダウンロード</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>メニュー</summary>
+        <nav aria-label="メイン">
+          <ul class="nav nav-stack">
+            <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/help">ガイド</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/support">サポート</a></li>
+          <li><a class="nav-cta" href="../../ja/download">ダウンロード</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>言語</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Mac 版 LocalGateKeys</h1>
+  <p class="lead">このデバイスのすべての画面と機能を手順ごとに説明します。各見出しは共有できるリンクです。</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="プラットフォーム">
+    <ul><li><a class="help-tab" href="../../ja/guide/windows">Windows</a></li><li><a class="help-tab" href="../../ja/guide/mac" aria-current="page">Mac</a></li><li><a class="help-tab" href="../../ja/guide/iphone">iPhone と iPad</a></li><li><a class="help-tab" href="../../ja/guide/android">Android</a></li><li><a class="help-tab" href="../../ja/guide/extension">ブラウザ拡張機能</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>どのデバイスでも知っておきたいこと</h2>
+    <ul>
+      <li><strong>保管庫はあなたのデバイスにとどまります。</strong>アカウントはなく、パスワードを保存する LocalGateKeys のサーバーもありません。</li>
+      <li><strong>マスターパスワードやアプリのパスワードは誰にもリセットできません。</strong>リカバリーフレーズを設定し、紙に書いて保管してください。</li>
+      <li><strong>Free</strong> は最大 7 件まで保存できます。<strong>Pro</strong>(US$29.99、買い切り)では項目数が無制限になり、2 要素コード、ファイル、同期が使えます。既存の項目の編集、削除、入力がブロックされることはありません。</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="mac" aria-labelledby="mac-title">
+    <h2 class="panel-title" id="mac-title">Mac のトピック</h2>
+
+    <p class="panel-lead">サイドバーには項目(<strong>すべての項目</strong>、<strong>お気に入り</strong>、<strong>最近使った項目</strong>、各種類、コレクション)と、ツールの<strong>セキュリティセンター</strong>、<strong>ジェネレーター</strong>、<strong>同期とデバイス</strong>、<strong>インポートとエクスポート</strong>、<strong>ゴミ箱</strong>が並び、一番下に<strong>設定</strong>があります。<strong>リカバリーセンター</strong>は設定 › バックアップから、<strong>デバイスと接続</strong>は同期とデバイスから開きます。</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Mac のトピック">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">このタブの内容</summary>
+          <ol>
+            <li><a href="#mac-setup">保管庫を作成する</a></li>
+            <li><a href="#mac-unlock">ロック解除とロック</a></li>
+            <li><a href="#mac-items">項目</a></li>
+            <li><a href="#mac-2fa">2 要素コード</a></li>
+            <li><a href="#mac-security">セキュリティセンター</a></li>
+            <li><a href="#mac-autofill">自動入力と Safari</a></li>
+            <li><a href="#mac-import">インポートとエクスポート</a></li>
+            <li><a href="#mac-backups">バックアップ</a></li>
+            <li><a href="#mac-sync">同期</a></li>
+            <li><a href="#mac-share">共有</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">設定</a></li>
+            <li><a href="#mac-keys">キーボードショートカット</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="mac-setup">
+          <h3><a href="#mac-setup">保管庫を作成する</a></h3>
+          <ol>
+            <li>LocalGateKeys を開き、マスターパスワードを 2 回入力して<strong>保管庫を作成</strong>を選びます。</li>
+            <li>続いてセットアップです:<strong>Touch ID を設定</strong>、パスワードを<strong>インポート…</strong>、<strong>リカバリーフレーズを開く</strong>、Safari と自動入力のための<strong>デバイスと接続を開く</strong>。</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="mac-unlock">
+          <h3><a href="#mac-unlock">ロック解除とロック</a></h3>
+          <ul>
+            <li><strong>Touch ID</strong>:設定 › セキュリティ › ロック解除 › <strong>Touch ID</strong>。指紋を変更した場合は、一度マスターパスワードを使ってください。</li>
+            <li><strong>マスターパスワードを変更</strong>:設定 › ロック解除。項目はそのまま残ります。</li>
+            <li><strong>リカバリーフレーズ</strong>:<strong>リカバリーセンター</strong>で設定し、3 つの単語を確認します。マスターパスワードを忘れた場合は、ロック画面で<strong>マスターパスワードを忘れた場合</strong> › <strong>リカバリーフレーズで復旧</strong>を選びます。</li>
+            <li><strong>ロック</strong>:<kbd>⌘</kbd><kbd>L</kbd>。設定 › ロック で、操作がないときのロック、画面ロックと連動、スリープ時、セッションの最大時間を設定します。操作がないときのロックで、何を操作とみなすかも選べます。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-items">
+          <h3><a href="#mac-items">項目</a></h3>
+          <ul>
+            <li><strong>新規項目</strong>(<kbd>⌘</kbd><kbd>N</kbd>)では iPhone と同じ種類に加えて<strong>ファイルを添付…</strong>(Pro)が使えます。</li>
+            <li>コピー:<kbd>⌘</kbd><kbd>C</kbd>(パスワード)、<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>(ユーザー名)、<kbd>⌘</kbd><kbd>T</kbd>(2FA コード)。</li>
+            <li>カスタムフィールド用の<strong>フィールドを追加</strong>、<strong>タグ</strong>、<strong>コレクション</strong>(他のデバイスと同期されます)。</li>
+            <li><kbd>⌫</kbd> で項目を最近削除した項目に移します。サイドバーの<strong>ゴミ箱</strong>を開き、<strong>選択を復元</strong>または<strong>ゴミ箱を空にする</strong>を使います。</li>
+            <li>添付ファイルは、Touch ID またはマスターパスワードの後にクイックルックで開きます。</li>
+            <li><strong>生成</strong>:ランダムなパスワード(文字の種類を選択、紛らわしい文字を避ける)またはパスフレーズ(大文字化、数字を追加、区切り文字)。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-2fa">
+          <h3><a href="#mac-2fa">2 要素コード</a> <span class="badge-pro">Pro</span></h3>
+          <p><strong>QR コードをスキャン…</strong>を選び、<strong>画像を選択…</strong>、<kbd>⌘</kbd><kbd>V</kbd> でスクリーンショットを貼り付け(<kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd> でコピー)、または画像をドラッグします。コードは自動入力で Safari に入力されます。</p>
+        </article>
+
+        <article class="topic" id="mac-security">
+          <h3><a href="#mac-security">セキュリティセンター</a></h3>
+          <p>弱い、使い回し、古いパスワードを表示します。設定 › プライバシー › <strong>漏洩チェック</strong>をオンにすると(厳格なオフラインモードがオフの場合)、<strong>すべてのパスワードを確認</strong>で漏洩を調べます。</p>
+        </article>
+
+        <article class="topic" id="mac-autofill">
+          <h3><a href="#mac-autofill">自動入力、パスキー、Safari</a></h3>
+          <ol>
+            <li><strong>デバイスと接続</strong>を開きます。</li>
+            <li><strong>自動入力の設定を開く</strong>を選び、システム設定 › 自動入力とパスワード で LocalGateKeys をオンにします。</li>
+            <li><strong>Safari の設定を開く</strong>を選び、Safari › 設定 › 機能拡張 で LocalGateKeys 機能拡張をオンにします。</li>
+          </ol>
+          <p>Safari でサインイン情報を入力するには、ユーザ名またはパスワードの欄をクリックします。その下に LocalGateKeys のログインが表示されるので、1 つ選び、Touch ID またはマスターパスワードで確認します。パスキーと 2FA コードも同じように表示され、自動入力はほかの Mac アプリでも使えます。</p>
+          <p>Safari 機能拡張は、サインインした後に新しいログインの保存を提案します。取り込んだ内容は、次に LocalGateKeys のロックを解除したときに確認します。他のブラウザは Mac ではまだサポートされていません。</p>
+          <p>ログインが表示されない場合は、<strong>デバイスと接続</strong>を開き、自動入力がオンになっているか確認してください。同じシステム設定のページで「パスワード」をオフにすると、LocalGateKeys だけがログインを表示します。</p>
+          <p><strong>デバイスと接続</strong>を開いたときに LocalGateKeys が終了する場合は、Mac App Store でアップデートしてください。</p>
+        </article>
+
+        <article class="topic" id="mac-import">
+          <h3><a href="#mac-import">インポートとエクスポート</a></h3>
+          <ul>
+            <li><strong>Apple パスワード</strong>(macOS 26):ログイン、2FA、パスキー。インポート前に確認します。</li>
+            <li>ファイル:Bitwarden の <code>.json</code>(パスワード保護付きも可)、1Password の <code>.1pux</code>、KeePass の <code>.kdbx</code>、<strong>列を選択</strong>付きの CSV。</li>
+            <li>iPhone と Android の <code>.lgkm</code> バックアップ:<strong>新しい項目をすべて追加</strong>、<strong>重複は両方を保持</strong>、<strong>すべてスキップ</strong>から選びます。何も消去されません。</li>
+            <li>暗号化バックアップ、または CSV(暗号化なし、事前に確認)をエクスポートします。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-backups">
+          <h3><a href="#mac-backups">バックアップ</a></h3>
+          <p><strong>リカバリーセンター</strong>で:</p>
+          <ul>
+            <li><strong>完全バックアップ</strong>:<code>.lgk</code> ファイルを<strong>作成…</strong>、または<strong>復元…</strong>(保管庫を置き換えます)。Mac と Windows の間で使えます。安全のためのコピーが残るので、<strong>元に戻す…</strong>で復元を取り消せます。</li>
+            <li><strong>スケジュールバックアップ</strong>:頻度、曜日、時刻、保持する数、フォルダーとミラーフォルダー、バックアップのパスワード(12 文字以上)。</li>
+            <li><strong>リカバリーキット…</strong>:最新のバックアップを説明するファイルで、バックアップと一緒に保管します。<strong>緊急キットを印刷…</strong>では、保管庫とバックアップの場所と復元方法を記したページを印刷します。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-sync">
+          <h3><a href="#mac-sync">同期</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Wi-Fi(このネットワーク)</strong>:<strong>Wi-Fi 同期をオンにする</strong>を選び、<strong>QR コードを表示…</strong>を選びます。デバイスが参加したらコードを確認し、<strong>承認</strong>または<strong>拒否</strong>を選びます。後で心当たりがなければ<strong>元に戻す</strong>を選びます。</li>
+            <li><strong>コードで参加</strong>:もう一方のデバイスで<strong>QR コードを表示</strong>、<strong>コードのテキストをコピー</strong>の順に選び、そのテキストをここに貼り付けます。</li>
+            <li><strong>クラウドフォルダー</strong>:Dropbox や iCloud Drive などのフォルダーで、同期パスワードを使ってグループに参加するか作成します。OneDrive と Google Drive は、Apple 側の問題が解決するまで現在使えません。</li>
+            <li><strong>同期から退出…</strong> / <strong>この Mac の同期をリセット…</strong>。</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-share">
+          <h3><a href="#mac-share">共有</a></h3>
+          <p>項目を選んで<strong>共有…</strong>を選びます。受け取るには 編集 › <strong>共有された項目を受け取る…</strong>を選び(または <kbd>⌘</kbd><kbd>K</kbd> で検索)、ファイルを開くかドロップして(または QR テキストを貼り付けて)、6 つの単語を入力します。パスキーやファイルが添付された項目は共有できません。</p>
+        </article>
+
+        <article class="topic" id="mac-pro">
+          <h3><a href="#mac-pro">Pro</a></h3>
+          <p>Pro は 設定 › プラン で購入します。1 回の購入で iPhone と Mac の両方のアプリに有効です。もう一方のデバイスでは<strong>購入を復元</strong>を使います。Pro の iPhone と同期している無料の Mac には<em>同期したデバイスからの Pro</em>と表示されます。</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">設定</a></h3>
+          <p>設定はメインウインドウでも <kbd>⌘</kbd><kbd>,</kbd> でも同じで、ツールはサイドバーの下部に常に表示されます。設定 › バックアップには、スケジュール、<strong>毎週の復元テスト</strong>、保持する自動バックアップの数があります。リカバリーセンター、ライセンス、セットアップの再表示はどちらのウインドウからも開けます。そのほかの設定:自動ロックで何をアクティビティとみなすか、2 段階認証コードをコピーする前の確認、保管庫に保存した書類をほかのアプリで開く、クイックアクセスの独自ショートカット、ヘルプのリンク。</p>
+          <p><strong>強要時パスワード</strong>(Pro、設定 › 強要時パスワード):誰かにロック解除を強要されたときのための 2 つ目のマスターパスワードです。選んだ項目だけが入った別の保管庫が開き、本物の保管庫は設定した時間のあいだマスターパスワードを受け付けなくなります。</p>
+        </article>
+
+        <article class="topic" id="mac-keys">
+          <h3><a href="#mac-keys">キーボードショートカット</a></h3>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>K</kbd></th><td>すべてを検索</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>N</kbd></th><td>新規項目</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>L</kbd></th><td>ロック</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>C</kbd></th><td>パスワードをコピー</td></tr>
+              <tr><th scope="row"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd></th><td>ユーザー名をコピー</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>T</kbd></th><td>2FA コードをコピー</td></tr>
+              <tr><th scope="row"><kbd>⌫</kbd></th><td>最近削除した項目に移動</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>/</kbd></th><td>すべてのキーボードショートカット</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../ja/help">ユーザーガイド全体を 1 ページで見る</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>保管庫をご自身のデバイスに置いたままにする、Windows、Mac、iPhone向けのパスワードマネージャーです。</p>
+        <p class="quiet">本サイトはCookieを使わないCloudflare Web Analyticsでページの閲覧数を計測しています。広告トラッカーは使用せず、Cookieも設定しません。</p>
+      </div>
+      <nav aria-label="製品">
+        <h2>製品</h2>
+        <ul>
+          <li><a href="../../ja/features">機能</a></li>
+          <li><a href="../../ja/pricing">料金</a></li>
+          <li><a href="../../ja/download">ダウンロード</a></li>
+          <li><a href="../../ja/get-started">はじめに</a></li>
+          <li><a href="../../ja/switch/">乗り換え</a></li>
+          <li><a href="../../buy">Proを購入</a></li>
+          <li><a href="../../ja/licence">Proライセンス</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">ライセンスを再取得</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="ヘルプ">
+        <h2>ヘルプ</h2>
+        <ul>
+          <li><a href="../../ja/help">ユーザーガイド</a></li>
+          <li><a href="../../ja/support">サポートとFAQ</a></li>
+          <li><a href="../../ja/security">セキュリティ</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">脆弱性の報告</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="法的情報">
+        <h2>法的情報</h2>
+        <p class="quiet">これらの文書は英語で提供されており、適用され拘束力を持つのは英語版です。</p>
+        <ul>
+          <li><a href="../../legal/eula">ライセンス契約</a></li>
+          <li><a href="../../legal/privacy">プライバシーポリシー</a></li>
+          <li><a href="../../legal/terms-of-sale">販売条件</a></li>
+          <li><a href="../../legal/refunds">返金ポリシー</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas。お問い合わせ: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windowsは Microsoft グループ企業の商標です。Chromeは Google LLC の商標です。Apple、iPhone、Apple Watch、Face ID、Touch ID、Safariは、米国およびその他の国で登録されたApple Inc.の商標です。</p>
+      <nav class="lang-switch" aria-label="言語"><ul><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja" aria-current="true">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

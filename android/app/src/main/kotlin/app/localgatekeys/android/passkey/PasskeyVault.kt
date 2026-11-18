@@ -14,6 +14,7 @@ import app.localgatekeys.core.records.Wrapper
 import app.localgatekeys.core.sync.ItemStore
 import app.localgatekeys.core.sync.StoreChange
 import app.localgatekeys.core.sync.StoreSnapshot
+import app.localgatekeys.core.sync.itemRecords
 
 /** A passkey the person can choose; no key material. */
 data class PasskeyCandidate(val itemId: String, val title: String, val rpId: String, val userName: String, val credentialId: ByteArray) {
@@ -48,7 +49,7 @@ object PasskeyVault {
 
     /** Usable passkeys for [rpId] ordered by item id; a non-empty [allowed] keeps only those credential ids. */
     fun candidates(s: StoreSnapshot, rpId: String, allowed: List<ByteArray>): List<PasskeyCandidate> =
-        s.records.keys.sortedWith { a, b -> Scalars.compare(a, b) }.mapNotNull { id ->
+        s.itemRecords.keys.sortedWith { a, b -> Scalars.compare(a, b) }.mapNotNull { id ->
             val r = live(s, id) ?: return@mapNotNull null
             if (r.key == null || !matches(r, rpId)) return@mapNotNull null
             if (allowed.isNotEmpty() && allowed.none { it.contentEquals(r.credentialId) }) return@mapNotNull null

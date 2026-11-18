@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">Collections</string>
+    <string name="collections_none">Aucune collection pour le moment.</string>
+    <string name="collections_footer">Les notes, cartes et autres éléments typés peuvent être ajoutés aux collections. Les identifiants non.</string>
+    <string name="collections_add_starters">Ajouter les collections de départ</string>
+    <string name="collections_new">Nouvelle collection</string>
+    <string name="collections_name">Nom</string>
+    <string name="collections_create">Créer</string>
+    <string name="collections_delete_title">Supprimer la collection ?</string>
+    <string name="collections_delete_message">Les éléments qu’elle contient sont conservés.</string>
+    <string name="collections_view_only">Consultation seule</string>
+    <string name="collections_shared">Partagée</string>
+    <string name="collections_picker_footer">Un élément peut appartenir à 20 collections au maximum.</string>
+    <string name="collections_all_items">Tous les éléments</string>
+    <string name="collections_manage">Gérer les collections</string>
+    <string name="collections_filter">Collection : %1$s</string>
+    <string name="collections_filter_clear">Afficher tous les éléments</string>
+    <string name="collections_filter_empty">Aucun élément dans cette collection.</string>
+    <string name="collections_read_only_item">Cet élément est dans une collection partagée avec vous en consultation seule ; il ne peut pas être modifié sur cet appareil.</string>
+    <string name="collections_read_only">Cette collection est partagée avec vous en consultation seule ; elle ne peut pas être modifiée sur cet appareil.</string>
+    <string name="collections_shared_delete">Une collection partagée ne peut pas être supprimée. Arrêtez d\'abord de la partager ou quittez-la.</string>
+    <string name="collections_limit">Vous pouvez avoir au maximum 500 collections.</string>
+    <string name="collections_not_member">Les identifiants et les documents ne peuvent pas être ajoutés à une collection.</string>
+    <string name="collections_bad_name">Ce nom ne peut pas être utilisé.</string>
+    <string name="collections_gone">Cette collection n’existe plus.</string>
+    <string name="collections_failed">Impossible de modifier la collection.</string>
+    <string name="collections_empty_name">Saisissez un nom pour la collection.</string>
+    <string name="collections_long_name">Les noms de collection peuvent compter au plus 100 caractères.</string>
+    <string name="collections_duplicate">Une collection portant ce nom existe déjà.</string>
+    <string name="collections_too_many">Un élément ne peut pas appartenir à plus de 20 collections.</string>
+    <string name="collections_read_failed">Le coffre-fort n’a pas pu être lu sur cet appareil.</string>
+    <string name="collection_starter_personal">Personnel</string>
+    <string name="collection_starter_work">Travail</string>
+    <string name="collection_starter_travel">Voyages</string>
+    <string name="collection_starter_emergency">Urgence</string>
+</resources>

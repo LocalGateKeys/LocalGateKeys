@@ -14,6 +14,7 @@ from localvault.app.home import HomeService
 from localvault.app.security import SecurityService
 from localvault.profiles import ProfileManager
 from localvault.settings import AppSettings
+from localvault.site_features import SiteFeatures
 
 KDF = {"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32}
 MASTER = "correct horse battery"
@@ -56,6 +57,9 @@ class Port:
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     monkeypatch.setattr("localvault.app.controller.clear_master_unlock_requirement", lambda _pid: None)
+    # no_2fa needs site data: both test sites offer TOTP
+    monkeypatch.setattr("localvault.site_features.load",
+                        lambda path=None: SiteFeatures({"weak.test": ["totp"], "ok.test": ["totp"]}))
     profiles = ProfileManager(tmp_path / "data")
     profiles.ensure_profile()
     settings = AppSettings(idle_source="vault", breach_check_enabled=True, strict_offline_mode=False)
@@ -100,6 +104,20 @@ def test_center_maps_actions_to_page_routes(env):
                                                                                  "value": False}
 
 
+def test_center_lists_agent_exposure_so_a_vault_without_logins_can_reach_it(env):
+    security = env["security"]
+    assert all(i["key"] != "agent_exposed" for i in security.center()["issues"])
+    security.agent_exposed = lambda session: 2
+    issue = next(i for i in security.center()["issues"] if i["key"] == "agent_exposed")
+    assert issue["count"] == 2 and issue["title"] == "Exposed to an AI agent"
+    assert issue["action"] == {"label": "Review 2", "route": "health", "params": {"filter": "agent"}}
+
+    def broken(session):
+        raise RuntimeError("log unreadable")
+    security.agent_exposed = broken
+    assert all(i["key"] != "agent_exposed" for i in security.center()["issues"])
+
+
 def test_set_setting_saves_privacy_switches_only(env):
     env["security"].set_setting("strict_offline_mode", True)
     assert env["controller"].settings.strict_offline_mode is True
@@ -107,12 +125,29 @@ def test_set_setting_saves_privacy_switches_only(env):
         env["security"].set_setting("auto_lock_seconds", 0)
 
 
+def test_network_activity_lists_the_ledger_and_needs_an_unlocked_vault(env):
+    from localvault import net_ledger
+
+    net_ledger._reset_for_tests()
+    net_ledger.record(net_ledger.UPDATE_CHECK, "updates.localgatekeys.app", "ok")
+    net_ledger.record(net_ledger.WEBSITE_ICON, "weak.test", "ok")
+    view = env["security"].network_activity()
+    assert {(e["purpose"], e["host"]) for e in view["entries"]} == {
+        ("update_check", "updates.localgatekeys.app"), ("website_icon", "weak.test")}
+    env["controller"].lock()
+    with pytest.raises(ApiError):
+        env["security"].network_activity()
+    net_ledger.flush()
+    net_ledger._reset_for_tests()
+
+
 def test_report_summary_and_rows_hold_no_passwords(env):
     report = env["health"].report()
     assert report["summary"] == "2 logins · 1 weak · 0 reused · 2 without 2FA · 0 older than a year"
     assert {r["breach"] for r in report["rows"]} == {"Not checked"}
     assert "password1" not in json.dumps(report)
-    assert [f["key"] for f in report["filters"]] == [None, "weak", "reused", "no_2fa", "old", "exposed"]
+    assert [f["key"] for f in report["filters"]] == [None, "weak", "reused", "no_2fa", "old", "http", "passkey",
+                                                      "exposed", "agent"]
 
 
 @pytest.mark.parametrize("setting,text,key", [
@@ -199,3 +234,14 @@ def test_second_scan_is_refused_while_consent_is_open(env):
         health.scan(None)
     assert inner == ["Wait for the current breach check to finish."]
     assert health._running is False
+
+
+def test_center_flags_passkey_available_until_a_passkey_item_exists(env, monkeypatch):
+    monkeypatch.setattr("localvault.site_features.load", lambda path=None: SiteFeatures({"pk.test": ["passkey"]}))
+    session = env["controller"].session
+    session.create_web_login(urls=[{"url": "https://app.pk.test", "match": "exact_origin"}], username="c",
+                             password="Xq7!vR2#mP9$wL4@", label="Pk")
+    keys = [i["key"] for i in env["security"].center()["issues"]]
+    assert "passkey" in keys
+    session.item_service.create_passkey("Pk passkey", relying_party_id="pk.test")
+    assert "passkey" not in [i["key"] for i in env["security"].center()["issues"]]

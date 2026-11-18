@@ -86,6 +86,20 @@ final class AppLockModelTests: XCTestCase {
         XCTAssertEqual(m.state, .locked)
     }
 
+    /// Sub-plan 06: the widgets hide codes from when the vault would lock in the background.
+    func test_background_lock_deadline_is_the_earlier_limit() async {
+        settings.autoLockDelay = .fifteenMinutes; settings.idleLock = .fiveMinutes
+        let m = await unlocked()
+        let start = clock.now
+        clock.now += 60
+        m.didEnterBackground()
+        XCTAssertEqual(m.backgroundLockDeadline, start + 300, "the idle limit comes first")
+        settings.idleLock = .never
+        XCTAssertEqual(m.backgroundLockDeadline, start + 60 + 900, "the auto-lock delay from the background")
+        m.lock()
+        XCTAssertNil(m.backgroundLockDeadline)
+    }
+
     func test_lock_cancels_the_idle_timer() async {
         let m = await unlocked()
         XCTAssertEqual(scheduler.pending, 1)
@@ -230,6 +244,53 @@ final class AppLockModelTests: XCTestCase {
         let m = await unlocked(); m.lock()
         await m.unlock()
         XCTAssertEqual(eraser.calls, 0); XCTAssertEqual(m.state, .unlocked)
+    }
+
+    // MARK: erase after a removal from sync
+
+    func test_erase_on_sync_removal_defaults_to_on() {
+        XCTAssertTrue(settings.eraseOnSyncRemoval)
+        XCTAssertNil(settings.syncRemovalErasedAt)
+        XCTAssertFalse(settings.syncRemovalErasePending)
+    }
+
+    func test_removal_with_the_setting_off_erases_nothing() async {
+        settings.eraseOnSyncRemoval = false
+        let m = await unlocked()
+        var waited = false
+        await m.eraseAfterRemoval { waited = true }
+        XCTAssertEqual(eraser.calls, 0); XCTAssertFalse(waited)
+        XCTAssertEqual(m.state, .unlocked); XCTAssertFalse(m.showsRemovalNotice); XCTAssertFalse(settings.erasePending)
+    }
+
+    func test_removal_erases_then_shows_the_notice_once() async {
+        let m = await unlocked()
+        var stateDuringWait: AppLockModel.State?
+        await m.eraseAfterRemoval { stateDuringWait = m.state }
+        XCTAssertEqual(stateDuringWait, .locked, "locked before the erase")
+        XCTAssertEqual(eraser.calls, 1); XCTAssertEqual(m.state, .locked)
+        XCTAssertTrue(m.showsRemovalNotice); XCTAssertEqual(settings.syncRemovalErasedAt, clock.now)
+        XCTAssertFalse(settings.syncRemovalErasePending)
+        m.dismissRemovalNotice()
+        XCTAssertFalse(m.showsRemovalNotice); XCTAssertNil(settings.syncRemovalErasedAt)
+    }
+
+    func test_failed_removal_erase_shows_no_notice_until_its_retry_succeeds() async {
+        let m = await unlocked()
+        eraser.failuresLeft = 1
+        await m.eraseAfterRemoval()
+        XCTAssertEqual(m.state, .locked); XCTAssertTrue(settings.erasePending)
+        XCTAssertFalse(m.showsRemovalNotice, "the vault was not erased")
+        XCTAssertTrue(settings.syncRemovalErasePending)
+        await m.unlock()   // the retry before unlocking succeeds
+        XCTAssertEqual(eraser.calls, 2); XCTAssertFalse(settings.erasePending)
+        XCTAssertTrue(m.showsRemovalNotice); XCTAssertFalse(settings.syncRemovalErasePending)
+    }
+
+    func test_plain_erase_shows_no_removal_notice() async {
+        let m = await unlocked()
+        await m.eraseAndLock()
+        XCTAssertFalse(m.showsRemovalNotice)
     }
 
     // MARK: scene phase (Face ID sheet makes the scene inactive, then active again)

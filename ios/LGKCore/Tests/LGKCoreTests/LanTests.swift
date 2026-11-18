@@ -373,11 +373,13 @@ final class LanTests: XCTestCase {
 
     func test_version_refusal_and_legacy_hello() throws {
         let sv = try vec("lan/session.json")
-        XCTAssertEqual(LanTransport.version, 2)
-        XCTAssertEqual(try LanTransport.versionRefusal(), bytes(str(sv["version_refusal"])))
+        XCTAssertEqual(LanTransport.version, 3)
+        XCTAssertEqual(try LanTransport.versionRefusal(), bytes(str(try vec("lan/v3/session.json")["version_refusal"])))
         XCTAssertNil(LanTransport.parseVersionRefusal(try LanTransport.versionRefusal()))   // our own version is no refusal
+        // What a released version-2 responder sends (lan/session.json keeps it).
+        XCTAssertEqual(LanTransport.parseVersionRefusal(bytes(str(sv["version_refusal"]))), 2)
         XCTAssertEqual(LanTransport.parseVersionRefusal(bytes(#"{"refused":"version","version":1}"#)), 1)
-        XCTAssertEqual(LanTransport.parseVersionRefusal(bytes(#"{"refused":"version","version":3}"#)), 3)
+        XCTAssertEqual(LanTransport.parseVersionRefusal(bytes(#"{"refused":"version","version":4}"#)), 4)
         for bad in [#"{"refused":"version","version":0}"#, #"{"refused":"version","version":1.0}"#, #"{"refused":"version","version":"1"}"#,
                     #"{"refused":"other","version":1}"#, #"{"refused":"version","version":1,"x":1}"#, #"{"refused":"version"}"#,
                     #"{"refused":"version","version":true}"#, #"{"refused":"version","version":2147483648}"#, "not json"] {
@@ -390,25 +392,28 @@ final class LanTests: XCTestCase {
         XCTAssertNil(SessionHello.otherVersion(bytes(str(obj(obj(obj(arr(sv["sessions"])[0])["hello"])["initiator"])["text"]))))
     }
 
-    /// Answers the client's hello with `reply` (a version refusal, or another version's hello) and nothing else.
+    /// Answers the client's hello with `reply` (a version refusal) and nothing else.
     final class RefusingConnection: LanConnection, @unchecked Sendable {
         let reply: [UInt8]
         var calls = 0
         init(_ reply: [UInt8]) { self.reply = reply }
         func exchange(_ frame: [UInt8]) async throws -> [UInt8] {
             calls += 1
-            XCTAssertNoThrow(try SessionHello.parse(try LanTransport.decodeFrame(frame)))   // the client sent a version-2 hello
+            // The client sent a sealed version-3 hello, never a clear-text one.
+            let payload = try LanTransport.decodeFrame(frame)
+            XCTAssertEqual(SessionHello.otherVersion(payload), 3)
+            XCTAssertThrowsError(try SessionHello.parse(payload))
+            XCTAssertNoThrow(try SealedHello.openInitiator(payload, identity: try KeyringTests.identity("B")))
             return try LanTransport.encodeFrame(reply)
         }
     }
 
     func test_client_reports_update_needed_and_never_falls_back() async throws {
         let sv = try vec("lan/session.json")
-        let legacy = bytes(str(obj(sv["legacy_hello"])["text"]))
         let cases: [([UInt8], String)] = [
             (bytes(#"{"refused":"version","version":1}"#), "peer-update-needed"),
-            (bytes(#"{"refused":"version","version":3}"#), "lan-update-needed"),
-            (legacy, "peer-update-needed"),
+            (bytes(str(sv["version_refusal"])), "peer-update-needed"),   // a released version-2 responder
+            (bytes(#"{"refused":"version","version":4}"#), "lan-update-needed"),
         ]
         for (reply, kind) in cases {
             let sleeps = Sleeps()
@@ -558,15 +563,19 @@ final class LanTests: XCTestCase {
         }
         func exchange(_ frame: [UInt8]) async throws -> [UInt8] {
             if channel == nil {
-                let h = try SessionHello.parse(try LanTransport.decodeFrame(frame))
+                // LAN protocol version 3: the client's hello comes sealed to B and is answered sealed.
+                let opened = try SealedHello.openInitiator(try LanTransport.decodeFrame(frame), identity: b)
+                defer { opened.context.wipe() }
+                let h = opened.hello
                 try SessionHello.verify(h, pinned: pinnedA, groupID: LanTests.groupID)
                 // The recorded nonce and ephemeral key when given (QueueRandom falls back to system randomness).
                 let mine = try SessionHello.make(identity: b, groupID: LanTests.groupID, sessionID: h.sessionID, counter: counter,
-                                                 random: QueueRandom(nonce.map { [$0] + (eph.map { [$0] } ?? []) } ?? []))
+                                                 random: QueueRandom(nonce.map { [$0] + (eph.map { [$0] } ?? []) } ?? []),
+                                                 version: h.version)
                 clientHello = h; localHello = mine
                 channel = try SecureChannel(local: b, remote: pinnedA, groupID: LanTests.groupID, sessionID: h.sessionID,
                                             role: .responder, localHello: mine, remoteHello: h)
-                return try LanTransport.encodeFrame(try mine.toBytes())
+                return try LanTransport.encodeFrame(try SealedHello.sealResponder(mine, context: opened.context))
             }
             let request = try channel!.open(frame)
             return try channel!.seal(try answer(request))
@@ -606,10 +615,14 @@ final class LanTests: XCTestCase {
             let got = try await client.request(request, peer: try pinned("B"), connection: conn)
             XCTAssertEqual(got, response)
             XCTAssertEqual(seen, request)
-            let recorded = try SessionHello.parse(bytes(str(obj(hello["initiator"])["text"])))
-            XCTAssertEqual(conn.clientHello?.unsignedJSON, recorded.unsignedJSON)
+            // The recorded version-2 hellos as version 3 (the client now seals a version-3 hello).
+            func asV3(_ text: String) throws -> [String: JSONValue] {
+                var o = try SessionHello.parse(bytes(text)).unsignedJSON; o["version"] = .int(3); return o
+            }
+            XCTAssertEqual(conn.clientHello?.unsignedJSON, try asV3(str(obj(hello["initiator"])["text"])))
+            XCTAssertEqual(conn.clientHello?.version, 3)
             // B's recorded hello recreated (same session id, nonce, ephemeral key and counter; hedged signature).
-            XCTAssertEqual(conn.localHello?.unsignedJSON, try SessionHello.parse(bytes(str(obj(hello["responder"])["text"]))).unsignedJSON)
+            XCTAssertEqual(conn.localHello?.unsignedJSON, try asV3(str(obj(hello["responder"])["text"])))
             XCTAssertEqual(conn.localHello?.ephemeralSecret?.used, true)   // the responder's key served its one derivation
         }
     }
@@ -674,7 +687,7 @@ final class LanTests: XCTestCase {
     final class DroppingConnection: LanConnection, @unchecked Sendable {
         var hello: SessionHello?
         func exchange(_ frame: [UInt8]) async throws -> [UInt8] {
-            hello = try SessionHello.parse(try LanTransport.decodeFrame(frame))
+            hello = try SealedHello.openInitiator(try LanTransport.decodeFrame(frame), identity: try KeyringTests.identity("B")).hello
             throw LanPeerNotAnswering("reply lost")
         }
     }

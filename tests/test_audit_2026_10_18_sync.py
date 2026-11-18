@@ -193,7 +193,10 @@ def test_adding_a_folder_after_a_wifi_removal_needs_a_fresh_key(devs, root: Path
     new = a.state
     assert new.group_id == old.group_id and new.epoch == old.epoch + 1 and new.key != old.key
     assert new.lan_removed is False and new.folder_path == str(root)
-    assert [p["device_id"] for p in new.lan_peers] == [b.device_id]  # B keeps its pairing entry
+    # B keeps its pairing entry; C stays listed only as revoked, so its id stays reserved.
+    assert [(p["device_id"], p["revoked"]) for p in new.lan_peers] == [(b.device_id, False), (c.device_id, True)]
+    assert lan.set_heir_peer(a.session, a.lease, "new-device", True)  # pruning drops no listed, unrevoked peer
+    assert c.device_id not in a.state.heir_peers
 
     # C (removed, still holding the old key) can open neither the keyring nor A's file.
     ring = kr.parse_keyring((root / ft.SYNC_DIR_NAME / ft.KEYRING_NAME).read_bytes())

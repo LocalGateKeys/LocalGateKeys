@@ -24,7 +24,7 @@ final class PhoneTrash {
 
     nonisolated static let title = String(localized: "Recently deleted")
     nonisolated static let emptyText = String(localized: "Recently deleted is empty.")
-    nonisolated static let saveFailedText = String(localized: "Recently deleted could not be saved on this iPhone.")
+    nonisolated static let saveFailedText = DeviceText.isPad ? String(localized: "ipad.phoneTrash.recentlyDeletedCouldNot", defaultValue: "Recently deleted could not be saved on this iPad.") : String(localized: "Recently deleted could not be saved on this iPhone.")
     nonisolated static let undoSeconds: Double = 5
 
     /// The last deleted item, for the Undo toast.
@@ -62,13 +62,16 @@ final class PhoneTrash {
 
     // MARK: listing
 
-    /// Newest first.
+    /// Newest first. Rows of items travel mode hides are left out (feature pack §2), as the list leaves them out.
     var rows: [Row] {
-        guard let trash = local.localData?.trash else { return [] }
+        guard let data = local.localData else { return [] }
+        let trash = data.trash
+        let hidden = Self.travelHidden(data, store: store)
         var seen: [String: Int] = [:]
-        let rows = trash.enumerated().map { index, row -> Row in
+        let rows = trash.enumerated().compactMap { index, row -> Row? in
             let record = (try? row.record())?.objectValue ?? [:]
             let itemID = record["id"]?.stringValue ?? ""
+            if hidden.contains(itemID) { return nil }
             let item = VaultItem(id: itemID, record: record)
             let kind = item?.kindLabel ?? String(localized: "Item")
             let title = item.map { $0.title.isEmpty ? $0.kindLabel : $0.title } ?? kind
@@ -79,6 +82,16 @@ final class PhoneTrash {
             return Row(id: key, itemID: itemID, title: title, detail: detail, deletedAt: row.deletedAt, index: index)
         }
         return rows.sorted { ($0.deletedAt, $0.index) > ($1.deletedAt, $1.index) }
+    }
+
+    /// The item ids travel mode hides here (Windows `hidden_id_set`): rows hidden by their own record, and rows of a
+    /// live item it hides.
+    private static func travelHidden(_ data: LocalData, store: any ItemStore) -> Set<String> {
+        let travel = data.travel
+        guard travel.on else { return [] }
+        var out = travel.hiddenIDs(trashRecords: data.trash.compactMap { try? $0.record() })
+        if let snap = try? store.load() { out.formUnion(travel.hiddenIDs(in: snap)) }
+        return out
     }
 
     var retentionDays: Int { local.localData?.preferences.trashRetentionDays ?? 30 }
@@ -102,12 +115,14 @@ final class PhoneTrash {
     /// commit takes the row out again, so the item is never lost from both). `.unchanged` when it was gone.
     func moveToTrash(id: String) -> SaveResult {
         guard var data = local.localData, let snap = try? store.load() else { return .failed }
-        guard case .object(let wrapper)? = snap.records[id], case .object? = wrapper["record"],
+        guard !CollectionStates.isStateID(id), case .object(let wrapper)? = snap.records[id], case .object? = wrapper["record"],
               let record = AttachmentDocuments.trashRecord(.object(wrapper)) else {
             return .unchanged
         }
         let now = clock.now
-        guard let row = try? LocalData.TrashRow(record: record, deletedAt: now) else { return .failed }
+        // The row keeps the item's collections; the store delete drops its membership.
+        guard let row = try? LocalData.TrashRow(record: CollectionCatalog.trashRecord(record, itemID: id, in: snap),
+                                                deletedAt: now) else { return .failed }
         let previous = data
         data.trash.append(row)
         data.purgeExpiredTrash(now: now)
@@ -119,6 +134,54 @@ final class PhoneTrash {
         }
         lastDeleted = (id, now)
         return .saved
+    }
+
+    /// Moves several live items to Recently deleted with one save of each store (the clean-up sweep's bulk delete and
+    /// the undo of an import, feature pack §3.3 and §6.1), by the rules of `moveToTrash(id:)`. Items that are gone,
+    /// collection states and view-only shared items are left out. Returns the ids moved, in `ids` order.
+    func moveToTrash(ids: [String]) -> [String] {
+        guard var data = local.localData, var snap = try? store.load() else { return [] }
+        let now = clock.now
+        let previous = data
+        var moved: [String] = []
+        for id in ids where !moved.contains(id) {
+            guard !CollectionStates.isStateID(id), case .object(let wrapper)? = snap.records[id], case .object? = wrapper["record"],
+                  !EditorModel.itemIsReadOnly(id, in: snap),
+                  let record = AttachmentDocuments.trashRecord(.object(wrapper)),
+                  let row = try? LocalData.TrashRow(record: CollectionCatalog.trashRecord(record, itemID: id, in: snap),
+                                                    deletedAt: now) else { continue }
+            // The tombstone as `EditorModel.delete` writes it (one bump for this device).
+            var tomb: SyncMeta?
+            if let m = snap.meta[id], !m.deleted, let device = snap.sync?.deviceID {
+                guard let vv = try? VersionVector.bump(m.vv, device: device) else { continue }
+                tomb = SyncMeta.tomb(vv: vv, deletedAt: now)
+            }
+            data.trash.append(row)
+            snap.records[id] = nil
+            snap.records = CollectionCatalog.withoutMembership(id, records: snap.records)
+            if let tomb { snap.meta[id] = tomb }
+            moved.append(id)
+        }
+        guard !moved.isEmpty else { return [] }
+        data.purgeExpiredTrash(now: now)
+        do { try local.commitLocalData(data) } catch { return [] }
+        let change = StoreChange(baseRevision: snap.revision, records: snap.records, meta: snap.meta, sync: snap.sync)
+        do { try background.run("LocalGateKeys save") { try store.commit(change) } } catch {
+            try? local.commitLocalData(previous)
+            return []
+        }
+        return moved
+    }
+
+    /// Puts items back from Recently deleted (the newest row of each), as Restore does. Returns how many came back.
+    @discardableResult
+    func restoreItems(_ itemIDs: [String], isPro: Bool) -> Int {
+        var restored = 0
+        for itemID in itemIDs {
+            guard let row = rows.first(where: { $0.itemID == itemID }) else { continue }
+            if restore(row, isPro: isPro) == .restored { restored += 1 }
+        }
+        return restored
     }
 
     // MARK: restore
@@ -141,14 +204,18 @@ final class PhoneTrash {
     private func restore(_ row: Row, isPro: Bool) -> RestoreOutcome {
         guard var data = local.localData, data.trash.indices.contains(row.index),
               data.trash[row.index].deletedAt == row.deletedAt else { return .failed(String(localized: "It is no longer in Recently deleted.")) }
-        guard case .object(let record)? = try? data.trash[row.index].record(), case .string(let id)? = record["id"], !id.isEmpty,
-              case .string(let kind)? = record["kind"] else { return .failed(String(localized: "This entry can't be restored.")) }
+        guard case .object(let stored)? = try? data.trash[row.index].record(), case .string(let id)? = stored["id"], !id.isEmpty,
+              !CollectionStates.isStateID(id),
+              case .string(let kind)? = stored["kind"] else { return .failed(String(localized: "This entry can't be restored.")) }
         guard let snap = try? store.load() else { return .failed(String(localized: "The vault could not be read.")) }
         guard ItemLimit.allows(.restore, snapshot: snap, isPro: isPro) else { return .limit }
         if snap.records[id] != nil, snap.meta[id]?.deleted != true { return .failed(String(localized: "An item with the same ID already exists.")) }
         let ns: LGKCore.Namespace = kind == "web" || kind == "desktop" ? .entry : .item
         var next = snap
-        next.records[id] = AttachmentDocuments.restoredWrapper(.object(record), ns: ns)   // a document keeps its file
+        // The row's collections become its membership again; the stored record never carries them.
+        let back = CollectionCatalog.restored(stored, itemID: id, records: snap.records)
+        next.records = back.records
+        next.records[id] = AttachmentDocuments.restoredWrapper(.object(back.record), ns: ns)   // a document keeps its file
         if let m = snap.meta[id], m.deleted {
             // Live again: the tomb's vector is kept and bumped once at the next view, so the restore wins.
             next.meta[id] = SyncMeta(digest: nil, body: nil, updatedAt: nil, vv: m.vv, deleted: false, deletedAt: nil)
@@ -163,7 +230,8 @@ final class PhoneTrash {
         } catch {
             // Store first, then the row: undo the store change so the item is not in both places.
             if var s = try? store.load() {
-                s.records[id] = snap.records[id]; s.meta[id] = snap.meta[id]
+                let membership = CollectionStates.membershipPrefix + id
+                s.records[id] = snap.records[id]; s.meta[id] = snap.meta[id]; s.records[membership] = snap.records[membership]
                 try? store.commit(StoreChange(baseRevision: s.revision, records: s.records, meta: s.meta, sync: s.sync))
             }
             return .failed(Self.saveFailedText)
@@ -177,6 +245,8 @@ final class PhoneTrash {
         let wanted = rows.filter { rowIDs.contains($0.id) }
         guard !wanted.isEmpty, var data = local.localData else { return }
         for index in wanted.map(\.index).sorted(by: >) { data.trash.remove(at: index) }
+        // Deleted for good: its earlier versions go too (scan 2026-11-15 W-M5, A-M3).
+        if let snap = try? store.load() { data.forgetHistoryOfPurgedItems(snap) }
         try local.commitLocalData(data)
         collectAttachmentGarbage(data)
     }
@@ -189,12 +259,14 @@ final class PhoneTrash {
 
     func emptyAll() throws { try purge(Set(rows.map(\.id))) }
 
-    /// On unlock: drops rows past the retention period.
+    /// On unlock: drops rows past the retention period, and the item history of every item deleted for good (purged
+    /// here or earlier, deleted with no trash, or deleted on another device; scan 2026-11-15 W-M5, A-M3).
     func purgeExpired() {
         guard var data = local.localData else { return }
         let before = data.trash.count
         data.purgeExpiredTrash(now: clock.now)
-        guard data.trash.count != before else { return }
+        let forgot = (try? store.load()).map { data.forgetHistoryOfPurgedItems($0) } ?? false
+        guard data.trash.count != before || forgot else { return }
         if (try? local.commitLocalData(data)) != nil { collectAttachmentGarbage(data) }
     }
 }

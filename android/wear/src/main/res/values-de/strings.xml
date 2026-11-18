@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">Angeheftete Codes</string>
+    <string name="tile_description">Ihre angehefteten Zwei-Faktor-Codes aus LocalGateKeys auf Ihrem Telefon.</string>
+    <string name="tile_no_data">Öffnen Sie LocalGateKeys auf Ihrem Telefon</string>
+    <string name="tile_locked">Entsperren Sie LocalGateKeys auf Ihrem Telefon, um Codes zu sehen</string>
+    <string name="tile_locked_immediately">Stellen Sie die automatische Sperre auf dem Telefon auf 1 Minute oder länger, um Codes hier zu sehen</string>
+    <string name="tile_empty">Heften Sie einen Code in LocalGateKeys an</string>
+    <string name="tile_watch_locked">Entsperren Sie Ihre Uhr, um Codes zu sehen</string>
+    <string name="tile_updated_now">Gerade aktualisiert</string>
+    <string name="tile_updated_minutes">Vor %1$d Min. aktualisiert</string>
+    <string name="tile_updated_hours">Vor %1$d Std. aktualisiert</string>
+    <string name="tile_updated_days">Vor %1$d T. aktualisiert</string>
+</resources>

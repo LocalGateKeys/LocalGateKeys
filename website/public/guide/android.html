@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys for Android: user guide</title>
+  <meta name="description" content="How the LocalGateKeys Android app works: setup, autofill, two-factor codes, import, backups and sync.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/android">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/android">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/android">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/android">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/android">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/android">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys for Android: user guide">
+  <meta property="og:description" content="How the LocalGateKeys Android app works: setup, autofill, two-factor codes, import, backups and sync.">
+  <meta property="og:url" content="https://localgatekeys.app/guide/android">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The LocalGateKeys logo: a password manager for Windows, Mac and iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys for Android: user guide">
+  <meta name="twitter:description" content="How the LocalGateKeys Android app works: setup, autofill, two-factor codes, import, backups and sync.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../brand/icon-256.png">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Main">
+        <ul class="nav">
+          <li><a href="../features">Features</a></li>
+          <li><a href="../get-started">Get started</a></li>
+          <li><a href="../help">Guide</a></li>
+          <li><a href="../security">Security</a></li>
+          <li><a href="../pricing">Pricing</a></li>
+          <li><a href="../support">Support</a></li>
+          <li><a class="nav-cta" href="../download">Download</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Main">
+          <ul class="nav nav-stack">
+            <li><a href="../features">Features</a></li>
+          <li><a href="../get-started">Get started</a></li>
+          <li><a href="../help">Guide</a></li>
+          <li><a href="../security">Security</a></li>
+          <li><a href="../pricing">Pricing</a></li>
+          <li><a href="../support">Support</a></li>
+          <li><a class="nav-cta" href="../download">Download</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Language</span></summary>
+        <ul class="lang-menu-list"><li><a href="../guide/android" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys for Android</h1>
+  <p class="lead">Step-by-step help for every screen and feature on this device. Every heading is a link you can share.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platforms">
+    <ul><li><a class="help-tab" href="../guide/windows">Windows</a></li><li><a class="help-tab" href="../guide/mac">Mac</a></li><li><a class="help-tab" href="../guide/iphone">iPhone and iPad</a></li><li><a class="help-tab" href="../guide/android" aria-current="page">Android</a></li><li><a class="help-tab" href="../guide/extension">Browser extension</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Good to know on every device</h2>
+    <ul>
+      <li><strong>Your vault stays on your devices.</strong> There is no account and no LocalGateKeys server holding your passwords.</li>
+      <li><strong>Nobody can reset your master password or app password.</strong> Set up a recovery phrase and keep it on paper.</li>
+      <li><strong>Free</strong> holds up to 7 items. <strong>Pro</strong> (US$29.99, paid once) adds unlimited items, two-factor codes, files and sync. Editing, deleting and filling items you already have are never blocked.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Android topics</h2>
+    <p class="callout-soon"><strong>Coming soon.</strong> The Android app is not on Google Play yet. This guide shows how it will work.</p>
+    <p class="panel-lead">The app has four tabs: <strong>Vault</strong>, <strong>Sync</strong>, <strong>Security</strong> and <strong>Settings</strong>. Search is the magnifier at the top of the Vault tab.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Android topics">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">On this tab</summary>
+          <ol>
+            <li><a href="#and-setup">First start and unlocking</a></li>
+            <li><a href="#and-apppw">App password and recovery</a></li>
+            <li><a href="#and-items">Items</a></li>
+            <li><a href="#and-search">Search and actions</a></li>
+            <li><a href="#and-generator">Password generator</a></li>
+            <li><a href="#and-2fa">Two-factor codes</a></li>
+            <li><a href="#and-autofill">Autofill</a></li>
+            <li><a href="#and-passkeys">Passkeys</a></li>
+            <li><a href="#and-import">Import</a></li>
+            <li><a href="#and-backups">Backups</a></li>
+            <li><a href="#and-sync">Sync</a></li>
+            <li><a href="#and-share">Sharing</a></li>
+            <li><a href="#and-settings">Settings and Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">First start and unlocking</a></h3>
+          <p>Your vault opens with your phone's fingerprint, face or screen lock. (The phone needs a screen lock.) A short setup follows: unlock with fingerprint, <strong>Import…</strong>, an optional app password and <strong>Open Autofill settings</strong>. Skip any step; the <em>Finish setting up</em> card brings you back.</p>
+          <p>Settings › Lock &amp; security sets <strong>Auto-lock after leaving the app</strong> (Immediately to 1 hour) and <strong>Lock when idle</strong> (1 to 30 minutes, or Never), and has <strong>Lock now</strong>. The app is hidden in the recent-apps view.</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">App password and recovery phrase</a></h3>
+          <ol>
+            <li>Settings › Lock &amp; security › turn on <strong>Use an app password</strong>, choose one and tap <strong>Continue</strong>. From then on it, not the screen lock, opens LocalGateKeys.</li>
+            <li>Write down the 24-word recovery phrase, tap <strong>I wrote them down</strong>, type the words it asks for and tap <strong>Turn on app password</strong>.</li>
+          </ol>
+          <p>Forgot it? Tap <strong>Forgot app password?</strong>, type the 24 words, and choose a new one. <strong>Change app password</strong>, and the <strong>Use an app password</strong> switch to turn it off, are in Settings › Lock &amp; security.</p>
+          <p class="note">After restoring a phone from a Google backup, the vault can't be opened (its key isn't backed up). Choose <strong>Start fresh</strong>, then sync with your PC to get everything back.</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">Items</a></h3>
+          <ul>
+            <li>Tap <strong>+</strong> and pick a kind: Website login, Note, Payment card, Identity, Bank account, Purchase, Subscription, Warranty, Wi-Fi network, License, API key, SSH key, Bookmark.</li>
+            <li>Open an item to copy fields, <strong>Open website</strong>, <strong>Edit</strong>, <strong>Delete</strong> or <strong>Add to Favorites</strong>.</li>
+            <li><strong>Password history</strong>: copy or restore an earlier password.</li>
+            <li><strong>Add a file</strong> (Pro): take a photo, choose a photo or a file, up to 25 MB each.</li>
+            <li><strong>Sort</strong> by title or date, favourites first.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">Search and actions</a></h3>
+          <p>Tap the magnifier on the Vault tab and type a name, or start with <code>&gt;</code> for actions such as Export backup, Generate password, Import passwords, Lock, Receive shared item, Scan QR code to pair and Sync now.</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">Password generator</a></h3>
+          <p><strong>Password</strong> (length, upper and lower case, digits, symbols, avoid look-alikes) or <strong>Passphrase</strong> (words, capitalise, add a number, separator). <strong>Generate again</strong>, then <strong>Copy</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">Two-factor codes</a> <span class="badge-pro">Pro</span></h3>
+          <p>Edit a login and tap <strong>Scan QR code</strong> next to the 2FA field, or type the setup key. Codes show in the item and in the <strong>Codes</strong> row: tap one to copy it.</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">Autofill</a></h3>
+          <ol>
+            <li>Settings › Autofill › <strong>Open Autofill settings</strong> and choose LocalGateKeys. (If it doesn't open, search the phone's Settings for <em>Autofill service</em>.)</li>
+            <li>Tap a sign-in box in any app or website and pick your login from the suggestions. Unlock when asked.</li>
+            <li>After signing in somewhere new, choose <strong>Save</strong> on <em>Save login?</em>, or <strong>Update password</strong> when it changed.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">Passkeys</a></h3>
+          <p>Turn on Settings › Autofill › <strong>Offer LocalGateKeys for passkeys</strong>. When a site or app offers a passkey, choose LocalGateKeys; sign in later with <strong>Use your passkey</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">Import</a></h3>
+          <p>Settings › Sync &amp; data › <strong>Import from a file</strong> › <strong>Choose export file</strong>: Chrome, Edge, Brave, Firefox, Apple Passwords, Bitwarden <code>.json</code> (also password-protected), 1Password <code>.1pux</code>, or any CSV. Review everything, then import. Delete the export file afterwards.</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">Backups</a></h3>
+          <p><strong>Export backup…</strong> saves an encrypted <code>.lgkm</code> file with a password you choose (it can't be recovered). <strong>Restore from a backup…</strong> opens one, shows a preview, and never overwrites a newer item. Works with the PC and iPhone too.</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">Sync with your PC</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>On the PC choose <strong>Show QR code</strong> on the Wi-Fi card.</li>
+            <li>On the phone, Sync tab › <strong>Scan QR code</strong> (or <strong>Paste code text</strong>).</li>
+            <li>Check both show the same code and accept on the PC.</li>
+          </ol>
+          <p>Or <strong>Join a folder…</strong> in Dropbox or Nextcloud with the sync password. The PC needs Pro too.</p>
+          <p class="note">OneDrive and Google Drive are unavailable for sync for now, until an issue with Apple is resolved. Use Dropbox, Nextcloud or Wi-Fi sync instead.</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">Sharing</a></h3>
+          <p>Open an item, tap Share, then <strong>Send as a file…</strong> or <strong>Show as a QR code</strong>, and tell the six words separately. To receive: Settings › Sync &amp; data › <strong>Receive a shared item</strong>, enter the six words, tap <strong>Open</strong>, then <strong>Add to vault</strong>. The share opens once within 24 hours; three wrong codes delete it. Passkeys and files cannot be shared.</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">Settings and Pro</a></h3>
+          <ul>
+            <li><strong>Appearance</strong>: System, Light or Dark, and your initials.</li>
+            <li><strong>Lock &amp; security</strong> has <strong>Clear clipboard after</strong>, <strong>Privacy</strong> has <strong>Hide passwords until tapped</strong>, and <strong>Sync &amp; data</strong> has <strong>Erase this phone's vault</strong> (this phone only). Android lets the app check the clipboard only while it is open, so a copy made from the Quick Settings tile or just before you switch apps is cleared the next time you open LocalGateKeys.</li>
+            <li><strong>Pro</strong> (top of Settings): <strong>Upgrade</strong> and buy once through Google Play, <strong>Restore purchases</strong> on another phone with the same Google account, and <strong>Copy key</strong> to unlock Windows too.</li>
+            <li><strong>Duress password</strong> (Pro): a second app password for when someone forces you to unlock. It opens a separate vault with only the items you choose, and your vault then refuses its app password for the hours you set. Turn on the app password first, then set it up under <strong>Duress password</strong> in Settings.</li>
+            <li><strong>Export to a CXF file…</strong> writes the logins, notes and passkeys you pick to a Credential Exchange file that other password managers can import. The file is not encrypted.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../help">The whole user guide on one page</a></p>
+</div>
+
+<script src="../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>A password manager for Windows, Mac and iPhone that keeps your vault on your own devices.</p>
+        <p class="quiet">This website uses Cloudflare Web Analytics, which is cookieless, to count page visits. It uses no advertising trackers and sets no cookies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../features">Features</a></li>
+          <li><a href="../pricing">Pricing</a></li>
+          <li><a href="../download">Download</a></li>
+          <li><a href="../get-started">Get started</a></li>
+          <li><a href="../switch/">Switch</a></li>
+          <li><a href="../buy">Buy Pro</a></li>
+          <li><a href="../licence">Your Pro licence</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recover your licence</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Help">
+        <h2>Help</h2>
+        <ul>
+          <li><a href="../help">User guide</a></li>
+          <li><a href="../support">Support and FAQ</a></li>
+          <li><a href="../security">Security</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Report a vulnerability</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Legal">
+        <h2>Legal</h2>
+        <ul>
+          <li><a href="../legal/eula">Licence agreement</a></li>
+          <li><a href="../legal/privacy">Privacy policy</a></li>
+          <li><a href="../legal/terms-of-sale">Terms of sale</a></li>
+          <li><a href="../legal/refunds">Refund policy</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is a trademark of the Microsoft group of companies. Chrome is a trademark of Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID and Safari are trademarks of Apple Inc., registered in the U.S. and other countries.</p>
+      <nav class="lang-switch" aria-label="Language"><ul><li><a href="../guide/android" hreflang="en" lang="en" aria-current="true">English</a></li><li><a href="../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

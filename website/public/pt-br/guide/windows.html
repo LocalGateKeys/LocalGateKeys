@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys para Windows: guia do usuário</title>
+  <meta name="description" content="Como configurar, desbloquear, preencher, importar, fazer backup e sincronizar o LocalGateKeys no Windows 10 e 11, passo a passo.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/windows">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/windows">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/windows">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/windows">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/windows">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/windows">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys para Windows: guia do usuário">
+  <meta property="og:description" content="Como configurar, desbloquear, preencher, importar, fazer backup e sincronizar o LocalGateKeys no Windows 10 e 11, passo a passo.">
+  <meta property="og:url" content="https://localgatekeys.app/pt-br/guide/windows">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="O logotipo do LocalGateKeys: um gerenciador de senhas para Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys para Windows: guia do usuário">
+  <meta name="twitter:description" content="Como configurar, desbloquear, preencher, importar, fazer backup e sincronizar o LocalGateKeys no Windows 10 e 11, passo a passo.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../pt-br/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/help">Guia</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/support">Suporte</a></li>
+          <li><a class="nav-cta" href="../../pt-br/download">Baixar</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/help">Guia</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/support">Suporte</a></li>
+          <li><a class="nav-cta" href="../../pt-br/download">Baixar</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Idioma</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys para Windows</h1>
+  <p class="lead">Ajuda passo a passo para cada tela e recurso neste dispositivo. Cada título é um link que você pode compartilhar.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Plataformas">
+    <ul><li><a class="help-tab" href="../../pt-br/guide/windows" aria-current="page">Windows</a></li><li><a class="help-tab" href="../../pt-br/guide/mac">Mac</a></li><li><a class="help-tab" href="../../pt-br/guide/iphone">iPhone e iPad</a></li><li><a class="help-tab" href="../../pt-br/guide/android">Android</a></li><li><a class="help-tab" href="../../pt-br/guide/extension">Extensão do navegador</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Bom saber em qualquer dispositivo</h2>
+    <ul>
+      <li><strong>Seu cofre fica nos seus dispositivos.</strong> Não há conta nem servidor do LocalGateKeys guardando suas senhas.</li>
+      <li><strong>Ninguém pode redefinir sua senha mestra ou a senha do app.</strong> Configure uma frase de recuperação e guarde-a no papel.</li>
+      <li>O <strong>Free</strong> guarda até 7 itens. O <strong>Pro</strong> (US$29.99, pagamento único) adiciona itens ilimitados, códigos de dois fatores, arquivos e sincronização. Editar, excluir e preencher os itens que você já tem nunca é bloqueado.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Tópicos do Windows</h2>
+    <p class="panel-lead">Windows 10 (versão 2004 ou posterior) e Windows 11, 64 bits. Instale pela Microsoft Store ou pela <a href="../../pt-br/download">página de download</a>.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Tópicos do Windows">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Nesta aba</summary>
+          <ol>
+            <li><a href="#win-setup">Primeiro uso e perfis</a></li>
+            <li><a href="#win-unlock">Desbloquear e bloquear</a></li>
+            <li><a href="#win-screen">A janela principal</a></li>
+            <li><a href="#win-items">Adicionar e editar itens</a></li>
+            <li><a href="#win-trash">Excluir, lixeira e desfazer</a></li>
+            <li><a href="#win-search">Pesquisa, paleta, Acesso rápido</a></li>
+            <li><a href="#win-generator">Gerador de senhas</a></li>
+            <li><a href="#win-security">Central de segurança</a></li>
+            <li><a href="#win-2fa">Códigos de dois fatores e QR</a></li>
+            <li><a href="#win-import">Importar</a></li>
+            <li><a href="#win-export">Exportar e transferir</a></li>
+            <li><a href="#win-backups">Backups e restauração</a></li>
+            <li><a href="#win-sync">Sincronização</a></li>
+            <li><a href="#win-share">Compartilhar um item</a></li>
+            <li><a href="#win-apps">Preencher apps do Windows</a></li>
+            <li><a href="#win-shared">Coleções compartilhadas</a></li>
+            <li><a href="#win-safety">Acesso de emergência e senha de coação</a></li>
+            <li><a href="#win-dev">Ferramentas de desenvolvedor e agentes de IA</a></li>
+            <li><a href="#win-settings">Configurações</a></li>
+            <li><a href="#win-pro">Licença Pro</a></li>
+            <li><a href="#win-updates">Atualizações</a></li>
+            <li><a href="#win-keys">Atalhos de teclado</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">Primeiro uso e perfis</a></h3>
+          <ol>
+            <li>Abra o LocalGateKeys. Digite uma <strong>Senha mestra</strong> com pelo menos 12 caracteres, repita-a em <strong>Confirmar senha</strong> e escolha <strong>Criar cofre</strong>.</li>
+            <li>Em seguida vem o guia <strong>Configurar o LocalGateKeys</strong>, em cinco etapas: criar o cofre, <strong>Configurar o Windows Hello</strong>, <strong>Importar</strong> suas senhas, <strong>Abrir frase de recuperação</strong> (você digita de novo três das palavras para provar que a guardou) e <strong>Testar conexão</strong> para a extensão do navegador.</li>
+            <li>Você pode <strong>Pular</strong> qualquer etapa. As etapas puladas ficam esperando num cartão <em>Concluir configuração</em> no cofre, com <strong>Continuar configuração</strong> e <strong>Ocultar</strong>.</li>
+          </ol>
+          <p class="tip"><strong>Dica.</strong> Para ver o guia de novo: Configurações › Ajuda e diagnóstico › <strong>Mostrar configuração de novo</strong>.</p>
+          <h4>Perfis</h4>
+          <p>Cada perfil é um cofre separado com sua própria senha mestra, por exemplo um para o trabalho e outro para casa.</p>
+          <ul>
+            <li>Na tela de desbloqueio escolha <strong>Usar outro perfil</strong>, depois <strong>Criar perfil</strong> e digite um <strong>Nome do perfil</strong>.</li>
+            <li>Para editar um perfil, pressione Ctrl+K e execute <strong>Trocar de perfil</strong>. Lá você pode <strong>Adicionar perfil</strong>, <strong>Editar</strong>, definir uma <strong>Foto…</strong> e uma <strong>Cor de destaque</strong> ou <strong>Remover</strong>.</li>
+            <li><strong>Bloquear e trocar de pessoa</strong>, no menu da bandeja, bloqueia e vai direto para a escolha de perfil.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">Desbloquear e bloquear</a></h3>
+          <h4>Formas de desbloquear</h4>
+          <ul>
+            <li><strong>Senha mestra</strong> e depois <strong>Desbloquear</strong>. Sempre funciona.</li>
+            <li><strong>Desbloquear com o Windows Hello</strong>: impressão digital, rosto ou PIN. Configure em Configurações › Desbloqueio › Windows Hello › <strong>Configurar</strong>. <strong>Iniciar o Windows Hello automaticamente</strong> (ativado por padrão) mostra a solicitação assim que a janela abre.</li>
+            <li><strong>Usar a câmera</strong>: reconhecimento facial com uma webcam comum, feito no PC. É menos seguro que o Windows Hello. Configure com <strong>Configurar verificação por câmera</strong>.</li>
+          </ul>
+          <h4>Esqueceu sua senha mestra?</h4>
+          <ol>
+            <li>Na tela de desbloqueio escolha <strong>Esqueceu? Use a frase de recuperação</strong>.</li>
+            <li>Digite as 24 palavras, separadas por espaços.</li>
+            <li>Escolha uma nova senha mestra (12 caracteres ou mais), digite-a duas vezes e escolha <strong>Recuperar cofre</strong>.</li>
+          </ol>
+          <p class="note"><strong>Depois</strong> configure de novo o Windows Hello e a verificação por câmera. A frase de recuperação continua funcionando.</p>
+          <h4>Alterar a senha mestra</h4>
+          <p>Configurações › Desbloqueio › Senha mestra › <strong>Alterar…</strong>. Digite a atual e a nova duas vezes. Para que a frase de recuperação continue funcionando, digite também as 24 palavras dela; caso contrário, crie uma nova frase depois. Os backups que você já fez mantêm a senha com que foram criados.</p>
+          <h4>Bloqueio</h4>
+          <ul>
+            <li>Botão <strong>Bloquear</strong> na barra superior, ou <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
+            <li><strong>Bloqueio de emergência</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd> em qualquer lugar do Windows. Bloqueia na hora e cancela qualquer preenchimento em andamento.</li>
+            <li>Configurações › Bloqueio:
+              <ul>
+                <li><strong>Bloquear após inatividade</strong>: Nunca, ou de 1 minuto a 24 horas.</li>
+                <li><strong>Bloquear quando o Windows bloquear</strong> (Win+L, troca de usuário, sair) e <strong>Bloquear ao suspender</strong> (tampa fechada, suspensão, hibernação).</li>
+                <li><strong>Nunca ficar desbloqueado por mais de</strong>: um limite fixo, não importa o que você esteja fazendo.</li>
+                <li><strong>Contar atividade de</strong>: atividade do computador ou atividade do cofre.</li>
+                <li><strong>Perguntar antes de liberar códigos 2FA</strong> para a extensão do navegador.</li>
+              </ul>
+            </li>
+          </ul>
+          <p>O menu do ícone na bandeja tem <strong>Abrir o LocalGateKeys</strong>, <strong>Desbloquear o cofre</strong>, <strong>Bloquear o cofre</strong>, <strong>Bloquear e trocar de pessoa</strong>, <strong>Acesso rápido</strong>, <strong>Verificar atualizações</strong>, chaves para <strong>Integração com o navegador</strong> e <strong>Ícones de preenchimento no desktop</strong>, e <strong>Sair</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">A janela principal</a></h3>
+          <dl class="defs">
+            <dt>Barra lateral · Cofre</dt><dd><strong>Todos os itens</strong>, <strong>Favoritos</strong>, <strong>Usados recentemente</strong>.</dd>
+            <dt>Barra lateral · Tipos</dt><dd>Uma entrada para cada tipo que você tem, como Logins, Cartões, Identidades, Notas seguras, Documentos, Wi-Fi ou Chaves de acesso.</dd>
+            <dt>Barra lateral · Coleções e visualizações</dt><dd>Suas coleções e visualizações fixadas.</dd>
+            <dt>Barra lateral · Ferramentas</dt><dd>Central de segurança, Gerador, Sync e dispositivos, Dispositivos e conexões, Importar e exportar, Lixeira. <strong>Configurações</strong> fica embaixo. Os lembretes abrem pelo cartão <em>Em breve</em> do Início, a Atividade pela Central de segurança, Escanear código QR com <kbd>Ctrl</kbd>+<kbd>K</kbd> e a Licença em Configurações › Plano e sincronização. <kbd>Ctrl</kbd>+<kbd>K</kbd> leva a qualquer página.</dd>
+            <dt>Barra superior</dt><dd>Caixa de pesquisa, <strong>Novo item</strong>, <strong>Bloquear</strong> e <strong>Ctrl K</strong> para a paleta de comandos.</dd>
+            <dt>Início</dt><dd>Cartões de Saúde das senhas, Backup e recuperação, Em breve e Gerador, além de <strong>Códigos de uso único</strong> (clique num código para copiá-lo).</dd>
+          </dl>
+          <h4>A lista de itens</h4>
+          <ul>
+            <li>Filtros: <strong>Todos</strong>, <strong>Precisa de atenção</strong>, <strong>Sem 2FA</strong>, <strong>Vencendo</strong>.</li>
+            <li><strong>Ordenar</strong>: Título A–Z, Título Z–A, Data de modificação, Data de criação.</li>
+            <li>Marcadores numa linha indicam uma senha vazada, fraca ou reutilizada.</li>
+            <li>Clique com o botão direito numa linha (ou <kbd>Shift</kbd>+<kbd>F10</kbd>) para Editar, Copiar nome de usuário, Copiar senha, Copiar código 2FA, Abrir site, Compartilhar…, Adicionar aos favoritos e Mover para a lixeira….</li>
+          </ul>
+          <h4>O painel de detalhes</h4>
+          <p>Mostra os campos do item selecionado. As senhas ficam ocultas até você clicar nelas. Os botões copiam o nome de usuário, a senha ou o código 2FA, abrem o site, <strong>Editar</strong>, <strong>Compartilhar</strong> ou <strong>Mover para a lixeira</strong>. Documentos têm também <strong>Abrir arquivo</strong>, <strong>Visualização segura</strong>, <strong>Salvar uma cópia…</strong> e <strong>Substituir arquivo…</strong>.</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">Adicionar e editar itens</a></h3>
+          <ol>
+            <li>Escolha <strong>Novo item</strong> ou pressione <kbd>Ctrl</kbd>+<kbd>N</kbd>.</li>
+            <li>Escolha um tipo (clique nele, pressione o número dele ou comece a digitar o nome):
+              <ul>
+                <li><em>Logins</em>: Login de site, Login de app de desktop, Chave de acesso</li>
+                <li><em>Dinheiro</em>: Cartão de pagamento, Conta bancária · <em>Pessoal</em>: Identidade, Nota segura, Documento</li>
+                <li><em>Tecnologia</em>: Chave SSH, Chave de API, Rede Wi-Fi, Favorito de site · <em>Seus bens</em>: Licença, Assinatura, Garantia, Compra</li>
+              </ul>
+            </li>
+            <li>Preencha os campos e escolha <strong>Salvar</strong>. Se você sair com alterações não salvas, aparece a pergunta <em>Descartar suas alterações?</em></li>
+          </ol>
+          <h4>Logins em detalhe</h4>
+          <ul>
+            <li><strong>Título</strong>, <strong>Site</strong>, <strong>Nome de usuário</strong>, <strong>Senha</strong> e <strong>Notas</strong>.</li>
+            <li><strong>Alterar</strong>, ao lado da senha, permite digitar uma nova ou escolher <strong>Frase secreta</strong>, <strong>Aleatória</strong> ou <strong>PIN</strong> para criar uma. Altere-a também no site e depois salve.</li>
+            <li><strong>Dois fatores</strong>: cole aqui a chave de configuração do site (Pro). Veja <a href="#win-2fa">Códigos de dois fatores</a>.</li>
+            <li><strong>Campos personalizados</strong>: <strong>Adicionar campo</strong> para qualquer outra coisa. Marque um campo como Oculto para tratá-lo como senha.</li>
+            <li><strong>Histórico de senhas</strong>: até 5 senhas antigas são guardadas, criptografadas, por um ano. <strong>Copiar senha anterior</strong> ou <strong>Restaurar esta senha</strong>.</li>
+            <li><strong>Códigos de recuperação</strong>: um por linha. <strong>Copiar e usar o próximo código</strong> copia um e o remove da lista.</li>
+            <li><strong>Regras de preenchimento automático</strong>: Preenchimento (Ao clicar ou Desativado), Entrar após preencher (Padrão, Nunca ou Sempre), Sempre pedir a senha mestra e Oferecer para salvar alterações vindas do navegador.</li>
+          </ul>
+          <h4>Outros tipos</h4>
+          <p>Cada tipo tem seus próprios campos. As datas são escritas como AAAA-MM-DD. Qualquer item pode ser <strong>Favorito</strong> e ter <strong>Tags</strong> (separe-as com vírgulas). Documentos usam <strong>Escolher arquivo e salvar</strong> (Pro).</p>
+          <h4>Coleções e lembretes</h4>
+          <ul>
+            <li>Coleções agrupam itens do seu jeito: <strong>Adicionar coleção</strong>, <strong>Renomear</strong>, <strong>Arquivar</strong>. Elas sincronizam com seus outros dispositivos, e você pode compartilhar uma com outras pessoas (veja <a href="#win-shared">Coleções compartilhadas</a>).</li>
+            <li><strong>Lembretes</strong> lista itens que vencem em breve ou já venceram, com <strong>Concluir</strong> e <strong>Adiar 1 dia</strong>.</li>
+            <li><strong>Atividade</strong> mostra um histórico do que aconteceu no cofre.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">Excluir, lixeira e desfazer</a></h3>
+          <ol>
+            <li>Selecione um item e escolha <strong>Mover para a lixeira</strong> ou pressione <kbd>Delete</kbd>.</li>
+            <li>Aparece uma mensagem com <strong>Desfazer</strong>: clique para trazer o item de volta na hora.</li>
+            <li>Depois, abra Ferramentas › <strong>Lixeira</strong> e use <strong>Restaurar selecionados</strong>, <strong>Excluir selecionados</strong> ou <strong>Esvaziar lixeira</strong>. Excluir da lixeira não pode ser desfeito.</li>
+          </ol>
+          <p>Configurações › Privacidade › <strong>Manter itens excluídos por</strong> define 7, 14, 30 ou 90 dias, e <strong>Esvaziar a lixeira automaticamente</strong> faz isso por você.</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">Pesquisa, paleta de comandos e Acesso rápido</a></h3>
+          <ul>
+            <li><strong>Pesquisa</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>, digite e pressione <kbd>Enter</kbd> para abrir o primeiro resultado ou <kbd>↓</kbd> para entrar na lista.</li>
+            <li><strong>Paleta de comandos</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd> encontra itens e ações. Comece com <code>&gt;</code> para ver só ações (Fazer backup agora, Gerar senha, Bloquear agora, Status da sincronização…), <code>#</code> para tags e <code>@</code> para coleções.</li>
+            <li><strong>Acesso rápido</strong>: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd> em qualquer lugar do Windows abre o LocalGateKeys na página Acesso rápido, para encontrar um login, uma nota ou um favorito. Altere o atalho em Configurações › Preenchimento automático › Acesso rápido.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">Gerador de senhas</a></h3>
+          <p>Abra-o pelo cartão <strong>Gerador</strong> no Início ou com Ctrl+K › Gerar senha.</p>
+          <ul>
+            <li><strong>Aleatória</strong>: escolha o comprimento e quais caracteres usar: A–Z, a–z, 0–9 e símbolos.</li>
+            <li><strong>Frase secreta</strong>: escolha o número de palavras. Mais fácil de digitar e igualmente forte quando longa o bastante.</li>
+            <li><strong>Gerar de novo</strong> para uma nova, <strong>Copiar</strong> para copiá-la.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">Central de segurança e saúde das senhas</a></h3>
+          <p>Ferramentas › <strong>Central de segurança</strong> mostra o que corrigir primeiro: senhas fracas, reutilizadas, antigas e vazadas, e logins que poderiam ter 2FA.</p>
+          <ul>
+            <li><strong>Verificar vazamentos em todas</strong> compara suas senhas com a lista do Have I Been Pwned. Só os 5 primeiros caracteres de um hash saem do seu PC, nunca a senha.</li>
+            <li>As verificações de vazamento exigem duas mudanças em Configurações › Privacidade: desative o <strong>Modo offline estrito</strong> (ativado por padrão) e ative <strong>Verificações de vazamento</strong>. O modo offline estrito bloqueia as verificações de vazamento, os ícones de sites e qualquer outra solicitação de rede.</li>
+            <li>Em <strong>Saúde das senhas</strong> use <strong>Abrir item</strong> ou <strong>Alterar senha</strong> para corrigir um item.</li>
+          </ul>
+          <p><strong>Atividade de rede</strong>, no fim da Central de segurança, lista cada vez que o LocalGateKeys ficou online e por quê: busca de atualizações, verificações de vazamento, ícones de sites e sincronização com seus próprios dispositivos.</p>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">Códigos de dois fatores e leitura de QR</a> <span class="badge-pro">Pro</span></h3>
+          <p>O LocalGateKeys pode mostrar os códigos de 6 dígitos que um site pede depois da senha, então você não precisa de um app autenticador separado.</p>
+          <ol>
+            <li>No site, ative o login com dois fatores / app autenticador para que ele mostre um código QR.</li>
+            <li>No LocalGateKeys escolha Ctrl+K › <strong>Escanear código QR</strong>. Traga a imagem de uma destas três formas:
+              <ul>
+                <li><strong>Colar captura de tela</strong>: pressione <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>, selecione o código QR e depois <kbd>Ctrl</kbd>+<kbd>V</kbd>.</li>
+                <li><strong>Escolher imagem…</strong> (PNG, JPEG, BMP) ou arraste a imagem.</li>
+                <li><strong>Usar webcam</strong> e aproxime dela a tela de um celular mostrando o código.</li>
+              </ul>
+            </li>
+            <li>Escolha o login ao qual ele pertence, ou <strong>Novo login</strong>, depois <strong>Abrir no editor</strong> e <strong>Salvar</strong>.</li>
+            <li>Digite o código atual no site para concluir a ativação do 2FA lá.</li>
+          </ol>
+          <p>Você também pode colar a chave de configuração ou um link <code>otpauth://</code> direto na seção <strong>Dois fatores</strong> do login.</p>
+          <h4>Migrar do Google Authenticator</h4>
+          <ol>
+            <li>No Google Authenticator escolha <strong>Transferir contas › Exportar</strong>.</li>
+            <li>Escaneie o código QR mostrado (se houver vários, escaneie cada um: "Código 1 de 3 escaneado").</li>
+            <li>Marque as contas, escolha <strong>Adicionar a um login existente</strong> ou Novo login e depois <strong>Adicionar</strong>. Duplicatas são ignoradas.</li>
+          </ol>
+          <p class="note">Novos logins criados assim recebem a tag <code>needs-password</code>: preencha a senha real depois. As imagens são lidas na memória e nunca salvas. No Free, os códigos que você já tem continuam funcionando; adicioná-los ou alterá-los exige o Pro.</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">Importar de outro gerenciador de senhas</a></h3>
+          <ol>
+            <li>Exporte suas senhas do app antigo (veja a lista abaixo).</li>
+            <li>No LocalGateKeys abra Ferramentas › Importar e exportar › <strong>Importar senhas e itens…</strong> e escolha o arquivo. O formato é reconhecido automaticamente. Arquivos criptografados pedem a <strong>Senha de importação</strong>.</li>
+            <li>Um CSV simples de um app desconhecido mostra <strong>Escolher colunas</strong>: indique qual coluna é o título, o nome de usuário, a senha e assim por diante.</li>
+            <li>Revise cada linha: Adicionar, Pular, Substituir, Mesclar ou Manter ambos. Use <strong>Adicionar todos os novos</strong>, <strong>Substituir todos os conflitos</strong> ou <strong>Pular tudo</strong> para todos de uma vez.</li>
+            <li>Escolha <strong>Importar</strong>. Tudo entra de uma vez; se algo falhar, nada é gravado.</li>
+            <li><strong>Exclua o arquivo exportado</strong>: ele contém suas senhas sem criptografia.</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">De</th><th scope="col">Arquivo</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux ou CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON (também protegido por senha) ou CSV</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip ou CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx (aberto diretamente), XML ou CSV</td></tr>
+              <tr><td>Proton Pass</td><td>zip JSON ou CSV (exportação sem PGP)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Senhas da Apple</td><td>CSV</td></tr>
+              <tr><td>Qualquer outro</td><td>CSV, com escolha de colunas</td></tr>
+            </tbody>
+          </table>
+          <p class="note">Não são importados: lixeira, histórico de senhas, chaves de acesso e anexos. Sites <code>http://</code> são salvos como https. Entradas sem site nem senha viram notas seguras. No Free vale o limite de 7 itens. Arquivos Credential Exchange (CXF, <code>.json</code> ou <code>.cxf</code>) de outros gerenciadores também são reconhecidos e trazem as chaves de acesso.</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">Exportação e transferência criptografada</a></h3>
+          <p>Ferramentas › Importar e exportar › <strong>Exportar…</strong> oferece:</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong>: criptografado com uma senha que você escolhe (12+ caracteres). A opção segura.</li>
+            <li>CSV compatível com Bitwarden, JSON do Bitwarden, XML do KeePass 2: <em>sem criptografia</em>. Exclua-os depois de usar.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: os logins, notas e chaves de acesso que você escolher, para outro gerenciador de senhas. <em>Sem criptografia</em>; as chaves privadas das chaves de acesso só entram se você concordar.</li>
+            <li>Marque <strong>Incluir segredos de senhas de uso único (2FA)</strong> para levar seus códigos 2FA.</li>
+          </ul>
+          <p><strong>Transferência criptografada…</strong> move itens escolhidos (por favoritos, tipos, tags) para outro perfil ou PC num pacote protegido por senha. Do outro lado escolha <strong>Importar um pacote</strong>, <strong>Inspecionar</strong>, <strong>Pré-visualizar</strong> e depois importe.</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">Backups e restauração</a></h3>
+          <h4>Backups agendados (recomendado)</h4>
+          <ol>
+            <li>Configurações › Backups › <strong>Senha do backup</strong> › <strong>Definir…</strong>. Use 12+ caracteres e <strong>anote-a</strong>.</li>
+            <li><strong>Backups agendados</strong>: diários ou semanais, com <strong>Horário</strong> e <strong>Dia da semana</strong>.</li>
+            <li><strong>Cópia na nuvem</strong> › <strong>Escolher…</strong> uma pasta, como um pendrive ou um segundo disco, para uma segunda cópia.</li>
+            <li><strong>Backups agendados antigos</strong>: manter só o mais recente, ou o mais recente e o anterior.</li>
+            <li><strong>Teste de restauração semanal</strong>: toda semana o LocalGateKeys comprova que um backup agendado pode ser restaurado. Nada é guardado. <strong>Backups automáticos a manter</strong> define quantos backups automáticos ficam.</li>
+          </ol>
+          <p class="note">Os backups só rodam com o cofre desbloqueado. Um que foi perdido com o app fechado roda no próximo desbloqueio.</p>
+          <h4>Página Backup e restauração</h4>
+          <p>Abra-a pelo cartão Backup e recuperação, por Ctrl+K ou por <strong>Backup e restauração</strong> na tela de desbloqueio.</p>
+          <ul>
+            <li><strong>Criar um backup</strong>: um arquivo <code>.lgk</code> criptografado com sua própria senha.</li>
+            <li><strong>Verificar um backup</strong>: confere se um arquivo abre, sem mexer no seu cofre.</li>
+            <li><strong>Restaurar backup</strong>: precisa da senha do backup e da senha mestra de quando ele foi feito. Você pode restaurá-lo como um novo perfil.</li>
+            <li><strong>Testar uma restauração</strong>: abre uma cópia temporária para provar que seu backup funciona; depois, <strong>Descartar a cópia de teste</strong>.</li>
+            <li><strong>Frase de recuperação</strong> (Configurar / Substituir…) e <strong>Gerar kit de recuperação</strong>, uma folha para imprimir.</li>
+          </ul>
+          <h4>Restaurar um backup do celular</h4>
+          <p>Importar e exportar › <strong>Restaurar backup do celular…</strong>, escolha o arquivo <code>.lgkm</code> do app de iPhone, digite a senha dele, <strong>Pré-visualizar</strong> e depois <strong>Restaurar</strong>. Os itens são adicionados ao seu cofre; nada é apagado.</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">Sincronizar entre dispositivos</a> <span class="badge-pro">Pro</span></h3>
+          <p>A sincronização só roda com o cofre desbloqueado: ao desbloquear, a cada 5 minutos e alguns segundos após uma alteração. São duas formas, e você pode usar as duas:</p>
+          <h4>Wi-Fi (celular ou outro PC na mesma rede)</h4>
+          <ol>
+            <li>Sync e dispositivos › <strong>Ativar sincronização por Wi-Fi…</strong>. Mantenha o endereço e a porta sugeridos (47821) e escolha <strong>Permitir no Firewall do Windows</strong> se for solicitado.</li>
+            <li>Escolha <strong>Mostrar código QR…</strong>. O código funciona uma vez, por 120 segundos.</li>
+            <li>Escaneie-o na aba Sincronização do app do celular. Para outro PC, escolha <strong>Copiar texto do código</strong> e use lá <strong>Entrar pelo texto do QR…</strong>.</li>
+            <li>Os dois dispositivos mostram um código de 6 dígitos. Escolha <strong>Aceitar</strong> só se forem iguais; senão, <strong>Recusar</strong>.</li>
+            <li>Logo após o pareamento, <strong>Desfazer</strong> remove o novo dispositivo se tiver sido um engano.</li>
+          </ol>
+          <p>Se o endereço do PC mudar, escolha <strong>Procurar de novo</strong> no celular.</p>
+          <h4>Pasta na nuvem (Dropbox, iCloud Drive…)</h4>
+          <ol>
+            <li>No primeiro dispositivo: <strong>Criar grupo de sincronização…</strong>, escolha uma pasta que seu app de nuvem sincroniza e defina uma senha de sincronização forte (12+ caracteres).</li>
+            <li>Em cada um dos outros dispositivos: <strong>Entrar numa pasta…</strong>, escolha a pasta que contém <em>LocalGateKeys Sync</em> e digite a senha de sincronização.</li>
+          </ol>
+          <p>A nuvem só vê arquivos criptografados.</p>
+          <p class="note">OneDrive e Google Drive estão indisponíveis para sincronização por enquanto, até que um problema com a Apple seja resolvido. Use Dropbox, iCloud Drive ou a sincronização por Wi-Fi.</p>
+          <h4>Gerenciar a sincronização</h4>
+          <ul>
+            <li><strong>Sincronizar agora</strong> na página Status da sincronização (clique no indicador de sincronização na barra lateral).</li>
+            <li><strong>Remover um dispositivo…</strong> (define uma nova senha de sincronização), <strong>Alterar senha de sincronização…</strong>.</li>
+            <li><strong>Sair da sincronização…</strong> mantém seus itens e esquece o grupo. <strong>Redefinir a sincronização neste PC…</strong> também esquece as chaves (pergunta duas vezes).</li>
+            <li>Se um item mudou em dois dispositivos ao mesmo tempo, a cópia extra recebe <em>(conflito de sincronização)</em> no título.</li>
+          </ul>
+          <p class="note">Todos os dispositivos do grupo precisam do Pro. Um PC gratuito emparelhado com um iPhone que tem o Pro assume a licença pela sincronização e passa a ser Pro (veja <a href="#win-pro">Licença Pro</a>). Até 16 dispositivos por grupo.</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">Compartilhar um item com alguém</a></h3>
+          <ol>
+            <li>Selecione o item, escolha <strong>Compartilhar</strong> e depois <strong>Criar compartilhamento</strong>.</li>
+            <li>O LocalGateKeys mostra um <strong>Código de compartilhamento</strong> de seis palavras. Escolha <strong>Salvar como arquivo…</strong> (um <code>.lgkshare</code>) ou <strong>Mostrar código QR</strong>.</li>
+            <li>Envie o arquivo e diga as seis palavras para a pessoa <em>por outro meio</em>, como por telefone ou pessoalmente.</li>
+          </ol>
+          <p><strong>Para receber:</strong> clique duas vezes no arquivo <code>.lgkshare</code>, ou Ctrl+K › Itens compartilhados recebidos › <strong>Abrir um item compartilhado…</strong>. Digite as seis palavras, confira a <strong>Pré-visualização</strong> e depois <strong>Salvar no cofre</strong>, <strong>Manter ambos</strong> ou <strong>Recusar</strong>. Chaves de acesso, documentos e itens com arquivo anexado não podem ser compartilhados.</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">Preencher apps do Windows</a></h3>
+          <p>O LocalGateKeys pode preencher janelas de login de programas comuns do Windows, não só sites.</p>
+          <ol>
+            <li>Abra a janela de login do programa.</li>
+            <li>Pressione <kbd>Ctrl</kbd>+<kbd>N</kbd>, escolha <strong>Login de app de desktop</strong> e depois <strong>Inspecionar o app…</strong>.</li>
+            <li><strong>Mapear campos de login</strong>: aponte para as caixas de nome de usuário e senha. Se quiser, <strong>Mapear botão de entrar…</strong>.</li>
+            <li><strong>Salvar login</strong>.</li>
+            <li>Na próxima vez, pressione <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Espaço</kbd> nesse programa ou clique no botão de preencher ao lado da caixa de senha.</li>
+          </ol>
+          <p>Se o programa mudar após uma atualização, abra o login e escolha <strong>Vínculo do app…</strong> › <strong>Atualizar vínculo…</strong>. O LocalGateKeys lê só o layout da janela, nunca o que você digita.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">Coleções compartilhadas</a> <span class="badge-pro">Pro</span></h3>
+          <p>Compartilhe uma coleção com a família ou uma equipe por uma pasta que todos acessem, como uma pasta compartilhada do OneDrive. Abra a coleção, escolha <strong>Compartilhar coleção</strong>, a pasta, se os membros podem editar ou só ver, e uma senha de compartilhamento.</p>
+          <p>Os outros escolhem <strong>Entrar em uma coleção compartilhada</strong>, a pasta e digitam a senha; depois você escolhe <strong>Liberar entrada</strong>. Só essa coleção passa pela pasta: seus outros itens continuam privados. Você pode remover alguém, <strong>Parar de compartilhar</strong> ou sair a qualquer momento.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">Acesso de emergência e senha de coação</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Acesso de emergência</strong> (Pro): na página Backup e restauração escolha <strong>Configurar o acesso de emergência</strong>. Sua frase de recuperação é dividida em partes para pessoas de confiança; você escolhe quantas partes são necessárias e um período de espera. Entregue a cada pessoa a folha ou o arquivo dela.</li>
+            <li>Quando pessoas suficientes pedem acesso pela pasta compartilhada, seus dispositivos mostram o pedido e você pode <strong>Recusar</strong> até o fim do período de espera. Quem tem uma parte escolhe <strong>Recebi acesso</strong>, adiciona as partes e escolhe <strong>Pedir acesso</strong>; depois de liberado, o cofre abre como um novo perfil.</li>
+            <li><strong>Pacote de herança</strong>, na mesma página, cria uma nota para seus herdeiros (onde está o testamento, contas a encerrar, dispositivos e quem tem uma parte) e depois o <strong>Kit de emergência</strong> para imprimir.</li>
+            <li><strong>Senha de coação</strong> (Pro): Configurações › Desbloqueio › <strong>Senha de coação</strong> › <strong>Configurar</strong>. É uma segunda senha mestra para quando alguém força você a desbloquear. Ela abre um cofre separado só com os itens que você escolher, e seu cofre real passa a recusar a senha mestra pelas horas definidas. Está no Windows, Mac, iPhone e Android.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">Ferramentas de desenvolvedor e agentes de IA</a></h3>
+          <p>Configurações › <strong>Desenvolvedor</strong> oferece as chaves SSH do cofre ao ssh e ao Git neste PC, para entrar e assinar commits. Cada assinatura pede sua aprovação. <strong>Gerar</strong> cria uma nova chave Ed25519 no cofre.</p>
+          <p><strong>Permitir que agentes de IA usem o LocalGateKeys</strong> deixa agentes como o Claude Code se conectarem por MCP. Você aprova cada login ou leitura; o agente nunca vê uma senha e cada pedido fica registrado. Na versão da Microsoft Store, adicione com <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>.</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">Configurações</a></h3>
+          <p>Use a caixa <strong>Pesquisar configurações</strong> no topo (<kbd>Ctrl</kbd>+<kbd>F</kbd>) para encontrar qualquer opção. As alterações são salvas na hora.</p>
+          <dl class="defs">
+            <dt>Desbloqueio</dt><dd>Windows Hello, chave de segurança, verificação por câmera, arquivo de chave, YubiKey, senha mestra, frase de recuperação.</dd>
+            <dt>Bloqueio</dt><dd>Tempos e gatilhos do bloqueio automático (veja <a href="#win-unlock">Desbloquear e bloquear</a>).</dd>
+            <dt>Preenchimento automático</dt><dd>Preenchimento no navegador, <strong>Oferecer o LocalGateKeys para chaves de acesso</strong>, preenchimento de apps de desktop, entrar após preencher, atalho do Acesso rápido. <strong>Usar o LocalGateKeys para as chaves de acesso do Windows</strong> oferece suas chaves de acesso em todos os apps e navegadores do Windows 11, sempre com sua aprovação.</dd>
+            <dt>Privacidade</dt><dd><strong>Limpar a área de transferência após</strong> (de 5 segundos a 5 minutos), verificação de vazamentos, modo offline estrito, ocultar de capturas e compartilhamento de tela, tempo da lixeira, abrir documentos em outros apps.</dd>
+            <dt>Backups</dt><dd>Veja <a href="#win-backups">Backups e restauração</a>.</dd>
+            <dt>Aparência e app</dt><dd><strong>Tema</strong> Sistema, Claro ou Escuro; <strong>Idioma</strong>; <strong>Iniciar com o Windows</strong> (inicia bloqueado); <strong>Continuar em execução na bandeja</strong>; Atualizações.</dd>
+            <dt>Plano e sincronização</dt><dd>Sua licença, a sincronização de dispositivos e <strong>Apagar este dispositivo se ele for removido da sincronização</strong>.</dd>
+            <dt>Desenvolvedor</dt><dd>Agente SSH e assinatura do Git, e agentes de IA (veja <a href="#win-dev">Ferramentas de desenvolvedor e agentes de IA</a>).</dd>
+            <dt>Ajuda e diagnóstico</dt><dd>Atalhos de teclado, Mostrar configuração de novo, Dispositivos e conexões, Registro de erros, páginas legais.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Licença Pro</a></h3>
+          <ol>
+            <li>Compre o Pro na <a href="../../pt-br/pricing">página de preços</a>. Sua chave (começa com <code>LGK1-</code>) chega por e-mail.</li>
+            <li>Abra Configurações › Plano e sincronização › <strong>Licença</strong>, cole a chave e escolha <strong>Instalar</strong>, ou <strong>Abrir arquivo…</strong> para um arquivo <code>.lgklicense</code>.</li>
+          </ol>
+          <p>Comprou o Pro no app para iPhone? Emparelhe o PC com o iPhone (veja <a href="#win-sync">Sincronização</a>) e um PC gratuito passa a ser Pro pela sincronização. Ou, nos Ajustes do iPhone, escolha <strong>Copiar chave</strong> e instale-a no PC da mesma forma. A página Licença mostra quantos dos 7 itens gratuitos você usa. Mais em <a href="../../pt-br/licence">Sua licença Pro</a>.</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">Atualizações</a></h3>
+          <p>O LocalGateKeys da Microsoft Store se atualiza pela própria Store. Ainda usa a versão do instalador antigo? A última atualização dela é a 0.4.12: desinstale-a em Configurações do Windows › Aplicativos › Aplicativos instalados e depois instale o LocalGateKeys pela Microsoft Store. Seu cofre continua onde está e abre com a mesma senha mestra.</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">Atalhos de teclado</a></h3>
+          <p>Pressione <kbd>F1</kbd> ou <kbd>?</kbd> no app para ver esta lista.</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>Paleta de comandos</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>Pesquisar</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>Novo item</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>Bloquear</td></tr>
+              <tr><th scope="row"><kbd>Esc</kbd></th><td>Voltar</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>Abrir o item selecionado</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>Copiar senha (pergunta antes)</td></tr>
+              <tr><th scope="row"><kbd>Delete</kbd></th><td>Mover para a lixeira</td></tr>
+              <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>Menu do item</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>Bloqueio de emergência, em qualquer lugar do Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>Acesso rápido, em qualquer lugar do Windows</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Espaço</kbd></th><td>Preencher um app do Windows vinculado</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../pt-br/help">O guia completo em uma página</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Um gerenciador de senhas para Windows, Mac e iPhone que mantém seu cofre nos seus próprios dispositivos.</p>
+        <p class="quiet">Este site conta as visitas com o Cloudflare Web Analytics, que não usa cookies. Não usa rastreadores de anúncios e não define cookies.</p>
+      </div>
+      <nav aria-label="Produto">
+        <h2>Produto</h2>
+        <ul>
+          <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/download">Baixar</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/switch/">Migrar</a></li>
+          <li><a href="../../buy">Comprar o Pro</a></li>
+          <li><a href="../../pt-br/licence">Sua licença Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recuperar sua licença</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Ajuda">
+        <h2>Ajuda</h2>
+        <ul>
+          <li><a href="../../pt-br/help">Guia do usuário</a></li>
+          <li><a href="../../pt-br/support">Suporte e perguntas frequentes</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Relatar uma vulnerabilidade</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Jurídico">
+        <h2>Jurídico</h2>
+        <p class="quiet">Estes documentos estão em inglês, e a versão em inglês é a que se aplica e a vinculante.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contrato de licença</a></li>
+          <li><a href="../../legal/privacy">Política de privacidade</a></li>
+          <li><a href="../../legal/terms-of-sale">Termos de venda</a></li>
+          <li><a href="../../legal/refunds">Política de reembolso</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contato: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows é uma marca registrada do grupo de empresas Microsoft. Chrome é uma marca registrada da Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari são marcas registradas da Apple Inc., registradas nos EUA e em outros países.</p>
+      <nav class="lang-switch" aria-label="Idioma"><ul><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "name": "openssh_default",
+      "password": "vector-pass",
+      "salt_hex": "000102030405060708090a0b0c0d0e0f",
+      "rounds": 16,
+      "length": 48,
+      "key_hex": "919689a5a45b514deb7eb06b5243a18eae0419157bbf794ec5db9a6bf183a93e96867e1859c4f21ef7e0be3d8677db54"
+    },
+    {
+      "name": "short_salt",
+      "password": "password",
+      "salt_hex": "73616c74",
+      "rounds": 4,
+      "length": 32,
+      "key_hex": "5bbf0cc293587f1c3635555c27796598d47e579071bf427e9d8fbe842aba34d9"
+    },
+    {
+      "name": "one_round_one_byte",
+      "password": "x",
+      "salt_hex": "7979797979797979797979797979797979797979797979797979797979797979",
+      "rounds": 1,
+      "length": 1,
+      "key_hex": "37"
+    },
+    {
+      "name": "unicode_long",
+      "password": "pässwörd ✓",
+      "salt_hex": "6465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80818283",
+      "rounds": 8,
+      "length": 80,
+      "key_hex": "ba7e76f7a5c2be96570c02a9fc6285b1d4001548c80f90107a978051df89f4d41ec865e878bf5ed0366f167b84e1c188331b45c82210abaf7600e0ae91ee82d95dabaf47414fd7c264b22bccdb5346cb"
+    },
+    {
+      "name": "odd_length",
+      "password": "p",
+      "salt_hex": "73",
+      "rounds": 2,
+      "length": 33,
+      "key_hex": "11f175a1d3d8a0197670cff4741d878b3dc50d10f81bc72d76d394ea00111f021c"
+    },
+    {
+      "name": "aes128_key",
+      "password": "correct horse battery staple",
+      "salt_hex": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7",
+      "rounds": 16,
+      "length": 32,
+      "key_hex": "1553f7a55573984a9c9b77fe72dc4f8c656e28dfd60853f4e8677520ba4c78e5"
+    }
+  ]
+}

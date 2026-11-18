@@ -26,7 +26,24 @@ param(
     # Windows SDK bin\<version>\x64 directory. Auto-detected (newest SDK).
     [string]$SdkBinPath = "",
     # Python with Pillow and cryptography. Defaults to .venv\Scripts\python.exe.
-    [string]$Python = ""
+    [string]$Python = "",
+    # The published Windows passkey provider (LocalGateKeysPasskeyProvider.exe and its self-contained
+    # runtime). Relative paths are under -OutputRoot. Published here first when it is missing, and always
+    # with -Build, so a package never carries a stale provider next to freshly built executables.
+    [string]$ProviderDist = "build\passkey-provider",
+    # dotnet.exe of the .NET 10 SDK, for publishing the provider. Defaults to the one on PATH.
+    [string]$Dotnet = "",
+    # ---- Optional Authenticode signing of the provider exe ------------------
+    # The app's pipe pin and the provider's server pin compare the Authenticode signers of
+    # LocalGateKeys.exe and LocalGateKeysPasskeyProvider.exe (frozen builds). When the frozen executables
+    # in -DistRoot were signed (build_personal_installer.ps1 -CertificateThumbprint), pass the same
+    # thumbprint here so the provider gets the same signature. The build refuses a package whose two
+    # executables have different signers, or where one is signed and the other is not. The Store adds only a
+    # package signature, not per-file ones, so an unsigned DistRoot means an unsigned provider: both pins then
+    # skip the signer and rely on the install-path check (docs/design/WINDOWS_PASSKEY_PROVIDER.md section 5.1).
+    [string]$CertificateThumbprint = "",
+    # RFC 3161 timestamp authority (same default as build_personal_installer.ps1).
+    [string]$TimestampUrl = "http://timestamp.digicert.com"
 )
 
 $ErrorActionPreference = "Stop"
@@ -51,6 +68,13 @@ $WorkRoot = Join-Path $OutputBase "build-msix\work"
 $Layout = Join-Path $WorkRoot "layout"
 $PriRoot = Join-Path $WorkRoot "pri"
 $OutDir = Join-Path $OutputBase "dist-msix"
+if (-not [IO.Path]::IsPathRooted($ProviderDist)) { $ProviderDist = [IO.Path]::GetFullPath((Join-Path $OutputBase $ProviderDist)) }
+$ProviderProject = Join-Path $Root "windows-passkey-provider\src\LocalGateKeys.PasskeyProvider\LocalGateKeys.PasskeyProvider.csproj"
+if (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
+    $CertificateThumbprint = ($CertificateThumbprint -replace '\s', '').ToUpperInvariant()
+    if ($CertificateThumbprint -notmatch '^[0-9A-F]{40}$') { throw "-CertificateThumbprint must be a 40-hex-digit SHA-1 thumbprint." }
+    if ($TimestampUrl -notmatch '^https?://') { throw "-TimestampUrl must be an http(s) RFC 3161 endpoint." }
+}
 $VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
 if ([string]::IsNullOrWhiteSpace($Python)) {
     $Python = if (Test-Path -LiteralPath $VenvPython -PathType Leaf) { $VenvPython } else { (Get-Command python -ErrorAction Stop).Source }
@@ -151,9 +175,37 @@ if ($Build) {
     & (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe") @buildArgs
     if ($LASTEXITCODE -ne 0) { throw "build_personal_installer.ps1 -SkipInstaller failed." }
 }
+# The Windows passkey provider (C#). Task 4's publish command; -Build republishes it from scratch.
+$ProviderExe = Join-Path $ProviderDist "LocalGateKeysPasskeyProvider.exe"
+if ($Build -or -not (Test-Path -LiteralPath $ProviderExe -PathType Leaf)) {
+    if ([string]::IsNullOrWhiteSpace($Dotnet)) {
+        $dotnetCommand = Get-Command dotnet -ErrorAction SilentlyContinue
+        if (-not $dotnetCommand) { throw "dotnet.exe was not found. Install the .NET 10 SDK, or pass -Dotnet <path to dotnet.exe>, or -ProviderDist with a published provider." }
+        $Dotnet = $dotnetCommand.Source
+    }
+    if (Test-Path -LiteralPath $ProviderDist) {
+        # -ProviderDist may be any absolute folder: only ever wipe an empty one or a previous provider publish.
+        $distFull = [IO.Path]::GetFullPath($ProviderDist).TrimEnd('\', '/')
+        $isRoot = [string]::IsNullOrEmpty([IO.Path]::GetDirectoryName($distFull + '\'))
+        foreach ($protected in $Root, $OutputBase, $env:USERPROFILE, $env:SystemRoot) {
+            if (-not [string]::IsNullOrWhiteSpace($protected) -and $distFull -ieq ([IO.Path]::GetFullPath($protected).TrimEnd('\', '/'))) { $isRoot = $true }
+        }
+        if (-not (Test-Path -LiteralPath $ProviderDist -PathType Container)) { $isRoot = $true }
+        $existing = @(Get-ChildItem -LiteralPath $ProviderDist -Force -ErrorAction Stop)
+        $isPublish = (Test-Path -LiteralPath $ProviderExe -PathType Leaf) -and (Test-Path -LiteralPath (Join-Path $ProviderDist "LocalGateKeysPasskeyProvider.runtimeconfig.json") -PathType Leaf)
+        if ($isRoot -or ($existing.Count -gt 0 -and -not $isPublish)) {
+            throw "Refusing to delete -ProviderDist $ProviderDist`: it is not empty and does not hold a passkey provider publish. Pass an empty or new folder."
+        }
+        Remove-Item -LiteralPath $ProviderDist -Recurse -Force
+    }
+    $publishArgs = @("publish", $ProviderProject, "-c", "Release", "-r", "win-x64", "--self-contained", "true", "-o", $ProviderDist, "--nologo")
+    Invoke-Tool $Dotnet $publishArgs "dotnet publish (passkey provider)"
+}
 $AgentDist = Join-Path $DistRoot "LocalGateKeys"
 $HostDist = Join-Path $DistRoot "LocalGateKeysNativeHost"
-foreach ($required in (Join-Path $AgentDist "LocalGateKeys.exe"), (Join-Path $HostDist "LocalGateKeysNativeHost.exe")) {
+# lgk.exe is not packaged: a Store package has one app execution alias, the native host's. The host runs the
+# CLI instead (`LocalGateKeysNativeHost.exe lgk ...`, `LocalGateKeysNativeHost.exe mcp`; native_host.py).
+foreach ($required in (Join-Path $AgentDist "LocalGateKeys.exe"), (Join-Path $HostDist "LocalGateKeysNativeHost.exe"), $ProviderExe) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Missing $required. Run with -Build, or build_personal_installer.ps1 -SkipInstaller first." }
 }
 
@@ -166,6 +218,47 @@ Copy-Item -Path (Join-Path $AgentDist "*") -Destination $Layout -Recurse -Force
 $HostLayout = Join-Path $Layout "NativeHost"
 New-Item -ItemType Directory -Force -Path $HostLayout | Out-Null
 Copy-Item -Path (Join-Path $HostDist "*") -Destination $HostLayout -Recurse -Force
+# Windows passkey provider: the manifest's windows.comServer points at PasskeyProvider\LocalGateKeysPasskeyProvider.exe.
+$ProviderLayout = Join-Path $Layout "PasskeyProvider"
+New-Item -ItemType Directory -Force -Path $ProviderLayout | Out-Null
+Copy-Item -Path (Join-Path $ProviderDist "*") -Destination $ProviderLayout -Recurse -Force
+# Debug symbols are not shipped, nor createdump.exe (DOTNET_DbgEnableMiniDump could otherwise dump the provider's
+# memory, pipe token included, to a chosen path).
+Get-ChildItem -LiteralPath $ProviderLayout -Filter "*.pdb" -File | Remove-Item -Force
+Get-ChildItem -LiteralPath $ProviderLayout -Filter "createdump.exe" -File -Recurse | Remove-Item -Force
+# Runtime injection stays off: DOTNET_STARTUP_HOOKS ignored, no built-in COM interop.
+$ProviderRuntimeConfig = Join-Path $ProviderLayout "LocalGateKeysPasskeyProvider.runtimeconfig.json"
+$providerOptions = (Get-Content -LiteralPath $ProviderRuntimeConfig -Raw | ConvertFrom-Json).runtimeOptions.configProperties
+foreach ($switchName in "System.StartupHookProvider.IsSupported", "System.Runtime.InteropServices.BuiltInComInterop.IsSupported") {
+    if ($providerOptions.$switchName -ne $false) { throw "$ProviderRuntimeConfig must set $switchName to false (see LocalGateKeys.PasskeyProvider.csproj)." }
+}
+$LayoutProviderExe = Join-Path $ProviderLayout "LocalGateKeysPasskeyProvider.exe"
+
+# The provider gets exactly what LocalGateKeys.exe has: the same embedded Authenticode signer, or none.
+function Get-SignerThumbprint([string]$Path) {
+    $signature = Get-AuthenticodeSignature -LiteralPath $Path
+    if ($signature.Status -eq "NotSigned") { return "" }
+    if ($signature.Status -in @("HashMismatch", "NotSupportedFileFormat", "Incompatible") -or -not $signature.SignerCertificate) {
+        throw "Broken Authenticode signature ($($signature.Status)): $Path"
+    }
+    return $signature.SignerCertificate.Thumbprint.ToUpperInvariant()
+}
+function Assert-SameSigner([string]$Agent, [string]$Provider) {
+    if ($Agent -ne $Provider) {
+        $describe = { param($t) if ($t) { "signed by $t" } else { "unsigned" } }
+        throw "LocalGateKeys.exe is $(& $describe $Agent) but LocalGateKeysPasskeyProvider.exe is $(& $describe $Provider). The pipe pins need the same signer on both; pass -CertificateThumbprint with the certificate that signed -DistRoot (or none for an unsigned DistRoot)."
+    }
+}
+if (-not [string]::IsNullOrWhiteSpace($CertificateThumbprint)) {
+    if (-not (Test-Path -LiteralPath $SignTool -PathType Leaf)) { throw "signtool.exe was not found next to makeappx.exe." }
+    Invoke-Tool $SignTool @("sign", "/fd", "SHA256", "/td", "SHA256", "/tr", $TimestampUrl, "/sha1", $CertificateThumbprint, $LayoutProviderExe) "signtool sign (passkey provider)"
+    Invoke-Tool $SignTool @("verify", "/pa", "/q", $LayoutProviderExe) "signtool verify (passkey provider)"
+}
+$AgentSigner = Get-SignerThumbprint (Join-Path $Layout "LocalGateKeys.exe")
+$ProviderSigner = Get-SignerThumbprint $LayoutProviderExe
+Assert-SameSigner $AgentSigner $ProviderSigner
+if ($AgentSigner) { Write-Host "LocalGateKeys.exe and the passkey provider share signer $AgentSigner." }
+else { Write-Host "LocalGateKeys.exe and the passkey provider are both unsigned (the pins use the install-path check)." }
 Copy-Item -LiteralPath (Join-Path $Root "assets") -Destination (Join-Path $Layout "assets") -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $Root "browser-extension") -Destination (Join-Path $Layout "browser-extension") -Recurse -Force
 # Licences of the bundled third-party software (audit 2026-10-24 I-23).

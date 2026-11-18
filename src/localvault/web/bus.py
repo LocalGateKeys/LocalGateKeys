@@ -60,6 +60,8 @@ class QueuedSink:
 class EventBus:
     def __init__(self, sink: Callable[[str], None] | None = None) -> None:
         self._sinks: dict[str, Callable[[str], None]] = {"main": sink or (lambda _js: None)}
+        # Python-side observers (name, detail), called after the pages; they must return quickly.
+        self.listeners: list[Callable[[str, dict[str, Any]], None]] = []
 
     def attach(self, sink: Callable[[str], None], *, key: str = "main") -> None:
         """Deliver events to one window's page (``main`` or ``popup``); attaching again replaces it."""
@@ -78,3 +80,8 @@ class EventBus:
                 sink(js)
             except Exception:  # noqa: BLE001 - a closed window must not break the caller
                 _log.debug("Event %s was not delivered", name, exc_info=True)
+        for listener in list(self.listeners):
+            try:
+                listener(name, detail)
+            except Exception:  # noqa: BLE001 - an observer never breaks the caller
+                _log.debug("Event listener failed for %s", name, exc_info=True)

@@ -22,7 +22,8 @@ private fun replay(detail: String) = LanTransportException(LanTransportException
  *
  * Key (protocol version 2) = HKDF-SHA256(ikm = X25519(own ephemeral, peer ephemeral) ||
  * X25519(own static, peer static), salt = SHA-256(`session-salt|v2|` + sorted hellos),
- * info = `session-key|v2|` + session id). The local hello's ephemeral private key is consumed
+ * info = `session-key|v2|` + session id; version 3 uses `v3` in both labels and needs both hellos of
+ * that version). The local hello's ephemeral private key is consumed
  * (zeroed) by the one derivation, so recorded traffic stays sealed after a static key leaks. Nonce = 4-byte direction prefix + 8-byte big-endian
  * counter; each direction starts at counter 1 and a receiver refuses a counter that does not
  * increase. The desktop sends one request and one response per connection.
@@ -69,7 +70,7 @@ class SecureChannel(key: ByteArray, sessionId: ByteArray, val role: Role) {
     val sessionId: ByteArray get() = sid.copyOf()
 
     private fun metadata(counter: Long, nonce: ByteArray): MutableMap<String, JsonValue> = mutableMapOf(
-        "version" to JsonValue.Int(LanTransport.VERSION),
+        "version" to JsonValue.Int(LanTransport.FRAME_VERSION),
         "session_id" to JsonValue.Str(Base64Std.encode(sid)),
         "counter" to JsonValue.Int(counter),
         "nonce" to JsonValue.Str(Base64Std.encode(nonce)),
@@ -131,6 +132,7 @@ class SecureChannel(key: ByteArray, sessionId: ByteArray, val role: Role) {
             remoteHello: SessionHello,
         ): ByteArray {
             SessionHello.verify(remoteHello, remote, groupId)
+            if (localHello.version != remoteHello.version) throw authentication("Session hello versions differ")
             if (localHello.groupId != groupId || localHello.deviceId != local.deviceId ||
                 !localHello.sessionId.contentEquals(sessionId) || !remoteHello.sessionId.contentEquals(sessionId)
             ) {
@@ -159,7 +161,7 @@ class SecureChannel(key: ByteArray, sessionId: ByteArray, val role: Role) {
             }
             val ikm = ephemeral + static
             try {
-                return deriveKey(ikm, sessionId, transcript)
+                return deriveKey(ikm, sessionId, transcript, localHello.version)
             } finally {
                 ikm.fill(0)
                 ephemeral.fill(0)
@@ -195,17 +197,29 @@ class SecureChannel(key: ByteArray, sessionId: ByteArray, val role: Role) {
             return t
         }
 
-        fun salt(transcript: ByteArray): ByteArray =
-            sha256("localgatekeys|sync|session-salt|v2|".toByteArray(Charsets.UTF_8) + transcript)
+        private fun labelVersion(version: Long): String = when (version) {
+            LanTransport.PLAIN_HELLO_VERSION -> "v2"
+            LanTransport.VERSION -> "v3"
+            else -> throw authentication("Session version is not supported")
+        }
 
-        fun info(sessionId: ByteArray): ByteArray = "localgatekeys|sync|session-key|v2|".toByteArray(Charsets.UTF_8) + sessionId
+        fun salt(transcript: ByteArray, version: Long = LanTransport.PLAIN_HELLO_VERSION): ByteArray =
+            sha256("localgatekeys|sync|session-salt|${labelVersion(version)}|".toByteArray(Charsets.UTF_8) + transcript)
 
-        /** HKDF over [ikm] = ephemeral shared secret || static shared secret (64 bytes). */
-        fun deriveKey(ikm: ByteArray, sessionId: ByteArray, transcript: ByteArray): ByteArray {
+        fun info(sessionId: ByteArray, version: Long = LanTransport.PLAIN_HELLO_VERSION): ByteArray =
+            "localgatekeys|sync|session-key|${labelVersion(version)}|".toByteArray(Charsets.UTF_8) + sessionId
+
+        /** HKDF over [ikm] = ephemeral shared secret || static shared secret (64 bytes), labels of [version]. */
+        fun deriveKey(
+            ikm: ByteArray,
+            sessionId: ByteArray,
+            transcript: ByteArray,
+            version: Long = LanTransport.PLAIN_HELLO_VERSION,
+        ): ByteArray {
             if (sessionId.size != LanTransport.SESSION_ID_BYTES || ikm.size != 64) {
                 throw authentication("Session transcript is malformed")
             }
-            return CryptoBox.hkdf(ikm, salt(transcript), info(sessionId), 32)
+            return CryptoBox.hkdf(ikm, salt(transcript, version), info(sessionId, version), 32)
         }
 
         /** First 4 bytes of SHA-256(key + `send|` + sender role). */
@@ -223,7 +237,7 @@ class SecureChannel(key: ByteArray, sessionId: ByteArray, val role: Role) {
                 null
             }
             if (o == null || o.keys != FRAME_FIELDS) throw malformed("Encrypted frame is malformed")
-            if (o["version"] != JsonValue.Int(LanTransport.VERSION)) throw malformed("Unsupported encrypted frame")
+            if (o["version"] != JsonValue.Int(LanTransport.FRAME_VERSION)) throw malformed("Unsupported encrypted frame")
             return o
         }
     }

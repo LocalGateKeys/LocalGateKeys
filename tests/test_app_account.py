@@ -15,6 +15,12 @@ from localvault.app.updates import UpdatesService
 from localvault.profiles import ProfileManager
 from localvault.settings import AppSettings
 
+
+@pytest.fixture(autouse=True)
+def _several_vaults_allowed(monkeypatch):
+    # Sub-plan 12: free holds one vault; these tests add profiles as Pro (the free refusal has its own test).
+    monkeypatch.setattr(licensing, "vault_limit", lambda *a: None)
+
 KDF = {"time_cost": 1, "memory_cost_kib": 8192, "parallelism": 1, "hash_len": 32}
 MASTER = "correct horse battery"
 
@@ -34,7 +40,10 @@ class Sched:
 
 class Port:
     def __init__(self):
-        self.asked, self.answers = [], []
+        self.asked, self.answers, self.upgrades = [], [], []
+
+    def show_upgrade(self, **kwargs):
+        self.upgrades.append(kwargs)
 
     def confirm(self, title, message):
         self.asked.append(title)
@@ -153,6 +162,39 @@ def test_update_available_and_not_configured(env, monkeypatch):
                                           "published.")
 
 
+def test_unsupported_version_wins_over_update_available(env):
+    env.controller.settings.strict_offline_mode = False
+    old = SimpleNamespace(current_version="1.0.0", latest_version="1.2.0", min_supported_version="1.1.0",
+                          published="2026-10-01", is_newer=True, is_unsupported=True)
+    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: old,
+                             revocations=lambda: None)
+    result = service.check()
+    assert result["unsupported"] is True and result["available"] is True and result["latest"] == "1.2.0"
+    assert "1.0.0" in result["message"] and "1.1.0" in result["message"] and "no longer supported" in result["message"]
+    supported = SimpleNamespace(**{**vars(old), "is_unsupported": False})
+    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: supported,
+                             revocations=lambda: None)
+    assert "unsupported" not in service.check()
+
+
+def test_reminder_surfaces_unsupported_from_last_verified_result_without_network(env, monkeypatch):
+    from localvault import updates as updates_module
+
+    monkeypatch.setattr(updates_module, "update_reminder_due", lambda *_a, **_k: False)
+    old = SimpleNamespace(current_version="1.0.0", min_supported_version="1.1.0", is_unsupported=True)
+
+    def no_network():
+        raise AssertionError("the reminder must not fetch")
+
+    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=no_network,
+                             last_verified=lambda: old)
+    reminder = service.reminder()
+    assert reminder["due"] is True and reminder["unsupported"] is True and "1.1.0" in reminder["text"]
+    service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=no_network,
+                             last_verified=lambda: None)
+    assert service.reminder() == {"due": False}
+
+
 def test_one_update_check_at_a_time(env):
     env.controller.settings.strict_offline_mode = False
     service = UpdatesService(env.controller, env.port, configuration=lambda: object(), check=lambda: None)
@@ -198,13 +240,16 @@ def test_the_only_profile_cannot_be_deleted(env):
 # ------------------------------------------------------------- connections
 def test_connections_headline_and_repair(env, monkeypatch):
     report = {"windows": True, "configured": True, "native_host_exists": True, "native_host_hash_matches": True,
-              "registration": {"Chrome": "ready", "Edge": "manifest_mismatch"}, "extension_recent": False}
+              "registration": {"Chrome": "ready", "Edge": "manifest_mismatch", "Firefox": "ready"},
+              "extension_recent": False}
     repaired = []
     service = ConnectionsService(env.port, Dialogs(env.tmp / "report.json"), collect=lambda **kw: report,
                                  repair=lambda: repaired.append(1))
     view = service.view()
     assert view["headline"] == "Bridge is ready" and view["status"] == "Waiting for extension"
     assert {"browser": "Edge", "state": "Needs repair", "ok": False} in view["browsers"]
+    assert [b["browser"] for b in view["browsers"]] == ["Chrome", "Edge", "Firefox"]
+    assert view["browsers"][2]["ok"] is True
     assert service.repair()["title"] == "Browser connection repaired" and repaired
     service.export()
     assert (env.tmp / "report.json").read_text(encoding="utf-8").startswith("{")
@@ -350,3 +395,12 @@ def test_camera_unlock_set_up_while_the_confirm_is_open_is_refused_before_the_lo
         service.delete(active)
     assert env.controller.is_unlocked()
     assert profiles.active_profile().id == active
+
+
+def test_free_plan_refuses_a_second_vault(env, monkeypatch):
+    monkeypatch.setattr(licensing, "vault_limit", lambda *a: 1)
+    service = ProfilesService(env.controller, env.port, Dialogs())
+    with pytest.raises(ApiError) as err:
+        service.create("Work")
+    assert err.value.code == "vault_limit"
+    assert env.port.upgrades and env.port.upgrades[0]["limit"] == 1

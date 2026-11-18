@@ -1,0 +1,217 @@
+{
+  "_comment": "Compare page data (website/build.py). Only facts that can be checked today: price model, account, where the vault lives, Wi-Fi sync, a published list of network connections, platforms. Competitor cells: a fact needs its date (\"checked\") and an https source from docs/marketing/compare-sources-2026-11-15.md (vendor pages only); anything not verified stays compare.v.unchecked. No claims about lifetime licences of other products.",
+  "checked": "2026-11-15",
+  "columns": [
+    {
+      "id": "localgatekeys",
+      "name": "LocalGateKeys"
+    },
+    {
+      "id": "1password",
+      "name": "1Password"
+    },
+    {
+      "id": "bitwarden",
+      "name": "Bitwarden"
+    },
+    {
+      "id": "proton-pass",
+      "name": "Proton Pass"
+    },
+    {
+      "id": "enpass",
+      "name": "Enpass"
+    },
+    {
+      "id": "keepassxc",
+      "name": "KeePassXC"
+    }
+  ],
+  "rows": [
+    {
+      "key": "compare.row.price",
+      "cells": {
+        "localgatekeys": {
+          "value": "text",
+          "key": "compare.v.lgk.price"
+        },
+        "1password": {
+          "value": "text",
+          "key": "compare.v.1p",
+          "source": "https://1password.com/pricing/password-manager"
+        },
+        "bitwarden": {
+          "value": "text",
+          "key": "compare.v.bw",
+          "source": "https://bitwarden.com/pricing/"
+        },
+        "proton-pass": {
+          "value": "text",
+          "key": "compare.v.pp",
+          "source": "https://proton.me/pass/pricing"
+        },
+        "enpass": {
+          "value": "text",
+          "key": "compare.v.en",
+          "source": "https://www.enpass.io/pricing/"
+        },
+        "keepassxc": {
+          "value": "text",
+          "key": "compare.v.kp",
+          "source": "https://keepassxc.org/"
+        }
+      }
+    },
+    {
+      "key": "compare.row.account",
+      "cells": {
+        "localgatekeys": {
+          "value": "no"
+        },
+        "1password": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "bitwarden": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "proton-pass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "enpass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "keepassxc": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        }
+      }
+    },
+    {
+      "key": "compare.row.vault",
+      "cells": {
+        "localgatekeys": {
+          "value": "text",
+          "key": "compare.v.lgk.vault"
+        },
+        "1password": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "bitwarden": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "proton-pass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "enpass": {
+          "value": "text",
+          "key": "compare.v.vault_en",
+          "source": "https://www.enpass.io/pricing/"
+        },
+        "keepassxc": {
+          "value": "text",
+          "key": "compare.v.vault_kp",
+          "source": "https://keepassxc.org/"
+        }
+      }
+    },
+    {
+      "key": "compare.row.wifi",
+      "cells": {
+        "localgatekeys": {
+          "value": "text",
+          "key": "compare.v.lgk.pro"
+        },
+        "1password": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "bitwarden": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "proton-pass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "enpass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "keepassxc": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        }
+      }
+    },
+    {
+      "key": "compare.row.network",
+      "cells": {
+        "localgatekeys": {
+          "value": "text",
+          "key": "compare.v.lgk.network"
+        },
+        "1password": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "bitwarden": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "proton-pass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "enpass": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        },
+        "keepassxc": {
+          "value": "text",
+          "key": "compare.v.unchecked"
+        }
+      }
+    },
+    {
+      "key": "compare.row.platforms",
+      "cells": {
+        "localgatekeys": {
+          "value": "text",
+          "key": "compare.v.lgk.platforms"
+        },
+        "1password": {
+          "value": "text",
+          "key": "compare.v.pl_1p",
+          "source": "https://1password.com/pricing"
+        },
+        "bitwarden": {
+          "value": "text",
+          "key": "compare.v.pl_bw",
+          "source": "https://bitwarden.com/download/"
+        },
+        "proton-pass": {
+          "value": "text",
+          "key": "compare.v.pl_pp",
+          "source": "https://proton.me/pass/download"
+        },
+        "enpass": {
+          "value": "text",
+          "key": "compare.v.pl_en",
+          "source": "https://www.enpass.io/downloads/"
+        },
+        "keepassxc": {
+          "value": "text",
+          "key": "compare.v.pl_kp",
+          "source": "https://keepassxc.org/"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">This vault also needs its key file.</string>
+    <string name="factors_required_yubikey">This vault also needs its YubiKey.</string>
+    <string name="factors_required_both">This vault also needs its key file and YubiKey.</string>
+    <string name="factors_keyfile_mismatch">This isn\'t the key file used for this vault.</string>
+    <string name="factors_yubikey_mismatch">This isn\'t the YubiKey used for this vault.</string>
+    <string name="factors_keyfile_invalid">This file can\'t be used as a key file.</string>
+    <string name="factors_yubikey_bad_answer">The YubiKey did not answer correctly. Check that slot %1$d is set to HMAC-SHA1 challenge-response.</string>
+    <string name="factors_yubikey_removed">Touch your YubiKey again.</string>
+    <string name="factors_yubikey_timeout">No touch detected. Touch your YubiKey when it blinks.</string>
+    <string name="factors_yubikey_slot_not_configured">Slot %1$d of this YubiKey is not set up for challenge-response. In Yubico Authenticator, choose Slots, then set slot %1$d to Challenge-response (HMAC-SHA1).</string>
+    <string name="factors_keyfile_unreadable">Could not read the key file %1$s. Choose it again.</string>
+    <string name="factors_keyfile_too_large">That file is too large to be a key file.</string>
+    <string name="factors_removed_by_phrase">Key file / YubiKey removed; add them again.</string>
+    <string name="factors_prompt_no_keyfile">No key file chosen</string>
+    <string name="factors_prompt_keyfile">Key file: %1$s</string>
+    <string name="factors_prompt_choose">Choose key file…</string>
+    <string name="factors_touch_title">Touch your YubiKey</string>
+    <string name="factors_section">Key file and YubiKey</string>
+    <string name="factors_keyfile">Key file</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">Key file set</string>
+    <string name="factors_keyfile_none">No key file</string>
+    <string name="factors_yubikey_set">YubiKey set (slot %1$d)</string>
+    <string name="factors_yubikey_none">No YubiKey</string>
+    <string name="factors_add_keyfile">Add key file…</string>
+    <string name="factors_create_keyfile">Create key file…</string>
+    <string name="factors_add_yubikey">Add YubiKey</string>
+    <string name="factors_slot">Slot</string>
+    <string name="factors_remove_keyfile">Remove the key file</string>
+    <string name="factors_remove_yubikey">Remove the YubiKey</string>
+    <string name="factors_remove_confirm">After this, the vault no longer needs this factor to unlock.</string>
+    <string name="factors_keyfile_added">Key file %1$s added.</string>
+    <string name="factors_keyfile_created">Key file %1$s created and added. Keep a copy in a safe place.</string>
+    <string name="factors_yubikey_added">YubiKey added (slot %1$d).</string>
+    <string name="factors_keyfile_removed">Key file removed.</string>
+    <string name="factors_yubikey_removed_done">YubiKey removed.</string>
+    <string name="factors_yubikey_setup">LocalGateKeys never programs your YubiKey. Set it up in Yubico Authenticator: Slots, Challenge-response, HMAC-SHA1, slot 2 (or slot 1). A backup YubiKey needs the same secret.</string>
+    <string name="factors_always_ask">Always ask for the key file / YubiKey</string>
+    <string name="factors_always_ask_needs_factor">Add a key file or YubiKey first.</string>
+    <string name="factors_shortcuts_off">Turn off “Always ask for the key file / YubiKey” first.</string>
+    <string name="factors_failed">The key file or YubiKey could not be changed.</string>
+    <string name="factors_yubikey_no_transport">Turn on NFC to hold your YubiKey to the phone, or plug it in.</string>
+    <string name="factors_prompt_remember">Remember this key file on this phone</string>
+    <string name="factors_prompt_yubikey">Hold your YubiKey to the back of the phone, or plug it in and touch it (slot %1$d).</string>
+    <string name="factors_sheet_title">Open LocalGateKeys to unlock</string>
+    <string name="factors_sheet_text">The app password needs its key file or YubiKey, which only the app can ask for.</string>
+    <string name="factors_sheet_open">Open LocalGateKeys</string>
+    <string name="factors_needs_app_password">Turn on the app password to add a key file or YubiKey</string>
+    <string name="factors_footer">A key file or YubiKey is then needed together with the app password. The recovery phrase still unlocks without them.</string>
+    <string name="factors_always_ask_note">Turns off fingerprint or face unlock while a key file or YubiKey is set.</string>
+    <string name="factors_remember">Remember the key file location on this phone</string>
+    <string name="factors_password_text">Enter the app password. A key file or YubiKey that is already set is asked for too.</string>
+    <string name="factors_add_confirm">From now on the app password and this factor are needed to unlock. The recovery phrase still unlocks without it.</string>
+</resources>

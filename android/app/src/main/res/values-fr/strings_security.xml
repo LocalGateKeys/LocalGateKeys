@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Sécurité</string>
+    <string name="security_cat_breached">Compromis</string>
+    <string name="security_cat_reused">Réutilisés</string>
+    <string name="security_cat_weak">Faibles</string>
+    <string name="security_cat_old">Anciens</string>
+    <string name="security_cat_no_2fa">2FA disponible</string>
+    <string name="security_expl_breached">Ces mots de passe figurent dans des fuites de données connues. Changez-les en premier.</string>
+    <string name="security_expl_reused">Ces mots de passe sont utilisés pour plusieurs identifiants. Si un site fuit, les autres sont exposés.</string>
+    <string name="security_expl_weak">Ces mots de passe sont courts ou faciles à deviner.</string>
+    <string name="security_expl_old">Ces mots de passe n’ont pas changé depuis plus d’un an. L’ancienneté seule n’est pas une raison de les changer.</string>
+    <string name="security_expl_no_2fa">Ce site propose des codes à deux facteurs, mais cet identifiant n\'en a aucun.</string>
+    <string name="security_blocked_offline">Le mode hors ligne strict est activé : les vérifications des fuites sont bloquées. Désactivez-le dans Paramètres › Vérification des fuites.</string>
+    <string name="security_blocked_disabled">Les vérifications des fuites sont désactivées. Activez-les dans Paramètres › Vérification des fuites.</string>
+    <string name="security_status_cancelled">Vérification des fuites annulée.</string>
+    <string name="security_status_checking">Vérification des mots de passe…</string>
+    <string name="security_status_none_found">Aucun mot de passe compromis trouvé.</string>
+    <string name="security_status_found">%1$d mot(s) de passe compromis trouvé(s).</string>
+    <string name="security_status_some_failed">Certains mots de passe n’ont pas pu être vérifiés. Réessayez plus tard.</string>
+    <string name="security_band_none">Aucun identifiant pour l’instant</string>
+    <string name="security_band_good">Bon</string>
+    <string name="security_band_fair">Moyen</string>
+    <string name="security_band_poor">Faible</string>
+    <string name="security_empty_hint">Ajoutez des identifiants pour voir la solidité de vos mots de passe.</string>
+    <string name="security_score_description">Score de sécurité : %1$d sur 100</string>
+    <string name="security_no_score">Pas encore de score de sécurité</string>
+    <string name="security_checks_header">Vérifications</string>
+    <string name="security_breach_header">Vérification des fuites</string>
+    <string name="security_breach_start">Rechercher les mots de passe compromis</string>
+    <string name="security_cancel">Annuler</string>
+    <string name="security_checking">Vérification…</string>
+    <string name="security_show_dismissed">Afficher à nouveau les éléments ignorés</string>
+    <string name="security_confirm_title">Vérifier chaque mot de passe avec Have I Been Pwned ?</string>
+    <string name="security_confirm_action">Vérifier</string>
+    <string name="security_consent">Les vérifications des fuites envoient à Have I Been Pwned uniquement les 5 premiers caractères du hachage SHA-1 de chaque mot de passe, via HTTPS avec remplissage, et seulement lorsque vous en lancez une. Aucun mot de passe, hachage complet, nom d’utilisateur ni site web n’est envoyé. Le service voit votre adresse IP.</string>
+    <string name="security_nothing_to_fix">Rien à corriger ici.</string>
+    <string name="security_dismiss">Ignorer</string>
+    <string name="security_change_password">Changer le mot de passe</string>
+    <string name="security_dismiss_item">Ignorer pour cet élément</string>
+    <string name="security_row_description">%1$s, %2$d éléments</string>
+    <string name="security_checks_footer">Les vérifications locales sont un conseil, pas une garantie. Rien ne quitte ce téléphone tant que vous ne lancez pas une vérification des fuites.</string>
+    <string name="security_issue_footer">%1$s Utilisez le menu d’un identifiant pour changer son mot de passe ou l’ignorer ici.</string>
+    <string name="security_row_menu">Plus d’actions pour %1$s</string>
+    <string name="security_untitled">Identifiant sans titre</string>
+</resources>

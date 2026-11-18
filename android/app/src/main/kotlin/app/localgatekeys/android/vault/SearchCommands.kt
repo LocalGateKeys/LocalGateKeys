@@ -8,7 +8,7 @@ import app.localgatekeys.android.editor.EditorKind
 /**
  * UX plan 2026-10-27 workstream 5: the vault search doubles as the command palette. A query that starts with `>`
  * lists actions instead of items; the words after it narrow the list (every word must appear in the title or the
- * keywords, case-insensitive). Android has no Security or Trash screens, so those commands are not offered here.
+ * keywords, case-insensitive). The list follows the iPhone's `PhoneCommand` (plus Android's backup and share pages).
  */
 sealed class SearchCommand(@StringRes val titleRes: Int, val keywords: String) {
     /** The command's name in the person's language. [keywords] stay English as well: they are search terms, not shown. */
@@ -20,11 +20,15 @@ sealed class SearchCommand(@StringRes val titleRes: Int, val keywords: String) {
     data object Lock : SearchCommand(R.string.topbar_lock, "lock vault close")
     data object SyncNow : SearchCommand(R.string.sync_status_page_sync_now, "sync refresh pc")
     data object SyncStatus : SearchCommand(R.string.command_sync_status_title, "sync devices status")
+    data object SecurityCheck : SearchCommand(R.string.cmd_security_check, "security weak reused health audit breach")
+    data object RecentlyDeleted : SearchCommand(R.string.trash_title, "trash deleted restore bin undo")
     data object Settings : SearchCommand(R.string.command_settings_title, "settings preferences options")
     data object Import : SearchCommand(R.string.cmd_import, "settings import csv bitwarden 1password keepass")
     data object ExportBackup : SearchCommand(R.string.cmd_export_backup, "settings backup export save")
     data object RestoreBackup : SearchCommand(R.string.recovery_page_restore_title, "settings backup restore")
     data object ReceiveShare : SearchCommand(R.string.cmd_receive_share, "settings share incoming lgkshare")
+    data object AutofillSettings : SearchCommand(R.string.settings_open_autofill, "autofill fill passkeys")
+    data object SyncSettings : SearchCommand(R.string.cmd_sync_settings, "sync wifi folder pair")
     data object ShowSetup : SearchCommand(R.string.settings_setup_title, "settings setup onboarding")
 
     override fun toString(): String = "SearchCommand(${javaClass.simpleName})"
@@ -35,8 +39,8 @@ sealed class SearchCommand(@StringRes val titleRes: Int, val keywords: String) {
         /** Every command in palette order; RootScaffold offers the ones its seams can run. */
         val all: List<SearchCommand> =
             EditorKind.entries.map { NewItem(it) } + listOf(
-                GeneratePassword, ScanQr, Lock, SyncNow, SyncStatus, Settings, Import, ExportBackup, RestoreBackup,
-                ReceiveShare, ShowSetup,
+                GeneratePassword, ScanQr, Lock, SyncNow, SyncStatus, SecurityCheck, RecentlyDeleted, Settings, Import,
+                ExportBackup, RestoreBackup, ReceiveShare, AutofillSettings, SyncSettings, ShowSetup,
             )
 
         /** True when [query] is a command query (leading spaces allowed). */
@@ -57,7 +61,7 @@ sealed class SearchCommand(@StringRes val titleRes: Int, val keywords: String) {
     }
 }
 
-/** Ctrl+K on a hardware keyboard opens the vault search (workstream 5). */
+/** Ctrl+K on a hardware keyboard opens the vault search listing the `>` actions (the iPhone's Cmd+K; workstream 5). */
 object SearchShortcut {
     /** Android's `KeyEvent.KEYCODE_K` and `ACTION_DOWN` (kept as numbers so this stays a plain unit). */
     const val KEYCODE_K = 39

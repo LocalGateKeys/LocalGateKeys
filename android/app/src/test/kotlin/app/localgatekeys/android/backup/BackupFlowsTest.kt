@@ -202,7 +202,7 @@ class BackupFlowsTest {
         val report = RestoreReport(new = 2, updated = 1, heldBack = 3, skipped = 1, deleted = 1)
         assertEquals(
             listOf("2 new items", "1 item updated from the backup", "1 item deleted (deleted before the backup was made)",
-                "3 items held back by the free plan's 4-item limit"),
+                "3 items held back by the free plan's 7-item limit"),
             text.reportLines(report),
         )
         assertEquals("Phone backup restored. 1 item this version cannot read was skipped.", text.reportStatus(report))

@@ -5,6 +5,7 @@ import app.localgatekeys.core.json.CanonicalJson
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Base64Std
 import app.localgatekeys.core.records.SyncMeta
+import app.localgatekeys.core.sync.CollectionStates
 import app.localgatekeys.core.sync.StoreSnapshot
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -44,13 +45,15 @@ class ItemLimitTest {
 
     private fun login(id: String) = Triple(id, entry("entry", "login"), false)
 
+    private fun logins(count: Int) = (0 until count).map { login("l$it") }
+
     private fun licenseSnapshot(extra: List<Triple<String, JsonValue, Boolean>> = emptyList()): StoreSnapshot {
         val o = vector()
         val licenseRow = Triple(o.getValue("state_id").str(), o.getValue("wrapper"), false)
         return snapshot(*(extra + licenseRow).toTypedArray())
     }
 
-    @Test fun free_items_is_four() = assertEquals(4, ItemLimit.FREE_ITEMS)
+    @Test fun free_items_is_seven() = assertEquals(7, ItemLimit.FREE_ITEMS)
 
     @Test fun live_count_excludes_licence_document_and_deleted() {
         val s = snapshot(
@@ -64,6 +67,20 @@ class ItemLimitTest {
         assertEquals(0, ItemLimit.liveCount(StoreSnapshot()))
     }
 
+    // Sub-plan 07: collections are free, so their states never count toward the free items (nor block a create).
+    @Test fun live_count_skips_collection_states() {
+        val cid = "f0000000-0000-4000-8000-000000000001"
+        val item = "a0000000-0000-4000-8000-00000000000a"
+        val states = listOf(
+            "col:$cid" to CollectionStates.wrapper(CollectionStates.catalog(cid, "Family", "", 1, 1)),
+            "cm:$item" to CollectionStates.wrapper(CollectionStates.membership(item, listOf(cid))),
+            "csl:$cid" to CollectionStates.wrapper(CollectionStates.link(cid, "edit", "owner")),
+        ).map { Triple(it.first, it.second, false) }
+        val s = snapshot(*(logins(ItemLimit.FREE_ITEMS - 1) + states).toTypedArray())
+        assertEquals(ItemLimit.FREE_ITEMS - 1, ItemLimit.liveCount(s))
+        assertTrue(ItemLimit.allows(ItemLimit.Action.CREATE, s, false))
+    }
+
     @Test fun live_count_ignores_a_record_marked_deleted_in_meta_even_if_still_present() {
         val s = StoreSnapshot(
             records = mapOf("a" to entry("entry", "login"), "b" to entry("entry", "login")),
@@ -73,10 +90,10 @@ class ItemLimitTest {
     }
 
     @Test fun allows_matrix() {
-        val full = snapshot(login("a"), login("b"), login("c"), login("d"))
-        val three = snapshot(login("a"), login("b"), login("c"))
+        val full = snapshot(*logins(ItemLimit.FREE_ITEMS).toTypedArray())
+        val belowLimit = snapshot(*logins(ItemLimit.FREE_ITEMS - 1).toTypedArray())
         for (a in listOf(ItemLimit.Action.CREATE, ItemLimit.Action.RESTORE)) {
-            assertTrue(ItemLimit.allows(a, three, isPro = false))
+            assertTrue(ItemLimit.allows(a, belowLimit, isPro = false))
             assertFalse(ItemLimit.allows(a, full, isPro = false))
             assertTrue(ItemLimit.allows(a, full, isPro = true))
         }
@@ -86,19 +103,25 @@ class ItemLimitTest {
     }
 
     @Test fun a_deleted_item_frees_its_slot() {
-        val s = snapshot(login("a"), login("b"), login("c"), Triple("d", entry("entry", "login"), true))
+        val s = snapshot(*(logins(ItemLimit.FREE_ITEMS - 1) + Triple("d", entry("entry", "login"), true)).toTypedArray())
         assertTrue(ItemLimit.allows(ItemLimit.Action.CREATE, s, isPro = false))
     }
 
-    @Test fun restore_at_four_live_items_plus_a_tombstone_needs_pro() {
-        val s = snapshot(
-            login("a"), login("b"), login("c"), login("d"),
-            Triple("gone", entry("entry", "login"), true),
-        )
-        assertEquals(4, ItemLimit.liveCount(s))
+    @Test fun restore_at_the_limit_live_items_plus_a_tombstone_needs_pro() {
+        val s = snapshot(*(logins(ItemLimit.FREE_ITEMS) + Triple("gone", entry("entry", "login"), true)).toTypedArray())
+        assertEquals(ItemLimit.FREE_ITEMS, ItemLimit.liveCount(s))
         assertFalse(ItemLimit.allows(ItemLimit.Action.RESTORE, s, isPro = false))
         assertTrue(ItemLimit.allows(ItemLimit.Action.RESTORE, s, isPro = true))
         assertFalse(ItemLimit.allows(ItemLimit.Action.CREATE, s, isPro = false))
+    }
+
+    @Test fun item_past_the_limit_hits_limit() {
+        val atLimit = snapshot(*logins(ItemLimit.FREE_ITEMS).toTypedArray())
+        val belowLimit = snapshot(*logins(ItemLimit.FREE_ITEMS - 1).toTypedArray())
+        assertFalse(ItemLimit.allows(ItemLimit.Action.CREATE, atLimit, isPro = false))
+        assertTrue(ItemLimit.allows(ItemLimit.Action.CREATE, belowLimit, isPro = false))
+        assertTrue(ItemLimit.allows(ItemLimit.Action.EDIT, atLimit, isPro = false))
+        assertTrue(ItemLimit.allows(ItemLimit.Action.DELETE, atLimit, isPro = false))
     }
 
     /** A licence bundle signed by a throwaway Ed25519 key made in the test; returns the wrapper and the raw public key. */

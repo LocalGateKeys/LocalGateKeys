@@ -4,7 +4,9 @@ import app.localgatekeys.android.i18n.appTxt
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -78,16 +80,25 @@ class GeneratorSheetTest {
         return button.top >= picker.bottom
     }
 
-    @Test fun at_the_default_text_size_the_picker_and_buttons_share_a_row() {
+    @Test fun at_the_default_text_size_every_mode_label_is_shown_in_full() {
         show(fontScale = 1f)
+        assertFalse(ellipsized("Password"))
         assertFalse(ellipsized("Passphrase"))
-        assertFalse(stacked())
+        assertFalse(ellipsized("Answer"))
+    }
+
+    @Test fun the_answer_tab_is_visible_and_selecting_it_shows_the_words_control() {
+        show(fontScale = 1f)
+        rule.onNodeWithTag("generator-mode-answer").assertIsDisplayed()
+        rule.onNodeWithTag("generator-mode-answer").performClick()
+        rule.onNodeWithContentDescription("Words").assertIsDisplayed()
     }
 
     @Test fun at_twice_the_text_size_the_picker_stacks_above_the_buttons_and_shows_passphrase_in_full() {
         show(fontScale = 2f)
         assertFalse(ellipsized("Passphrase"))
         assertFalse(ellipsized("Password"))
+        assertFalse(ellipsized("Answer"))
         assertTrue(stacked())
     }
 }

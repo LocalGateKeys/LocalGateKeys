@@ -62,6 +62,18 @@ public enum FolderLayout {
         Identifier.isSafeDeviceFile(deviceID) ? "\(witnessDir)/\(deviceID)\(deviceSuffix)" : nil
     }
 
+    /// Heartbeats (desktop `sync/seen.py`): `seen/<id>.lgksync`, an empty view whose header time is the device's
+    /// last folder run, and `seen/<id>.lgksig`, its signature. Older builds never scan this folder.
+    public static var seenDir: String { "\(syncDir)/seen" }
+
+    public static func heartbeatFile(_ deviceID: String) -> String? {
+        Identifier.isSafeDeviceFile(deviceID) ? "\(seenDir)/\(deviceID)\(deviceSuffix)" : nil
+    }
+
+    public static func heartbeatSignatureFile(_ deviceID: String) -> String? {
+        Identifier.isSafeDeviceFile(deviceID) ? "\(seenDir)/\(deviceID)\(signatureSuffix)" : nil
+    }
+
     /// Path of the signature of `deviceID`'s witness file; nil unless the id is a safe file name.
     public static func witnessSignatureFile(_ deviceID: String) -> String? {
         Identifier.isSafeDeviceFile(deviceID) ? "\(witnessDir)/\(deviceID)\(signatureSuffix)" : nil

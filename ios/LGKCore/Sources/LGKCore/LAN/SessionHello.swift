@@ -28,8 +28,16 @@ public struct PinnedPeer: Equatable, Sendable {
 
 /// Transport constants (desktop `sync.transport`).
 public enum LanTransport {
-    /// Version 2 added the per-session ephemeral key (forward secrecy); there is no fallback to version 1.
-    public static let version: Int64 = 2
+    /// The transport protocol version (desktop `TRANSPORT_VERSION`). Version 2 added the per-session
+    /// ephemeral key (forward secrecy); version 3 seals the hello to the responder's pinned exchange key
+    /// (`SealedHello`, docs/formats/LAN_SYNC_V3.md). There is no fallback to version 1. This is the version
+    /// of the refusal and of the inner hello this device sends.
+    public static let version: Int64 = 3
+    /// The clear-text hello of protocol version 2 (desktop `PLAIN_HELLO_VERSION`): still answered for an
+    /// unpinned peer, never sent.
+    public static let plainHelloVersion: Int64 = 2
+    /// The metadata version of every encrypted frame (desktop `FRAME_VERSION`), unchanged in version 3.
+    public static let frameVersion: Int64 = 2
     public static let maxFramePayload = 1024 * 1024
     public static let maxMessageBytes = maxFramePayload - 256
     public static let sessionIDBytes = 16
@@ -64,14 +72,14 @@ public enum LanTransport {
     }
 
     /// The plain frame payload a responder sends for a hello of another version (`version_refusal`):
-    /// canonical `{"refused":"version","version":2}`.
+    /// canonical `{"refused":"version","version":3}`.
     public static func versionRefusal() throws -> [UInt8] {
         try canonical(.object(["refused": .string("version"), "version": .int(version)]))
     }
 
     /// The version a peer announced in a version refusal, or nil when `payload` is not exactly one
     /// (`parse_version_refusal`): the fields `refused` ("version") and `version` (an integer 1 ... 2^31-1
-    /// other than this version), at most 256 bytes.
+    /// other than this version, 3), at most 256 bytes.
     public static func parseVersionRefusal(_ payload: [UInt8]) -> Int64? {
         guard payload.count <= 256, case .object(let o)? = try? CanonicalJSON.parse(payload),
               Set(o.keys) == ["refused", "version"], o["refused"] == .string("version"),
@@ -111,12 +119,18 @@ public final class EphemeralSecret: @unchecked Sendable, CustomStringConvertible
     public var description: String { "EphemeralSecret(<redacted>)" }
 }
 
-/// The signed hello each side sends first on a LAN connection (desktop `transport.SessionHello`, version 2).
+/// The signed hello each side sends first on a LAN connection (desktop `transport.SessionHello`). Version 2
+/// is the clear-text first frame; version 3 is the same hello (other signing label) sent inside a sealed
+/// frame (`SealedHello`). Both hellos of one connection have the same version.
 public struct SessionHello: Equatable, Sendable {
     static let fields: Set<String> = ["counter", "device_id", "ephemeral_public", "exchange_public", "group_id", "nonce",
                                       "session_id", "signature", "signing_public", "version"]
-    static let label = Array("localgatekeys|sync|session-hello|v2|".utf8)
 
+    /// The signing label of a hello of `version` (`session-hello|v2|` or `session-hello|v3|`).
+    static func label(_ version: Int64) -> [UInt8] { Array("localgatekeys|sync|session-hello|v\(version)|".utf8) }
+
+    /// 2 (clear text) or 3 (sealed).
+    public let version: Int64
     public let sessionID: [UInt8]
     public let groupID: String
     public let deviceID: String
@@ -131,22 +145,24 @@ public struct SessionHello: Equatable, Sendable {
     public let ephemeralSecret: EphemeralSecret?
 
     init(sessionID: [UInt8], groupID: String, deviceID: String, signingPublic: [UInt8], exchangePublic: [UInt8],
-         ephemeralPublic: [UInt8], nonce: [UInt8], counter: Int64, signature: [UInt8], ephemeralSecret: EphemeralSecret? = nil) {
+         ephemeralPublic: [UInt8], nonce: [UInt8], counter: Int64, signature: [UInt8], ephemeralSecret: EphemeralSecret? = nil,
+         version: Int64 = LanTransport.plainHelloVersion) {
         self.sessionID = sessionID; self.groupID = groupID; self.deviceID = deviceID
         self.signingPublic = signingPublic; self.exchangePublic = exchangePublic; self.ephemeralPublic = ephemeralPublic
         self.nonce = nonce; self.counter = counter; self.signature = signature; self.ephemeralSecret = ephemeralSecret
+        self.version = version
     }
 
     /// Every wire field; the ephemeral secret is not compared.
     public static func == (a: SessionHello, b: SessionHello) -> Bool {
-        a.sessionID == b.sessionID && a.groupID == b.groupID && a.deviceID == b.deviceID
+        a.version == b.version && a.sessionID == b.sessionID && a.groupID == b.groupID && a.deviceID == b.deviceID
             && a.signingPublic == b.signingPublic && a.exchangePublic == b.exchangePublic
             && a.ephemeralPublic == b.ephemeralPublic && a.nonce == b.nonce && a.counter == b.counter
             && a.signature == b.signature
     }
 
     var unsignedJSON: [String: JSONValue] {
-        ["version": .int(LanTransport.version), "session_id": .string(Base64.encode(sessionID)),
+        ["version": .int(version), "session_id": .string(Base64.encode(sessionID)),
          "group_id": .string(groupID), "device_id": .string(deviceID),
          "signing_public": .string(Base64.encode(signingPublic)), "exchange_public": .string(Base64.encode(exchangePublic)),
          "ephemeral_public": .string(Base64.encode(ephemeralPublic)),
@@ -154,7 +170,7 @@ public struct SessionHello: Equatable, Sendable {
     }
 
     /// The signed text: label + canonical JSON of the hello without `signature`.
-    public func signingBytes() throws -> [UInt8] { Self.label + (try LanTransport.canonical(.object(unsignedJSON))) }
+    public func signingBytes() throws -> [UInt8] { Self.label(version) + (try LanTransport.canonical(.object(unsignedJSON))) }
 
     /// Canonical JSON of the whole hello (the transcript uses this form).
     public func toBytes() throws -> [UInt8] {
@@ -165,10 +181,12 @@ public struct SessionHello: Equatable, Sendable {
 
     /// A signed hello of `identity` with a fresh ephemeral key (`ephemeralSecret`, good for one derivation).
     /// Draws the 32-byte hello nonce, then the 32-byte X25519 ephemeral private key, from `random`
-    /// (`SystemRandomSource` in the app; tests inject the vectors' values).
+    /// (`SystemRandomSource` in the app; tests inject the vectors' values). `version` 3 is the hello sent
+    /// inside a sealed frame; 2 the clear-text hello (only answered, for an unpinned version-2 peer).
     public static func make(identity: DeviceIdentity, groupID: String, sessionID: [UInt8], counter: Int64,
-                            random: some RandomSource) throws -> SessionHello {
-        guard !groupID.isEmpty, sessionID.count == LanTransport.sessionIDBytes, counter >= 0 else {
+                            random: some RandomSource, version: Int64 = LanTransport.plainHelloVersion) throws -> SessionHello {
+        guard !groupID.isEmpty, sessionID.count == LanTransport.sessionIDBytes, counter >= 0,
+              version == LanTransport.plainHelloVersion || version == LanTransport.version else {
             throw LanTransportError.authentication("Session hello input is malformed")
         }
         let nonce = random.bytes(count: 32)
@@ -180,11 +198,12 @@ public struct SessionHello: Equatable, Sendable {
         let ephPublic = Array(eph.publicKey.rawRepresentation)
         let unsigned = SessionHello(sessionID: sessionID, groupID: groupID, deviceID: identity.deviceID,
                                     signingPublic: identity.signingPublicKey, exchangePublic: identity.exchangePublicKey,
-                                    ephemeralPublic: ephPublic, nonce: nonce, counter: counter, signature: [])
+                                    ephemeralPublic: ephPublic, nonce: nonce, counter: counter, signature: [], version: version)
         return SessionHello(sessionID: sessionID, groupID: groupID, deviceID: identity.deviceID,
                             signingPublic: identity.signingPublicKey, exchangePublic: identity.exchangePublicKey,
                             ephemeralPublic: ephPublic, nonce: nonce, counter: counter,
-                            signature: try identity.sign(try unsigned.signingBytes()), ephemeralSecret: EphemeralSecret(eph))
+                            signature: try identity.sign(try unsigned.signingBytes()), ephemeralSecret: EphemeralSecret(eph),
+                            version: version)
     }
 
     /// This hello with `privateKey` attached as its ephemeral secret; it must be the key of `ephemeralPublic`
@@ -196,27 +215,37 @@ public struct SessionHello: Equatable, Sendable {
         }
         return SessionHello(sessionID: sessionID, groupID: groupID, deviceID: deviceID, signingPublic: signingPublic,
                             exchangePublic: exchangePublic, ephemeralPublic: ephemeralPublic, nonce: nonce, counter: counter,
-                            signature: signature, ephemeralSecret: EphemeralSecret(k))
+                            signature: signature, ephemeralSecret: EphemeralSecret(k), version: version)
     }
 
-    /// The version of a first frame that is a signed hello (an object with `signature`) of another integer
-    /// version, or nil. Such a hello is never used for a key; the initiator reports "update needed".
-    public static func otherVersion(_ bytes: [UInt8]) -> Int64? {
+    /// The integer version of a signed object (one with `signature`), or nil.
+    private static func announcedVersion(_ bytes: [UInt8]) -> Int64? {
         guard bytes.count <= LanTransport.maxMessageBytes, case .object(let o)? = try? CanonicalJSON.parse(bytes),
-              o["signature"] != nil, case .int(let v)? = o["version"], v != LanTransport.version else { return nil }
+              o["signature"] != nil, case .int(let v)? = o["version"] else { return nil }
+        return v
+    }
+
+    /// The version of a first frame that is a signed hello (an object with `signature`) of an integer version
+    /// other than the clear-text 2, or nil. 3 is a sealed first frame (`SealedHello.openInitiator`); any other
+    /// is never used for a key and gets the version refusal.
+    public static func otherVersion(_ bytes: [UInt8]) -> Int64? {
+        guard let v = announcedVersion(bytes), v != LanTransport.plainHelloVersion else { return nil }
         return v
     }
 
     /// Strict parse (`SessionHello.from_bytes`): exact field set, duplicate keys refused, `version`
-    /// the JSON integer 2, canonical base64 with exact lengths, `counter` an integer 0 ... 2^63-1.
-    /// A signed hello of another version is refused too (`otherVersion`).
-    public static func parse(_ bytes: [UInt8]) throws -> SessionHello {
+    /// the JSON integer `version` (2: a clear-text first frame; 3: the inside of a sealed one), canonical
+    /// base64 with exact lengths, `counter` an integer 0 ... 2^63-1. A signed hello of another version is
+    /// refused too (`otherVersion`).
+    public static func parse(_ bytes: [UInt8], version: Int64 = LanTransport.plainHelloVersion) throws -> SessionHello {
         guard bytes.count <= LanTransport.maxMessageBytes else { throw LanTransportError.tooLarge("Session hello exceeds the bound") }
-        if let v = otherVersion(bytes) { throw LanTransportError.malformed("Session hello version \(v) is not supported") }
+        if let v = announcedVersion(bytes), v != version { throw LanTransportError.malformed("Session hello version \(v) is not supported") }
         guard case .object(let o)? = try? CanonicalJSON.parse(bytes), Set(o.keys) == fields else {
             throw LanTransportError.malformed("Session hello is malformed")
         }
-        guard o["version"] == .int(LanTransport.version) else { throw LanTransportError.malformed("Unsupported session hello") }
+        guard version == LanTransport.plainHelloVersion || version == LanTransport.version, o["version"] == .int(version) else {
+            throw LanTransportError.malformed("Unsupported session hello")
+        }
         guard case .int(let counter)? = o["counter"], counter >= 0 else { throw LanTransportError.malformed("Session hello counter is malformed") }
         guard case .string(let group)? = o["group_id"], case .string(let device)? = o["device_id"] else {
             throw LanTransportError.malformed("Session hello is malformed")
@@ -227,7 +256,7 @@ public struct SessionHello: Equatable, Sendable {
                             exchangePublic: try LanTransport.b64(o["exchange_public"], length: 32, "exchange public key"),
                             ephemeralPublic: try LanTransport.b64(o["ephemeral_public"], length: 32, "ephemeral public key"),
                             nonce: try LanTransport.b64(o["nonce"], length: 32, "session nonce"), counter: counter,
-                            signature: try LanTransport.b64(o["signature"], length: 64, "session signature"))
+                            signature: try LanTransport.b64(o["signature"], length: 64, "session signature"), version: version)
     }
 
     /// `verify_session_hello`: group, device id, signing key, fingerprint and exchange key must be

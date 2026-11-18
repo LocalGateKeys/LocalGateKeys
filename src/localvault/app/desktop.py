@@ -58,6 +58,14 @@ def _with_com(fn: Callable[[], Any]) -> Any:
             pythoncom.CoUninitialize()
 
 
+def _set_foreground(hwnd: int) -> None:
+    """Give the window back the focus the palette took (allowed: this process is in front)."""
+    if os.name == "nt":
+        import ctypes
+
+        ctypes.windll.user32.SetForegroundWindow(hwnd)
+
+
 class DesktopService:
     def __init__(self, controller: Any, port: Any, bus: Any, *, serialise: Callable[[Callable[[], Any]], Any],
                  ensure_unlocked: Callable[[], bool], reauthenticate: Callable[[str, Any], bool],
@@ -76,12 +84,17 @@ class DesktopService:
         self._sleep = sleep
         self._clock = time.monotonic
         self._busy = threading.Lock()
+        self._activate: Callable[[int], Any] = _set_foreground
         self._snapshots: dict[str, dict[str, Any]] = {}
         controller.on_lock.append(self._snapshots.clear)
 
     # ---------------------------------------------------------------- helpers
     def _status(self, text: str, kind: str = "info") -> None:
         self._bus.emit("toast", {"kind": kind, "message": text})
+
+    def _refused(self, text: str, kind: str = "info") -> str:
+        self._status(text, kind)
+        return text
 
     @property
     def _session(self) -> Any:
@@ -232,25 +245,23 @@ class DesktopService:
         token = self._remember(snapshot, fill_after=True)
         self._bus.emit("navigate", {"route": "desktop-bind", "params": {"token": token}})
 
-    def _fill_entry(self, entry_id: str, snapshot: Any) -> None:
-        from ..access_policy import may_sign_in, normalized_policy
+    def _fill_entry(self, entry_id: str, snapshot: Any) -> str | None:
+        """Fill one login; returns why nothing was filled (also shown as status), None once filled."""
+        from ..access_policy import enforced_policy, may_sign_in
 
         uia = self._uia
         lease = self._lease()
         entry = self._serialise(lambda: self._session.get_entry(entry_id))
         if not entry:
-            self._status(t("desktop.theEntryWasRemoved"), "error")
-            return
+            return self._refused(t("desktop.theEntryWasRemoved"), "error")
         try:
             if not uia.desktop_entry_matches_snapshot(entry, snapshot):
-                self._status(t("desktop.appBindingChangedRebindExplicitly"), "warning")
-                return
-            policy = normalized_policy(entry.get("policy"))
+                return self._refused(t("desktop.appBindingChangedRebindExplicitly"), "warning")
+            policy = enforced_policy(entry)
             if policy["fill"] == "never":
-                self._status(t("desktop.fillingIsDisabledForThis"))
-                return
+                return self._refused(t("desktop.fillingIsDisabledForThis"))
             if policy["require_master_password"] and not self._reauthenticate(t("desktop.authorizeDesktopFill"), lease):
-                return
+                return t("desktop.desktopFillCancelled")
             scope = entry.get("scope", {})
             selector = scope.get("password_selector") or {}
             warnings = []
@@ -269,7 +280,7 @@ class DesktopService:
                     t("desktop.rememberApprovalForThisSaved") if embedded else "")
                 self._controller.require_lease(lease)
                 if not answer.get("approved"):
-                    return
+                    return t("desktop.desktopFillCancelled")
                 if answer.get("remember") and embedded:
                     self._serialise(lambda: self._session.set_desktop_embedded_fill_approval(entry_id, True))
             self._controller.require_lease(lease)
@@ -280,6 +291,7 @@ class DesktopService:
             self._controller.touch()
             self._status(t("desktop.credentialsFilledSignInInvoked") if submitted
                          else t("desktop.credentialsFilledSignInManually"))
+            return None
         finally:
             entry.clear()
 
@@ -291,6 +303,61 @@ class DesktopService:
             self._sleep(3)
             snapshot = self._uia_job(self._uia.scan_foreground_window)
             self._fill_entry(entry_id, snapshot)
+        finally:
+            self._busy.release()
+        return {}
+
+    def _foreground(self) -> int:
+        if hasattr(self._uia, "foreground_hwnd"):
+            return int(self._uia.foreground_hwnd() or 0)
+        if os.name == "nt":
+            import ctypes
+
+            return int(ctypes.windll.user32.GetForegroundWindow())
+        return 0
+
+    def fill_entry_into(self, entry_id: str, hwnd: int, *, hide: Callable[[], None],
+                        show_again: Callable[[], None]) -> dict[str, Any]:
+        """The quick-search palette's Enter: fill the chosen desktop login into the window the palette opened over.
+
+        Only that login and only that window: an item not bound to it is refused while the palette still shows,
+        and the fill stops if the window is not back in front once the palette hides.
+        """
+        if not hwnd:
+            raise ApiError("not_front", t("quickPalette.targetGone"))
+        if not self._busy.acquire(blocking=False):
+            raise ApiError("busy", t("desktop.aDesktopOperationIsAlready"))
+        try:
+            try:
+                snapshot = self._uia_job(lambda: self._uia.scan_window(hwnd))
+            except ApiError:
+                raise ApiError("not_front", t("quickPalette.targetGone")) from None
+            entry = self._serialise(lambda: self._session.get_entry(entry_id))
+            if not entry:
+                raise ApiError("cannot_fill", t("quickPalette.cannotFill"))
+            try:
+                matches = self._uia.desktop_entry_matches_snapshot(entry, snapshot)
+            finally:
+                entry.clear()
+            if not matches:
+                raise ApiError("cannot_fill", t("quickPalette.cannotFill"))
+            hide()
+            self._activate(hwnd)
+            for _ in range(20):  # up to a second for the window to take focus back
+                if self._foreground() == hwnd:
+                    break
+                self._sleep(0.05)
+            else:
+                show_again()
+                raise ApiError("not_front", t("quickPalette.targetGone"))
+            try:
+                refused = self._fill_entry(entry_id, snapshot)
+            except ApiError:
+                show_again()  # the palette hid for the fill: the reason shows in it
+                raise
+            if refused:
+                show_again()
+                raise ApiError("fill_refused", refused)
         finally:
             self._busy.release()
         return {}

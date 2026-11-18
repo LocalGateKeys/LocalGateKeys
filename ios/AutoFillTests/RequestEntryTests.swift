@@ -14,7 +14,10 @@ enum DesktopEntries {
         let out: [(String, String, [String: JSONValue])] = cases.compactMap { c in
             guard case .object(let o) = c, o["error"] == .null, o["ns"] == .string("entry"),
                   case .string(let name)? = o["name"], case .object(let r)? = o["output"],
-                  r["kind"] == .string("web"), case .string(let id)? = r["id"] else { return nil }
+                  r["kind"] == .string("web"), case .string(let id)? = r["id"],
+                  // A login whose rules refuse autofill (`policy.fill` never, as the normaliser reads "auto" and unknown
+                  // values) is never filled on purpose (feature pack §4); its own tests are in AutoFillTests.
+                  AccessRules.effective(r, device: .phone, today: "2026-11-15").autofill else { return nil }
             return (name, id, r)
         }
         guard !out.isEmpty else { throw CocoaError(.fileReadCorruptFile) }

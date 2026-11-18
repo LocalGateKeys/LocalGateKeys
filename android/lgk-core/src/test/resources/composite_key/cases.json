@@ -1,0 +1,512 @@
+{
+  "argon": {
+    "hash_len": 32,
+    "memory_cost_kib": 8192,
+    "output_hex": "8519de606965c38ef8a7bf0129eb94f6f62707b672a430024339522688465713",
+    "parallelism": 1,
+    "password": "correct horse battery staple 42",
+    "salt_hex": "c7346c56b5bad5a13f015e681cd02293",
+    "time_cost": 1
+  },
+  "cases": [
+    {
+      "combine_hex": "8519de606965c38ef8a7bf0129eb94f6f62707b672a430024339522688465713",
+      "factors": [],
+      "info": null,
+      "name": "no_factors",
+      "secrets_hex": [],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "975f8de1e1d9e2dc5aee0e0d2c9822580e0697e1f39771a403691cb493ee1926f131426c5534dd9b7812cf74c3c3cf29",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "858daf4bf21b00457f93d652439a64080b3ccccc8e9cb64f2f5ac718db994060",
+      "factors": [
+        {
+          "check": "10ed9c05250cf31b",
+          "kind": "keyfile"
+        }
+      ],
+      "info": "[{\"check\":\"10ed9c05250cf31b\",\"kind\":\"keyfile\"}]",
+      "name": "keyfile_xml_v2",
+      "secrets_hex": [
+        "b639caa6546d2001c52c9e9401a708033e25e99a3cbb8c88915a6417d56fc988"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "359a6e663239fbd6a5e5dcc08bdd11957ee01b50f6221f35b699a1e66bfde3f0eb69ca77cae6de451cb6aaa79bcc793d",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "52efee6105f54f4daf17a245e2e82ca1dcf743d4f53b18d170cb9e8b47f1ccb8",
+      "factors": [
+        {
+          "check": "03e9f4027fa109be",
+          "kind": "keyfile"
+        }
+      ],
+      "info": "[{\"check\":\"03e9f4027fa109be\",\"kind\":\"keyfile\"}]",
+      "name": "keyfile_xml_v1",
+      "secrets_hex": [
+        "88562bbf6f5dd9461ebc7a87dfe02995a88c03b3a81d1dc9f8013ac5ddcdd88a"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "8702c6bf3495f35f479d4cabe47ff185058434f0c3959ea145b5b5af06ff5590fbafa580d3409d0a6cb93da459e62cb3",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "1cf82ce9e001b8c611fdd2aba8ece050f5ff3fa858f2549d19932dead6506326",
+      "factors": [
+        {
+          "check": "94df60a6bf5a46dd",
+          "kind": "keyfile"
+        }
+      ],
+      "info": "[{\"check\":\"94df60a6bf5a46dd\",\"kind\":\"keyfile\"}]",
+      "name": "keyfile_raw32",
+      "secrets_hex": [
+        "4b361d59c3c625ee2986bd10041e3fc7f601d6fea0d2946b6cf98d363df06ab9"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "8052f87b649bf6bb90791691a84ba1e5c194c9c5c612e7fc3ffac0e883f65d6f178d24579c624aec55230af193799ac5",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "46aaf9baac9d20ec3965d3498391db9b5edca19573f588e78de37f6f4ae009b5",
+      "factors": [
+        {
+          "check": "4511404117541cac",
+          "kind": "keyfile"
+        }
+      ],
+      "info": "[{\"check\":\"4511404117541cac\",\"kind\":\"keyfile\"}]",
+      "name": "keyfile_hex64",
+      "secrets_hex": [
+        "cadcf6d704eadb7529e8937381ffa3596b5a334284e41b201e5c92528cab16ff"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "9b82bb47738c6bd3de0ab68d58b9ee3dea3442487261bdec5c57c5b67879f7c42acaa2ca717b31b683852a0e37c7339e",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "890173cbde7ae9816fe332fbe92c2433d8a7e0a419d1a153aac2d8cbc2f1a94b",
+      "factors": [
+        {
+          "check": "4933aa9cc03a2b84",
+          "kind": "keyfile"
+        }
+      ],
+      "info": "[{\"check\":\"4933aa9cc03a2b84\",\"kind\":\"keyfile\"}]",
+      "name": "keyfile_arbitrary",
+      "secrets_hex": [
+        "59c2033d26111c79cf599741452cb6c12b6d19b77dafce333515da7ab4470ed1"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "44981f8e2aeaa982d2cfb91acb6ed3e8c27c85faa33c003f46c3263b55a3e10f6bad7487cc36bc886288ef8817661d62",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "9533dc0b53b189768bfb853010861c96cc2e034718baccd149f70bc60902eb79",
+      "factors": [
+        {
+          "challenge": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+          "check": "d4cceb1d258554e0",
+          "kind": "yubikey-hmac",
+          "slot": 2
+        }
+      ],
+      "info": "[{\"challenge\":\"c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb\",\"check\":\"d4cceb1d258554e0\",\"kind\":\"yubikey-hmac\",\"slot\":2}]",
+      "name": "yubikey_only",
+      "secrets_hex": [
+        "4d735bdee6508193d77b87754386f50267e5433cb462e58ae5673f2ca183474d"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "28ce88d0f195681bba7f5789ef7f1278829a072b048855b64dafc97273865e1711db870564a29db013d2242bd8746952",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "combine_hex": "8fbe891e8345d29cc2133ec3a424c5b0ebad04228ce96e90e4e70d3beb8f6685",
+      "factors": [
+        {
+          "check": "10ed9c05250cf31b",
+          "kind": "keyfile"
+        },
+        {
+          "challenge": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+          "check": "d4cceb1d258554e0",
+          "kind": "yubikey-hmac",
+          "slot": 2
+        }
+      ],
+      "info": "[{\"check\":\"10ed9c05250cf31b\",\"kind\":\"keyfile\"},{\"challenge\":\"c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb\",\"check\":\"d4cceb1d258554e0\",\"kind\":\"yubikey-hmac\",\"slot\":2}]",
+      "name": "keyfile_and_yubikey",
+      "secrets_hex": [
+        "b639caa6546d2001c52c9e9401a708033e25e99a3cbb8c88915a6417d56fc988",
+        "4d735bdee6508193d77b87754386f50267e5433cb462e58ae5673f2ca183474d"
+      ],
+      "wrap": {
+        "aad_hex": "",
+        "ciphertext_hex": "da5bd201912c89c3cd4ad8dfaeb21dfd9dc434dc0fed55a5d563c732bc7d5eedca482b4be3a7f7c3b20dc8abcd04449e",
+        "nonce_hex": "4f78b385e063efa58d08e097"
+      }
+    },
+    {
+      "argon_out_hex": "1629252b80e537c4759088e1532cd03c7a315797738adf7a62eebdea021fb163",
+      "catalog_aad_b64": "bG9jYWxnYXRla2V5c3x2YXVsdHx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImNpcGhlciI6eyJuYW1lIjoiYWVzLTI1Ni1nY20ifSwiZm9ybWF0IjoibG9jYWxnYXRla2V5cy12YXVsdC12MyIsImdlbmVyYXRpb24iOjMsImtleV9nZW5lcmF0aW9uIjoxLCJ2YXVsdF9pZCI6ImM3MjlkN2QwZDY3ZTFmNmQ5NDQ0ZmFlNmNhODU2NTg1IiwidmVyc2lvbiI6M30=",
+      "data_key_hex": "31295b5f00cb4668eeafd8bd15366ac85efff8fd9408445566c79447074c05d6",
+      "factors": [
+        {
+          "check": "10ed9c05250cf31b",
+          "kind": "keyfile"
+        },
+        {
+          "challenge": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+          "check": "d4cceb1d258554e0",
+          "kind": "yubikey-hmac",
+          "slot": 2
+        }
+      ],
+      "file": "windows_v4_vault.json",
+      "kek_hex": "be52a4c47e87dadf57951b95ed75f711767cf2a49c9481d2ad6f8e6601abdb1f",
+      "name": "windows_v4_header",
+      "password": "correct horse battery staple 42",
+      "payload": {
+        "attachments": [],
+        "catalog": "localgatekeys-catalog",
+        "collections": [],
+        "created_at": 1790000000,
+        "entries": [],
+        "events": [],
+        "generation": 3,
+        "history": [],
+        "items": [],
+        "ocr_derivatives": [],
+        "relationships": [],
+        "reminders": [],
+        "smart_views": [],
+        "sync_protocol_state": {
+          "item_revisions": {},
+          "next_counter": 1
+        },
+        "sync_receipts": [],
+        "templates": [],
+        "updated_at": 1790000000,
+        "version": 2
+      },
+      "recovery_aad_b64": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsia2luZCI6ImJpcDM5LWVuZ2xpc2gtMjQiLCJzYWx0IjoieFJnRk9CeWlyaDAwcERQL01YZjJLUT09In0sInZhdWx0X2lkIjoiYzcyOWQ3ZDBkNjdlMWY2ZDk0NDRmYWU2Y2E4NTY1ODUiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicmVjb3ZlcnkifQ==",
+      "recovery_entropy_hex": "6bf1fc4892233c5af41d135cf59d7556ffa2a410eb7d41b6aa72da945f50d260",
+      "recovery_phrase": "hip morning banana cattle critic coin spare pen friend provide front pupil when faith dry hurry double relief original release echo position end allow",
+      "secret_sources": [
+        "keyfile_xml_v2",
+        "yubikey"
+      ],
+      "tampered": [
+        {
+          "aad_hex": "6c6f63616c676174656b6579737c7661756c742d6b65792d777261707065727c76337c7b22636174616c6f67223a226c6f63616c676174656b6579732d636174616c6f67222c22636174616c6f675f76657273696f6e223a322c22666f726d6174223a226c6f63616c676174656b6579732d7661756c742d7633222c226b65795f67656e65726174696f6e223a312c226d65746164617461223a7b226b6466223a7b22686173685f6c656e223a33322c226d656d6f72795f636f73745f6b6962223a383139322c226e616d65223a226172676f6e326964222c22706172616c6c656c69736d223a312c2273616c74223a22614f2b726752696b7a5069793941622b4f42376362773d3d222c2274696d655f636f7374223a317d7d2c227661756c745f6964223a226337323964376430643637653166366439343434666165366361383536353835222c2276657273696f6e223a332c2277726170706572223a2270617373776f7264227d",
+          "description": "factor list removed; key = plain Argon2id output, no-factor AAD",
+          "expect": "unwrap-fails",
+          "factors": [],
+          "file": "windows_v4_tampered_no_factors.json",
+          "key_hex": "1629252b80e537c4759088e1532cd03c7a315797738adf7a62eebdea021fb163",
+          "name": "factors_removed"
+        },
+        {
+          "aad_hex": "6c6f63616c676174656b6579737c7661756c742d6b65792d777261707065727c76337c7b22636174616c6f67223a226c6f63616c676174656b6579732d636174616c6f67222c22636174616c6f675f76657273696f6e223a322c22666f726d6174223a226c6f63616c676174656b6579732d7661756c742d7633222c226b65795f67656e65726174696f6e223a312c226d65746164617461223a7b22666163746f7273223a5b7b22636865636b223a2231306564396330353235306366333162222c226b696e64223a226b657966696c65227d2c7b226368616c6c656e6765223a2263303533353964373439313931323037333966363431333038383633353037643235396162353562643634303162303430393863353039383962653662356662222c22636865636b223a2264346363656231643235383535346530222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a317d5d2c226b6466223a7b22686173685f6c656e223a33322c226d656d6f72795f636f73745f6b6962223a383139322c226e616d65223a226172676f6e326964222c22706172616c6c656c69736d223a312c2273616c74223a22614f2b726752696b7a5069793941622b4f42376362773d3d222c2274696d655f636f7374223a317d7d2c227661756c745f6964223a226337323964376430643637653166366439343434666165366361383536353835222c2276657273696f6e223a332c2277726170706572223a2270617373776f7264227d",
+          "description": "YubiKey slot 2 -> 1; info and AAD recomputed",
+          "expect": "unwrap-fails",
+          "factors": [
+            {
+              "check": "10ed9c05250cf31b",
+              "kind": "keyfile"
+            },
+            {
+              "challenge": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+              "check": "d4cceb1d258554e0",
+              "kind": "yubikey-hmac",
+              "slot": 1
+            }
+          ],
+          "key_hex": "43bd45f94ae805e9d374d908d73894aa8156c8df64efcd37e25045f7f8010d33",
+          "name": "slot_changed"
+        },
+        {
+          "aad_hex": "6c6f63616c676174656b6579737c7661756c742d6b65792d777261707065727c76337c7b22636174616c6f67223a226c6f63616c676174656b6579732d636174616c6f67222c22636174616c6f675f76657273696f6e223a322c22666f726d6174223a226c6f63616c676174656b6579732d7661756c742d7633222c226b65795f67656e65726174696f6e223a312c226d65746164617461223a7b22666163746f7273223a5b7b22636865636b223a2231306564396330353235306366333162222c226b696e64223a226b657966696c65227d2c7b226368616c6c656e6765223a2237656132663831386263353630336331616564376530343030393037303963613735346536353134663764613635653062363765323564626134363065613161222c22636865636b223a2264346363656231643235383535346530222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a327d5d2c226b6466223a7b22686173685f6c656e223a33322c226d656d6f72795f636f73745f6b6962223a383139322c226e616d65223a226172676f6e326964222c22706172616c6c656c69736d223a312c2273616c74223a22614f2b726752696b7a5069793941622b4f42376362773d3d222c2274696d655f636f7374223a317d7d2c227661756c745f6964223a226337323964376430643637653166366439343434666165366361383536353835222c2276657273696f6e223a332c2277726170706572223a2270617373776f7264227d",
+          "description": "YubiKey challenge replaced; info and AAD recomputed, same secrets",
+          "expect": "unwrap-fails",
+          "factors": [
+            {
+              "check": "10ed9c05250cf31b",
+              "kind": "keyfile"
+            },
+            {
+              "challenge": "7ea2f818bc5603c1aed7e040090709ca754e6514f7da65e0b67e25dba460ea1a",
+              "check": "d4cceb1d258554e0",
+              "kind": "yubikey-hmac",
+              "slot": 2
+            }
+          ],
+          "key_hex": "537ed2593b47a79446f7d0bbacae764e24bdc87e8903b1334c0ad00e189fcd3a",
+          "name": "challenge_changed"
+        }
+      ],
+      "wrapper_aad_b64": "bG9jYWxnYXRla2V5c3x2YXVsdC1rZXktd3JhcHBlcnx2M3x7ImNhdGFsb2ciOiJsb2NhbGdhdGVrZXlzLWNhdGFsb2ciLCJjYXRhbG9nX3ZlcnNpb24iOjIsImZvcm1hdCI6ImxvY2FsZ2F0ZWtleXMtdmF1bHQtdjMiLCJrZXlfZ2VuZXJhdGlvbiI6MSwibWV0YWRhdGEiOnsiZmFjdG9ycyI6W3siY2hlY2siOiIxMGVkOWMwNTI1MGNmMzFiIiwia2luZCI6ImtleWZpbGUifSx7ImNoYWxsZW5nZSI6ImMwNTM1OWQ3NDkxOTEyMDczOWY2NDEzMDg4NjM1MDdkMjU5YWI1NWJkNjQwMWIwNDA5OGM1MDk4OWJlNmI1ZmIiLCJjaGVjayI6ImQ0Y2NlYjFkMjU4NTU0ZTAiLCJraW5kIjoieXViaWtleS1obWFjIiwic2xvdCI6Mn1dLCJrZGYiOnsiaGFzaF9sZW4iOjMyLCJtZW1vcnlfY29zdF9raWIiOjgxOTIsIm5hbWUiOiJhcmdvbjJpZCIsInBhcmFsbGVsaXNtIjoxLCJzYWx0IjoiYU8rcmdSaWt6UGl5OUFiK09CN2Nidz09IiwidGltZV9jb3N0IjoxfX0sInZhdWx0X2lkIjoiYzcyOWQ3ZDBkNjdlMWY2ZDk0NDRmYWU2Y2E4NTY1ODUiLCJ2ZXJzaW9uIjozLCJ3cmFwcGVyIjoicGFzc3dvcmQifQ=="
+    },
+    {
+      "aad_hex": "6c6f63616c676174656b6579737c6d61632d6d61737465727c76327c743d317c6d3d383139327c703d317c73616c743d76336f4555504343726d4a536c44654d657a32634c513d3d7c666163746f72733d5b7b226368616c6c656e6765223a2238666631636561323035663461373064303265653237353437333135313835363135353032656637333730663236363132386431316261656437316238323963222c22636865636b223a2230313033303866626138323537363234222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a317d5d",
+      "argon_out_hex": "4de47ad9e0ad1dbb9d301abfdcd8285db82a892916675653ff03697b15e0cd64",
+      "factors": [
+        {
+          "challenge": "8ff1cea205f4a70d02ee27547315185615502ef7370f266128d11baed71b829c",
+          "check": "010308fba8257624",
+          "kind": "yubikey-hmac",
+          "slot": 1
+        }
+      ],
+      "file": "apple_masterkeyfile_v2.json",
+      "key_hex": "0e89ec9543e4a763ff71ee1a7bdf8554452f4970cc7e1a8bb81541dede492ac4",
+      "local_key_hex": "7ef7682004c56f39a3d05768cecef7eab33d68c4a65a4044148d1e239cc4fe06",
+      "name": "apple_masterkeyfile_v2",
+      "password": "correct horse battery staple 42",
+      "secret_sources": [
+        "yubikey"
+      ],
+      "tampered": [
+        {
+          "aad_hex": "6c6f63616c676174656b6579737c6d61632d6d61737465727c76317c743d317c6d3d383139327c703d317c73616c743d76336f4555504343726d4a536c44654d657a32634c513d3d",
+          "description": "factor list removed; key = plain Argon2id output, no-factor AAD",
+          "expect": "unwrap-fails",
+          "factors": [],
+          "key_hex": "4de47ad9e0ad1dbb9d301abfdcd8285db82a892916675653ff03697b15e0cd64",
+          "name": "factors_removed"
+        },
+        {
+          "aad_hex": "6c6f63616c676174656b6579737c6d61632d6d61737465727c76327c743d317c6d3d383139327c703d317c73616c743d76336f4555504343726d4a536c44654d657a32634c513d3d7c666163746f72733d5b7b226368616c6c656e6765223a2238666631636561323035663461373064303265653237353437333135313835363135353032656637333730663236363132386431316261656437316238323963222c22636865636b223a2230313033303866626138323537363234222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a327d5d",
+          "description": "YubiKey slot 1 -> 2; info and AAD recomputed",
+          "expect": "unwrap-fails",
+          "factors": [
+            {
+              "challenge": "8ff1cea205f4a70d02ee27547315185615502ef7370f266128d11baed71b829c",
+              "check": "010308fba8257624",
+              "kind": "yubikey-hmac",
+              "slot": 2
+            }
+          ],
+          "key_hex": "fc4028ebaee8c30faa89902390ef7688e6ada72171ee65c2329ebf53ca89af14",
+          "name": "slot_changed"
+        },
+        {
+          "aad_hex": "6c6f63616c676174656b6579737c6d61632d6d61737465727c76327c743d317c6d3d383139327c703d317c73616c743d76336f4555504343726d4a536c44654d657a32634c513d3d7c666163746f72733d5b7b226368616c6c656e6765223a2237656132663831386263353630336331616564376530343030393037303963613735346536353134663764613635653062363765323564626134363065613161222c22636865636b223a2230313033303866626138323537363234222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a317d5d",
+          "description": "YubiKey challenge replaced; info and AAD recomputed, same secrets",
+          "expect": "unwrap-fails",
+          "factors": [
+            {
+              "challenge": "7ea2f818bc5603c1aed7e040090709ca754e6514f7da65e0b67e25dba460ea1a",
+              "check": "010308fba8257624",
+              "kind": "yubikey-hmac",
+              "slot": 1
+            }
+          ],
+          "key_hex": "104a276f8489ab1d5477695bb4b3c30532d2e0fb9bb85a85f4ee9a7f98b5d6c4",
+          "name": "challenge_changed"
+        }
+      ],
+      "yubikey": {
+        "padded_challenge_hex": "8ff1cea205f4a70d02ee27547315185615502ef7370f266128d11baed71b829c2020202020202020202020202020202020202020202020202020202020202020",
+        "response_hex": "f109e11f95b19b5a62e7b0e84656a5b7f619966e",
+        "secret_hex": "7590191f0bfeb71f6d61b178a934f48043302cf118eeba37173cc6fbecee4389"
+      }
+    },
+    {
+      "argon_out_hex": "694d8fe8834e1d51e0b92ad0bc4b804d44334c8f3037b9e50c1ab4674a785e0d",
+      "factors": [
+        {
+          "check": "03e9f4027fa109be",
+          "kind": "keyfile"
+        },
+        {
+          "challenge": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+          "check": "d4cceb1d258554e0",
+          "kind": "yubikey-hmac",
+          "slot": 2
+        }
+      ],
+      "file": "android_apppassword_v2.bin",
+      "hex": "4c474b4150570200002000010100ba5b7b22636865636b223a2230336539663430323766613130396265222c226b696e64223a226b657966696c65227d2c7b226368616c6c656e6765223a2263303533353964373439313931323037333966363431333038383633353037643235396162353562643634303162303430393863353039383962653662356662222c22636865636b223a2264346363656231643235383535346530222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a327d5d2de57f7eff7bd5c6a2e0d513b758b1347a76b1e91d84ade5e82d86061f709892af55f66aa7cb4b8b0d306c75c327c8e1b8ab27536a2aa6c8854680f410d714cc84f5e3eea5efbf68dae89589eb62d34a960108a0dabbc592c6330031212435a230cd84f5c9662beb14e34fb462b03200888ba3d17dc8006db329a02ca0f05ead68acdb00544688d46d8a8bdc6ade53b456cb3f4b9f8e4fec",
+      "key_hex": "ce09411f3f8f81373ab0cd1b514344a09c532bb568a3d7a56e2aae9e59837d0c",
+      "local_key_hex": "43bea5461897dcecba6c2885d3db79903c71313ccc435ec1aedd8315582e607d",
+      "name": "android_apppassword_v2",
+      "password": "correct horse battery staple 42",
+      "password_aad_hex": "4c474b4150570200002000010100ba5b7b22636865636b223a2230336539663430323766613130396265222c226b696e64223a226b657966696c65227d2c7b226368616c6c656e6765223a2263303533353964373439313931323037333966363431333038383633353037643235396162353562643634303162303430393863353039383962653662356662222c22636865636b223a2264346363656231643235383535346530222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a327d5d7c70617373776f7264",
+      "recovery_aad_hex": "4c474b415057010000200001017c7265636f76657279",
+      "recovery_entropy_hex": "36af239739bb9281f83c81287ea9d9e5c749cd145cbca7350914d19b2365ebbb",
+      "recovery_phrase": "cute jungle total inflict rice domain thought mother chronic vocal island slide innocent track fabric nurse poet portion early permit rate real puzzle kit",
+      "secret_sources": [
+        "keyfile_xml_v1",
+        "yubikey"
+      ],
+      "size": 353,
+      "tampered": [
+        {
+          "aad_hex": "4c474b415057010000200001017c70617373776f7264",
+          "description": "factor list removed; key = plain Argon2id output, no-factor AAD",
+          "expect": "unwrap-fails",
+          "factors": [],
+          "key_hex": "694d8fe8834e1d51e0b92ad0bc4b804d44334c8f3037b9e50c1ab4674a785e0d",
+          "name": "factors_removed"
+        },
+        {
+          "aad_hex": "4c474b4150570200002000010100ba5b7b22636865636b223a2230336539663430323766613130396265222c226b696e64223a226b657966696c65227d2c7b226368616c6c656e6765223a2263303533353964373439313931323037333966363431333038383633353037643235396162353562643634303162303430393863353039383962653662356662222c22636865636b223a2264346363656231643235383535346530222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a317d5d7c70617373776f7264",
+          "description": "YubiKey slot 2 -> 1; info and AAD recomputed",
+          "expect": "unwrap-fails",
+          "factors": [
+            {
+              "check": "03e9f4027fa109be",
+              "kind": "keyfile"
+            },
+            {
+              "challenge": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+              "check": "d4cceb1d258554e0",
+              "kind": "yubikey-hmac",
+              "slot": 1
+            }
+          ],
+          "key_hex": "eef536f037745a4cdc414f1bcfb0e7f7d8fa187c27df771fac5ccdcd4221e355",
+          "name": "slot_changed"
+        },
+        {
+          "aad_hex": "4c474b4150570200002000010100ba5b7b22636865636b223a2230336539663430323766613130396265222c226b696e64223a226b657966696c65227d2c7b226368616c6c656e6765223a2237656132663831386263353630336331616564376530343030393037303963613735346536353134663764613635653062363765323564626134363065613161222c22636865636b223a2264346363656231643235383535346530222c226b696e64223a22797562696b65792d686d6163222c22736c6f74223a327d5d7c70617373776f7264",
+          "description": "YubiKey challenge replaced; info and AAD recomputed, same secrets",
+          "expect": "unwrap-fails",
+          "factors": [
+            {
+              "check": "03e9f4027fa109be",
+              "kind": "keyfile"
+            },
+            {
+              "challenge": "7ea2f818bc5603c1aed7e040090709ca754e6514f7da65e0b67e25dba460ea1a",
+              "check": "d4cceb1d258554e0",
+              "kind": "yubikey-hmac",
+              "slot": 2
+            }
+          ],
+          "key_hex": "33c0a5e5232667e5a70d15c22acc71fff5a7b1be124e6e897e6c2ace21e5c992",
+          "name": "challenge_changed"
+        }
+      ]
+    }
+  ],
+  "check_info": "localgatekeys|factor-check|v1",
+  "composite_salt": "localgatekeys|composite|v1",
+  "data_key_hex": "d04f2e6bbb5670f43766117e2230217c4770ff7e9704e32b291d57b548dae5f5",
+  "format": "localgatekeys-composite-key-vectors",
+  "keyfile_rejects": [
+    {
+      "file": "keyfiles/reject_xml_v2_bad_hash.keyx",
+      "name": "xml_v2_bad_hash",
+      "reason": "XML 2.0 Hash does not match the data"
+    },
+    {
+      "file": "keyfiles/reject_xml_v1_short.key",
+      "name": "xml_v1_short",
+      "reason": "XML data is not 32 bytes (a factor key must be 32 bytes)"
+    },
+    {
+      "file": "keyfiles/reject_xml_doctype.key",
+      "name": "xml_doctype",
+      "reason": "XML with a DOCTYPE is refused"
+    },
+    {
+      "file": "keyfiles/reject_xml_no_data.key",
+      "name": "xml_no_data",
+      "reason": "XML without Key/Data"
+    }
+  ],
+  "keyfiles": [
+    {
+      "check": "10ed9c05250cf31b",
+      "file": "keyfiles/xml_v2.keyx",
+      "key_hex": "b639caa6546d2001c52c9e9401a708033e25e99a3cbb8c88915a6417d56fc988",
+      "name": "keyfile_xml_v2",
+      "rule": "xml-2.0"
+    },
+    {
+      "check": "03e9f4027fa109be",
+      "file": "keyfiles/xml_v1.key",
+      "key_hex": "88562bbf6f5dd9461ebc7a87dfe02995a88c03b3a81d1dc9f8013ac5ddcdd88a",
+      "name": "keyfile_xml_v1",
+      "rule": "xml-1.0"
+    },
+    {
+      "check": "94df60a6bf5a46dd",
+      "file": "keyfiles/raw32.key",
+      "key_hex": "4b361d59c3c625ee2986bd10041e3fc7f601d6fea0d2946b6cf98d363df06ab9",
+      "name": "keyfile_raw32",
+      "rule": "raw-32"
+    },
+    {
+      "check": "4511404117541cac",
+      "file": "keyfiles/hex64.key",
+      "key_hex": "cadcf6d704eadb7529e8937381ffa3596b5a334284e41b201e5c92528cab16ff",
+      "name": "keyfile_hex64",
+      "rule": "hex-64"
+    },
+    {
+      "check": "fecb493fb72ac22f",
+      "file": "keyfiles/hex64_newline.key",
+      "key_hex": "5bffbcba4d9b9a5bf50c1f03f52aa5a0e4a70df766e146ba12f3420c3d71ecde",
+      "name": "keyfile_hex64_newline",
+      "rule": "sha256"
+    },
+    {
+      "check": "68c5dc37fb434e70",
+      "file": "keyfiles/not_hex64.key",
+      "key_hex": "4e52b0a8d918b923a15f50e49b43cd4f99cf19eb581bd84dcc2f0b288e55da04",
+      "name": "keyfile_64_not_hex",
+      "rule": "sha256"
+    },
+    {
+      "check": "4933aa9cc03a2b84",
+      "file": "keyfiles/arbitrary.txt",
+      "key_hex": "59c2033d26111c79cf599741452cb6c12b6d19b77dafce333515da7ab4470ed1",
+      "name": "keyfile_arbitrary",
+      "rule": "sha256"
+    }
+  ],
+  "pad_challenge": [
+    {
+      "challenge_hex": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+      "hmac_message_hex": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+      "padded_hex": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb2020202020202020202020202020202020202020202020202020202020202020"
+    },
+    {
+      "challenge_hex": "857875918869a47d8698bf9231ce94eb7cd0b8f06fbe9fd5595f7b7c481c9620",
+      "hmac_message_hex": "857875918869a47d8698bf9231ce94eb7cd0b8f06fbe9fd5595f7b7c481c96",
+      "padded_hex": "857875918869a47d8698bf9231ce94eb7cd0b8f06fbe9fd5595f7b7c481c96202020202020202020202020202020202020202020202020202020202020202020"
+    }
+  ],
+  "spec": "docs/formats/COMPOSITE_KEY_V1.md",
+  "version": 1,
+  "yubikey": {
+    "challenge_hex": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+    "check": "d4cceb1d258554e0",
+    "hmac_message_hex": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb",
+    "hmac_secret": "vector-hmac-secret",
+    "padded_challenge_hex": "c05359d74919120739f641308863507d259ab55bd6401b04098c50989be6b5fb2020202020202020202020202020202020202020202020202020202020202020",
+    "response_hex": "32c1c73745d1873a0dc5dfc174e7822e3e5e40f9",
+    "secret_hex": "4d735bdee6508193d77b87754386f50267e5433cb462e58ae5673f2ca183474d",
+    "slot": 2
+  }
+}

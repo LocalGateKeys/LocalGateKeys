@@ -14,6 +14,7 @@ Usage::
     python scripts/gen_mac_backup_vectors.py kit [OUT]     # default: tests/vectors/recovery/kit
     python scripts/gen_mac_backup_vectors.py recovery [OUT]  # default: tests/vectors/recovery
     python scripts/gen_mac_backup_vectors.py schedule [OUT]  # default: tests/vectors/backup/schedule
+    python scripts/gen_mac_backup_vectors.py backup_v3 [OUT]  # default: tests/vectors/backup/v3
 
 The ``backup`` section (Task 5) writes a full backup v2 (``full.lgkfull``) with Windows
 ``export_full_backup`` over a fixture profile, with every random byte and the clock fixed, plus
@@ -36,12 +37,19 @@ recovery wrapper) and only read here.
 The ``schedule`` section (Task 9) writes ``schedule.json``: Windows ``backup_schedule.py``
 ``latest_slot``, ``is_due``, ``validated_time``, ``profile_tag``, ``scheduled_filename``,
 ``owned_backups`` and ``prune`` over fixed clocks (naive local times) and folder listings.
+
+The ``backup_v3`` section (scheduled backups to a public key, step 1) writes ``key.json``, ``wrap.json``,
+``record.json`` and ``authority.json`` with ``localvault.backup_key`` (see ``tests/vectors/backup/v3/SCHEMA.md``),
+and (step 2a) a full backup v3 ``full.lgkfull`` of the v2 fixture profile, ``relocked.lgkfull`` (the same file
+re-locked to a second key), ``expected.json`` and ``rejected/*.lgkfull``.  ``from_mac_v3.lgkfull`` is written by the
+Swift ``FullBackupV3Tests`` and only read here.
 """
 
 # ruff: noqa: S101
 
 from __future__ import annotations
 
+import base64
 import io
 import json
 import shutil
@@ -49,9 +57,15 @@ import sys
 import zipfile
 from pathlib import Path
 
+from localvault import outside_marks
 from localvault.importers import ImporterError, ImportPasswordError, ImportPasswordRequired
 from localvault.importers.chrome import guess_mapping
 from localvault.importers.detect import detect_format, load_records
+
+# Throwaway vaults, in every entry point (each ``*_main``, imported or run): their rollback and throttle marks stay
+# in this process, never in the real registry.
+if not isinstance(outside_marks.backend(), outside_marks.MemoryBackend):
+    outside_marks.set_backend(outside_marks.MemoryBackend())
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "tests/fixtures/imports"
@@ -1193,21 +1207,606 @@ def _schedule_cases() -> dict:
         "listing": {"tag": tag, "names": listing_all, "directory": f"LocalGateKeys-scheduled-{tag}-20261025-120000.lgk",
                     "owned": owned},
         "prune": prunes,
-        "state": {"when": "2026-10-26T12:00:00", "timestamp": datetime(2026, 10, 26, 12, 0, 0).timestamp()},
     }
 
 
 def schedule_main(out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
-    doc = _schedule_cases()
-    doc.pop("state")   # the timestamp depends on the generator's time zone
+    doc = _schedule_cases()   # naive local times only; no wall clock, no .timestamp() (design 12.1)
     (out / "schedule.json").write_text(newline="\n", data=json.dumps(doc, indent=1, sort_keys=True, ensure_ascii=False) + "\n",
                                        encoding="utf-8")
     print(out)
 
 
+# --------------------------------------------------------------------------- backup key / v3 (public key, step 1)
+# docs/design/backup-public-key-2026-10-31.md sections 3.2-3.4 (wrap only), 3.6 and 12.  Every time value below is
+# an explicit integer; nothing here reads the clock (section 12.1).
+V3_DEFAULT_KDF = {"time_cost": 3, "memory_cost_kib": 262144, "parallelism": 4}   # BACKUP_KDF on 2026-10-31
+V3_PASSWORDS = (
+    ("ascii", "fixture backup password 2026", V3_DEFAULT_KDF),
+    ("composed", "fixture café password 2026", CHEAP_KDF),
+    ("decomposed", "fixture café password 2026", CHEAP_KDF),
+    ("max_length", ("LocalGateKeys-0123456789-" * 164)[:4096], CHEAP_KDF),
+)
+V3_SECOND_PASSWORD = "second fixture backup password"  # noqa: S105 - published test vector
+V3_THIRD_PASSWORD = "third fixture backup password"  # noqa: S105 - published test vector
+V3_SET_AT, V3_CHANGED_AT, V3_RESET_AT, V3_MIGRATED_AT = 1793001000, 1793002000, 1793003000, 1793004000
+V3_AUTHORITY_NOW = 1793000300
+V3_KEY_SET_AT = 1793001000
+#: Low-order X25519 points (RFC 7748; Bernstein's list): each gives an all-zero shared secret.
+V3_LOW_ORDER = (
+    "00" * 32,
+    "01" + "00" * 31,
+    "e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800",
+    "5f9c95bca3508c24b1d0b1559c83ef5b04445cc4581c8e86d8224eddd09f1157",
+    "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+)
+V3_NOTE = "TEST ONLY: every password, phrase and key here is published."
+
+
+def _v3_kdf(salt: bytes, parameters: dict) -> dict:
+    from localvault.backup_key import new_kdf
+    return new_kdf(salt=salt, parameters=parameters)
+
+
+def _v3_error(call) -> str:
+    from localvault.backup import BackupError
+    try:
+        call()
+    except BackupError as exc:
+        return str(exc)
+    raise AssertionError("accepted")
+
+
+def _v3_key_doc(seeded) -> dict:
+    from localvault.backup_key import _derive_parts, derive_backup_key, key_id, x25519_public
+    cases = []
+    for name, password, parameters in V3_PASSWORDS:
+        kdf = _v3_kdf(seeded(16), parameters)
+        seed, sk_raw, sk = _derive_parts(password, kdf)
+        pk = x25519_public(sk)
+        cases.append({"name": name, "password": password, "password_utf8_hex": password.encode("utf-8").hex(),
+                      "password_characters": len(password), "kdf": kdf, "seed": bytes(seed).hex(),
+                      "sk_raw": bytes(sk_raw).hex(), "sk": bytes(sk).hex(), "pk": pk.hex(),
+                      "pk_b64": base64.b64encode(pk).decode(), "key_id": key_id(pk)})
+    assert cases[1]["pk"] != cases[2]["pk"], "composed and decomposed must differ (no normalisation)"
+    good = cases[1]["kdf"]
+    rejected_passwords = {"11 characters": "elevenchars", "4097 characters": "x" * 4097, "empty": ""}
+    rejected_kdf = {
+        "extra hash_len key": dict(good, hash_len=32),
+        "missing salt": {k: v for k, v in good.items() if k != "salt"},
+        "salt 15 bytes": dict(good, salt=base64.b64encode(bytes(15)).decode()),
+        "salt not base64": dict(good, salt="not base64!!"),
+        "salt unpadded": dict(good, salt=base64.b64encode(bytes(16)).decode().rstrip("=")),
+        "name argon2i": dict(good, name="argon2i"),
+        "time_cost 11": dict(good, time_cost=11),
+        "time_cost 0": dict(good, time_cost=0),
+        "time_cost as string": dict(good, time_cost="1"),
+        "time_cost true": dict(good, time_cost=True),
+        "memory below 8192 KiB": dict(good, memory_cost_kib=8191),
+        "memory above 512 MiB": dict(good, memory_cost_kib=524289),
+        "parallelism 17": dict(good, parallelism=17),
+    }
+    return {
+        "info": "localgatekeys|backup-key|x25519|v1",
+        "key_id_prefix": "localgatekeys|backup-key-id|v1|",
+        "hkdf_salt": "absent = 32 zero bytes",
+        "cases": cases,
+        "rejected_passwords": [{"name": n, "password": p, "kdf": good,
+                                "error": _v3_error(lambda p=p: derive_backup_key(p, good))}
+                               for n, p in rejected_passwords.items()],
+        "rejected_kdf": [{"name": n, "kdf": k,
+                          "error": _v3_error(lambda k=k: derive_backup_key(cases[1]["password"], k))}
+                         for n, k in rejected_kdf.items()],
+        "note": V3_NOTE,
+    }
+
+
+def _v3_wrap_doc(seeded, key_case: dict) -> dict:
+    from localvault import backup_key as bk
+    sk, pk = bytes.fromhex(key_case["sk"]), bytes.fromhex(key_case["pk"])
+    dk = seeded(32)
+    esk_random = seeded(32)
+    ephemeral = bk.new_ephemeral_key(esk_random)
+    core = {"format": "localgatekeys-full-backup", "version": 3,
+            "cipher": {"name": "aes-256-gcm", "nonce_bytes": 12, "tag_bytes": 16}, "entry_count": 5}
+    body = {"scheme": bk.RECIPIENT_SCHEME, "key_id": key_case["key_id"], "key_set_at": V3_KEY_SET_AT,
+            "kdf": key_case["kdf"], "ephemeral_public_key": base64.b64encode(ephemeral.public).decode()}
+    aad = bk.wrap_aad(core, body)
+    ss = bk._shared_secret(ephemeral.secret, pk)
+    assert bytes(ss) == bytes(bk._shared_secret(sk, ephemeral.public))
+    kek = bk._wrap_kek(ss, ephemeral.public, pk)
+    wrapped = bk.wrap_data_key(dk, pk, ephemeral, aad)
+    assert bytes(bk.unwrap_data_key(sk, ephemeral.public, wrapped, aad)) == dk
+    assert bytes(bk.unwrap_with_password(key_case["password"], kdf=key_case["kdf"], expected_key_id=key_case["key_id"],
+                                         ephemeral_public=ephemeral.public, wrapped=wrapped, aad=aad)) == dk
+    flipped = bytearray(wrapped)
+    flipped[0] ^= 1
+    other = bk.derive_backup_key(V3_SECOND_PASSWORD, key_case["kdf"])
+    unwrap_rejected = {
+        "epk all zero (low order)": lambda: bk.unwrap_data_key(sk, bytes(32), wrapped, aad),
+        "epk low order (order 8)": lambda: bk.unwrap_data_key(sk, bytes.fromhex(V3_LOW_ORDER[2]), wrapped, aad),
+        "wrapped tampered": lambda: bk.unwrap_data_key(sk, ephemeral.public, bytes(flipped), aad),
+        "wrapped 47 bytes": lambda: bk.unwrap_data_key(sk, ephemeral.public, wrapped[:47], aad),
+        "aad tampered (key_set_at + 1)": lambda: bk.unwrap_data_key(
+            sk, ephemeral.public, wrapped, bk.wrap_aad(core, dict(body, key_set_at=V3_KEY_SET_AT + 1))),
+        "aad tampered (entry_count + 1)": lambda: bk.unwrap_data_key(
+            sk, ephemeral.public, wrapped, bk.wrap_aad(dict(core, entry_count=6), body)),
+        "other private key": lambda: bk.unwrap_data_key(other.private_key, ephemeral.public, wrapped, aad),
+        "wrong password (key id check, no GCM attempt)": lambda: bk.unwrap_with_password(
+            V3_SECOND_PASSWORD, kdf=key_case["kdf"], expected_key_id=key_case["key_id"],
+            ephemeral_public=ephemeral.public, wrapped=wrapped, aad=aad),
+        "right password, other key id": lambda: bk.unwrap_with_password(
+            key_case["password"], kdf=key_case["kdf"], expected_key_id="0" * 32,
+            ephemeral_public=ephemeral.public, wrapped=wrapped, aad=aad),
+    }
+    doc = {
+        "info": "localgatekeys|backup-wrap|v1",
+        "aad_prefix": "localgatekeys|backup-recipient|v1|",
+        "nonce": "00" * 12,
+        "key_case": key_case["name"],
+        "password": key_case["password"],
+        "sk": sk.hex(), "pk": pk.hex(),
+        "dk": dk.hex(), "esk_random": esk_random.hex(), "esk": bytes(ephemeral.secret).hex(),
+        "epk": ephemeral.public.hex(), "ss": bytes(ss).hex(), "kek_salt": (ephemeral.public + pk).hex(),
+        "kek": bytes(kek).hex(),
+        "core": core, "recipient_body": body, "wrap_aad": aad.hex(),
+        "wrapped": wrapped.hex(), "wrapped_b64": base64.b64encode(wrapped).decode(),
+        "wrap_to_low_order_pk": [{"pk": point, "error": _v3_error(
+            lambda point=point: bk.wrap_data_key(dk, bytes.fromhex(point), ephemeral, aad))} for point in V3_LOW_ORDER],
+        "unwrap_rejected": [{"name": n, "error": _v3_error(call)} for n, call in unwrap_rejected.items()],
+        "note": V3_NOTE,
+    }
+    other.wipe()
+    ephemeral.wipe()
+    return doc
+
+
+def _v3_authority_vault(tmp: Path, seed: int) -> dict:
+    """A Windows vault with a phrase; snapshot; replace the phrase (data-key rotation); snapshot again."""
+    from localvault import vault as vault_module
+    from localvault.backup_key import capture_wrapper_authority
+    from localvault.vault import _read_vault_header, create_vault
+    saved = (vault_module.UnlockThrottle.binding, vault_module._dpapi, vault_module._default_kdf)
+    vault_module.UnlockThrottle.binding = lambda self: None
+    vault_module._dpapi = lambda: None
+    vault_module._default_kdf = lambda: {**vault_module.DEFAULT_KDF, **CHEAP_KDF}   # cheap, machine-independent
+    try:
+        with _Fixed(_SeededRandom(seed), V3_AUTHORITY_NOW):
+            path = tmp / "vault.json"
+            session = create_vault(path, MASTER_PASSWORD, kdf_overrides=CHEAP_KDF)
+            try:
+                old_phrase = session.create_recovery_phrase(MASTER_PASSWORD)
+                old = capture_wrapper_authority(_read_vault_header(path)[0])
+                new_phrase = session.create_recovery_phrase(MASTER_PASSWORD)
+                assert session.last_recovery_phrase_change["operation"] == "replace"
+                new = capture_wrapper_authority(_read_vault_header(path)[0])
+            finally:
+                session.lock()
+    finally:
+        vault_module.UnlockThrottle.binding, vault_module._dpapi, vault_module._default_kdf = saved
+    assert old is not None and new is not None and old != new
+    return {"old_phrase": old_phrase, "old_snapshot": old, "new_phrase": new_phrase, "new_snapshot": new}
+
+
+def _v3_authority_doc(tmp: Path, seeded, record_key_id: str) -> dict:
+    from localvault import backup_key as bk
+    from localvault.vault import entropy_from_phrase, phrase_from_entropy
+    windows = _v3_authority_vault(tmp, 7302)
+    old_entropy, new_entropy = entropy_from_phrase(windows["old_phrase"]), entropy_from_phrase(windows["new_phrase"])
+    checks = []
+    for snapshot in ("old_snapshot", "new_snapshot"):
+        for phrase, entropy in (("old_phrase", old_entropy), ("new_phrase", new_entropy)):
+            checks.append({"snapshot": snapshot, "phrase": phrase,
+                           "accepted": bk.verify_authority(windows[snapshot], entropy, record_key_id)})
+    assert [c["accepted"] for c in checks] == [True, False, False, True]
+    mac_entropy = bytes(range(32))
+    other_entropy = bytes(range(1, 33))
+    mac_salt = seeded(16)
+    phrase_key = bk.phrase_key(mac_entropy, mac_salt)
+    mac = bk.capture_mac_authority(mac_salt, phrase_key, record_key_id)
+    mac_checks = [
+        {"phrase": "phrase", "key_id": record_key_id, "accepted": bk.verify_authority(mac, mac_entropy, record_key_id)},
+        {"phrase": "other_phrase", "key_id": record_key_id,
+         "accepted": bk.verify_authority(mac, other_entropy, record_key_id)},
+        {"phrase": "phrase", "key_id": "0" * 32, "accepted": bk.verify_authority(mac, mac_entropy, "0" * 32)},
+    ]
+    assert [c["accepted"] for c in mac_checks] == [True, False, False]
+    good_wrapper, good_mac = windows["old_snapshot"], mac
+    bad = {
+        "not an object": [good_mac],
+        "unknown kind": dict(good_mac, kind="recovery-key-v2"),
+        "wrapper extra key": dict(good_wrapper, key_id=record_key_id),
+        "wrapper missing aad": {k: v for k, v in good_wrapper.items() if k != "aad"},
+        "wrapper ciphertext 47 bytes": dict(good_wrapper, ciphertext=base64.b64encode(bytes(47)).decode()),
+        "wrapper nonce 16 bytes": dict(good_wrapper, nonce=base64.b64encode(bytes(16)).decode()),
+        "wrapper empty aad": dict(good_wrapper, aad=""),
+        "wrapper aad 4097 bytes": dict(good_wrapper, aad=base64.b64encode(bytes(4097)).decode()),
+        "mac 31 bytes": dict(good_mac, mac=base64.b64encode(bytes(31)).decode()),
+        "mac salt 32 bytes": dict(good_mac, salt=base64.b64encode(bytes(32)).decode()),
+        "mac extra key": dict(good_mac, aad=good_wrapper["aad"]),
+    }
+    return {
+        "phrase_key_info": "localgatekeys|recovery-key|v1",
+        "mac_prefix": "localgatekeys|backup-reset-authority|v1|",
+        "record_key_id": record_key_id,
+        "windows": {**windows, "old_entropy": old_entropy.hex(), "new_entropy": new_entropy.hex(), "checks": checks},
+        "mac": {"phrase": phrase_from_entropy(mac_entropy), "entropy": mac_entropy.hex(),
+                "other_phrase": phrase_from_entropy(other_entropy), "other_entropy": other_entropy.hex(),
+                "salt": mac_salt.hex(), "phrase_key": bytes(phrase_key).hex(), "authority": mac, "checks": mac_checks},
+        "rejected": [{"name": n, "authority": a, "error": _v3_error(lambda a=a: bk.validate_authority(a))}
+                     for n, a in bad.items()],
+        "note": V3_NOTE,
+    }
+
+
+def _v3_noncanonical(value: str) -> str:
+    """The same 32 bytes with the unused low bits of the last base64 digit set (decoders that ignore them agree)."""
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    last = alphabet.index(value[42])
+    assert last % 4 == 0
+    changed = value[:42] + alphabet[last + 1] + value[43:]
+    assert base64.b64decode(changed) == base64.b64decode(value)
+    return changed
+
+
+def _v3_record_doc(seeded, key_doc: dict, authority: dict) -> dict:
+    from localvault import backup_key as bk
+    from localvault.backup import _full_canonical
+    first = key_doc["cases"][1]
+    first_key = bk.derive_backup_key(first["password"], first["kdf"])
+    wrapper_authority = authority["windows"]["old_snapshot"]
+    records = {}
+    records["set"] = bk.build_record(first_key, now=V3_SET_AT, set_by="set", reset_authority=wrapper_authority)
+    second = bk.derive_backup_key(V3_SECOND_PASSWORD, _v3_kdf(seeded(16), CHEAP_KDF))
+    records["changed"] = bk.build_record(second, now=V3_CHANGED_AT, set_by="changed",
+                                         reset_authority=wrapper_authority, previous=records["set"])
+    third = bk.derive_backup_key(V3_THIRD_PASSWORD, _v3_kdf(seeded(16), CHEAP_KDF))
+    third_mac = bk.capture_mac_authority(bytes.fromhex(authority["mac"]["salt"]),
+                                         bytes.fromhex(authority["mac"]["phrase_key"]), third.key_id)
+    records["reset"] = bk.build_record(third, now=V3_RESET_AT, set_by="reset", reset_authority=third_mac,
+                                       previous=records["changed"])
+    migrated = bk.derive_backup_key(BACKUP_PASSWORD, _v3_kdf(seeded(16), CHEAP_KDF))
+    records["migrated"] = bk.build_record(migrated, now=V3_MIGRATED_AT, set_by="migrated", reset_authority=None)
+    full = dict(records["changed"], history=[
+        {"key_id": f"{i + 1:032x}", "set_at": V3_SET_AT - 100 * (i + 1), "set_by": "changed",
+         "replaced_at": V3_SET_AT - 100 * i} for i in range(16)])
+    records["changed_history_full"] = bk.build_record(third, now=V3_RESET_AT, set_by="changed",
+                                                      reset_authority=None, previous=full)
+    assert len(records["changed_history_full"]["history"]) == 16
+    assert records["changed_history_full"]["history"][0]["key_id"] == second.key_id
+    inputs = {
+        "set": {"password": first["password"], "kdf": first["kdf"], "now": V3_SET_AT,
+                "reset_authority": "authority.json windows.old_snapshot"},
+        "changed": {"password": V3_SECOND_PASSWORD, "kdf": records["changed"]["kdf"], "now": V3_CHANGED_AT,
+                    "previous": "set", "reset_authority": "authority.json windows.old_snapshot"},
+        "reset": {"password": V3_THIRD_PASSWORD, "kdf": records["reset"]["kdf"], "now": V3_RESET_AT,
+                  "previous": "changed",
+                  "reset_authority": "recovery-key-mac-v1 from authority.json mac.salt and mac.phrase_key, "
+                                     "bound to this record's key_id"},
+        "migrated": {"password": BACKUP_PASSWORD, "kdf": records["migrated"]["kdf"], "now": V3_MIGRATED_AT,
+                     "reset_authority": None},
+        "changed_history_full": {"password": V3_THIRD_PASSWORD, "kdf": records["reset"]["kdf"], "now": V3_RESET_AT,
+                                 "previous": "changed, with its history replaced by previous_history (16 entries)",
+                                 "reset_authority": None},
+    }
+    good = records["changed"]
+    other_pk = base64.b64encode(bytes.fromhex(key_doc["cases"][2]["pk"])).decode()
+    bad = {
+        "not an object": [good],
+        "v 2": dict(good, v=2),
+        "v true": dict(good, v=True),
+        "extra field": dict(good, password=V3_SECOND_PASSWORD),
+        "missing history": {k: v for k, v in good.items() if k != "history"},
+        "key_id uppercase": dict(good, key_id=good["key_id"].upper()),
+        "key_id short": dict(good, key_id=good["key_id"][:31]),
+        "key_id mismatch (other public key)": dict(good, public_key=other_pk),
+        "public_key 31 bytes": dict(good, public_key=base64.b64encode(bytes(31)).decode()),
+        "public_key not canonical base64 (padding bits set)": dict(good, public_key=_v3_noncanonical(good["public_key"])),
+        "kdf extra hash_len": dict(good, kdf=dict(good["kdf"], hash_len=32)),
+        "kdf time_cost 11": dict(good, kdf=dict(good["kdf"], time_cost=11)),
+        "kdf salt 15 bytes": dict(good, kdf=dict(good["kdf"], salt=base64.b64encode(bytes(15)).decode())),
+        "set_at negative": dict(good, set_at=-1),
+        "set_at 2^53": dict(good, set_at=2**53),
+        "set_at float": dict(good, set_at=1793002000.0),
+        "set_at string": dict(good, set_at="1793002000"),
+        "set_by unknown": dict(good, set_by="imported"),
+        "reset_at on a changed key": dict(good, reset_at=V3_CHANGED_AT),
+        "reset without reset_at": dict(records["reset"], reset_at=None),
+        "reset_authority unknown kind": dict(good, reset_authority=dict(third_mac, kind="other")),
+        "reset_authority wrapper ciphertext 47 bytes": dict(
+            good, reset_authority=dict(wrapper_authority, ciphertext=base64.b64encode(bytes(47)).decode())),
+        "history not a list": dict(good, history={}),
+        "history 17 entries": dict(good, history=full["history"] + [full["history"][0]]),
+        "history entry with public_key": dict(good, history=[dict(good["history"][0], public_key=good["public_key"])]),
+        "history entry bad key_id": dict(good, history=[dict(good["history"][0], key_id="xyz")]),
+        "history entry set_by unknown": dict(good, history=[dict(good["history"][0], set_by="removed")]),
+        "history entry replaced_at null": dict(good, history=[dict(good["history"][0], replaced_at=None)]),
+    }
+    for key in (first_key, second, third, migrated):
+        key.wipe()
+    proofs = [{"record": name, "password": password, "matches": bk.password_matches(records[name], password)}
+              for name, password in (("set", first["password"]), ("set", V3_SECOND_PASSWORD),
+                                     ("changed", V3_SECOND_PASSWORD), ("changed", first["password"]),
+                                     ("reset", V3_THIRD_PASSWORD), ("migrated", BACKUP_PASSWORD))]
+    assert [p["matches"] for p in proofs] == [True, False, True, False, True, True]
+    return {
+        "records": {name: {"inputs": inputs[name], "record": record, "canonical": _full_canonical(record).decode()}
+                    for name, record in records.items()},
+        "previous_history": full["history"],
+        "password_proofs": proofs,
+        "rejected": [{"name": n, "record": r, "error": _v3_error(lambda r=r: bk.validate_record(r))}
+                     for n, r in bad.items()],
+        "note": V3_NOTE,
+    }
+
+
+def _v3_strict(seeded, authority: dict, record_doc: dict) -> dict:
+    """Owner decision Q2 (strict): only the vault's current phrase, bound in ``reset_authority``, resets."""
+    from localvault import backup_key as bk
+    from localvault.backup import _full_canonical
+    win, mac = authority["windows"], authority["mac"]
+    rows = record_doc["records"]
+    set_record, reset_record = rows["set"]["record"], rows["reset"]["record"]
+    old_e, new_e = bytes.fromhex(win["old_entropy"]), bytes.fromhex(win["new_entropy"])
+    mac_e, other_e = bytes.fromhex(mac["entropy"]), bytes.fromhex(mac["other_entropy"])
+    # Mac: the current VaultKey before and after the phrase is replaced (new entropy, new salt).
+    mac_before = bk.capture_mac_authority(bytes.fromhex(mac["salt"]), bytes.fromhex(mac["phrase_key"]),
+                                          reset_record["key_id"])
+    replaced_salt = seeded(16)
+    replaced_key = bk.phrase_key(other_e, replaced_salt)
+    mac_after = bk.capture_mac_authority(replaced_salt, replaced_key, reset_record["key_id"])
+    win_rebound = bk.rebind_record(set_record, rows["set"]["inputs"]["password"], win["new_snapshot"])
+    mac_rebound = bk.rebind_record(reset_record, rows["reset"]["inputs"]["password"], mac_after)
+    records = {"set": set_record, "reset": reset_record, "migrated": rows["migrated"]["record"],
+               "set_rebound": win_rebound, "reset_rebound": mac_rebound}
+    currents = {"windows.old_snapshot": win["old_snapshot"], "windows.new_snapshot": win["new_snapshot"],
+                "mac_before": mac_before, "mac_after": mac_after, "none": None}
+    plan = [
+        ("windows, phrase not replaced", "set", "windows.old_snapshot", "old", True),
+        ("windows, replaced phrase (bound, no longer current)", "set", "windows.new_snapshot", "old", False),
+        ("windows, current phrase not bound yet", "set", "windows.new_snapshot", "new", False),
+        ("windows, no phrase enrolled now", "set", "none", "old", False),
+        ("windows, after re-bind: current phrase", "set_rebound", "windows.new_snapshot", "new", True),
+        ("windows, after re-bind: replaced phrase", "set_rebound", "windows.new_snapshot", "old", False),
+        ("mac, phrase not replaced", "reset", "mac_before", "mac", True),
+        ("mac, replaced phrase (bound, no longer current)", "reset", "mac_after", "mac", False),
+        ("mac, current phrase not bound yet", "reset", "mac_after", "other", False),
+        ("mac, after re-bind: current phrase", "reset_rebound", "mac_after", "other", True),
+        ("mac, after re-bind: replaced phrase", "reset_rebound", "mac_after", "mac", False),
+        ("no authority in the record", "migrated", "windows.old_snapshot", "old", False),
+        ("kind mismatch (Mac current for a Windows authority)", "set", "mac_before", "old", False),
+    ]
+    entropies = {"old": old_e, "new": new_e, "mac": mac_e, "other": other_e}
+    cases = []
+    for name, record, current, phrase, expected in plan:
+        got = bk.verify_reset_phrase(records[record], entropies[phrase], currents[current])
+        assert got is expected, name
+        cases.append({"name": name, "record": record, "current": current, "entropy": phrase, "accepted": got})
+    refusal = _v3_error(lambda: bk.rebind_record(set_record, V3_SECOND_PASSWORD, win["new_snapshot"]))
+    assert win_rebound == dict(set_record, reset_authority=win["new_snapshot"])
+    return {
+        "rule": "accepted = verify(record.reset_authority) and verify(current authority captured now, same kind)",
+        "entropies": {k: v.hex() for k, v in entropies.items()},
+        "records": records,
+        "rebound_canonical": {"set_rebound": _full_canonical(win_rebound).decode(),
+                              "reset_rebound": _full_canonical(mac_rebound).decode()},
+        "mac_replaced": {"salt": replaced_salt.hex(), "phrase_key": bytes(replaced_key).hex()},
+        "currents": currents,
+        "cases": cases,
+        "rebind_with_wrong_password": {"record": "set", "password": V3_SECOND_PASSWORD, "error": refusal},
+    }
+
+
+def backup_v3_main(out: Path) -> None:
+    """``key.json``, ``wrap.json``, ``record.json`` and ``authority.json`` (design section 12, step 1), then the
+    v3 container files ``full.lgkfull``, ``relocked.lgkfull``, ``expected.json`` and ``rejected/`` (step 2a).
+
+    Only these are rewritten; anything else in ``out`` (``SCHEMA.md``, the Swift ``from_mac_v3.lgkfull``) is kept.
+    """
+    import tempfile
+    out.mkdir(parents=True, exist_ok=True)
+    seeded = _RecordingRandom(7301)
+    key_doc = _v3_key_doc(seeded)
+    wrap_doc = _v3_wrap_doc(seeded, key_doc["cases"][1])
+    with tempfile.TemporaryDirectory() as tmp:
+        authority_doc = _v3_authority_doc(Path(tmp), seeded, key_doc["cases"][1]["key_id"])
+    record_doc = _v3_record_doc(seeded, key_doc, authority_doc)
+    authority_doc["strict_reset"] = _v3_strict(seeded, authority_doc, record_doc)
+    for name, doc in (("key.json", key_doc), ("wrap.json", wrap_doc), ("record.json", record_doc),
+                      ("authority.json", authority_doc)):
+        (out / name).write_text(newline="\n", data=json.dumps(doc, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+                                encoding="utf-8")
+    backup_v3_container_main(out)
+    print(out)
+
+
+# --------------------------------------------------------------------------- full backup v3 container (step 2a)
+# docs/design/backup-public-key-2026-10-31.md sections 3.4, 7.2 and 12: ``full.lgkfull``, ``relocked.lgkfull``,
+# ``expected.json`` and ``rejected/*.lgkfull``.  Own seeds (7311-7317), so the four step-1 files do not move.
+V3_CONTAINER_FILES = ("full.lgkfull", "relocked.lgkfull", "expected.json")
+V3_REJECTED = (
+    "unknown_scheme", "extra_recipient_key", "extra_header_key", "key_id_mismatch", "tampered_recipient_kdf",
+    "kdf_out_of_range", "wrapped_short", "epk_low_order", "tampered_core_entry_count", "version_4",
+    "manifest_version_2_in_v3", "recipient_from_other_file", "tampered_header", "tampered_member",
+)
+
+
+def _v3_with_header(members: list, header: dict) -> bytes:
+    from localvault.backup import _full_canonical
+    return _stored_zip([("header.json", _full_canonical(header)), *members[1:]])
+
+
+def _v3_reencrypt(members: list, header: dict, manifest: dict, data_key: bytes, seeded) -> bytes:
+    """``members`` with ``manifest`` re-encrypted under ``data_key`` (fresh seeded nonces) and every member
+    re-encrypted to its new digest: a file whose only fault is the manifest content."""
+    import hashlib
+
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+    from localvault.backup import _full_canonical, _v3_manifest_aad, _v3_member_aad
+    core_data = _full_canonical({k: v for k, v in header.items() if k != "recipient"})
+    old_manifest = AESGCM(data_key).decrypt(members[1][1][:12], members[1][1][12:], _v3_manifest_aad(core_data))
+    old_digest = hashlib.sha256(old_manifest).digest()
+    manifest_data = _full_canonical(manifest)
+    digest = hashlib.sha256(manifest_data).digest()
+    rows = list(members[:1])
+    nonce = seeded(12)
+    rows.append(("manifest.bin", nonce + AESGCM(data_key).encrypt(nonce, manifest_data, _v3_manifest_aad(core_data))))
+    for name, blob in members[2:]:
+        plain = AESGCM(data_key).decrypt(blob[:12], blob[12:], _v3_member_aad(core_data, old_digest, name))
+        nonce = seeded(12)
+        rows.append((name, nonce + AESGCM(data_key).encrypt(nonce, plain, _v3_member_aad(core_data, digest, name))))
+    return _stored_zip(rows)
+
+
+def _v3_rejected(good: bytes, other: bytes, data_key: bytes, other_key_id: str, seeded) -> dict[str, bytes]:
+    from localvault.backup import _full_canonical
+    members = _members(good)
+    header = json.loads(members[0][1])
+    recipient = header["recipient"]
+    data_index = [name for name, _ in members].index("data/00000000.bin")
+    flipped = bytearray(members[data_index][1])
+    flipped[20] ^= 0x01
+    tampered_member = list(members)
+    tampered_member[data_index] = (members[data_index][0], bytes(flipped))
+
+    def with_recipient(**changes) -> bytes:
+        return _v3_with_header(members, dict(header, recipient=dict(recipient, **changes)))
+
+    manifest = json.loads(_v3_manifest_plain(members, header, data_key))
+    return {
+        "unknown_scheme": with_recipient(scheme="x25519-hkdf-sha256-aes-256-gcm-v2"),
+        "extra_recipient_key": with_recipient(public_key=recipient["ephemeral_public_key"]),
+        "extra_header_key": _v3_with_header(members, dict(header, kdf=recipient["kdf"])),
+        "key_id_mismatch": with_recipient(key_id=other_key_id),
+        "tampered_recipient_kdf": with_recipient(kdf=dict(recipient["kdf"], time_cost=recipient["kdf"]["time_cost"] + 1)),
+        "kdf_out_of_range": with_recipient(kdf=dict(recipient["kdf"], time_cost=11)),
+        "wrapped_short": with_recipient(wrapped_key=base64.b64encode(base64.b64decode(recipient["wrapped_key"])[:47]).decode()),
+        "epk_low_order": with_recipient(ephemeral_public_key=base64.b64encode(bytes(32)).decode()),
+        "tampered_core_entry_count": _v3_with_header(members, dict(header, entry_count=header["entry_count"] + 1)),
+        "version_4": _v3_with_header(members, dict(header, version=4)),
+        "manifest_version_2_in_v3": _v3_reencrypt(members, header, dict(manifest, version=2), data_key, seeded),
+        "recipient_from_other_file": with_recipient(**json.loads(_members(other)[0][1])["recipient"]),
+        "tampered_header": _stored_zip([("header.json", _full_canonical(header) + b" "), *members[1:]]),
+        "tampered_member": _stored_zip(tampered_member),
+    }
+
+
+def _v3_manifest_plain(members: list, header: dict, data_key: bytes) -> bytes:
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+    from localvault.backup import _full_canonical, _v3_manifest_aad
+    core_data = _full_canonical({k: v for k, v in header.items() if k != "recipient"})
+    blob = members[1][1]
+    return AESGCM(data_key).decrypt(blob[:12], blob[12:], _v3_manifest_aad(core_data))
+
+
+def _v3_container_doc(out: Path, tmp: Path) -> dict:
+    import hashlib
+
+    from localvault.backup import (
+        _full_read_container,
+        export_full_backup_to_key,
+        relock_full_backup,
+    )
+    from localvault.backup_key import build_record, derive_backup_key, unwrap_with_password
+    profile = tmp / "profile"
+    profile.mkdir()
+    records = _fixture_profile(profile)
+    first_key = derive_backup_key(BACKUP_PASSWORD, _v3_kdf(_RecordingRandom(7311)(16), CHEAP_KDF))
+    first = build_record(first_key, now=V3_KEY_SET_AT, set_by="set", reset_authority=None)
+    second_key = derive_backup_key(V3_SECOND_PASSWORD, _v3_kdf(_RecordingRandom(7313)(16), CHEAP_KDF))
+    second = build_record(second_key, now=V3_CHANGED_AT, set_by="changed", reset_authority=None, previous=first)
+    second_key.wipe()
+
+    def write(name: str, seed: int) -> tuple[bytes, bytes]:
+        random_source = _RecordingRandom(seed)
+        with _Fixed(random_source, BACKUP_NOW):
+            result = export_full_backup_to_key(tmp / name, record=first, profile_dir=profile,
+                                               profile_name=PROFILE_NAME)
+        try:
+            result["verifier"].verify(tmp / name, record=first)
+        finally:
+            result["verifier"].wipe()
+        return (tmp / name).read_bytes(), bytes(random_source.taken)
+
+    good, taken = write("full.lgkfull", 7312)
+    other, _ = write("other.lgkfull", 7315)
+    relocked_path = tmp / "relocked.lgkfull"
+    relocked_path.write_bytes(good)
+    relock_random = _RecordingRandom(7314)
+    with _Fixed(relock_random, BACKUP_NOW):
+        assert relock_full_backup(relocked_path, old_key=first_key, new_record=second) == "relocked"
+    first_key.wipe()
+    relocked = relocked_path.read_bytes()
+    good_members, relocked_members = _members(good), _members(relocked)
+    assert [n for n, _ in good_members] == [n for n, _ in relocked_members]
+    assert good_members[0] != relocked_members[0] and good_members[1:] == relocked_members[1:]
+
+    header = json.loads(good_members[0][1])
+    from localvault.backup import _v3_parse_header
+    parsed = _v3_parse_header(good_members[0][1], header)
+    data_key = bytes(unwrap_with_password(BACKUP_PASSWORD, kdf=parsed.kdf, expected_key_id=parsed.recipient["key_id"],
+                                          ephemeral_public=parsed.ephemeral_public, wrapped=parsed.wrapped,
+                                          aad=parsed.wrap_aad()))
+    (out / "full.lgkfull").write_bytes(good)
+    (out / "relocked.lgkfull").write_bytes(relocked)
+    rejected_dir = out / "rejected"
+    if rejected_dir.exists():
+        shutil.rmtree(rejected_dir)
+    rejected_dir.mkdir()
+    rejected = {}
+    for name, data in _v3_rejected(good, other, data_key, second["key_id"], _RecordingRandom(7316)).items():
+        path = rejected_dir / f"{name}.lgkfull"
+        path.write_bytes(data)
+        rejected[name] = _python_refusal(path, BACKUP_PASSWORD)
+    assert sorted(rejected) == sorted(V3_REJECTED)
+    rejected["full.lgkfull with a wrong password"] = _python_refusal(out / "full.lgkfull", V3_SECOND_PASSWORD)
+    rejected["relocked.lgkfull with the first password"] = _python_refusal(out / "relocked.lgkfull", BACKUP_PASSWORD)
+    manifest = _full_read_container(out / "full.lgkfull", BACKUP_PASSWORD, on_entry=lambda e, d: None)["manifest"]
+    _full_read_container(out / "relocked.lgkfull", V3_SECOND_PASSWORD, on_entry=lambda e, d: None)
+    inputs = {"vault.json": profile / "vault.json", "settings.json": profile / "settings.json",
+              "generation.json": profile / "vault.generation.json"}
+    inputs.update({f"{a}.blob": profile / "Attachments" / f"{a}.blob" for a in ATTACHMENT_IDS})
+    return {
+        "backup_password": BACKUP_PASSWORD,
+        "second_password": V3_SECOND_PASSWORD,
+        "master_password": MASTER_PASSWORD,
+        "profile_name": PROFILE_NAME,
+        "created_at": BACKUP_NOW,
+        "record": first,
+        "relock_record": second,
+        "data_key": data_key.hex(),
+        "random_hex": taken.hex(),
+        "random_order": "dk 32, esk_random 32 (clamped), manifest nonce 12, one nonce 12 per member in order",
+        "relock_esk_random": bytes(relock_random.taken[:32]).hex(),
+        "header": header,
+        "relocked_header": json.loads(relocked_members[0][1]),
+        "manifest": manifest,
+        "records": records,
+        "attachment_ids": sorted(ATTACHMENT_IDS),
+        "inputs_sha256": {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in sorted(inputs.items())},
+        "full_sha256": hashlib.sha256(good).hexdigest(),
+        "relocked_sha256": hashlib.sha256(relocked).hexdigest(),
+        "rejected": rejected,
+        "note": V3_NOTE + " inputs_sha256: the fixture profile files (the same as ../v2/inputs).",
+    }
+
+
+def backup_v3_container_main(out: Path) -> None:
+    import tempfile
+    out.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        doc = _v3_container_doc(out, Path(tmp))
+    (out / "expected.json").write_text(newline="\n", data=json.dumps(doc, indent=2, sort_keys=True,
+                                                                     ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "schedule":
+    if len(sys.argv) > 1 and sys.argv[1] == "backup_v3":
+        backup_v3_main(Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "tests/vectors/backup/v3")
+    elif len(sys.argv) > 1 and sys.argv[1] == "schedule":
         schedule_main(Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "tests/vectors/backup/schedule")
     elif len(sys.argv) > 1 and sys.argv[1] == "recovery":
         recovery_main(Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "tests/vectors/recovery")

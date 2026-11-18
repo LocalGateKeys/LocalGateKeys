@@ -1,0 +1,74 @@
+{
+  "description": "Folder capability files of device A (tests/vectors/sync/identities.json) under group_key: .lgkcol is a signed zero-record format-1 view with counter 1, .lgkcap the same with counter 0 (a copy of one never counts as the other). Then LAN features messages (lan_sync.parse_message: ok / bad-message).",
+  "device": "A",
+  "epoch": 3,
+  "features": [
+    "collections"
+  ],
+  "features_message": "{\"features\":[\"collections\"],\"type\":\"features\"}",
+  "group_id": "7c2e9b41-3d5a-4f80-9e16-b0a4c8d2f357",
+  "group_key_hex": "59812fdbf00b21c3a643be620eaec1124dc67b49987d99c7e831a82e80364c46",
+  "lgkcap": {
+    "counter": 0,
+    "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjowLCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MywiZm9ybWF0IjoxLCJncm91cF9pZCI6IjdjMmU5YjQxLTNkNWEtNGY4MC05ZTE2LWIwYTRjOGQyZjM1NyIsIndyaXR0ZW5fYXQiOjE4MDAwMDAwMDB9Cmf3GXA9vrx1DDDbEa40AMe7vbwQDp8We8aoYoe7LA==",
+    "sig_b64": "eyJjb3VudGVyIjowLCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MywiZm9ybWF0IjoxLCJncm91cF9pZCI6IjdjMmU5YjQxLTNkNWEtNGY4MC05ZTE2LWIwYTRjOGQyZjM1NyIsInNpZyI6IkxKVlVjQnlHQnY5WDVTdFVnYkduUGt2ZHFlWTZLbGFnYjVmWnRFNldUenIwWU5LTDgrYVVEMTBqTjJlMGJGR25lZ1B3TUtlU2hFdFFHajJZVnlxNkNnPT0iLCJzaWduaW5nX3B1YmxpYyI6IjlDQUVxZ1JRWE1hbDFPMW4rdHFNZnF4OWlkSW11MzRpc2ZYZkpjZStJUlU9Iiwidmlld19zaGEyNTYiOiI0YWUyODdmMDNjOTliMDdjMTA4NjE4NWMzZmM0ODNjMDVlYWFiMTZhZjExM2E4M2UwMmEyZmE3YTg4ZDE0Y2VjIn0="
+  },
+  "lgkcol": {
+    "counter": 1,
+    "file_b64": "TEdLU1lOQzEKeyJjb3VudGVyIjoxLCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MywiZm9ybWF0IjoxLCJncm91cF9pZCI6IjdjMmU5YjQxLTNkNWEtNGY4MC05ZTE2LWIwYTRjOGQyZjM1NyIsIndyaXR0ZW5fYXQiOjE4MDAwMDAwMDB9CqIIpwBzE7N2x6NrnO67J9Wc50Ircvv5rhRiX6xluQ==",
+    "sig_b64": "eyJjb3VudGVyIjoxLCJkZXZpY2VfaWQiOiJhMTExMTExMS0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMGEiLCJlcG9jaCI6MywiZm9ybWF0IjoxLCJncm91cF9pZCI6IjdjMmU5YjQxLTNkNWEtNGY4MC05ZTE2LWIwYTRjOGQyZjM1NyIsInNpZyI6IlZBZGp1L05wVThDYTB1U3c5SkxrUHE5ejUxWlh1UUxjWWpkT0RINlRJQjVhWENhYU9NYnB2M1FwMnZxZm1YUFREdXVsekhnbkNXY2c1ZUt6OUF3dkFnPT0iLCJzaWduaW5nX3B1YmxpYyI6IjlDQUVxZ1JRWE1hbDFPMW4rdHFNZnF4OWlkSW11MzRpc2ZYZkpjZStJUlU9Iiwidmlld19zaGEyNTYiOiJmODNiNTYxMThkMmJjYmY5YmYzYjViMGE4ZTg1ZjU2NDA4YTQ5Nzk0OTZhYmU0YTE1NWQyZThhODg0MDNhYjU2In0="
+  },
+  "max_features": 16,
+  "messages": [
+    {
+      "name": "ours",
+      "raw": "{\"features\":[\"collections\"],\"type\":\"features\"}",
+      "verdict": "ok"
+    },
+    {
+      "name": "empty_list",
+      "raw": "{\"features\":[],\"type\":\"features\"}",
+      "verdict": "ok"
+    },
+    {
+      "name": "unknown_feature_is_fine",
+      "raw": "{\"features\":[\"collections\",\"later\"],\"type\":\"features\"}",
+      "verdict": "ok"
+    },
+    {
+      "name": "not_a_list",
+      "raw": "{\"features\":\"collections\",\"type\":\"features\"}",
+      "verdict": "bad-message"
+    },
+    {
+      "name": "empty_name",
+      "raw": "{\"features\":[\"\"],\"type\":\"features\"}",
+      "verdict": "bad-message"
+    },
+    {
+      "name": "name_too_long",
+      "raw": "{\"features\":[\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"],\"type\":\"features\"}",
+      "verdict": "bad-message"
+    },
+    {
+      "name": "too_many",
+      "raw": "{\"features\":[\"f0\",\"f1\",\"f2\",\"f3\",\"f4\",\"f5\",\"f6\",\"f7\",\"f8\",\"f9\",\"f10\",\"f11\",\"f12\",\"f13\",\"f14\",\"f15\",\"f16\"],\"type\":\"features\"}",
+      "verdict": "bad-message"
+    },
+    {
+      "name": "extra_field",
+      "raw": "{\"features\":[],\"seq\":0,\"type\":\"features\"}",
+      "verdict": "bad-message"
+    },
+    {
+      "name": "number_in_list",
+      "raw": "{\"features\":[1],\"type\":\"features\"}",
+      "verdict": "bad-message"
+    }
+  ],
+  "suffixes": {
+    "collections": ".lgkcol",
+    "collections_sig": ".lgkcol.lgksig"
+  },
+  "written_at": 1800000000
+}

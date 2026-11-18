@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="security_title">Seguridad</string>
+    <string name="security_cat_breached">Expuesta</string>
+    <string name="security_cat_reused">Reutilizadas</string>
+    <string name="security_cat_weak">Débiles</string>
+    <string name="security_cat_old">Antiguo</string>
+    <string name="security_cat_no_2fa">2FA disponible</string>
+    <string name="security_expl_breached">Estas contraseñas aparecen en filtraciones de datos conocidas. Cámbialas primero.</string>
+    <string name="security_expl_reused">Estas contraseñas se usan en más de un inicio de sesión. Si un sitio sufre una filtración, los demás quedan expuestos.</string>
+    <string name="security_expl_weak">Estas contraseñas son cortas o fáciles de adivinar.</string>
+    <string name="security_expl_old">Estas contraseñas no han cambiado en más de un año. La antigüedad por sí sola no es motivo para cambiarlas.</string>
+    <string name="security_expl_no_2fa">Este sitio ofrece códigos de dos factores, pero este inicio de sesión no tiene ninguno.</string>
+    <string name="security_blocked_offline">El modo estricto sin conexión está activado, por lo que las comprobaciones de filtraciones están bloqueadas. Desactívalo en Ajustes › Comprobaciones de filtraciones.</string>
+    <string name="security_blocked_disabled">Las comprobaciones de filtraciones están desactivadas. Actívalas en Ajustes › Comprobaciones de filtraciones.</string>
+    <string name="security_status_cancelled">Comprobación de filtraciones cancelada.</string>
+    <string name="security_status_checking">Comprobando contraseñas…</string>
+    <string name="security_status_none_found">No se encontraron contraseñas expuestas en filtraciones.</string>
+    <string name="security_status_found">Se encontraron %1$d contraseñas expuestas en filtraciones.</string>
+    <string name="security_status_some_failed">No se pudieron comprobar algunas contraseñas. Inténtalo de nuevo más tarde.</string>
+    <string name="security_band_none">Aún no hay inicios de sesión</string>
+    <string name="security_band_good">Buena</string>
+    <string name="security_band_fair">Aceptable</string>
+    <string name="security_band_poor">Mala</string>
+    <string name="security_empty_hint">Añade inicios de sesión para ver lo saludables que son tus contraseñas.</string>
+    <string name="security_score_description">Puntuación de seguridad %1$d de 100</string>
+    <string name="security_no_score">Aún no hay puntuación de seguridad</string>
+    <string name="security_checks_header">Comprobaciones</string>
+    <string name="security_breach_header">Comprobación de filtraciones</string>
+    <string name="security_breach_start">Comprobar contraseñas expuestas en filtraciones</string>
+    <string name="security_cancel">Cancelar</string>
+    <string name="security_checking">Comprobando…</string>
+    <string name="security_show_dismissed">Mostrar de nuevo los elementos descartados</string>
+    <string name="security_confirm_title">¿Comprobar cada contraseña con Have I Been Pwned?</string>
+    <string name="security_confirm_action">Comprobar</string>
+    <string name="security_consent">Las comprobaciones de filtraciones envían a Have I Been Pwned solo los primeros 5 caracteres del hash SHA-1 de cada contraseña, por HTTPS con relleno y únicamente cuando inicias una. No se envía ninguna contraseña, hash completo, nombre de usuario ni sitio web. El servicio ve tu dirección IP.</string>
+    <string name="security_nothing_to_fix">Nada que corregir aquí.</string>
+    <string name="security_dismiss">Descartar</string>
+    <string name="security_change_password">Cambiar contraseña</string>
+    <string name="security_dismiss_item">Descartar para este elemento</string>
+    <string name="security_row_description">%1$s, %2$d elementos</string>
+    <string name="security_checks_footer">Las comprobaciones locales son una guía, no una garantía. Nada sale de este teléfono a menos que inicies una comprobación de filtraciones.</string>
+    <string name="security_issue_footer">%1$s Usa el menú de un inicio de sesión para cambiar su contraseña o descartarlo aquí.</string>
+    <string name="security_row_menu">Más acciones para %1$s</string>
+    <string name="security_untitled">Inicio de sesión sin título</string>
+</resources>

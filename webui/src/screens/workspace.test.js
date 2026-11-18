@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import WorkspacePages from '../components/WorkspacePages.svelte';
 import OnboardingPage from '../components/OnboardingPage.svelte';
 import App from '../App.svelte';
@@ -72,14 +72,24 @@ describe('Set up LocalGateKeys', () => {
     expect(api.onboarding_skip_all).toHaveBeenCalled();
   });
 
-  it('shows the vault card until it is hidden', async () => {
+  it('shows the setup chip in the filter row until it is hidden', async () => {
     const api = fakeApi({ onboarding_card: vi.fn().mockResolvedValue({ ok: true, card: true, progress: '3 of 5', done: 3, total: 5 }),
       onboarding_hide: vi.fn().mockResolvedValue({ ok: true, card: false }) });
     render(Home, { vault: UNLOCKED });
-    expect(await screen.findByText('Finish setting up · 3 of 5')).toBeInTheDocument();
-    await fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
+    const chips = await screen.findByRole('group', { name: 'Quick filters' });
+    expect(await within(chips).findByRole('button', { name: 'Setup 3 of 5' })).toBeInTheDocument();
+    expect(screen.queryByText('Finish setting up · 3 of 5')).toBeNull(); // no card any more
+    await fireEvent.click(within(chips).getByRole('button', { name: 'Hide' }));
     await waitFor(() => expect(api.onboarding_hide).toHaveBeenCalled());
-    await waitFor(() => expect(screen.queryByText('Finish setting up · 3 of 5')).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Setup 3 of 5' })).toBeNull());
+  });
+
+  it('the setup chip opens the setup guide', async () => {
+    const api = fakeApi({ onboarding_card: vi.fn().mockResolvedValue({ ok: true, card: true, progress: '3 of 5', done: 3, total: 5 }),
+      onboarding_show: vi.fn().mockResolvedValue(view('unlock')) });
+    render(Home, { vault: UNLOCKED });
+    await fireEvent.click(await screen.findByRole('button', { name: 'Setup 3 of 5' }));
+    await waitFor(() => expect(api.onboarding_show).toHaveBeenCalled());
   });
 });
 
@@ -117,6 +127,7 @@ describe('Passkey prompt', () => {
     const signIn = await screen.findByRole('button', { name: 'Sign in' });
     expect(signIn).toBeDisabled();
     await fireEvent.click(screen.getByLabelText('bob'));
+    await waitFor(() => expect(signIn).toBeEnabled(), { timeout: 2000 }); // arm delay
     await fireEvent.click(signIn);
     expect(api.modal_answer).toHaveBeenCalledWith('pk1', { choice: 'approve', item_id: 'i2' });
   });

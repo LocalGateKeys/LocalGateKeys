@@ -177,6 +177,11 @@ def short_id(device_id: str) -> str:
     return t("sync.deviceShortId", id=sanitize_name(device_id, limit=9)[:8])
 
 
+def peer_label(name: str | None, device_id: str) -> str:
+    """"Pixel 8 · Device 54cf9842": the name a device sent is not authenticated, its id is."""
+    return f"{sanitize_name(name)} · {short_id(device_id)}" if name else short_id(device_id)
+
+
 #: User copy per issue kind; ``{subject}`` is the file or device the issue is about.
 ISSUE_COPY: Mapping[str, str] = {
     # keyring and membership (cloud folder)
@@ -184,6 +189,7 @@ ISSUE_COPY: Mapping[str, str] = {
     "folder-has-other-group": "sync.thisSyncFolderNowHolds",
     "rotation-conflict": "sync.twoDevicesChangedTheSync",
     "removed-or-conflict": "sync.thisDeviceMayHaveBeen",
+    "removal-notice": "sync.removalNoticeVerified",
     "rejoin-required": "sync.thisPcMustJoinSync",
     "member-dropped": "sync.disappearedFromTheMemberList",
     "member-added": "sync.wasAddedToThisSync",
@@ -310,7 +316,7 @@ RESET_KINDS = frozenset({"folder-has-other-group", "rotation-conflict", "removed
 
 
 _ERROR_KINDS = RESET_KINDS | frozenset({
-    "rejoin-required", "keyring-missing", "keyring-unreadable", "folder-missing", "folder-unreadable",
+    "rejoin-required", "removal-notice", "keyring-missing", "keyring-unreadable", "folder-missing", "folder-unreadable",
     "write-failed", "epoch-behind", "error", "listen-failed", "local-data", "apply-failed", "too-large",
     "counter-exhausted", "vault-rollback",
 })
@@ -324,7 +330,7 @@ _NOTICE_KINDS = frozenset({"counter-resynced", "keyring-restored", "busy", "igno
 
 #: Banner order: lower first.
 _PRIORITY = (
-    "vault-rollback", "state-corrupt", "folder-has-other-group", "rotation-conflict", "removed-or-conflict", "rejoin-required",
+    "vault-rollback", "removal-notice", "state-corrupt", "folder-has-other-group", "rotation-conflict", "removed-or-conflict", "rejoin-required",
     "tampered", "keyring-rollback", "keyring-corrupt", "identity-mismatch", "keyring-missing", "keyring-unreadable", "folder-missing",
     "folder-unreadable", "epoch-behind", "listen-failed", "write-failed", "too-large", "trash-full",
     "history-quota", "member-dropped", "member-added", "old-key-known", "own-file-rewritten", "view-forged",
@@ -437,6 +443,7 @@ ERROR_COPY: Mapping[str, str] = {
     "weak-password": "sync.theSyncPasswordNeedsAt",
     "folder-in-use": "sync.thisFolderAlreadyHoldsA",
     "no-group": "sync.thereIsNoSyncGroup",
+    "no-group-paired": "sync.noSyncGroupPaired",
     "different-group": "sync.thisVaultAlreadySyncsWith",
     "keyring-changed": "sync.anotherDeviceChangedTheSync",
     "folder-error": "sync.theFolderCouldNotBe",
@@ -455,6 +462,8 @@ ERROR_COPY: Mapping[str, str] = {
     "update-needed": "sync.updateLocalgatekeysOnThisPc",
     "bad-offer": "sync.thatIsNotAValid",
     "refused": "sync.theOtherDeviceRefusedThe2",
+    # Keep the device id on rejoin, rule 5: an older host refused this PC's earlier id (a new one is used next).
+    "pair-again": "sync.theOtherDeviceCouldNotPair",
     "not-our-offer": "sync.thisPairingCodeBelongsTo",
     "already-has-folder": "sync.thisSyncGroupAlreadyUses",
     "folder-has-other-group": "sync.thatFolderHoldsADifferent",
@@ -462,6 +471,7 @@ ERROR_COPY: Mapping[str, str] = {
     "epoch-mismatch": "sync.theSyncKeyInThat",
     "already-member": "sync.thisPcIsAlreadyIn",
     "lan-peer-removed": "sync.aWiFiDeviceWas2",
+    "share-group": "sync.thatFolderHoldsASharedCollection",
 }
 
 
@@ -606,6 +616,8 @@ class PeerSnapshot:
 
     device_id: str
     endpoint: str | None = None
+    #: The name the device gave when it paired (display only; None when none was stored).
+    name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -625,7 +637,9 @@ class GroupSnapshot:
     lan_removed: bool = False
 
     def names(self) -> dict[str, str]:
-        return {m.device_id: m.name for m in self.members}
+        names = {p.device_id: p.name for p in self.lan_peers if p.name}
+        names.update({m.device_id: m.name for m in self.members if m.name})
+        return names
 
 
 @dataclass(frozen=True)
@@ -661,6 +675,8 @@ class SyncScreenView:
     running: bool = False
     conflicts: int = 0
     conflicts_text: str = ""
+    #: "Device 54cf9842": what the other devices show for this PC ("" before it joins a group).
+    own_id: str = ""
 
 
 def orphan_members(group: GroupSnapshot | None, *, now: float) -> tuple[MemberView, ...]:
@@ -781,14 +797,14 @@ def _folder_card(status: Any, group: GroupSnapshot | None, *, now: float, availa
     if "folder-has-other-group" in kinds:
         actions = {"leave", "reset", "sync-now"}
         state, text = "stopped", t("sync.stoppedTheFolderHoldsAnother")
-    elif kinds & {"rotation-conflict", "removed-or-conflict", "rejoin-required"}:
+    elif kinds & {"rotation-conflict", "removed-or-conflict", "rejoin-required", "removal-notice"}:
         actions = {"join-folder", "leave", "reset", "sync-now"}
         state, text = "stopped", t("sync.stoppedJoinTheFolderAgain")
     elif kinds & (RESET_KINDS - {"state-corrupt"}):
         actions = {"join-folder", "leave", "reset", "sync-now"}
         state, text = "stopped", t("sync.stoppedTheSyncFolderNeeds")
     else:
-        actions = {"sync-now", "change-password", "remove-device", "leave"}
+        actions = {"sync-now", "change-password", "remove-device", "lost-device", "leave"}
         if orphan_members(group, now=now):
             actions.add("show-orphans")
         if unacked & {m.device_id for m in group.members}:
@@ -815,7 +831,7 @@ def _wifi_card(status: Any, group: GroupSnapshot | None, *, now: float, availabl
     peers: tuple[MemberView, ...] = ()
     if group is not None:
         peers = tuple(
-            MemberView(p.device_id, sanitize_name(names.get(p.device_id) or short_id(p.device_id)),
+            MemberView(p.device_id, peer_label(names.get(p.device_id), p.device_id),
                        t("sync.atEndpoint", endpoint=sanitize_name(p.endpoint, limit=48)) if p.endpoint else t("sync.connectsToThisPc"),
                        False, True)
             for p in group.lan_peers)
@@ -838,7 +854,7 @@ def _wifi_card(status: Any, group: GroupSnapshot | None, *, now: float, availabl
                         actions=frozenset({"leave", "reset", "wifi-disable"}), **common)
     actions = {"show-qr", "sync-now", "wifi-disable"}
     if peers:
-        actions.add("remove-device")
+        actions |= {"remove-device", "lost-device"}
     if lan_only:
         # Includes epoch-behind in a Wi-Fi-only group: its copy says leave, then pair again.  A folder
         # member is told to let the folder sync or join again instead, so Leave is not offered there.
@@ -871,7 +887,8 @@ def sync_view(status: Any, group: GroupSnapshot | None, *, lan_endpoint: str, no
                                                  group.item_names if group is not None else {}),
                           running=bool(getattr(status, "running", False)),
                           conflicts=int(getattr(status, "conflicts", 0) or 0),
-                          conflicts_text=_conflicts_text(int(getattr(status, "conflicts", 0) or 0)))
+                          conflicts_text=_conflicts_text(int(getattr(status, "conflicts", 0) or 0)),
+                          own_id=t("sync.thisDeviceLabel", label=peer_label(names.get(own), own)) if own else "")
 
 
 def _skipped_lines(skipped: Iterable[tuple[str, str]], item_names: Mapping[str, str]) -> tuple[str, ...]:
@@ -1005,7 +1022,8 @@ def snapshot_job(install_id: str, skipped_ids: Iterable[str] = ()) -> Callable[[
             if isinstance(where, Mapping) and isinstance(where.get("host"), str):
                 host = where["host"]
                 endpoint = f"[{host}]:{where.get('port')}" if ":" in host else f"{host}:{where.get('port')}"
-            peers.append(PeerSnapshot(device_id, endpoint))
+            name = entry.get("name")
+            peers.append(PeerSnapshot(device_id, endpoint, name if isinstance(name, str) and name.strip() else None))
         return GroupSnapshot(state.device_id, state.folder_path, state.epoch, state.install_id == install_id,
                              members, tuple(peers), item_names, unacked=tuple(state.unacked_members),
                              lan_removed=state.lan_removed), False
@@ -1050,8 +1068,14 @@ def attach_folder_job(folder: str, password: str, device_name: str, install_id: 
     def job(session: Any, lease: Any, gate: Any) -> Any:
         from ..sync import folder_transport
 
-        return folder_transport.attach_folder(folder, session, lease, password, device_name,
-                                              install_id=install_id, ui_released=gate.ui_released, run=False)
+        try:
+            return folder_transport.attach_folder(folder, session, lease, password, device_name,
+                                                  install_id=install_id, ui_released=gate.ui_released, run=False)
+        except folder_transport.FolderSyncError as exc:
+            # Already in the group over Wi-Fi: an empty folder gets the copy that fits this case.
+            if exc.reason == "no-group":
+                raise folder_transport.FolderSyncError("no-group-paired") from None
+            raise
 
     return job
 
@@ -1185,6 +1209,15 @@ def refind_job(qr_text: str, install_id: str):
     return job
 
 
+def lost_device_checklist(*, folder: bool) -> list[str]:
+    """What to do after "I lost a device" removed it (*folder*: it was removed from a cloud-folder group)."""
+    keys = ["sync.lostChecklistPasswords", "sync.lostChecklistEncrypted"]
+    keys += (["sync.lostChecklistEraseFolder", "sync.lostChecklistCloudSignOut"] if folder
+             else ["sync.lostChecklistEraseWifi"])
+    keys.append("sync.lostChecklistFindDevice")
+    return [t(key) for key in keys]
+
+
 def _noop_job(session: Any, lease: Any, gate: Any) -> None:
     """Lets ``submit`` re-read the state (listener start/stop after a settings change)."""
     return None
@@ -1198,6 +1231,7 @@ _ACTION_LABELS = {
     "use-folder": "sync.useThisGroupSCloud2",
     "change-password": "sync.changeSyncPassword",
     "remove-device": "sync.removeADevice",
+    "lost-device": "sync.iLostADevice",
     "show-orphans": "sync.unusedMembers",
     "ack-members": "sync.theseAreMyDevices",
     "leave": "sync.leaveSync",
@@ -1210,7 +1244,7 @@ _ACTION_LABELS = {
 
 
 _ACTION_ORDER = ("sync-now", "show-qr", "join-qr", "create-group", "join-folder", "add-folder", "use-folder",
-                 "ack-members", "change-password", "remove-device", "show-orphans", "wifi-enable", "wifi-disable", "leave", "reset")
+                 "ack-members", "change-password", "remove-device", "lost-device", "show-orphans", "wifi-enable", "wifi-disable", "leave", "reset")
 
 
 _PRIMARY = frozenset({"sync-now", "create-group", "add-folder", "show-qr", "wifi-enable"})

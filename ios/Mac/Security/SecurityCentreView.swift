@@ -15,6 +15,11 @@ struct SecurityCentreView: View {
     /// The Recovery centre's status (Backups panel, Recovery phrase row).
     var backup: RecoveryStatus?
     var onRecoveryCentre: (RecoveryCentreModel.Initial?) -> Void = { _ in }
+    /// The access log chain check (nil: no local data, no row).
+    var accessLogOK: Bool?
+    var onActivity: () -> Void = {}
+    /// Clean-up (feature pack §3): duplicates, items not changed in 2 years, expired items (nil: no row).
+    var onCleanUp: (() -> Void)? = nil
     @Environment(\.macTheme) private var theme
     @State private var selectedID: String?
 
@@ -34,6 +39,22 @@ struct SecurityCentreView: View {
                 header(health, issues: issues)
                 if !issues.isEmpty { section(String(localized: "Issues to fix")) { issueRows(issues) } }
                 panels
+                if let onCleanUp {
+                    section(String(localized: "Clean-up")) {
+                        HStack(spacing: 10) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Clean-up").font(.system(size: 13))
+                                Text("Checked on this device only. Nothing is changed until you choose.")
+                                    .font(.system(size: 11)).foregroundStyle(theme.textMuted).fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer(minLength: 8)
+                            Button(String(localized: "Open"), action: onCleanUp).buttonStyle(PillButtonStyle(primary: false))
+                                .accessibilityLabel(String(localized: "Open") + ", " + String(localized: "Clean-up"))
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 9)
+                    }
+                }
+                section(RestoreTestModel.title) { RestoreTestPanel(settings: model.settings, backup: backup) }
                 section(String(localized: "Passwords")) { passwords(health) }
                 Text(SecurityModel.footnote).font(.system(size: 11)).foregroundStyle(theme.textFaint)
                     .fixedSize(horizontal: false, vertical: true)
@@ -156,7 +177,9 @@ struct SecurityCentreView: View {
                     health?.weak.contains(item.id) == true ? String(localized: "Weak") : nil,
                     health?.reused.contains(item.id) == true ? String(localized: "Reused") : nil,
                     health?.noTwoFactor.contains(item.id) == true ? String(localized: "No 2FA") : nil,
-                    health?.old.contains(item.id) == true ? String(localized: "Old") : nil].compactMap { $0 }
+                    health?.old.contains(item.id) == true ? String(localized: "Old") : nil,
+                    health?.insecure.contains(item.id) == true ? String(localized: "Not HTTPS") : nil,
+                    health?.passkeyAvailable.contains(item.id) == true ? String(localized: "Passkey available") : nil].compactMap { $0 }
         let selected = selectedID == item.id
         return HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
@@ -185,7 +208,7 @@ struct SecurityCentreView: View {
     // MARK: panels
 
     private var panels: some View {
-        let list = model.panels(touchIDAvailable: touchIDAvailable, backup: backup)
+        let list = model.panels(touchIDAvailable: touchIDAvailable, backup: backup, accessLogOK: accessLogOK)
         return Grid(alignment: .topLeading, horizontalSpacing: 12, verticalSpacing: 12) {
             ForEach(0..<(list.count + 1) / 2, id: \.self) { r in
                 GridRow {
@@ -218,6 +241,7 @@ struct SecurityCentreView: View {
                     case .toggleStrictOffline: model.settings.strictOfflineMode.toggle()
                     case .importExport: onImportExport()
                     case .recoveryCentre(let initial): onRecoveryCentre(initial)
+                    case .activity: onActivity()
                     case .later: break
                     }
                 }

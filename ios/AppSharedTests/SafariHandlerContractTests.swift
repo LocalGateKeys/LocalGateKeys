@@ -23,9 +23,8 @@ final class SafariHandlerContractTests: XCTestCase {
     override func tearDownWithError() throws { try? FileManager.default.removeItem(at: root) }
 
     func makeService() -> SafariSaveService {
-        let files: URL = filesDir, vault: URL = vaultDir
-        let settings = AppSettings(defaults: UserDefaults(suiteName: "safari-contract-\(UUID().uuidString)")!)
-        return SafariSaveService(keychain: keychain, files: { files }, vaultDirectory: { vault }, settings: settings,
+        let files: URL = filesDir
+        return SafariSaveService(keychain: keychain, files: { files },
                                  entitlement: FakeSafariEntitlement(false), now: { 1000 }, random: FixedRandom())
     }
 
@@ -43,9 +42,10 @@ final class SafariHandlerContractTests: XCTestCase {
         return try String(contentsOf: url, encoding: .utf8)
     }
 
-    /// Every `native({ ... })` object literal in the background: action name -> its keys.
+    /// Every `native({ ... })` object literal (and the `const message = { ... }` sent as `native(message)`) in the
+    /// background: action name -> the union of its keys across calls.
     func nativeRequests(in source: String) throws -> [String: Set<String>] {
-        let regex = try NSRegularExpression(pattern: #"native\(\{([^}]*)\}\)"#)
+        let regex = try NSRegularExpression(pattern: #"(?:native\(|const message = )\{([^}]*)\}"#)
         var out: [String: Set<String>] = [:]
         let ns = source as NSString
         for match in regex.matches(in: source, range: NSRange(location: 0, length: ns.length)) {
@@ -57,7 +57,7 @@ final class SafariHandlerContractTests: XCTestCase {
                 keys.insert(key)
                 if key == "action", pieces.count == 2 { action = pieces[1].trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }
             }
-            out[try XCTUnwrap(action, "a native request without a literal action")] = keys
+            out[try XCTUnwrap(action, "a native request without a literal action"), default: []].formUnion(keys)
         }
         return out
     }
@@ -94,7 +94,45 @@ final class SafariHandlerContractTests: XCTestCase {
             "classify": ["action", "origin", "username", "password"],
             "save": ["action", "origin", "username", "password", "status"],
             "same_site": ["action", "origin", "other"],
+            // The AI-agent fill (Mac only; the iPhone shares this script and refuses them, see below).
+            "agent_status": ["action"],
+            "agent_offer": ["action", "url"],
+            "agent_release": ["action", "url", "grant", "entry_id"],
+            // The toolbar popup: the badge count, and on the Mac "Open LocalGateKeys" (the Mac handler answers
+            // both open_app actions; whether the button shows comes from open_app_supported).
+            "pending_count": ["action"],
+            "open_app_supported": ["action"],
+            "open_app": ["action"],
         ])
+    }
+
+    /// The badge count carries a decimal String and nothing else; the iPhone has no `open_app`.
+    func test_pending_count_reply_is_count_only() async throws {
+        let keys = try XCTUnwrap(try nativeRequests(in: try backgroundSource())["pending_count"])
+        try storeKeys()
+        let s = makeService()
+        let empty = await s.handle(request("pending_count", keys: keys))
+        XCTAssertEqual(empty as? [String: String], ["count": "0"])
+        _ = await s.handle(["action": "save", "origin": "https://example.com", "username": "alex", "password": "pw1", "status": "new"])
+        let one = await s.handle(request("pending_count", keys: keys))
+        XCTAssertEqual(one as? [String: String], ["count": "1"])
+        assertPlistValues(one)
+        XCTAssertTrue(try backgroundSource().contains(#"/^[0-9]{1,6}$/.test(text)"#), "the background accepts digits only")
+        let open = await s.handle(["action": "open_app"])
+        XCTAssertEqual(open as? [String: String], ["error": "unsupported"])
+        // No "supported" on the iPhone, so the background's can_open stays false and the button hidden.
+        let supported = await s.handle(["action": "open_app_supported"])
+        XCTAssertEqual(supported as? [String: String], ["error": "unsupported"])
+        XCTAssertTrue(try backgroundSource().contains("canOpen?.supported === true"), "only an explicit true shows the button")
+    }
+
+    /// The iPhone has no agent gate: the shared background's agent requests get `unsupported`, never a grant.
+    func test_iphone_refuses_the_agent_requests() async {
+        let s = makeService()
+        for action in ["agent_status", "agent_offer", "agent_release"] {
+            let reply = await s.handle(["action": action, "url": "https://example.com/login"])
+            XCTAssertEqual(reply as? [String: String], ["error": "unsupported"], action)
+        }
     }
 
     func test_same_site_reply_is_same_only() async throws {

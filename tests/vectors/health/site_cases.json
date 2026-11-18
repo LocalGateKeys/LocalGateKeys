@@ -1,0 +1,801 @@
+[
+ {
+  "name": "plain_http_flagged",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "http://shop.test/login"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [
+    "a"
+   ],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "loopback_http_not_flagged",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "http://localhost:3000"
+    ],
+    "has_totp": false
+   },
+   {
+    "id": "b",
+    "urls": [
+     "http://127.0.0.1/x"
+    ],
+    "has_totp": false
+   },
+   {
+    "id": "c",
+    "urls": [
+     "http://[::1]:8080/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "https_not_flagged",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://shop.test/login"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "uppercase_scheme_and_host_flagged",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "HTTP://Shop.Test:8080/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [
+    "a"
+   ],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "non_loopback_port_flagged",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "http://shop.test:8080/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [
+    "a"
+   ],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "uppercase_host_feeds_feature_lookup",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://TOTP-Only.Test/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [
+    "a"
+   ],
+   "passkey": []
+  }
+ },
+ {
+  "name": "unparseable_url_ignored",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "not a url"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "http_among_https_urls",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://shop.test",
+     "http://old.shop.test/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [
+    "a"
+   ],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "totp_site_without_totp",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://totp-only.test/login"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [
+    "a"
+   ],
+   "passkey": []
+  }
+ },
+ {
+  "name": "totp_site_with_totp",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://totp-only.test/login"
+    ],
+    "has_totp": true
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "unknown_site_no_hint",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://unknown.test/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "passkey_site_without_passkey",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://passkey-only.test/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": [
+    "a"
+   ]
+  }
+ },
+ {
+  "name": "passkey_site_with_passkey_item",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://passkey-only.test/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [
+   "passkey-only.test"
+  ],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "subdomain_matches_registrable",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://accounts.example.com/signin"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [
+    "a"
+   ],
+   "passkey": [
+    "a"
+   ]
+  }
+ },
+ {
+  "name": "subdomain_passkey_item_on_registrable_domain",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://accounts.example.com/signin"
+    ],
+    "has_totp": true
+   }
+  ],
+  "passkey_domains": [
+   "example.com"
+  ],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "multi_suffix_registrable",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://www.login.example.co.uk/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [
+    "a"
+   ],
+   "passkey": []
+  }
+ },
+ {
+  "name": "psl_private_suffix_no_match",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://someone.github.io/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "psl_private_suffix_exact_listed",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "https://github.io/"
+    ],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [
+    "a"
+   ],
+   "passkey": [
+    "a"
+   ]
+  }
+ },
+ {
+  "name": "login_without_urls",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [],
+   "no_2fa": [],
+   "passkey": []
+  }
+ },
+ {
+  "name": "mixed_logins",
+  "logins": [
+   {
+    "id": "a",
+    "urls": [
+     "http://totp-only.test/"
+    ],
+    "has_totp": false
+   },
+   {
+    "id": "b",
+    "urls": [
+     "https://example.com"
+    ],
+    "has_totp": true
+   },
+   {
+    "id": "c",
+    "urls": [],
+    "has_totp": false
+   }
+  ],
+  "passkey_domains": [],
+  "sites": {
+   "example.com": [
+    "passkey",
+    "totp"
+   ],
+   "totp-only.test": [
+    "totp"
+   ],
+   "passkey-only.test": [
+    "passkey"
+   ],
+   "github.io": [
+    "totp",
+    "passkey"
+   ],
+   "example.co.uk": [
+    "totp"
+   ]
+  },
+  "expected": {
+   "http": [
+    "a"
+   ],
+   "no_2fa": [
+    "a"
+   ],
+   "passkey": [
+    "b"
+   ]
+  }
+ }
+]

@@ -1,6 +1,9 @@
 /* LocalGateKeys design tokens. Dark navy glass is the default; light is frosted white.
    Values follow the approved 2026-10-17 glass mockups. */
 :root {
+  /* Tells Windows/WebView2 which palette to use for native parts (the open list of a <select>,
+     scrollbars, date pickers). Without it they stay light and the theme's light text is unreadable. */
+  color-scheme: dark;
   --font-ui: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic", system-ui, sans-serif;
   --font-display: "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Yu Gothic UI", "Malgun Gothic", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
@@ -43,6 +46,7 @@
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
+    color-scheme: light;
     --text: #13203a;
     --text-muted: rgba(19, 32, 58, 0.7);
     --text-faint: rgba(19, 32, 58, 0.64);
@@ -68,8 +72,16 @@
   }
 }
 
+/* The open list of a <select> takes the select's translucent glass, which WebView2 can draw light even with
+   color-scheme set; give its options a solid theme colour so the list is readable in both themes. */
+select option, select optgroup {
+  color: var(--text);
+  background-color: var(--wash-base-opaque);
+}
+
 /* An explicit in-app choice wins over the Windows setting. */
 :root[data-theme="light"] {
+  color-scheme: light;
   --text: #13203a;
   --text-muted: rgba(19, 32, 58, 0.7);
   --text-faint: rgba(19, 32, 58, 0.64);

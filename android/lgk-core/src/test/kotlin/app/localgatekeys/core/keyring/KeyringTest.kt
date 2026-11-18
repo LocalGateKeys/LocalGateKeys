@@ -125,7 +125,9 @@ class KeyringTest {
         assertEquals("bad-json", reason { parse("{\"x\":NaN}") })
         assertEquals("too-large", reason { Keyring.parse(ByteArray(256 * 1024 + 1) { 0x20 }) })
         assertEquals("bad-format", reason { parse(text.replace("\"format\":2", "\"format\":2.0")) })
-        assertEquals("bad-format", reason { parse(text.replace("\"format\":2", "\"format\":3")) })
+        // Format 3 is a share v2 keyring (a personal one is `bad-fields`); above 3 a later app version wrote it.
+        assertEquals("bad-fields", reason { parse(text.replace("\"format\":2", "\"format\":3")) })
+        assertEquals("newer-format", reason { parse(text.replace("\"format\":2", "\"format\":4")) })
         assertEquals("bad-format", reason { parse(text.replace("\"format\":2", "\"format\":0")) })
         assertEquals("bad-epoch", reason { parse(text.replace("\"epoch\":1", "\"epoch\":0")) })
         assertEquals("bad-kdf", reason { parse(text.replace("\"iterations\":4", "\"iterations\":3")) })

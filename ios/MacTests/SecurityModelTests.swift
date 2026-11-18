@@ -41,11 +41,16 @@ final class SecurityModelTests: XCTestCase {
     }
 
     private func login(_ id: String, _ title: String, _ password: String, totp: Bool = true, age: TimeInterval = 0) -> HealthLogin {
-        HealthLogin(id: id, title: title, password: password, hasTOTP: totp, updatedAt: now.addingTimeInterval(-age))
+        HealthLogin(id: id, title: title, password: password, hasTOTP: totp, updatedAt: now.addingTimeInterval(-age),
+                    urls: ["https://\(id).example.com"])
     }
 
+    /// Every test login lives on <id>.example.com, a site that offers 2FA codes (a one-rule suffix list: ".com").
+    private let exampleOffersTotp = SiteFeatures(
+        sites: ["example.com": ["totp"]], matcher: URLMatcher(rules: PublicSuffixRules.parse(lines: ["com"])))
+
     private func health(_ logins: [HealthLogin], breached: Set<String> = []) -> VaultHealth {
-        VaultHealth.compute(logins, breached: breached, now: now, cache: StrengthCache())
+        VaultHealth.compute(logins, breached: breached, now: now, cache: StrengthCache(), features: exampleOffersTotp)
     }
 
     private func model(_ transport: FakeBreachTransport, pause: Duration = .zero) -> SecurityModel {
@@ -92,7 +97,23 @@ final class SecurityModelTests: XCTestCase {
         XCTAssertEqual(issues[3].actionLabel, "Set up 2FA")
         XCTAssertEqual(issues[4].title, "Not changed in over a year")
         XCTAssertEqual(issues[4].description, "Low risk; change when convenient")
-        XCTAssertEqual(SecurityFilter.allCases.map(\.label), ["All", "Weak", "Reused", "No 2FA", "Old (>1 year)", "Exposed (HIBP)"])
+        XCTAssertEqual(SecurityFilter.allCases.map(\.label), ["All", "Weak", "Reused", "No 2FA", "Old (>1 year)", "Not HTTPS", "Passkey available", "Exposed (HIBP)"])
+    }
+
+    func testHttpAndPasskeyIssues() {
+        let plain = HealthLogin(id: "a", title: "Alpha", password: "correct horse battery staple", hasTOTP: true,
+                                updatedAt: now, urls: ["http://a.shop.test/login"])
+        let features = SiteFeatures(sites: ["shop.test": ["passkey"]], matcher: URLMatcher(rules: nil))
+        let h = VaultHealth.compute([plain], breached: [], now: now, cache: StrengthCache(), features: features)
+        XCTAssertEqual(h.insecure, ["a"])
+        // No suffix list: the host is its own registrable domain, so "shop.test" does not match "a.shop.test".
+        XCTAssertTrue(h.passkeyAvailable.isEmpty)
+        let issues = SecurityModel.issues(h, titles: ["a": "Alpha"])
+        XCTAssertEqual(issues.map(\.key), [.http])
+        XCTAssertEqual(issues[0].title, "Saved with a plain http:// address")
+        XCTAssertEqual(issues[0].filter, .http)
+        XCTAssertEqual(SecurityModel.ids(.http, health: h, all: ["a"]), ["a"])
+        XCTAssertEqual(SecurityModel.ids(.passkey, health: h, all: ["a"]), [])
     }
 
     func testScanAllText() {
@@ -134,7 +155,7 @@ final class SecurityModelTests: XCTestCase {
         await m.waitForScan()
         XCTAssertEqual(transport.calls, 2, "identical passwords are requested once")
         XCTAssertEqual(m.breached, ["a", "b"])
-        XCTAssertEqual(m.exposure["a"], "Found in 3,201 breaches")
+        XCTAssertEqual(m.exposure["a"], "Found in \(3201.formatted()) breaches")
         XCTAssertEqual(m.exposure["c"], "Not found")
         XCTAssertEqual(m.statusText, "Checked 2 unique passwords · 2 logins exposed · 0 errors. Not found does not prove a password is safe.")
     }

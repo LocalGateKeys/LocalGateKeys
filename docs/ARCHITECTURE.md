@@ -139,6 +139,27 @@ Stores a single encrypted JSON payload. The KDF metadata and cipher envelope are
 
 Inspects only foreground-window and editable-control metadata. It intentionally does not call value-read APIs on password controls. Fill uses `set_edit_text` where supported, with outbound `SendInput` as a fallback.
 
+### Windows passkey provider (Microsoft Store build)
+
+Design note: `docs/design/WINDOWS_PASSKEY_PROVIDER.md`. A small provider program (`windows-passkey-provider`,
+`LocalGateKeysPasskeyProvider.exe`, shipped in the MSIX package) is the Windows 11 24H2+ passkey plugin:
+
+- **COM server.** Windows activates it by CLSID and calls `MakeCredential`, `GetAssertion`, `CancelOperation` and
+  `GetLockStatus`. It verifies the Windows request signature on each call, applies a 30 s limit and refuses a signature
+  it has already accepted (replay cache). `--register`, `--unregister`, `--state` and `--sync` are command-line modes
+  the app starts.
+- **Pipe.** It forwards to the agent over the existing local pipe under a third pin scope, `system_passkey`, which
+  admits only the actions `passkey_create_system`, `passkey_get_system`, `passkey_cancel_system`,
+  `passkey_lock_status_system` and `passkey_credentials_system`. The agent shows its approval window, signs inside the
+  app and returns authenticator data, signature and credential ID only. If the app is closed the provider starts
+  `LocalGateKeys.exe --background` and retries.
+- **Sync.** After unlock and on every passkey change the app sends Windows the site names, user names and credential
+  IDs so its account picker can list them (never keys). Turning passkeys or the switch off clears them.
+- **Extension hand-off.** When the setting is on and the cached Windows state is `enabled`, the broker answers the
+  extension's passkey create and get with `system_provider` and `webauthn-page.js` calls the browser's own method, so
+  Windows shows its picker. Logins, passwords and codes are unchanged; an unknown or stale state falls back to the
+  extension.
+
 ## 2. Browser save flow
 
 ```text
@@ -365,6 +386,21 @@ only when a format changes on purpose. Byte rules are not restated here.
 Two canonical-JSON variants exist: sealed views and keyrings use
 `ensure_ascii=False`; pairing JSON uses `ensure_ascii=True`. All identifiers are
 ASCII `[A-Za-z0-9._:-]`, 1 to 128 characters.
+
+### Collections and shared collections
+
+Collections, item membership and share links sync as separate `collection` states
+(`col:`, `cm:`, `csl:`), so item records keep their earlier shape and older peers read
+every view as before. They are sent only to peers that announce support.
+
+A shared collection is a second sync group over its own cloud folder. Its key file
+carries share metadata. The owner device pins an Ed25519 key and signs every change to
+the member list; members refuse a key file that drops the owner or changes a pin.
+The collection name is encrypted under the group key. Mode (view-only or edit) is fixed
+at creation. Share sync is folder-only in this release. Python, Kotlin and Swift
+implement the same formats and are checked against shared vectors in
+`tests/vectors/share/`. Details: [SYNC.md](SYNC.md) ("Share metadata", "Personal
+collections").
 
 ### Threading and the gate contracts
 

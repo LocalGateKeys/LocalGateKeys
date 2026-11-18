@@ -116,6 +116,11 @@ class PhoneRestore(
     private val pairedPeerId: () -> String? = { null },
     /** The attachment store document files are restored into, or null (documents then are skipped). */
     private val attachments: AttachmentVault? = null,
+    /**
+     * Runs after a restore that merged (even with nothing new): the removal watch file is forgotten, so an old removal
+     * notice can never erase the restored vault. The next folder run writes a fresh watch.
+     */
+    private val onRestored: () -> Unit = {},
 ) {
     private val present: ((app.localgatekeys.core.sync.AttachmentRef) -> Boolean)? =
         attachments?.let { v -> { ref -> v.has(ref) } }
@@ -219,6 +224,11 @@ class PhoneRestore(
                 val kind = if (e.kind == LocalStoreException.Kind.STALE) "busy" else "apply-failed"
                 return RestoreReport(heldBack = plan.heldBack, skipped = plan.skipped, failure = kind, filesMissing = plan.filesMissing)
             }
+        }
+        try {
+            onRestored()
+        } catch (e: Exception) {
+            // best effort: the watch file is rewritten by the next run
         }
         val new = (contentIds(after) - before).size
         return RestoreReport(

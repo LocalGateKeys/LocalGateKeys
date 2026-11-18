@@ -311,6 +311,39 @@ final class KeyRotationTests: XCTestCase {
         XCTAssertThrowsError(try ScheduleSecretStore(directory: dir, localKey: oldKey).load())
     }
 
+    /// A format v2 secret (public backup key record, no password), as `BackupScheduleModel.setPassword` writes it.
+    private func writeScheduleV2(_ v: MacVault, password: String, backupPassword: String) async throws -> BackupKeyRecord {
+        _ = try await v.unlock(password: password)
+        var key = try XCTUnwrap(v.takeOpenedLocalKey())
+        defer { for i in key.indices { key[i] = 0 } }
+        let pk = try DesktopVaultFile.derivePasswordKey(password: password, kdf: Self.scheduleKDF, random: SystemRandomSource())
+        var pair = try BackupKey.derive(password: backupPassword, kdf: BackupKeyKDF.fresh(Self.scheduleKDF, random: SystemRandomSource()))
+        defer { pair.wipe() }
+        let record = try BackupKeyRecord.build(key: pair, now: 1_793_000_000, setBy: "set", resetAuthority: nil, previous: nil)
+        try ScheduleSecretStore(directory: dir, localKey: key).save(ScheduledBackupSecret(backupKey: record, passwordKey: pk, recovery: nil))
+        return record
+    }
+
+    func testPasswordChangeKeepsThePublicKeyRecord() async throws {
+        let v = try await populated(touchID: false)
+        let record = try await writeScheduleV2(v, password: master, backupPassword: Self.scheduledPassword)
+        try await v.changePassword(old: master, new: "new master password")
+        let loaded = try await schedule("new master password")
+        let s = try XCTUnwrap(loaded.secret)
+        XCTAssertEqual(s.backupKey, record)
+        XCTAssertNil(s.backupPassword)
+        try assertOpens(s, password: "new master password")
+    }
+
+    /// The new master password derives the record's public key (it is the backup password): the secret is dropped.
+    func testPasswordChangeToTheBackupPasswordDropsTheRecord() async throws {
+        let v = try await populated(touchID: false)
+        _ = try await writeScheduleV2(v, password: master, backupPassword: Self.scheduledPassword)
+        try await v.changePassword(old: master, new: Self.scheduledPassword)
+        let loaded = try await schedule(Self.scheduledPassword)
+        XCTAssertNil(loaded.secret)
+    }
+
     func testReplacingThePhraseRebuildsTheSchedulePhraseKey() async throws {
         let v = try await populated(touchID: false)
         let first = try await v.prepareRecovery(password: master)

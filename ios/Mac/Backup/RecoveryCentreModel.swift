@@ -26,12 +26,12 @@ struct BackupHistory {
     func reset() { lastBackup = nil; lastVerified = nil }
 
     private func date(_ key: String) -> Date? {
-        guard let s = defaults.object(forKey: key) as? Double, s > 0 else { return nil }
+        guard let s = defaults.object(forKey: ProfileScope.key(key)) as? Double, s > 0 else { return nil }
         return Date(timeIntervalSince1970: s)
     }
 
     private func set(_ date: Date?, _ key: String) {
-        if let date { defaults.set(date.timeIntervalSince1970, forKey: key) } else { defaults.removeObject(forKey: key) }
+        if let date { defaults.set(date.timeIntervalSince1970, forKey: ProfileScope.key(key)) } else { defaults.removeObject(forKey: ProfileScope.key(key)) }
     }
 }
 
@@ -108,7 +108,7 @@ final class RecoveryCentreModel {
         [title, intro, phraseTitle, phraseSetText, phraseNotSetText, fullBackupTitle, fullBackupText, scheduleTitle,
          scheduleText, oldBackupsTitle, oldBackupsText, safetyText, setAsideText, noBackupWarning, staleWarning,
          noPhraseWarning, enterCreate, enterBoth, mismatch, tooShort, verifiedText, kitSavedText, kitNeedsBackup,
-         folderUnusable, RecoveryPhraseSheet.intro, RecoveryPhraseSheet.cardIntro, RecoveryPhraseSheet.removeIntro,
+         folderUnusable, masterAlsoText, RecoveryPhraseSheet.intro, RecoveryPhraseSheet.cardIntro, RecoveryPhraseSheet.removeIntro,
          MacFullBackup.restoredMessage, MacFullBackup.keptDataUnreadable.message]
     }
 
@@ -129,6 +129,57 @@ final class RecoveryCentreModel {
         let password: String
         let vaultPassword: String
         let preview: RestorePreview
+        /// The key file / YubiKey the backup's vault needed at preview (a Windows v4 vault); the restore asks again.
+        var factors = FactorSecrets()
+
+        static func == (a: PendingRestore, b: PendingRestore) -> Bool { a.id == b.id }
+    }
+
+    /// The key file / YubiKey a backup's vault asks for (a Windows v4 vault, design §4.4), after verify or preview said
+    /// so: the sheet then offers "Choose key file…" and asks for the YubiKey at the next try.
+    struct FactorRequest: Equatable {
+        let url: URL
+        let kinds: [FactorKind]
+        let slot: Int
+        /// Picked for this backup only: never remembered.
+        var keyFile: URL?
+    }
+    var factorRequest: FactorRequest?
+
+    /// The sheet's "Choose key file…" for the backup's vault.
+    func chooseRestoreKeyFile() {
+        guard factorRequest != nil, let url = MacFactors.chooseKeyFile() else { return }
+        factorRequest?.keyFile = url
+        error = nil
+    }
+
+    /// The factors for `url` asked for so far (none before verify or preview said the vault needs them).
+    private func restoreFactors(for url: URL) async throws -> FactorSecrets {
+        guard let request = factorRequest, request.url == url else { return FactorSecrets() }
+        var input = FactorSecrets()
+        if request.kinds.contains(.keyFile), let file = request.keyFile { input.keyFile = try await MacFactors.loadKeyFile(file) }
+        if request.kinds.contains(.yubiKeyHMAC) { input.yubiKey = YubiKeyPrompt.shared.responder(slot: request.slot) }
+        return input
+    }
+
+    /// The vault inside `url` needs factors: which ones (and the YubiKey's slot) are read from it, then asked for.
+    private func askFactors(url: URL, password: String, missing: [FactorKind]) async {
+        let specs = (try? await backup?.vaultFactors(url: url, password: password)) ?? []
+        let kinds = specs.isEmpty ? missing : specs.map(\.kind)
+        let slot = specs.first(where: { $0.kind == .yubiKeyHMAC })?.slot ?? MacFactors.defaultSlot
+        let keyFile = factorRequest?.url == url ? factorRequest?.keyFile : nil
+        factorRequest = FactorRequest(url: url, kinds: kinds, slot: slot, keyFile: keyFile)
+        error = MacFactors.factorMessage(.required(missing))
+    }
+
+    /// A verify or preview failure: factors asked for, a cancelled touch says nothing, the rest as `describe` says.
+    private func failed(_ error: Error, url: URL, password: String) async {
+        switch error {
+        case FactorError.required(let missing): await askFactors(url: url, password: password, missing: missing)
+        case YubiKeyError.cancelled: self.error = nil
+        default:
+            self.error = MacFullBackup.describe(error, slot: factorRequest?.slot ?? MacFactors.defaultSlot)
+        }
     }
 
     @ObservationIgnored let backup: MacFullBackup?
@@ -169,7 +220,7 @@ final class RecoveryCentreModel {
     private(set) var lastBackupURL: URL?
     private(set) var lastInventory: BackupInventory?
     /// Opens the password sheet for a backup action.
-    func ask(_ kind: PasswordForm.Kind) { error = nil; message = nil; form = PasswordForm(kind: kind) }
+    func ask(_ kind: PasswordForm.Kind) { error = nil; message = nil; factorRequest = nil; form = PasswordForm(kind: kind) }
 
     /// The page's first action when opened from the Security centre (taken once).
     var initial: Initial?
@@ -304,14 +355,16 @@ final class RecoveryCentreModel {
         error = nil; message = nil; working = true
         defer { working = false }
         do {
-            let inventory = try await backup.verify(url: url, password: password, vaultPassword: master)
+            let factors = try await restoreFactors(for: url)
+            let inventory = try await backup.verify(url: url, password: password, vaultPassword: master, factors: factors)
             history.lastVerified = now()
             lastBackupURL = url; lastInventory = inventory
             message = Self.verifiedText
             form = nil
+            factorRequest = nil
             refresh()
         } catch {
-            self.error = MacFullBackup.describe(error)
+            await failed(error, url: url, password: password)
         }
     }
 
@@ -322,11 +375,13 @@ final class RecoveryCentreModel {
         error = nil; message = nil; working = true
         defer { working = false }
         do {
-            let preview = try await backup.previewRestore(url: url, password: password, vaultPassword: master)
-            readyPreview = PendingRestore(url: url, password: password, vaultPassword: master, preview: preview)
+            let factors = try await restoreFactors(for: url)
+            let preview = try await backup.previewRestore(url: url, password: password, vaultPassword: master, factors: factors)
+            readyPreview = PendingRestore(url: url, password: password, vaultPassword: master, preview: preview, factors: factors)
             form = nil
+            factorRequest = nil
         } catch {
-            self.error = MacFullBackup.describe(error)
+            await failed(error, url: url, password: password)
         }
     }
 
@@ -347,7 +402,7 @@ final class RecoveryCentreModel {
         guard let restore = approvedRestore, let backup else { return }
         approvedRestore = nil
         let asked = backup.requestRestore(url: restore.url, password: restore.password, vaultPassword: restore.vaultPassword,
-                                          then: { [weak self] ok in self?.restoreFinished(ok) })
+                                          factors: restore.factors, then: { [weak self] ok in self?.restoreFinished(ok) })
         if !asked { error = backup.message }
     }
 
@@ -379,6 +434,69 @@ final class RecoveryCentreModel {
         } catch {
             self.error = MacFullBackup.describe(error)
         }
+    }
+
+    // MARK: which backup password (design section 8)
+
+    nonisolated static let masterAlsoText = String(localized: "You will also need the master password of the backed-up vault.")
+
+    /// The line shown before any password is asked: which backup password the chosen file needs, from its public
+    /// header only. `recipient` is the v3 header's (nil for an old-format backup), `record` this Mac's current key.
+    nonisolated static func keyText(recipient: FullBackupV3.Recipient?, oldFormatDate: Date?, record: BackupKeyRecord?,
+                                    calendar: Calendar) -> String {
+        func day(_ seconds: Int64) -> String { BackupScheduleModel.day(seconds, calendar) }
+        let first: String
+        if let r = recipient {
+            if let record, r.keyID == record.keyID {
+                first = String(localized: "This backup uses your current backup password (set on \(day(r.keySetAt))).")
+            } else if let record, let i = record.history.firstIndex(where: { $0.keyID == r.keyID }) {
+                let entry = record.history[i]
+                // What replaced that key: the next newer one (the current record for the newest history entry).
+                let replacedBy = i == 0 ? record.setBy : record.history[i - 1].setBy
+                if replacedBy == "reset" {
+                    first = String(localized: "This backup uses the backup password set on \(day(r.keySetAt)). It was reset on \(day(entry.replacedAt)); the new password does not open it.")
+                } else {
+                    first = String(localized: "This backup uses the backup password set on \(day(r.keySetAt)). It was changed on \(day(entry.replacedAt)).")
+                }
+            } else {
+                first = String(localized: "This backup uses the backup password set on \(day(r.keySetAt)) on the device that made it.")
+            }
+        } else {
+            let when = oldFormatDate.map { day(Int64($0.timeIntervalSince1970)) } ?? ""
+            first = String(localized: "This backup uses the backup password that was in use when it was made (\(when)).")
+        }
+        return first + " " + masterAlsoText
+    }
+
+    /// The timestamp of a scheduled backup's name (`LocalGateKeys-scheduled-<tag>-YYYYMMDD-HHMMSS[-n].lgk`, any
+    /// profile tag, local time), or nil.
+    nonisolated static func scheduledDate(_ name: String, calendar: Calendar) -> Date? {
+        let prefix = BackupSchedule.filenamePrefix
+        guard name.lowercased().hasPrefix(prefix.lowercased()) else { return nil }
+        let tag = String(name.dropFirst(prefix.count).prefix(8)).lowercased()
+        guard let (stamp, _) = BackupSchedule.parse(name, tag: tag) else { return nil }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        f.calendar = gregorian
+        f.timeZone = calendar.timeZone
+        f.dateFormat = "yyyyMMdd-HHmmss"
+        return f.date(from: stamp)
+    }
+
+    /// `keyText` for a chosen file (its header is read; nothing is decrypted). Old format: the scheduled name's date,
+    /// else the file's modified date.
+    func keyLine(for url: URL, calendar: Calendar = .current) -> String {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        var recipient: FullBackupV3.Recipient?
+        if let data = try? Data(contentsOf: url, options: .alwaysMapped), FullBackup.headerVersion(data) == FullBackupV3.version {
+            recipient = (try? FullBackupV3.inspect(data))?.recipient
+        }
+        let modified = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
+        return Self.keyText(recipient: recipient, oldFormatDate: Self.scheduledDate(url.lastPathComponent, calendar: calendar) ?? modified,
+                            record: scheduleModel?.record, calendar: calendar)
     }
 
     // MARK: old backups

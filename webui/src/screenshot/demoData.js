@@ -42,6 +42,52 @@ export const LOGINS = [
     password: 'fT6@hJ1!pZ8#cV3q', age: 420, tags: ['travel'], notes: '' },
   { id: 'proton', title: 'Proton Mail', username: 'alex.morgan@proton.example', origin: 'https://account.proton.me',
     password: 'violet-orbit-cactus-91-ember', totp: 'IFBEGRCFIZDUQSKKJNGE2TSPKA', age: 5, tags: ['email'], notes: '' },
+  // Saved with a plain http:// address: the Security check "Not HTTPS" filter lists it.
+  { id: 'forum', title: 'Old hobby forum', username: 'alexm', origin: 'http://forum.example.com',
+    password: 'Tq4!nB8#zR2@xL6v', age: 200, tags: ['hobby'], notes: '' },
+];
+
+const MARKDOWN_NOTE = [
+  '# Packing list',
+  '',
+  'Things to **double-check** before the flight, from the [airline page](https://example.com/baggage):',
+  '',
+  '- Passport and *printed* tickets',
+  '- Travel adapter and a power bank',
+  '- Medicine in the hand luggage',
+  '',
+  '## Before leaving',
+  '',
+  '- [x] Water the plants',
+  '- [x] Turn off the heating',
+  '- [ ] Download offline maps',
+  '- [ ] Tell the neighbours',
+  '',
+  'Router reset command, in case the Wi-Fi is down when we return:',
+  '',
+  '```',
+  'ssh admin@192.168.1.1 reboot',
+  '```',
+  '',
+  '1. Unplug for ten seconds',
+  '2. Plug back in',
+].join('\n');
+
+// A made-up token: header {alg: HS256, typ: JWT}, claims for a fictional service, a meaningless signature.
+const DEMO_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJzdmMtZGVwbG95IiwiYXVkIjpbImFwaS5leGFtcGxlLmNvbSJdLCJpYXQiOjE3NjcyMjU2MDAsImV4cCI6MTgwMTAwMDAwMH0.ZGVtby1zaWduYXR1cmUtbm90LXJlYWwtMDAwMA';
+
+// The token block typed_reveal adds for an API key whose value is a JWT (app/typed.py _token_block).
+export const JWT_TOKEN = { alg: 'HS256', typ: 'JWT', iss: 'https://auth.example.com', sub: 'svc-deploy',
+  aud: ['api.example.com'], iat: '2026-01-01 01:00', nbf: '', exp: '2027-01-26 14:26', expired: false, set_expiry_date: '2027-01-26' };
+
+/** The Wi-Fi QR typed_wifi_qr returns (a real QR of WIFI:T:WPA;S:Morgan-Home-5G;P:quiet-maple-harbor-27;;). */
+export const WIFI_QR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD2AQAAAADNaUdlAAABkklEQVR42u1ZQY7EIAyzlgfwJL7Ok3gAEpPYYXdPc115tlUHdcglGNdxKM7ba+OJP/EPjyOv0VY+tzU2cFZOtYh/4f3113HmHD+mvTF2P3HHX8175L8QsKPnA/rkXowcrfIPzGNsZyZzDPPfvR60Fqf8yf9APpYg8jQr/l/9+X076U9JaddGQOJTkx78D8KneAaFSJsYJxllw58LfubMF8EpfxYvVq4sYeBewCj/QLud82MhyKIoZMeGPxScxD9lP8hfLsgl//AM37ahJ/ljOemCrPifry0GaTOrCtjU3ynYhXyr13k66SeRp22YElIz/5CCT+XsYlGVYxf+E3CWrcQ/Rzjlj1twJ1mEuxaT+pUNCw3nlc1WdsjFfxJq0p7OTQsxqr/QFog2At+o/yL/D0sA/T8rglyQiX+4bQuZ00pRj1f/dXOevI8W4tX/JoXk/M38Dy2cSsB1Dkb8v57tztThw7Q7v6Jslopuo/PbVQeG6Gob1cvAjv+y0DrLhU//VfpD2OXiZIS89P/5vvPE/1/8BVyeGtsLj7BwAAAAAElFTkSuQmCC';
+
+/** SSH keys the Developer page lists (developer_status.keys). The fingerprints are made up. */
+export const SSH_KEYS = [
+  { id: 'ssh-laptop', title: 'Work laptop', fingerprint: 'SHA256:Q3v8mTk1R0yXr2uLw7Zc9pNfA4sHbDeJgKi5oVtM6xE', state: 'ok', reason: '', offered: true },
+  { id: 'ssh-deploy', title: 'Deploy key (CI)', fingerprint: 'SHA256:Hn4bW2pTzY8kLq1VdR6cAeX9sMuJf0oGiB3tKvC7yPw', state: 'ok', reason: '', offered: false },
+  { id: 'ssh-old', title: 'Old server key', fingerprint: '', state: 'needs_passphrase', reason: '', offered: false },
 ];
 
 /** Typed items (source "typed"). fields: the detail rows typed_detail returns, in schema order. */
@@ -89,7 +135,26 @@ export const TYPED = [
       { name: 'hidden', label: 'Hidden network', value: false, protected: false, present: true },
     ],
     secrets: { password: 'quiet-maple-harbor-27' } },
+  { id: 'note-trip', kind: 'note', title: 'Trip checklist', target: '', age: 2, favorite: false,
+    fields: [
+      { name: 'body', label: 'Note body', value: null, protected: true, present: true },
+    ],
+    secrets: { body: MARKDOWN_NOTE } },
+  { id: 'api-deploy', kind: 'api_key', title: 'Deploy service token', target: 'api.example.com', age: 14, collection: 'work', favorite: false,
+    fields: [
+      { name: 'service', label: 'Service', value: 'api.example.com', protected: false, present: true },
+      { name: 'key', label: 'Key', value: null, protected: true, present: true },
+    ],
+    secrets: { key: DEMO_JWT }, token: JWT_TOKEN },
+  { id: 'ssh-laptop', kind: 'ssh_key', title: 'Work laptop', target: '', age: 30, collection: 'work', favorite: false,
+    fields: [
+      { name: 'private_key', label: 'Private key', value: null, protected: true, present: true },
+      { name: 'public_key', label: 'Public key', value: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDemoKeyNotReal0000000000000000000000 work-laptop', protected: false, present: true },
+      { name: 'fingerprint', label: 'Fingerprint', value: 'SHA256:Q3v8mTk1R0yXr2uLw7Zc9pNfA4sHbDeJgKi5oVtM6xE', protected: false, present: true },
+    ],
+    secrets: { private_key: '-----BEGIN OPENSSH PRIVATE KEY-----\n(demo key, not real)\n-----END OPENSSH PRIVATE KEY-----' } },
 ];
+
 
 /** Typed kinds in sidebar order with their plural labels (shell/nav.py). */
 export const TYPE_NAV = [
@@ -99,11 +164,13 @@ export const TYPE_NAV = [
   ['passkey', 'Passkeys', 'nav.tools'],
   ['card', 'Cards', 'nav.tools'],
   ['wifi', 'Wi-Fi', 'nav.tools'],
+  ['api_key', 'API keys', 'nav.tools'],
+  ['ssh_key', 'SSH keys', 'nav.tools'],
 ];
 
 export const KIND_LABELS = {
   web: 'Website login', desktop: 'Desktop login', card: 'Payment card', identity: 'Identity', note: 'Note',
-  passkey: 'Passkey', wifi: 'Wi-Fi network',
+  passkey: 'Passkey', wifi: 'Wi-Fi network', api_key: 'API key', ssh_key: 'SSH key',
 };
 
 /** Items with a reminder in the next 30 days (the "Expiring" chip). */

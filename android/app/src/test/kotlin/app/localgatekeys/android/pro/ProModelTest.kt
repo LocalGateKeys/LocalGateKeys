@@ -174,19 +174,19 @@ class ProModelTest {
 
     // MARK: EditorAndLimitTests.test_fifth_item_needs_pro (the purchase half; the limit half is EditorModelTest)
 
-    @Test fun fifth_item_needs_pro() = runBlocking {
-        val store = CountingStore(snapshot(numberedNotes(3)))
+    @Test fun sixteenth_item_needs_pro() = runBlocking {
+        val store = CountingStore(snapshot(numberedNotes(ItemLimit.FREE_ITEMS - 1)))
         val purchases = FakePurchases()
         val p = pro(purchases)
         p.refresh(); p.update(store.snapshot)
         val fourth = editor(store, null, EditorKind.NOTE, { p.isPro }).also { it.set("title", "Fourth"); it.set("body", "b") }
         assertEquals(SaveResult.SAVED, fourth.save())
-        assertEquals(4, ItemLimit.liveCount(store.snapshot))
+        assertEquals(ItemLimit.FREE_ITEMS, ItemLimit.liveCount(store.snapshot))
 
         val fifth = editor(store, null, EditorKind.NOTE, { p.isPro }).also { it.set("title", "Fifth"); it.set("body", "b") }
         assertEquals(SaveResult.NEEDS_PRO, fifth.save())
         assertTrue(fifth.showUpgrade)
-        assertEquals(4, ItemLimit.liveCount(store.snapshot))
+        assertEquals(ItemLimit.FREE_ITEMS, ItemLimit.liveCount(store.snapshot))
 
         // Restore purchases with nothing to restore keeps the limit.
         p.restore()
@@ -198,7 +198,7 @@ class ProModelTest {
         assertTrue(p.isPro)
         assertNull(p.message)
         assertEquals(SaveResult.SAVED, fifth.save())
-        assertEquals(5, ItemLimit.liveCount(store.snapshot))
+        assertEquals(ItemLimit.FREE_ITEMS + 1, ItemLimit.liveCount(store.snapshot))
 
         // A cancelled purchase leaves the free plan in place.
         val other = FakePurchases().apply { purchaseResult = PurchaseOutcome.CANCELLED }

@@ -1,33 +1,48 @@
 <script>
-  /** Windows Hello and camera verification for this profile: status, set up, remove. */
+  /** Windows Hello, security key and camera verification for this profile: status, set up, remove.
+   *  Also the vault's key file / YubiKey (KeePass-style factors), "Always ask for the key file / YubiKey" and the
+   *  duress password (DuressSection). */
   import { call } from '../lib/api.js';
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import CameraView from './CameraView.svelte';
+  import DuressSection from './DuressSection.svelte';
+  import FactorPrompt from './FactorPrompt.svelte';
   import PhraseCard from './PhraseCard.svelte';
 
   let { onclose, startHello = false } = $props();
   let hello = $state(null);
   let face = $state(null);
+  let key = $state(null);
   let busy = $state('');
   let message = $state('');
   // Removing camera verification with a recovery phrase replaces the phrase: the new one is shown once here.
   let card = $state(null);
   let phraseNotes = $state([]);
   let started = false;
+  let factors = $state(null);
+  let slot = $state(2);
+  const keyfileSet = $derived(!!factors?.factors?.some((f) => f.kind === 'keyfile'));
+  const yubikeySet = $derived(factors?.factors?.find((f) => f.kind === 'yubikey-hmac'));
+  // "Always ask" is on for this vault: Windows Hello, the security key and the camera are not offered.
+  const shortcutsOff = $derived(!!factors?.shortcuts_off);
 
   async function load() {
-    const [h, f] = await Promise.all([call('hello_status'), call('face_status')]);
+    const [h, f, k, x] = await Promise.all([call('hello_status'), call('face_status'), call('security_key_status'),
+      call('factors_status')]);
     if (okOrToast(h, t('unlockingPage.helloReadFailed'))) hello = h;
     if (okOrToast(f, t('unlockingPage.cameraReadFailed'))) face = f;
+    if (okOrToast(k, t('unlockingPage.securityKeyReadFailed'))) key = k;
+    if (x?.ok) factors = x;
+    else if (x && x.error?.code !== 'bridge') toast(t('factors.page.readFailed'), '', 'error');
   }
 
-  async function run(method, kind) {
+  async function run(method, kind, ...args) {
     if (busy) return;
     busy = kind;
     message = '';
-    const result = await call(method);
+    const result = await call(method, ...args);
     busy = '';
     if (result.ok) {
       message = result.message;
@@ -43,6 +58,11 @@
   $effect(() => {
     load().then(() => { if (startHello && !started) { started = true; run('hello_enable', 'hello'); } });
   });
+
+  async function toggle(method, event) {
+    const value = event.currentTarget.checked;
+    await run(method, 'factors', value);
+  }
 
   async function autoStart(event) {
     const result = await call('hello_auto_start', event.currentTarget.checked);
@@ -63,7 +83,46 @@
   {/if}
   {#if card}
     {#key card.token}<PhraseCard {card} ondone={(text) => { card = null; if (text) message = text; }} />{/key}
-  {:else if hello}
+  {/if}
+  {#if factors && !card}
+    <div class="section-label">{t('factors.page.section')}</div>
+    <div class="group card">
+      <p class="note">{factors.hint}</p>
+      <FactorPrompt factors={[]} />
+      <p class="status" class:success={keyfileSet}>{keyfileSet ? t('factors.page.keyFileSet') : t('factors.page.keyFileNone')}{#if keyfileSet && factors.keyfile_name} · {factors.keyfile_name}{/if}</p>
+      <footer>
+        {#if keyfileSet}<Button label={t('unlockingPage.remove')} variant="danger" onclick={() => run('factors_remove', 'factors', 'keyfile')} disabled={!!busy} />
+        {:else}
+          <Button label={t('factors.page.createKeyFile')} onclick={() => run('factors_create_keyfile', 'factors')} disabled={!!busy} />
+          <Button label={t('factors.page.addKeyFile')} variant="primary" onclick={() => run('factors_add_keyfile', 'factors')} disabled={!!busy} />
+        {/if}
+      </footer>
+      {#if keyfileSet}
+        <label class="toggle"><input type="checkbox" checked={factors.remember} onchange={(e) => toggle('factors_set_remember', e)} disabled={!!busy} /> {t('factors.page.remember')}</label>
+      {/if}
+      <p class="status" class:success={!!yubikeySet}>{yubikeySet ? t('factors.page.yubikeySet', { slot: yubikeySet.slot ?? 2 }) : t('factors.page.yubikeyNone')}</p>
+      <p class="note">{factors.yubikey_setup}</p>
+      <footer>
+        {#if yubikeySet}
+          <Button label={t('unlockingPage.remove')} variant="danger" onclick={() => run('factors_remove', 'factors', 'yubikey-hmac')} disabled={!!busy} />
+          <Button label={t('factors.page.checkBackup')} onclick={() => run('factors_check_backup_yubikey', 'factors')} disabled={!!busy} />
+        {:else}
+          <label class="slot">{t('factors.page.slot')}
+            <select bind:value={slot} disabled={!!busy}><option value={2}>2</option><option value={1}>1</option></select>
+          </label>
+          <Button label={t('factors.page.addYubikey')} variant="primary" onclick={() => run('factors_add_yubikey', 'factors', Number(slot))} disabled={!!busy} />
+        {/if}
+      </footer>
+      {#if yubikeySet}<p class="note">{t('factors.page.backupHint')}</p>{/if}
+      {#if keyfileSet || yubikeySet}
+        <label class="toggle"><input type="checkbox" checked={factors.always_ask} onchange={(e) => toggle('factors_set_always_ask', e)} disabled={!!busy} /> {t('factors.alwaysAskTitle')}</label>
+        <p class="note">{t('factors.page.alwaysAskNote')}</p>
+      {/if}
+    </div>
+  {/if}
+  {#if shortcutsOff && !card}
+    <p class="summary" role="note">{t('factors.page.shortcutsOff')}</p>
+  {:else if hello && !card}
     <div class="section-label">Windows Hello</div>
     <div class="group card">
       <p class="status {hello.tone}">{hello.status}</p>
@@ -79,7 +138,21 @@
       {/if}
     </div>
   {/if}
-  {#if face && !card}
+  {#if key && !card && !shortcutsOff}
+    <div class="section-label">{t('unlockingPage.securityKey')}</div>
+    <div class="group card">
+      <p class="status {key.tone}">{key.status}</p>
+      <p class="note">{key.guidance}</p>
+      {#if key.supported}
+        {#if busy === 'key'}<p class="note" role="status">{t('unlockingPage.securityKeyPrompt')}</p>{/if}
+        <footer>
+          {#if key.enabled || key.incomplete}<Button label={t('unlockingPage.remove')} variant="danger" onclick={() => run('security_key_disable', 'key')} disabled={!!busy} />{/if}
+          {#if !key.enabled}<Button label={t('unlockingPage.securityKeySetUp')} variant="primary" busy={busy === 'key'} busyLabel={t('unlockingPage.waitingWindows')} onclick={() => run('security_key_enable', 'key')} disabled={!!busy || key.incomplete} />{/if}
+        </footer>
+      {/if}
+    </div>
+  {/if}
+  {#if face && !card && (!shortcutsOff || face.enabled || face.incomplete)}
     <div class="section-label">{t('unlockingPage.camera')}</div>
     <div class="group card">
       <p class="status {face.tone}">{face.status}</p>
@@ -92,6 +165,7 @@
       {/if}
     </div>
   {/if}
+  {#if !card}<DuressSection />{/if}
 </div>
 {#if busy === 'face'}<CameraView title={t('unlockingPage.cameraSetUp')} mode="enroll" />{/if}
 
@@ -107,6 +181,7 @@
   .status { margin: 0; font-weight: 600; }
   .status.success { color: #34C759; }
   .status.danger { color: var(--danger); }
+  .slot { display: flex; gap: 6px; align-items: center; font-size: 13px; margin-right: auto; }
   .note { margin: 0; color: var(--text-muted); font-size: 12.5px; white-space: pre-line; }
   .summary { padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
   .phrase-notes { margin: 0; padding: 8px 12px 8px 28px; border-radius: 10px; font-size: 12.5px;

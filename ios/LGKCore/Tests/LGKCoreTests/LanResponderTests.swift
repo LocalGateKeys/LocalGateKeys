@@ -113,7 +113,7 @@ final class LanResponderTests: XCTestCase {
         guard case .refuse(let frame) = try r.accept(helloFrame: try LanTransport.encodeFrame(bytes(str(obj(sv["legacy_hello"])["text"])))) else {
             return XCTFail("a version-1 hello must get the version refusal")
         }
-        XCTAssertEqual(try LanTransport.decodeFrame(frame), bytes(str(sv["version_refusal"])))
+        XCTAssertEqual(try LanTransport.decodeFrame(frame), bytes(str(try vec("lan/v3/session.json")["version_refusal"])))
         // Every error a responder sends is one the vectors list.
         let listed = Set(arr(try vec("lan/messages.json")["errors"]).map { str(obj($0)["reason"]) })
         XCTAssertEqual(reason(r.serve(peer: try lanPeer("A"), request: bytes("{}"))), "bad-message")
@@ -298,10 +298,11 @@ final class LanResponderTests: XCTestCase {
         XCTAssertEqual(pinned.lanPeers[0].pinned.fingerprint, b.fingerprint)
         // Replayed: used up, nothing more to pin.
         XCTAssertEqual(LanPeers.verifyEnrollment(raw, session: session, state: pinned), .refuse(try Enrollment.refusal("used-or-expired")))
-        // The id is now reserved (a second accept of the same request is refused).
-        XCTAssertThrowsError(try LanPeers.acceptEnrollment(req, offer: offer, state: pinned, now: 1, random: SystemRandomSource())) {
-            XCTAssertEqual($0 as? PairingError, .refused("refused"))
-        }
+        // The same device with the same keys accepted again (design 2026-11-17, rule 4: a rejoin) replaces its entry;
+        // it is never pinned twice. Other keys under the id stay refused (`KeptIdentityTests`).
+        let (_, again) = try LanPeers.acceptEnrollment(req, offer: offer, state: pinned, now: 1790000040, random: SystemRandomSource())
+        XCTAssertEqual(again.lanPeers.map(\.deviceID), [b.deviceID])
+        XCTAssertEqual(again.lanPeers[0].pairedAt, 1790000040)
         // Expired: refused with the Windows reason.
         let late = try OfferSession(offer: offer, inviter: a, wall: clocks, monotonic: clocks)
         clocks.advance(wall: 121, mono: 121)

@@ -14,6 +14,8 @@ If you are not happy with LocalGateKeys Pro, you can get a full refund within 30
 
 ## 2. How to ask for a refund
 
+This section is for purchases made on our website. If you bought Pro in the App Store or Google Play, the store decides refunds under its own rules: ask the store (for Google Play, through your Google Play order history or its help page). When the store refunds a purchase, your licence is revoked as described in section 3.
+
 Either:
 
 - use the link in the receipt email from {{MERCHANT_OF_RECORD}}, or contact {{MERCHANT_OF_RECORD}} through its buyer support; or
@@ -25,9 +27,9 @@ The refund is paid by {{MERCHANT_OF_RECORD}} to your original payment method, no
 
 3.1 A refunded licence is revoked. We add its licence ID to the signed revocation list within 7 days.
 
-3.2 The next time the app reads the revocation list (with its next update check), the free edition applies again: up to 4 items, and no device sync or new two-factor codes and attachments.
+3.2 The next time the app reads the revocation list (with its next update check), the free edition applies again: up to 7 items, and no device sync or new two-factor codes and attachments.
 
-3.3 **Your vault is not affected.** Revocation never deletes, locks or changes your vault. Every item you already have stays usable, editable and fillable, and two-factor codes and attachments you already saved stay viewable and exportable; you just cannot add new items while you have 4 or more, add or change two-factor codes or attachments, or sync.
+3.3 **Your vault is not affected.** Revocation never deletes, locks or changes your vault. Every item you already have stays usable, editable and fillable, and two-factor codes and attachments you already saved stay viewable and exportable; you just cannot add new items while you have 7 or more, add or change two-factor codes or attachments, or sync.
 
 3.4 Please delete the licence key and file after a refund.
 

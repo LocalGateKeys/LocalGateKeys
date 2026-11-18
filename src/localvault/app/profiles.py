@@ -4,7 +4,8 @@ from __future__ import annotations
 from typing import Any
 
 from ..api.result import ApiError
-from ..profiles import CAMERA_UNLOCK_BLOCKS_DELETE, ProfileError
+from .. import licensing
+from ..profiles import CAMERA_UNLOCK_BLOCKS_DELETE, ProfileError, VaultLimitReached
 from ..i18n import t
 
 REMOVE_TEXT = ("profiles.removeFromLocalgatekeysItsEncrypted")
@@ -62,7 +63,14 @@ class ProfilesService:
         if self._controller.is_unlocked():
             self._unlocked()
         try:
-            record = self._profiles.create_profile(str(name))
+            record = self._profiles.create_profile(str(name), vault_limit=licensing.vault_limit())
+        except VaultLimitReached as exc:
+            # The upgrade sheet, as for the item limit; the page also shows the message.
+            try:
+                self._port.show_upgrade(limit=exc.limit, message=t("vaults.limitReached"), on_enter=lambda: None)
+            except Exception:  # noqa: BLE001 - no window (tests): the error below still says why
+                pass
+            raise ApiError("vault_limit", t("vaults.limitReached")) from None
         except (ProfileError, ValueError) as exc:
             raise ApiError("invalid", str(exc)) from None
         self._controller._extras_cache = None

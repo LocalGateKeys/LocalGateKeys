@@ -10,9 +10,11 @@ is shown, copied or opened for editing only after the master password.
 from __future__ import annotations
 
 import time
+from datetime import datetime
 from typing import Any
 
 from ..api.result import ApiError
+from ..jwt_view import decode_jwt
 from ..item_schema import IDENTITY_FIELDS, PROTECTED_FIELDS_BY_KIND, ItemSchemaError
 from ..shell.overview_model import age_text
 from ..vault import ItemLimitReached, VaultError
@@ -118,6 +120,9 @@ class TypedService:
         return ref["id"]
 
     def _item(self, session: Any, item_id: str, *, protected: bool) -> dict[str, Any]:
+        from .secrets import refuse_travel_hidden
+
+        refuse_travel_hidden(session, item_id)
         item = session.item_service.get_item(item_id, include_protected=protected)
         if item is None:
             raise ApiError("not_found", t("typed.err.itemGone"))
@@ -325,7 +330,68 @@ class TypedService:
     def reveal(self, ref: dict[str, Any], field: str) -> dict[str, Any]:
         value = self._release(ref, field, "reveal")
         self._controller.touch()
-        return {"value": value, "mask_after": REVEAL_SECONDS}
+        result: dict[str, Any] = {"value": value, "mask_after": REVEAL_SECONDS}
+        token = self._token_block(ref, field, value)
+        if token is not None:
+            result["token"] = token
+        return result
+
+    def _token_block(self, ref: dict[str, Any], field: str, value: str) -> dict[str, Any] | None:
+        """Read-only decode of a revealed API-key value that is a JWT. Only reached after a successful reveal."""
+        if field not in ("key", "secret"):
+            return None
+        item = self._item(self._session(), self._typed_ref(ref), protected=False)
+        if item.get("kind") != "api_key":
+            return None
+        info = decode_jwt(value)
+        if info is None:
+            return None
+
+        def text(claim: Any) -> str:
+            return claim[:200] if isinstance(claim, str) else ""
+
+        def when(stamp: int | None, fmt: str = "%Y-%m-%d %H:%M") -> str:
+            # A date the platform cannot format is dropped; it must never stop the reveal.
+            try:
+                return "" if stamp is None else datetime.fromtimestamp(stamp).astimezone().strftime(fmt)
+            except (OSError, OverflowError, ValueError):
+                return ""
+
+        audience = info.claims.get("aud")
+        audiences = [text(a) for a in audience] if isinstance(audience, list) else [text(audience)]
+        has_expires = bool((item.get("payload") or {}).get("expires"))
+        return {"alg": info.alg or "", "typ": text(info.header.get("typ")), "iss": text(info.claims.get("iss")),
+                "sub": text(info.claims.get("sub")), "aud": [a for a in audiences if a][:10],
+                "iat": when(info.issued), "nbf": when(info.not_before), "exp": when(info.expires),
+                "expired": info.expired(int(time.time())),
+                "set_expiry_date": "" if has_expires else when(info.expires, "%Y-%m-%d")}
+
+    def wifi_qr(self, ref: dict[str, Any]) -> dict[str, Any]:
+        """PNG QR for a Wi-Fi item, released through the same gate as revealing its password."""
+        import base64
+        import io
+
+        import segno
+
+        from ..wifi_qr import wifi_qr_text
+
+        session = self._session()
+        item = self._item(session, self._typed_ref(ref), protected=False)
+        if item.get("kind") != "wifi":
+            raise ApiError("invalid", t("typed.err.unsupportedField"))
+        payload = item.get("payload") or {}
+        security = str(payload.get("security") or "wpa2")
+        ssid = str(payload.get("ssid") or "")
+        hidden = bool(payload.get("hidden"))
+        if wifi_qr_text(ssid, "", security, hidden) is None:
+            raise ApiError("not_supported", t("detail.wifi.enterprise_no_qr"))
+        password = self._release(ref, "password", "reveal") if security != "none" else ""
+        text = wifi_qr_text(ssid, password, security, hidden)
+        out = io.BytesIO()
+        segno.make(text, error="m", micro=False, boost_error=False).save(out, kind="png", scale=6, border=4)
+        self._controller.touch()
+        return {"png_data_url": "data:image/png;base64," + base64.b64encode(out.getvalue()).decode("ascii"),
+                "ssid": ssid}
 
     def copy(self, ref: dict[str, Any], field: str) -> dict[str, Any]:
         value = self._release(ref, field, "copy")

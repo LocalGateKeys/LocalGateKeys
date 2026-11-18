@@ -1,10 +1,12 @@
 """Pure view-model for the sidebar navigation (no Tk)."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any
 
 from ..app.catalog import KIND_ORDER, _safe_display, kind_label
+from ..collections import display_name
 from ..i18n import t
 
 RECENT_LIMIT = 30
@@ -37,15 +39,16 @@ class NavGroup:
     entries: tuple[NavEntry, ...]
 
 
+# Five tools; the pages they replaced stay one step away (shown in brackets):
+# Security center (Activity), Sync & devices (Devices & connections), Import & export (Scan QR code).
+# Reminders open from the Home "Coming up" box, Licence from Settings > Plan & sync, and Collections
+# from the "Collections & views" group below. The command palette still reaches every page directly.
 _TOOLS = (
     ("nav.tool.security_health", "nav.securityRecovery", "security_health_clicked"),
-    ("nav.tool.reminders", "nav.reminders", "reminders_clicked"),
-    ("nav.tool.sync", "nav.devicesConnections", "sync_clicked"),
+    ("nav.tool.generator", "nav.tools", "password_generator_clicked"),
+    ("nav.tool.sync_devices", "nav.devicesConnections", "sync_clicked"),
     ("nav.tool.connections", "nav.devicesConnections", "connections_clicked"),
-    ("nav.tool.licence", "nav.settings", "licence_clicked"),
     ("nav.tool.import_export", "nav.tools", "import_export_clicked"),
-    ("nav.tool.scan_qr", "nav.tools", "scan_qr_clicked"),
-    ("nav.tool.activity", "nav.allItems", "activity_clicked"),
     ("nav.tool.trash", "nav.trash", "trash_clicked"),
 )
 
@@ -90,13 +93,14 @@ def build_nav(summaries: Iterable[Any], collections: list[dict[str, Any]],
         groups.append(NavGroup(t("nav.group.types"), tuple(
             NavEntry(type_label(k), _KIND_ICONS.get(k, _FALLBACK_ICON), k, counts[k]) for k in kinds)))
         entries = [
-            NavEntry(_safe_display(str(row.get("name", "")), 60), "nav.collections", f"collection:{row['id']}")
+            NavEntry(_safe_display(display_name(str(row.get("name", ""))), 60), "nav.collections", f"collection:{row['id']}")
             for row in sorted(collections, key=lambda r: str(r.get("name", "")).casefold()) if row.get("id")
         ]
         entries += [
             NavEntry(_safe_display(str(row.get("name", "")), 60), "filters.funnel", f"view:{row['id']}")
             for row in views if row.get("pinned") and row.get("id") and not row.get("disabled")
         ]
+        entries.append(NavEntry(t("nav.collections.manage"), "nav.collections", None, None, "collections_clicked"))
         groups.append(NavGroup(t("nav.group.collections"), tuple(entries)))
     groups.append(NavGroup(t("nav.group.tools"), tools_entries()))
     return groups

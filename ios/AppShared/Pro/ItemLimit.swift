@@ -13,13 +13,14 @@ public enum LicenseKeys {
 /// The free plan's item limit (spec "Item limit and in-app purchase"). Shared with the AutoFill extension,
 /// which checks it before creating a passkey.
 public enum ItemLimit {
-    public static let freeItems = 4
+    public static let freeItems = 7
 
     public enum Action: Sendable { case create, restore, edit, delete, autofill }
 
-    /// Live synced items: logins and typed items; tombstones, licence states and kinds that never sync excluded.
+    /// Live synced items: logins and typed items; tombstones, licence states, collection states (`itemRecords`) and
+    /// kinds that never sync excluded.
     public static func liveCount(_ snapshot: StoreSnapshot) -> Int {
-        snapshot.records.reduce(0) { n, entry in
+        snapshot.itemRecords.reduce(0) { n, entry in
             let (id, wrapper) = entry
             if snapshot.meta[id]?.deleted == true { return n }
             guard case .object(let w) = wrapper, case .string(let ns)? = w["ns"], ns != Namespace.license.rawValue,

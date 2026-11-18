@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Beveiliging | LocalGateKeys</title>
-  <meta name="description" content="Hoe LocalGateKeys je kluis beschermt en waartegen het niet beschermt.">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>Beveiliging van LocalGateKeys: Argon2id en AES-256-GCM</title>
+  <meta name="description" content="Hoe LocalGateKeys je kluis beschermt met Argon2id en AES-256-GCM, waarom er geen account of server is en waartegen het ontwerp niet beschermt.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/nl/security">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/security">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/security">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/security">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/security">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/security">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/security">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="Beveiliging van LocalGateKeys: Argon2id en AES-256-GCM">
+  <meta property="og:description" content="Hoe LocalGateKeys je kluis beschermt met Argon2id en AES-256-GCM, waarom er geen account of server is en waartegen het ontwerp niet beschermt.">
+  <meta property="og:url" content="https://localgatekeys.app/nl/security">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Het LocalGateKeys-logo: een wachtwoordbeheerder voor Windows, Mac en iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Beveiliging van LocalGateKeys: Argon2id en AES-256-GCM">
+  <meta name="twitter:description" content="Hoe LocalGateKeys je kluis beschermt met Argon2id en AES-256-GCM, waarom er geen account of server is en waartegen het ontwerp niet beschermt.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,22 +44,39 @@
   <a class="skip" href="#main">Naar de inhoud</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../nl/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../nl/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="Hoofdmenu">
+      <nav class="nav-wide" aria-label="Hoofdmenu">
         <ul class="nav">
-          <li><a href="../nl/features.html">Functies</a></li>
-          <li><a href="../nl/pricing.html">Prijzen</a></li>
-          <li><a href="../nl/security.html" aria-current="page">Beveiliging</a></li>
-          <li><a href="../nl/get-started.html">Aan de slag</a></li>
-          <li><a href="../nl/help.html">Handleiding</a></li>
-          <li><a href="../nl/download.html">Downloaden</a></li>
-          <li><a href="../nl/support.html">Support</a></li>
-          <li><a href="../buy.html">Pro kopen</a></li>
+          <li><a href="../nl/features">Functies</a></li>
+          <li><a href="../nl/get-started">Aan de slag</a></li>
+          <li><a href="../nl/help">Handleiding</a></li>
+          <li><a href="../nl/security" aria-current="page">Beveiliging</a></li>
+          <li><a href="../nl/pricing">Prijzen</a></li>
+          <li><a href="../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../nl/download">Downloaden</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Hoofdmenu">
+          <ul class="nav nav-stack">
+            <li><a href="../nl/features">Functies</a></li>
+          <li><a href="../nl/get-started">Aan de slag</a></li>
+          <li><a href="../nl/help">Handleiding</a></li>
+          <li><a href="../nl/security" aria-current="page">Beveiliging</a></li>
+          <li><a href="../nl/pricing">Prijzen</a></li>
+          <li><a href="../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../nl/download">Downloaden</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Taal</span></summary>
+        <ul class="lang-menu-list"><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
@@ -62,13 +93,14 @@
   </div>
   <dl class="spec">
     <dt>Versleuteling van de kluis</dt><dd>AES-256-GCM met een nieuwe willekeurige nonce bij elke opslag</dd>
-    <dt>Hoofdwachtwoord</dt><dd>Argon2id, 64 MiB geheugen, 3 passes, parallellisme 4, willekeurige salt per verpakking</dd>
+    <dt>Hoofdwachtwoord</dt><dd>Argon2id, 3 passes, parallellisme 4, willekeurige salt per verpakking; 256 MiB geheugen in de Windows-app (64 MiB op een pc met minder dan 4 GB geheugen) en 64 MiB in de apps voor Mac, iPhone en Android</dd>
     <dt>Herstelzin</dt><dd>Optionele BIP39-zin van 24 woorden (256 bits), uitgebreid met HKDF-SHA256</dd>
-    <dt>Windows Hello</dt><dd>Verpakt de kluissleutel, nooit het hoofdwachtwoord</dd>
+    <dt>Windows Hello, Touch ID, Face ID en vingerafdruk</dt><dd>Geven de kluissleutel vrij uit opslag die het apparaat beschermt; het hoofdwachtwoord wordt nooit opgeslagen</dd>
     <dt>Back-ups en overdrachten</dt><dd>Argon2id en AES-256-GCM met de parameters opgeslagen in de geauthenticeerde header</dd>
     <dt>Synchronisatie tussen apparaten</dt><dd>Een willekeurige groepssleutel, aan elk apparaat doorgegeven met X25519 en HKDF-SHA256 en, voor een cloudmap, ook met Argon2id verpakt door je synchronisatiewachtwoord; elk record verzegeld met AES-256-GCM en gebonden aan zijn item, versie en sleutelperiode; elk apparaatbestand gebonden aan het apparaat dat het schreef</dd>
-    <dt>Passkeys</dt><dd>ES256-sleutels (P-256) bewaard in de versleutelde kluis; de app bouwt de ondertekende gegevens op uit de oorsprong die de browser meldt, nooit uit de pagina</dd>
+    <dt>Passkeys</dt><dd>ES256-sleutels (P-256) bewaard in de versleutelde kluis; de app bouwt de ondertekende gegevens op uit de oorsprong die de browser meldt, nooit uit de pagina. De app uit de Microsoft Store kan ook de passkeyprovider van Windows 11 zijn (standaard uit); Windows bewaart dan de namen van je passkeysites en -accounts in zijn eigen lijst, nooit de sleutels</dd>
     <dt>Schrijven naar schijf</dt><dd>Tijdelijk bestand, flush, dan atomisch vervangen, zodat een crash geen halve kluis kan achterlaten</dd>
+    <dt>AI-agents</dt><dd>Standaard uit (Pro). Een agent bereikt de app alleen via lgk mcp op je eigen apparaat en ziet alleen de logins en items die je hebt toegestaan. Je keurt elk verzoek goed; de app vult de aanmelding zelf in en geen enkel antwoord aan de agent bevat een wachtwoord. Elk verzoek komt in een toegangslogboek waarvan de regels met SHA-256-hashes aan elkaar zijn gekoppeld, en de beveiligingscontrole meldt of die keten intact is</dd>
   </dl>
 
   <div class="ledger">
@@ -82,6 +114,8 @@
         <li>Wachtwoorden die onversleuteld op schijf staan</li>
         <li>Formulieren die zonder jou worden verzonden</li>
         <li>Je cloudaanbieder die gesynchroniseerde gegevens leest: die slaat alleen versleutelde tekst op</li>
+        <li>Een webpagina die de accounts meeleest die LocalGateKeys je aanbiedt: in Chrome, Edge en Firefox wordt de lijst getekend in een apart extensieframe dat de pagina niet kan lezen</li>
+        <li>Een AI-agent die een wachtwoord uit LocalGateKeys krijgt: geen enkel antwoord aan de agent bevat er een, en hij ziet alleen de logins die je hebt toegestaan</li>
       </ul>
     </section>
     <section class="not" aria-labelledby="not-protects">
@@ -93,6 +127,7 @@
         <li>Iemand die je pc gebruikt terwijl de kluis is ontgrendeld</li>
         <li>Phishing binnen een echte app die door een aanvaller beheerde inhoud toont</li>
         <li>Het verlies van je kluis, je back-ups en je hoofdwachtwoord zonder herstelzin: niemand, wij ook niet, kan hem openen</li>
+        <li>Een AI-agent die je browser bestuurt en een wachtwoord leest nadat LocalGateKeys het in de pagina heeft ingevuld, of een opdracht die je hebt goedgekeurd en die de ontvangen geheimen doorgeeft</li>
       </ul>
     </section>
   </div>
@@ -110,28 +145,34 @@
       <li>verzenden van een aanmelding die je niet hebt gestart</li>
     </ul>
 
-    <h2>Het netwerk, eerlijk gezegd</h2>
+    <h2 id="network">Het netwerk, eerlijk gezegd</h2>
     <p>Er is geen LocalGateKeys-account en geen server die kluizen bewaart. De app maakt alleen in deze gevallen verbinding met internet:</p>
     <ul>
-      <li><strong>Updatecontroles.</strong> Als je Controleren op updates kiest, downloadt de app één klein bestand en controleert de handtekening ervan met een sleutel die in de app is ingebouwd. De app downloadt of voert nooit zelf een installatieprogramma uit.</li>
-      <li><strong>Intrekkingslijst voor licenties.</strong> Samen met elke updatecontrole downloadt de app een ondertekende lijst met terugbetaalde licenties en controleert je licentie daarop, op je pc. Er wordt niets over je licentie verstuurd.</li>
+      <li><strong>Updates.</strong> De Microsoft Store werkt de Windows-app bij en de App Store de apps voor Mac en iPhone; LocalGateKeys downloadt of start zelf nooit een installatieprogramma. De stopgezette Windows-versies met installatieprogramma (tot en met 0.4.12, de laatste) downloaden één klein bestand van onze server als je Controleren op updates kiest en controleren de handtekening ervan met een sleutel die in de app is ingebouwd.</li>
+      <li><strong>Intrekkingslijst voor licenties.</strong> Bij elke updatecontrole in de versies met installatieprogramma, en als je in de app uit de Microsoft Store Controleren op updates kiest terwijl de strikte offlinemodus uit staat, downloadt de app een ondertekende lijst met terugbetaalde licenties en controleert je licentie daarop, op je pc. Er wordt niets over je licentie verstuurd.</li>
       <li><strong>Websitepictogrammen.</strong> Om het pictogram van een site te tonen, downloadt de app het van het eigen adres van die site. Er worden geen gebruikersnaam, wachtwoord of kluisgegevens verstuurd, maar elke download laat die site, en iedereen die het netwerk in de gaten houdt, weten dat je kluis daar een account heeft. Dit staat standaard uit en gebeurt alleen als je "Websitepictogrammen tonen" aanzet in Instellingen; de strikte offlinemodus blokkeert het.</li>
       <li><strong>Datalekcontroles, als je ze aanzet.</strong> Als je een controle start, stuurt de app de eerste vijf tekens van de SHA-1-hash van elk wachtwoord naar Have I Been Pwned. De dienst ziet je IP-adres, nooit het wachtwoord, de volledige hash, de gebruikersnaam of de website.</li>
       <li><strong>Synchronisatie, als je die instelt.</strong> Via je thuisnetwerk praten apparaten rechtstreeks met elkaar. Via een cloudmap doet je cloudopslag-app het uploaden.</li>
+      <li><strong>Pro kopen in de app voor Mac, iPhone of Android.</strong> De app stuurt het ondertekende aankoopbewijs van de store naar onze licentieserver, die antwoordt met je licentiesleutel. Er worden geen e-mailadres en geen apparaatgegevens verstuurd.</li>
+      <li><strong>Geverifieerde site.</strong> De controle op bijna identieke adressen draait op uw apparaat. Uw opgeslagen sites verlaten de app nooit en er wordt niets naar een server gestuurd.</li>
     </ul>
-    <p>De strikte offlinemodus staat standaard aan. Hij blokkeert internetverzoeken op de achtergrond, websitepictogrammen en datalekcontroles, en een updatecontrole vraagt eerst om toestemming. Het <a href="../legal/privacy.html">privacybeleid</a> noemt precies wat onze servers zien wanneer je wel op updates controleert.</p>
+    <p>In de Windows-app toont Beveiligingscentrum › Netwerkactiviteit elk van deze verbindingen met de tijd, de host en het resultaat. De namen van websites die je hebt opgeslagen, worden alleen getoond zolang de app draait en nooit naar schijf geschreven, en apparaten in je eigen netwerk verschijnen als 'Lokaal netwerk'.</p>
+    <p>De strikte offlinemodus staat standaard aan. Hij blokkeert internetverzoeken op de achtergrond, websitepictogrammen en datalekcontroles, en een updatecontrole vraagt eerst om toestemming. Het <a href="../legal/privacy">privacybeleid</a> noemt precies wat onze servers zien wanneer je wel op updates controleert.</p>
 
     <h2>Bekende beperkingen</h2>
     <ul>
-      <li>Het hoofdwachtwoord wordt in een wisbare buffer geplaatst zodra het de app bereikt en wordt gewist wanneer de bewerking die het nodig had klaar is. De pagina waarin je het typt draait in Microsoft Edge WebView2, en de overdracht van die pagina naar de app maakt een kortlevende kopie; geen van beide kopieën kan door de app worden gewist.</li>
-      <li>Het ontgrendelen met de camera is een gemakscontrole, geen gecertificeerde bescherming tegen foto's of maskers. Windows Hello is de sterkere keuze.</li>
+      <li>Het hoofdwachtwoord wordt in een wisbare buffer geplaatst zodra het de app bereikt en wordt gewist wanneer de bewerking die het nodig had klaar is. De pagina waarin je het typt draait in Microsoft Edge WebView2. De pagina maakt haar veld leeg en de app laat de kopie los die bij de overdracht is gemaakt, voordat je sleutel wordt berekend, maar geen van die twee kopieën kan in het geheugen worden overschreven, dus er kunnen daar korte tijd sporen achterblijven.</li>
+      <li>Ontgrendelen met de camera vraagt om een willekeurige hoofdbeweging, dus een foto die plat voor de camera wordt gehouden of een stilstaand beeld op een scherm komt er niet doorheen. Het blijft toch een gemakscontrole en geen gecertificeerde bescherming: een gebogen of gevouwen foto, een video die de aanwijzingen volgt of een masker kan erdoor komen. Windows Hello is de sterkere keuze.</li>
       <li>Invullen in Windows-apps werkt niet met programma's die als beheerder draaien, zelfgetekende game-interfaces of ingebedde webweergaven die het niet kan verifiëren.</li>
-      <li>De kluis detecteert dat hij naar een oudere kopie is teruggezet. Als je synchronisatie gebruikt, onthouden je andere apparaten ook hoe nieuw je kluis was, dus het samen verwijderen van de kluis en het bijbehorende ankerbestand wordt bij de volgende synchronisatie opgemerkt (voorlopig Windows-pc's; de iPhone-, Mac- en Android-apps volgen). Zonder synchronisatie kan iemand die beide bestanden kan vervangen de controle nog steeds omzeilen.</li>
-      <li>Passkeys werken alleen in Chrome en Edge, en alleen voor de pagina zelf: een aanmelding binnen het frame van een andere site gebruikt het eigen passkey-venster van de browser. Als een site annuleert nadat je een nieuwe passkey hebt goedgekeurd, kan de passkey in je kluis blijven staan; verwijder hem dan in de app.</li>
+      <li>De kluis detecteert dat hij naar een oudere kopie is teruggezet. Als je synchronisatie gebruikt, onthouden je andere apparaten hoe nieuw je kluis was, dus een oudere kopie die op één apparaat wordt teruggezet, wordt bij de volgende synchronisatie gemeld, in elke app. Zonder synchronisatie bewaart een Windows-pc een tweede registratie buiten de kluismap, dus een oudere kluis die samen met zijn ankerbestand wordt teruggezet, wordt geweigerd; wie de instellingen van je Windows-account kan wijzigen, kan ook die registratie verwijderen. De apps voor iPhone, Mac en Android houden hun bestanden afgesloten voor andere apps, maar merken zonder synchronisatie niet dat er een oudere kopie op hun plaats is gezet.</li>
+      <li>Passkeys werken in Chrome, Edge en Firefox. Aanmelden met een passkey binnen het frame van een andere site werkt in Chrome en Edge als de omringende site dat toestaat; in Firefox, en wanneer je een passkey aanmaakt binnen het frame van een andere site, wordt het eigen passkey-venster van de browser gebruikt. Als een site annuleert nadat je een nieuwe passkey hebt goedgekeurd, verwijdert de app hem weer; als de app niet kan zien of de site hem heeft bewaard, blijft de passkey in je kluis staan en kun je hem in de app verwijderen.</li>
+      <li>De waarschuwing voor bijna identieke adressen is een hint, geen muur: het eigen script van een pagina kan haar omzeilen, bijvoorbeeld door een wachtwoord te sturen zonder een formulier te verzenden. Controleer het adres zelf.</li>
+      <li>Noodtoegang heeft geen server, dus alleen de apps dwingen de wachttijd en uw veto af. Wie genoeg delen heeft, kan uw back-up meteen herstellen, zonder te wachten. Kies houders die niet samen zouden optrekken en bewaar de delen apart.</li>
+      <li>Het dwangwachtwoord beschermt tegen gedwongen ontgrendelen van de app. Het beschermt niet tegen iemand die de bestanden op uw schijf onderzoekt, en een zorgvuldig iemand kan ontdekken dat er een tweede kluis is. Het is er op Windows, de Mac, iPhone en Android.</li>
     </ul>
 
     <h2>Een kwetsbaarheid melden</h2>
-    <p>Mail naar <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. Het <a href="../legal/vulnerability-disclosure.html">beleid voor het melden van kwetsbaarheden</a> legt uit wat binnen het bereik valt, hoe snel we reageren en hoe we onderzoekers vermelden.</p>
+    <p>Mail naar <a href="mailto:security@localgatekeys.app">security@localgatekeys.app</a>. Het <a href="../legal/vulnerability-disclosure">beleid voor het melden van kwetsbaarheden</a> legt uit wat binnen het bereik valt, hoe snel we reageren en hoe we onderzoekers vermelden.</p>
   </div>
 </div>
   </main>
@@ -139,43 +180,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>Een wachtwoordmanager voor Windows die je kluis op je eigen apparaten bewaart.</p>
-        <p class="quiet">Deze site plaatst geen cookies, gebruikt geen analytics en laadt niets van andere bedrijven.</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Een wachtwoordmanager voor Windows, Mac en iPhone die je kluis op je eigen apparaten bewaart.</p>
+        <p class="quiet">Deze website telt bezoeken met Cloudflare Web Analytics, dat geen cookies gebruikt. Ze gebruikt geen advertentietrackers en plaatst geen cookies.</p>
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
         <ul>
-          <li><a href="../nl/features.html">Functies</a></li>
-          <li><a href="../nl/pricing.html">Prijzen</a></li>
-          <li><a href="../nl/download.html">Downloaden</a></li>
-          <li><a href="../nl/licence.html">Je Pro-licentie</a></li>
+          <li><a href="../nl/features">Functies</a></li>
+          <li><a href="../nl/pricing">Prijzen</a></li>
+          <li><a href="../nl/download">Downloaden</a></li>
+          <li><a href="../nl/get-started">Aan de slag</a></li>
+          <li><a href="../nl/switch/">Overstappen</a></li>
+          <li><a href="../buy">Pro kopen</a></li>
+          <li><a href="../nl/licence">Je Pro-licentie</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Licentie terugvinden</a></li>
         </ul>
       </nav>
       <nav aria-label="Hulp">
         <h2>Hulp</h2>
         <ul>
-          <li><a href="../nl/help.html">Handleiding</a></li>
-          <li><a href="../nl/support.html">Support en veelgestelde vragen</a></li>
-          <li><a href="../nl/security.html">Beveiliging</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">Een kwetsbaarheid melden</a></li>
+          <li><a href="../nl/help">Handleiding</a></li>
+          <li><a href="../nl/support">Support en veelgestelde vragen</a></li>
+          <li><a href="../nl/security">Beveiliging</a></li>
+          <li><a href="../legal/vulnerability-disclosure">Een kwetsbaarheid melden</a></li>
         </ul>
       </nav>
       <nav aria-label="Juridisch">
         <h2>Juridisch</h2>
         <p class="quiet">Deze documenten zijn in het Engels, en de Engelse versie is van toepassing en bindend.</p>
         <ul>
-          <li><a href="../legal/eula.html">Licentieovereenkomst</a></li>
-          <li><a href="../legal/privacy.html">Privacybeleid</a></li>
-          <li><a href="../legal/terms-of-sale.html">Verkoopvoorwaarden</a></li>
-          <li><a href="../legal/refunds.html">Terugbetalingsbeleid</a></li>
+          <li><a href="../legal/eula">Licentieovereenkomst</a></li>
+          <li><a href="../legal/privacy">Privacybeleid</a></li>
+          <li><a href="../legal/terms-of-sale">Verkoopvoorwaarden</a></li>
+          <li><a href="../legal/refunds">Terugbetalingsbeleid</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows is een handelsmerk van de Microsoft-bedrijvengroep. Chrome is een handelsmerk van Google LLC.</p>
-      <p class="lang-switch" role="navigation" aria-label="Taal"><a href="../security.html" hreflang="en" lang="en">English</a> · <a href="../es/security.html" hreflang="es" lang="es">Español</a> · <a href="../it/security.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/security.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/security.html" hreflang="zh-Hans" lang="zh-Hans">简体中文</a> · <a href="../ja/security.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/security.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/security.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/security.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/security.html" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></p>
+      <p>Windows is een handelsmerk van de Microsoft-groep van bedrijven. Chrome is een handelsmerk van Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID en Safari zijn handelsmerken van Apple Inc., geregistreerd in de VS en andere landen.</p>
+      <nav class="lang-switch" aria-label="Taal"><ul><li><a href="../security" hreflang="en" lang="en">English</a></li><li><a href="../es/security" hreflang="es" lang="es">Español</a></li><li><a href="../it/security" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/security" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/security" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../ja/security" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/security" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/security" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/security" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/security" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../fr/security" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

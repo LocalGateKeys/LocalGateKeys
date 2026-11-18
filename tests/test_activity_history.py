@@ -31,7 +31,7 @@ def test_activity_is_allowlisted_content_free_and_retentive(session) -> None:
 
     events = service.list()
     assert len(events) == 3
-    assert all(set(event) == {"id", "event_type", "timestamp", "item_id", "result", "count"}
+    assert all(set(event) - {"prev_hash"} == {"id", "event_type", "timestamp", "item_id", "result", "count"}
                for event in events)
     assert all("LICENSE-SECRET" not in repr(event) for event in events)
     assert "item.update" not in session.path.read_text(encoding="utf-8")

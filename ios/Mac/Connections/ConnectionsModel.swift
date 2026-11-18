@@ -20,7 +20,7 @@ protocol ConnectionStateProviding {
 /// The live providers: Safari's extension manager and the credential identity store.
 @MainActor
 struct SystemConnectionState: ConnectionStateProviding {
-    static let safariExtensionID = "app.localgatekeys.app.safari"
+    nonisolated static let safariExtensionID = "app.localgatekeys.app.safari"
     /// System Settings › Passwords (macOS 15; macOS 14 shows AutoFill & Passwords under General).
     static let autoFillURL = URL(string: "x-apple.systempreferences:com.apple.Passwords-Settings.extension")!
 
@@ -32,22 +32,32 @@ struct SystemConnectionState: ConnectionStateProviding {
         }
     }
 
-    func safariExtensionEnabled() async -> Bool? {
-        await Self.bridge { done in
-            SFSafariExtensionManager.getStateOfSafariExtension(withIdentifier: Self.safariExtensionID) { @Sendable state, error in
-                done(error == nil ? state?.isEnabled : nil)
-            }
+    // The macOS 27 SDK marks this completion NS_SWIFT_UI_ACTOR, yet Safari calls it on an XPC queue, so a
+    // Swift closure there traps the main-actor check (crash opening Devices & connections, 2026-11-03).
+    // Calling through the runtime with a plain block keeps Swift from adding that check.
+    nonisolated static func readSafariState(_ done: @escaping @Sendable (Bool?) -> Void) {
+        let reply: @convention(block) (SFSafariExtensionState?, NSError?) -> Void = { state, error in
+            done(error == nil ? state?.isEnabled : nil)
         }
+        let selector = NSSelectorFromString("getStateOfSafariExtensionWithIdentifier:completionHandler:")
+        guard SFSafariExtensionManager.responds(to: selector) else { return done(nil) }
+        _ = (SFSafariExtensionManager.self as AnyObject).perform(selector, with: safariExtensionID as NSString, with: reply)
+    }
+
+    nonisolated static func showSafariPreferences(_ done: @escaping @Sendable (Bool) -> Void) {
+        SFSafariApplication.showPreferencesForExtension(withIdentifier: safariExtensionID) { error in
+            done(error == nil)
+        }
+    }
+
+    func safariExtensionEnabled() async -> Bool? {
+        await Self.bridge(Self.readSafariState)
     }
 
     func autoFillEnabled() async -> Bool { await ASCredentialIdentityStore.shared.state().isEnabled }
 
     func openSafariSettings() async -> Bool {
-        let ok: Bool = await Self.bridge { done in
-            SFSafariApplication.showPreferencesForExtension(withIdentifier: Self.safariExtensionID) { @Sendable error in
-                done(error == nil)
-            }
-        }
+        let ok: Bool = await Self.bridge(Self.showSafariPreferences)
         if !ok, let safari = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Safari") {
             NSWorkspace.shared.open(safari)
         }

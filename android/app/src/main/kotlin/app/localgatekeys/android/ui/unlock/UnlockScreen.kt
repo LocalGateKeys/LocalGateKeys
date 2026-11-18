@@ -39,8 +39,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.mutableStateOf
 import app.localgatekeys.android.R
 import app.localgatekeys.android.unlock.AppLockModel
+import app.localgatekeys.android.unlock.KeyFileRef
+import app.localgatekeys.android.unlock.OpenKeyFile
+import app.localgatekeys.core.crypto.FactorKind
 import app.localgatekeys.android.ui.theme.AuroraBackground
 import app.localgatekeys.android.ui.theme.LgkTheme
 
@@ -53,8 +60,20 @@ fun UnlockScreen(
     onPassword: (String) -> Unit = {},
     onRecover: (String, String) -> Unit = { _, _ -> },
     biometricShortcut: () -> Boolean = { false },
+    /** Task 9: a picked key file's name (no grant is persisted here: only after it worked); null: no picker here. */
+    describeKeyFile: ((uri: android.net.Uri) -> KeyFileRef)? = null,
 ) {
     val needsPassword by model.needsPassword.collectAsStateWithLifecycle()
+    val factorSpecs by model.factorSpecs.collectAsStateWithLifecycle()
+    val keyFile by model.keyFile.collectAsStateWithLifecycle()
+    val yubiKeyPrompt by model.yubiKeyPrompt.collectAsStateWithLifecycle()
+    // Follows Settings: with "Don't remember" the box is not offered and nothing is remembered.
+    val canRemember = model.remembersKeyFile()
+    var rememberKeyFile by rememberSaveable { mutableStateOf(canRemember) }
+    val picker = rememberLauncherForActivityResult(OpenKeyFile()) { uri ->
+        val describe = describeKeyFile
+        if (uri != null && describe != null) model.chooseKeyFile(describe(uri), rememberKeyFile && canRemember)
+    }
     val state by model.state.collectAsStateWithLifecycle()
     val errorMessage by model.errorMessage.collectAsStateWithLifecycle()
     val offersStartFresh by model.offersStartFresh.collectAsStateWithLifecycle()
@@ -72,6 +91,23 @@ fun UnlockScreen(
                     onPassword = onPassword,
                     onBiometric = onUnlock,
                     onRecover = onRecover,
+                    factorRows = if (factorSpecs.isEmpty()) null else {
+                        {
+                            FactorUnlockRows(
+                                needsKeyFile = factorSpecs.any { it.kind == FactorKind.KEYFILE },
+                                keyFile = keyFile,
+                                remember = rememberKeyFile,
+                                onRemember = if (canRemember) ({ rememberKeyFile = it }) else null,
+                                canPick = describeKeyFile != null && state != AppLockModel.State.UNLOCKING,
+                                onPick = {
+                                    model.willOpenLockedPicker()
+                                    picker.launch(arrayOf("*/*"))
+                                },
+                                yubiKeyPrompt = yubiKeyPrompt,
+                                onCancelYubiKey = { model.cancelYubiKey() },
+                            )
+                        }
+                    },
                 )
             }
         },
@@ -112,7 +148,17 @@ fun UnlockContent(
                     .shadow(16.dp, RoundedCornerShape(22.dp), ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f))
                     .testTag("brandMark"),
             )
-            Text("LocalGateKeys", color = colors.text, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("LocalGateKeys", color = colors.text, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                // The Windows unlock screen's tagline (unlock.tagline).
+                Text(
+                    stringResource(R.string.unlock_tagline),
+                    color = colors.secondaryText,
+                    fontSize = 17.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                )
+            }
             if (errorMessage != null) {
                 Text(
                     errorMessage,
@@ -162,5 +208,56 @@ fun UnlockContent(
             },
             dismissButton = { TextButton(onClick = { freshStep = 0 }) { Text(stringResource(R.string.common_cancel)) } },
         )
+    }
+}
+
+/**
+ * Task 9: under the app password field, the key file ("Key file: name" or "No key file chosen", Choose key file… and
+ * Remember this key file on this phone) and, while a YubiKey is awaited, what to do with it and Cancel.
+ */
+@Composable
+private fun FactorUnlockRows(
+    needsKeyFile: Boolean,
+    keyFile: KeyFileRef?,
+    remember: Boolean,
+    /** Null with "Don't remember" (no box). */
+    onRemember: ((Boolean) -> Unit)?,
+    canPick: Boolean,
+    onPick: () -> Unit,
+    yubiKeyPrompt: AppLockModel.YubiKeyPrompt?,
+    onCancelYubiKey: () -> Unit,
+) {
+    val colors = LgkTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (needsKeyFile) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (keyFile != null) stringResource(R.string.factors_prompt_keyfile, keyFile.name) else stringResource(R.string.factors_prompt_no_keyfile),
+                    color = colors.secondaryText,
+                    modifier = Modifier.weight(1f).testTag("unlock-keyfile-name"),
+                )
+                TextButton(onClick = onPick, enabled = canPick, modifier = Modifier.testTag("unlock-keyfile-choose")) {
+                    Text(stringResource(R.string.factors_prompt_choose), color = colors.accentText)
+                }
+            }
+            if (onRemember != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = remember, onCheckedChange = onRemember, modifier = Modifier.testTag("unlock-keyfile-remember"))
+                    Text(stringResource(R.string.factors_prompt_remember), color = colors.secondaryText)
+                }
+            }
+        }
+        if (yubiKeyPrompt != null) {
+            Text(
+                if (yubiKeyPrompt.again) stringResource(R.string.factors_yubikey_removed)
+                else stringResource(R.string.factors_prompt_yubikey, yubiKeyPrompt.slot),
+                color = colors.text,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().testTag("unlock-yubikey-prompt"),
+            )
+            TextButton(onClick = onCancelYubiKey, modifier = Modifier.fillMaxWidth().testTag("unlock-yubikey-cancel")) {
+                Text(stringResource(R.string.common_cancel), color = colors.accentText)
+            }
+        }
     }
 }

@@ -1,8 +1,12 @@
 """Scheduled encrypted backups and the optional mirror folder.
 
-A scheduled backup is a full encrypted ``.lgk`` (``export_full_backup``) made
-with the backup password the user keeps inside the encrypted vault payload.
-It therefore only runs while the vault is unlocked.  The schedule itself is a
+A scheduled backup is a full encrypted ``.lgk``, version 3 since 2026-11
+(``export_full_backup_to_key``): it is locked to the public backup key record
+kept inside the encrypted vault payload, so no password is needed to write it
+and none is stored (``docs/design/backup-public-key-2026-10-31.md``).  It
+still only runs while the vault is unlocked.  Older scheduled backups (full
+backup v2, made with the stored password) are never rewritten; the retention
+rule counts old and new files together by file name.  The schedule itself is a
 pure function of the clock, the settings and the last successful run, so a
 restart never repeats a backup and any number of missed slots catch up once.
 
@@ -24,7 +28,7 @@ import re
 import shutil
 import tempfile
 import zipfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -116,11 +120,14 @@ def read_last_success(directory: Path) -> datetime | None:
         return None
 
 
-def write_last_success(directory: Path, when: datetime) -> None:
-    """Persist the last successful run (a timestamp, never a secret)."""
+def write_last_success(directory: Path, when: datetime, *, sha256: str = "") -> None:
+    """Persist the last successful run and the published file's SHA-256 (never a secret)."""
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    _atomic_write(state_path(directory), json.dumps({"version": 1, "last_success": when.timestamp()}).encode())
+    state: dict[str, Any] = {"version": 1, "last_success": when.timestamp()}
+    if sha256:
+        state["last_sha256"] = sha256
+    _atomic_write(state_path(directory), json.dumps(state).encode())
 
 
 # --- filenames and retention ------------------------------------------------
@@ -158,10 +165,20 @@ def owned_backups(directory: Path, tag: str) -> list[Path]:
     return [row[2] for row in found]
 
 
-def prune(directory: Path, tag: str, keep: int, *, protect: Path | None = None) -> list[Path]:
-    """Delete this profile's scheduled backups beyond ``keep``; never ``protect``."""
+def prune(directory: Path, tag: str, keep: int, *, protect: Path | None = None,
+          protect_old: Iterable[str] | None = ()) -> list[Path]:
+    """Delete this profile's scheduled backups beyond ``keep``; never ``protect``.
+
+    Files are chosen by file name only (old-format and version 3 backups count together).  Names in
+    ``protect_old`` (owner decision Q3: the newest backup from before the public key) are never removed
+    and do not count against ``keep``.  ``protect_old=None`` means the protected names are unknown (the
+    device state could not be read): then no file that is not version 3 is removed (fail closed, review L5;
+    only its cleartext header is read).
+    """
     keep = max(1, int(keep))
     candidates = owned_backups(directory, tag)
+    unknown = protect_old is None
+    exempt = set() if unknown else {str(name).casefold() for name in protect_old}
     kept: list[Path] = []
     if protect is not None:
         kept.append(Path(protect))
@@ -169,9 +186,16 @@ def prune(directory: Path, tag: str, keep: int, *, protect: Path | None = None) 
     for path in candidates:
         if protect is not None and path.name == Path(protect).name:
             continue
+        if path.name.casefold() in exempt:
+            continue
         if len(kept) < keep:
             kept.append(path)
             continue
+        if unknown:
+            from .backup import is_version3_backup
+
+            if not is_version3_backup(path):
+                continue
         try:
             path.unlink()
             removed.append(path)
@@ -209,6 +233,7 @@ def write_scheduled_backup(
     keep: int,
     make_backup: Callable[[Path], Any],
     verify: Callable[[Path], Any],
+    protect_old: Iterable[str] | None = (),
 ) -> Path:
     """Write, verify, publish, then prune.  Failure leaves older files alone."""
     directory = Path(directory)
@@ -230,7 +255,7 @@ def write_scheduled_backup(
         raise ScheduleError("Could not write or verify the scheduled backup") from exc
     finally:
         temporary.unlink(missing_ok=True)
-    prune(directory, tag, keep, protect=destination)
+    prune(directory, tag, keep, protect=destination, protect_old=protect_old)
     return destination
 
 
@@ -264,8 +289,13 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def mirror_backup(source: Path, mirror_dir: Path | str, *, tag: str, keep: int) -> Path:
-    """Copy one finished scheduled backup into the mirror folder atomically."""
+def mirror_backup(source: Path, mirror_dir: Path | str, *, tag: str, keep: int,
+                  protect_old: Iterable[str] | None = (), expected_sha256: str = "") -> Path:
+    """Copy one finished scheduled backup into the mirror folder atomically.
+
+    The copy must match ``expected_sha256`` (the digest recorded as ``last_sha256`` when the backup was
+    published) when given, else the source file as it is now.
+    """
     source = Path(source)
     if not _pattern(tag).match(source.name):
         raise MirrorError("Only scheduled LocalGateKeys backups are mirrored")
@@ -294,7 +324,7 @@ def mirror_backup(source: Path, mirror_dir: Path | str, *, tag: str, keep: int) 
             shutil.copyfileobj(reader, handle, 1024 * 1024)
             handle.flush()
             os.fsync(handle.fileno())
-        if _sha256(temporary) != _sha256(source):
+        if _sha256(temporary) != (expected_sha256 or _sha256(source)):
             raise MirrorError("The mirror copy did not match the backup")
         os.replace(temporary, destination)
     except MirrorError:
@@ -304,7 +334,7 @@ def mirror_backup(source: Path, mirror_dir: Path | str, *, tag: str, keep: int) 
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-    prune(mirror, tag, keep, protect=destination)
+    prune(mirror, tag, keep, protect=destination, protect_old=protect_old)
     return destination
 
 
@@ -327,23 +357,28 @@ def run_scheduled_backup(
     verify: Callable[[Path], Any],
     mirror_dir: str = "",
     log: Callable[[str, BaseException], Any] | None = None,
+    protect_old: Iterable[str] | None = (),
 ) -> RunResult:
     """Make one scheduled backup, record it, then mirror it if configured.
 
     Raises ScheduleError when the local backup fails (nothing is recorded or
     deleted).  Mirror problems are logged and returned as a warning.
     """
+    protect_old = None if protect_old is None else tuple(protect_old)
     path = write_scheduled_backup(directory, tag=tag, when=when, keep=keep,
-                                  make_backup=make_backup, verify=verify)
+                                  make_backup=make_backup, verify=verify, protect_old=protect_old)
+    digest = ""
     try:
-        write_last_success(directory, when)
+        digest = _sha256(path)
+        write_last_success(directory, when, sha256=digest)
     except OSError as exc:
         if log is not None:
             log("scheduled-backup-state", exc)
     if not str(mirror_dir or "").strip():
         return RunResult(path)
     try:
-        return RunResult(path, mirror_backup(path, mirror_dir, tag=tag, keep=keep))
+        return RunResult(path, mirror_backup(path, mirror_dir, tag=tag, keep=keep, protect_old=protect_old,
+                                             expected_sha256=digest))
     except Exception as exc:  # noqa: BLE001 - a mirror problem never fails the local backup
         if log is not None:
             log("backup-mirror", exc)
@@ -351,20 +386,46 @@ def run_scheduled_backup(
         return RunResult(path, None, message)
 
 
-def full_backup_functions(*, profile_dir: Path, profile_name: str, backup_password: str
+def full_backup_functions(*, profile_dir: Path, profile_name: str, record: dict[str, Any],
+                          current_record: Callable[[], dict[str, Any] | None] | None = None,
+                          vault_filter: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
                           ) -> tuple[Callable[[Path], Any], Callable[[Path], Any]]:
-    """Return (make, verify) callables for an encrypted full profile backup."""
-    from .backup import export_full_backup, preflight_full_backup
+    """Return (make, verify) callables for a version 3 full backup locked to the public key ``record``.
+
+    ``vault_filter``: what the vault file becomes in the backup (``backup.without_share_records``).
+
+    ``verify`` is the design's section 9.1 check, which needs no password: the structure, the key wrap
+    (with the writer's ephemeral key, against the record as it is *now*: ``current_record()`` when
+    given, else ``record``) and a restore preflight dry run with the data key.  The writer's data key
+    and ephemeral key are wiped when ``verify`` ends, and also when ``make`` fails.
+    """
+    from .backup import BackupError, export_full_backup_to_key
+
+    held: dict[str, Any] = {}
 
     def make(path: Path) -> Any:
-        return export_full_backup(path, profile_dir=profile_dir, profile_name=profile_name,
-                                  backup_password=backup_password)
+        stale = held.pop("verifier", None)
+        if stale is not None:
+            stale.wipe()
+        result = export_full_backup_to_key(path, record=record, profile_dir=profile_dir,
+                                           profile_name=profile_name, vault_filter=vault_filter)
+        held["verifier"] = result["verifier"]
+        return result
 
     def verify(path: Path) -> Any:
-        probe = Path(tempfile.mkdtemp(prefix=".lgk-scheduled-probe-", dir=str(path.parent)))
-        try:
-            return preflight_full_backup(path, profile_dir=probe / "profile", backup_password=backup_password)
-        finally:
-            shutil.rmtree(probe, ignore_errors=True)
+        verifier = held.pop("verifier", None)
+        if verifier is None:
+            raise BackupError("The scheduled backup was not written by this run")
+        with verifier:
+            now = current_record() if current_record is not None else record
+            if now is None:
+                raise BackupError("The backup key was removed while the backup was written")
+            return verifier.verify(path, record=now)
 
+    def discard() -> None:
+        verifier = held.pop("verifier", None)
+        if verifier is not None:
+            verifier.wipe()
+
+    make.discard = discard  # type: ignore[attr-defined] - the run's finally wipes a verifier never reached
     return make, verify

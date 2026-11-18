@@ -386,7 +386,9 @@ class SafeWorkspaceController:
             for collection_id in summary.collection_ids:
                 counts[collection_id] = counts.get(collection_id, 0) + 1
         result = []
-        for row in session.collections.list():
+        from .travel import visible_collections
+
+        for row in visible_collections(session, session.collections.list()):
             result.append({
                 "id": str(row["id"]),
                 "name": str(row["name"]),

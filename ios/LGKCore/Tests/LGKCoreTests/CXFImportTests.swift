@@ -23,12 +23,13 @@ final class CXFImportTests: XCTestCase {
         XCTAssertEqual(f.username, "ada")
         XCTAssertEqual(f.password, "correct horse")
         XCTAssertEqual(f.notes, "recovery in drawer")
-        XCTAssertEqual(f.otpauth, "otpauth://totp/Example:ada?secret=JBSWY3DPEHPK3PXP&period=30&digits=6&algorithm=SHA1")
+        XCTAssertEqual(f.otpauth, "otpauth://totp/Example:ada?secret=JBSWY3DPEHPK3PXP&issuer=Example")
+        XCTAssertEqual(r.candidates[0].urls, ["https://mail.example.test/login", "https://example.test"])
     }
 
     func testPasskeyFields() throws {
         let r = try fixture()
-        guard case .passkey(let p) = r.candidates[2].kind else { return XCTFail("not a passkey") }
+        guard case .passkey(let p) = r.candidates[1].kind else { return XCTFail("not a passkey") }
         XCTAssertEqual(p.rpID, "pk.example.test")
         XCTAssertEqual(p.userName, "bob")
         XCTAssertEqual(p.userDisplayName, "Bob B")
@@ -41,7 +42,8 @@ final class CXFImportTests: XCTestCase {
     func testItemWithPasswordAndPasskeyGivesTwoCandidates() throws {
         let r = try fixture()
         XCTAssertEqual(r.candidates.count, 3)
-        guard case .login(let f) = r.candidates[1].kind else { return XCTFail("not a login") }
+        // In item order, an item's passkeys before its login (as on Windows and Android).
+        guard case .login(let f) = r.candidates[2].kind else { return XCTFail("not a login") }
         XCTAssertEqual(f.username, "bob")
         XCTAssertNil(f.otpauth)
         XCTAssertEqual(r.candidates[1].title, "Example Passkey Site")
@@ -82,14 +84,17 @@ final class CXFImportTests: XCTestCase {
         return f.otpauth
     }
 
-    func testInvalidTotpSecretDroppedButLoginKept() throws {
+    /// As on Windows: the unreadable secret is kept on the login; the import review moves it to a hidden field.
+    func testInvalidTotpSecretKeptForTheReview() throws {
         let r = try login(totp: ["secret": "!!!notbase32"])
-        XCTAssertEqual(r.candidates.count, 1); XCTAssertNil(otp(r)); XCTAssertEqual(r.unsupported, 1)
+        XCTAssertEqual(r.candidates.count, 1); XCTAssertEqual(otp(r), "otpauth://totp/u?secret=!!!NOTBASE32")
+        XCTAssertEqual(r.unsupported, 0)
     }
 
-    func testTotpDigitsOutOfRangeDropped() throws {
-        let r = try login(totp: ["secret": "JBSWY3DPEHPK3PXP", "digits": 12])
-        XCTAssertEqual(r.candidates.count, 1); XCTAssertNil(otp(r)); XCTAssertEqual(r.unsupported, 1)
+    /// As on Windows: digits outside 6...8 fall back to 6, and the code is kept.
+    func testTotpDigitsOutOfRangeFallBack() throws {
+        let r = try login(totp: ["secret": "JBSWY3DPEHPK3PXP", "digits": 12, "period": true])
+        XCTAssertEqual(otp(r), "otpauth://totp/u?secret=JBSWY3DPEHPK3PXP"); XCTAssertEqual(r.unsupported, 0)
     }
 
     func testTotpLabelPercentEncodedRoundTrips() throws {
@@ -123,6 +128,76 @@ final class CXFImportTests: XCTestCase {
         }
     }
 
+    // MARK: parity with Windows (tests/test_importer_cxf.py) and Android (CxfImportTest)
+
+    private func parse(_ items: [Any]) throws -> (candidates: [ImportCandidate], unsupported: Int) {
+        let root: [String: Any] = ["id": "QQ", "items": items]
+        return try CXFImport.candidates(fromAccountJSON: JSONSerialization.data(withJSONObject: root))
+    }
+
+    func testOrphanTotpBecomesLoginHoldingTheCode() throws {
+        let r = try parse([["id": "a", "title": "Codes", "scope": ["urls": ["https://c.test"]],
+                            "credentials": [["type": "totp", "secret": "JBSWY3DPEHPK3PXP"]]]])
+        XCTAssertEqual(r.unsupported, 0)
+        XCTAssertEqual(r.candidates.count, 1)
+        guard case .login(let f) = r.candidates[0].kind else { return XCTFail("not a login") }
+        XCTAssertEqual([f.username, f.password], ["", ""])
+        XCTAssertEqual(r.candidates[0].urls, ["https://c.test"])
+        XCTAssertTrue(try XCTUnwrap(f.otpauth).contains("secret=JBSWY3DPEHPK3PXP"))
+    }
+
+    func testOrphanNoteBecomesNote() throws {
+        let r = try parse([["id": "a", "title": "Memo", "credentials": [["type": "note", "content": ["value": "hello"]]]]])
+        XCTAssertEqual(r.candidates.map(\.kind), [.note(NoteFields(notes: "hello"))])
+        XCTAssertEqual(r.candidates.map(\.title), ["Memo"])
+    }
+
+    func testSecondBasicAuthIsSkipped() throws {
+        let r = try parse([["id": "a", "title": "Two", "scope": ["urls": ["https://two.test"]], "credentials": [
+            ["type": "basic-auth", "username": "a", "password": "p1"], ["type": "basic-auth", "username": "b", "password": "p2"]]]])
+        XCTAssertEqual(r.candidates.count, 1)
+        guard case .login(let f) = r.candidates[0].kind else { return XCTFail("not a login") }
+        XCTAssertEqual(f.username, "a")
+        XCTAssertEqual(r.unsupported, 1)
+    }
+
+    func testExtraTotpBecomesCodeOnlyLoginAndNotesJoin() throws {
+        let r = try parse([["id": "a", "title": "Many", "scope": ["urls": ["https://m.test", "https://n.test"]], "credentials": [
+            ["type": "basic-auth", "username": "u", "password": "p"],
+            ["type": "totp", "secret": "JBSWY3DPEHPK3PXP"], ["type": "totp", "secret": "GEZDGNBVGY3TQOJQ"],
+            ["type": "note", "content": "one"], ["type": "note", "content": ["value": "two"]]]]])
+        XCTAssertEqual(r.unsupported, 0)
+        XCTAssertEqual(r.candidates.count, 2)
+        guard case .login(let first) = r.candidates[0].kind, case .login(let extra) = r.candidates[1].kind else {
+            return XCTFail("not two logins")
+        }
+        XCTAssertEqual(first.notes, "one\n\ntwo")
+        XCTAssertEqual(first.otpauth, "otpauth://totp/u?secret=JBSWY3DPEHPK3PXP")
+        XCTAssertEqual([extra.username, extra.password, extra.notes], ["", "", ""])
+        XCTAssertEqual(extra.otpauth, "otpauth://totp/account?secret=GEZDGNBVGY3TQOJQ")
+        XCTAssertEqual(r.candidates[1].urls, ["https://m.test", "https://n.test"])
+    }
+
+    func testNoteBesideAPasskeyIsKept() throws {
+        let key = PasskeyKey.generate().pkcs8B64URL
+        let r = try parse([["id": "a", "title": "Site", "credentials": [
+            ["type": "passkey", "credentialId": "AQID", "rpId": "PK.Example.Test", "username": "u", "key": key],
+            ["type": "note", "content": "recovery codes"]]]])
+        XCTAssertEqual(r.unsupported, 0)
+        XCTAssertEqual(r.candidates.count, 2)
+        XCTAssertEqual(r.candidates[0].kind, .note(NoteFields(notes: "recovery codes")))
+        guard case .passkey(let p) = r.candidates[1].kind else { return XCTFail("not a passkey") }
+        XCTAssertEqual(p.rpID, "pk.example.test", "the relying party is casefolded, as on Windows and Android")
+        XCTAssertEqual(r.candidates[1].urls, ["https://pk.example.test"])
+    }
+
+    func testUnknownTypesCountedAndNonObjectItemsIgnored() throws {
+        let r = try parse([["id": "a", "title": "X", "credentials": [
+            ["type": "ssh-key", "privateKey": "x"], ["type": "wifi"], ["type": "ssh-key"], ["notype": 1]]], 7, "x"])
+        XCTAssertEqual(r.candidates.count, 0)
+        XCTAssertEqual(r.unsupported, 4)
+    }
+
     func testMalformedCountedNotCrash() throws {
         XCTAssertThrowsError(try CXFImport.candidates(fromAccountJSON: Data("nope".utf8)))
         let r = try CXFImport.candidates(fromAccountJSON: Data(#"{"items":[{"title":"A","credentials":[{"type":"passkey","key":5},{"type":"future"}]},7]}"#.utf8))
@@ -144,5 +219,13 @@ extension CXFImportTests {
         let items = try XCTUnwrap(o["items"] as? [[String: Any]])
         let creds = try XCTUnwrap(items[1]["credentials"] as? [[String: Any]])
         return try XCTUnwrap(creds.last?["key"] as? String)
+    }
+
+    /// docs/PENDING.md: a lone high surrogate escape (`\ud800`) in a CXF file imports with U+FFFD, not a refused file.
+    func testLoneHighSurrogateEscapeImportsWithReplacementCharacter() throws {
+        let json = #"{"items":[{"id":"a","title":"Memo \ud800 x","credentials":[{"type":"note","content":{"value":"a\ud800b \\ud800 \ud83d\ude00 \udc00"}}]}]}"#
+        let r = try CXFImporter.candidates(from: Data(json.utf8), options: ImportOptions())
+        XCTAssertEqual(r.candidates.map(\.title), ["Memo \u{FFFD} x"])
+        XCTAssertEqual(r.candidates.map(\.kind), [.note(NoteFields(notes: "a\u{FFFD}b \\ud800 \u{1F600} \u{FFFD}"))])
     }
 }

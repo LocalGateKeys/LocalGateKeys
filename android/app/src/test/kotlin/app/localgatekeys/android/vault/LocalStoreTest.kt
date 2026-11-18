@@ -106,14 +106,15 @@ class LocalStoreTest {
         val hints = AppSettings(MemoryStore())
         val store = open(hints)
         val records = LinkedHashMap<String, JsonValue>()
-        for (i in 0 until 3) records["n$i"] = note(i)
+        val last = app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS - 1
+        for (i in 0 until last) records["n$i"] = note(i)
         store.commit(StoreChange(0, HashMap(records), emptyMap(), null))
         assertNull("room left", hints.planFullRevision)
-        records["n3"] = note(3)
+        records["n$last"] = note(last)
         store.commit(StoreChange(1, HashMap(records), emptyMap(), null))
         assertEquals(2L, hints.planFullRevision)
         assertEquals("readable before unlock (plain CURRENT)", 2L, LocalStore.committedRevision(dir))
-        records.remove("n3")
+        records.remove("n$last")
         store.commit(StoreChange(2, HashMap(records), emptyMap(), null))
         assertNull(hints.planFullRevision)
         assertNull(LocalStore.committedRevision(File(dir, "missing")))
@@ -215,6 +216,32 @@ class LocalStoreTest {
         }
     }
 
+    // Phone Wi-Fi host mode (2026-11-13): the devices paired with this phone, stored only when there are some.
+    @Test fun lan_peers_round_trip_and_are_omitted_when_none() {
+        val plain = sampleChange(0).sync!!
+        assertFalse("lan_peers" in (LocalStore.encodeSync(plain) as JsonValue.Obj).fields)
+        val peer = app.localgatekeys.core.lan.LanPeer(
+            "d2222222-0000-4000-8000-00000000000e", plain.groupId, "Desk", null, ByteArray(32) { 5 }, ByteArray(32) { 6 },
+            pairedAt = 1_700_000_000, hello = 3,
+        )
+        val gone = app.localgatekeys.core.lan.LanPeer(
+            "d3333333-0000-4000-8000-00000000000f", plain.groupId, null, null, ByteArray(32) { 7 }, ByteArray(32) { 8 }, revoked = true,
+        )
+        val state = plain.copy(lanPeers = listOf(peer, gone))
+        val store = open()
+        val base = sampleChange(0)
+        store.commit(StoreChange(0, base.records, base.meta, state))
+        val read = open().load().sync!!
+        assertEquals(state, read)
+        assertEquals(listOf(false, true), read.lanPeers.map { it.revoked })
+        assertTrue(read.lanPeers[0].sealed)
+        assertEquals(null, read.lanPeers[0].endpoint)
+        val json = (LocalStore.encodeSync(state) as JsonValue.Obj).fields
+        for (bad in listOf(JsonValue.Str("x"), JsonValue.Arr(listOf(JsonValue.Int(1))), JsonValue.Arr(listOf(peer.json, peer.json)))) {
+            assertEquals(LocalStoreException.Kind.CORRUPT, kind { LocalStore.decodeSync(JsonValue.Obj(json + ("lan_peers" to bad))) })
+        }
+    }
+
     @Test fun a_commit_keeps_the_signers() {
         val store = open()
         val base = sampleChange(0)
@@ -227,6 +254,49 @@ class LocalStoreTest {
         assertEquals(2L, again.revision)
         assertEquals(signers, again.sync!!.viewSigners)
         assertTrue(again.records.containsKey("n9"))
+    }
+
+    // Share groups (sub-plan 07): sealed in the state blob, kept by other commits, replaced only on purpose.
+    @Test fun share_groups_are_kept_by_other_commits_survive_a_reopen_and_stay_sealed() {
+        val store = open()
+        val shareSecret = "share-group-key-c2VjcmV0"
+        val shares = obj("5b0c7d3e-9a41-4f6b-8c2d-3e1a7f905b64" to obj("state" to obj("key" to s(shareSecret))))
+        val base = sampleChange(0)
+        store.commit(StoreChange(0, base.records, base.meta, base.sync, StoreChange.Shares.Replace(shares)))
+        assertEquals(shares, open().load().shares)
+        // An ordinary commit (an edit) keeps them.
+        val snap = store.load()
+        store.commit(StoreChange(snap.revision, snap.records + ("n9" to note(9)), snap.meta, snap.sync))
+        assertEquals(shares, open().load().shares)
+        for (gen in gens()) {
+            for (name in File(dir, gen).list()!!) {
+                assertFalse(name, String(File(File(dir, gen), name).readBytes(), Charsets.ISO_8859_1).contains(shareSecret))
+            }
+        }
+        // Replacing with none removes them; a store without shares reads as before.
+        store.commit(StoreChange(2, snap.records, snap.meta, snap.sync, StoreChange.Shares.Replace(null)))
+        assertNull(open().load().shares)
+        store.commit(StoreChange(3, snap.records, snap.meta, snap.sync))
+        assertNull(open().load().shares)
+    }
+
+    // Collections migration marker (sub-plan 07): set once by the migration commit, kept by every other commit.
+    @Test fun the_collections_migrated_marker_is_set_once_and_kept_by_later_commits() {
+        val store = open()
+        store.commit(sampleChange(0))
+        assertFalse(open().load().collectionsMigrated)
+        val s1 = store.load()
+        store.commit(StoreChange(s1.revision, s1.records, s1.meta, s1.sync, collectionsMigrated = true))
+        assertTrue(open().load().collectionsMigrated)
+        // An ordinary commit (null) keeps it, also after a reopen.
+        val s2 = store.load()
+        store.commit(StoreChange(s2.revision, s2.records + ("n9" to note(9)), s2.meta, s2.sync))
+        assertTrue(open().load().collectionsMigrated)
+        assertTrue(store.load().collectionsMigrated)
+        // A store that never migrated writes no marker at all.
+        val other = open(d = File(tmp.root, "Other"))
+        other.commit(sampleChange(0))
+        assertFalse(other.load().collectionsMigrated)
     }
 
     // test_files_are_encrypted_and_tamper_detected
@@ -735,7 +805,7 @@ class LocalStoreTest {
             }
         }
         val store = open(AppSettings(kv))
-        store.commit(StoreChange(0, (0 until 4).associate { "n$it" to note(it) }, emptyMap(), null)) // full: hint written
+        store.commit(StoreChange(0, (0 until app.localgatekeys.android.pro.ItemLimit.FREE_ITEMS).associate { "n$it" to note(it) }, emptyMap(), null)) // full: hint written
         assertNull(inner?.toString(), inner)
         assertEquals(2L, other.load().revision)
     }

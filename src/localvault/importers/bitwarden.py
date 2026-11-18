@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import uuid
 from collections.abc import Mapping
 from pathlib import Path
@@ -138,6 +139,8 @@ def decrypt_enc_string(value: Any, enc_key: bytes, mac_key: bytes) -> bytes:
     expected = hmac.new(mac_key, iv + ciphertext, hashlib.sha256).digest()
     if not hmac.compare_digest(expected, mac):
         raise BitwardenPasswordError(t("bitwarden.wrongPasswordOrCorruptedExport"))
+    # Semgrep: Bitwarden's export format is AES-CBC with HMAC-SHA256, verified just above.
+    # nosemgrep
     decryptor = Cipher(algorithms.AES(enc_key), modes.CBC(iv)).decryptor()
     padded = decryptor.update(ciphertext) + decryptor.finalize()
     unpadder = padding.PKCS7(128).unpadder()
@@ -151,6 +154,8 @@ def encrypt_enc_string(plaintext: bytes, enc_key: bytes, mac_key: bytes) -> str:
     iv = os.urandom(16)
     padder = padding.PKCS7(128).padder()
     data = padder.update(plaintext) + padder.finalize()
+    # Semgrep: Bitwarden's export format is AES-CBC; the HMAC-SHA256 is added just below.
+    # nosemgrep
     encryptor = Cipher(algorithms.AES(enc_key), modes.CBC(iv)).encryptor()
     ciphertext = encryptor.update(data) + encryptor.finalize()
     mac = hmac.new(mac_key, iv + ciphertext, hashlib.sha256).digest()
@@ -352,11 +357,24 @@ BITWARDEN_CSV_COLUMNS = ("folder", "favorite", "type", "name", "notes", "fields"
 
 
 def _parse_fields_column(record: ImportedRecord, text: str) -> None:
+    """``name: value`` lines; a line that starts with a space, or has no colon, continues the previous value
+    (LocalGateKeys writes multi-line values that way, so recovery codes survive a CSV round trip)."""
+    fields: list[list[str]] = []
     for line in text.splitlines():
+        indented = line[:1] in (" ", "\t")
+        if fields and (indented or ":" not in line):
+            fields[-1][1] += "\n" + (line[1:] if indented else line)
+            continue
         if ":" not in line:
             continue
         name, value = line.split(":", 1)
-        add_custom_field(record, name.strip(), value.strip())
+        fields.append([name.strip(), value.strip()])
+    for name, value in fields:
+        add_custom_field(record, name, value)
+
+
+# Split ``login_uri`` only on a comma that starts a new URL, so a comma inside a path or query stays.
+_URI_SPLIT = re.compile(r",(?=\s*[A-Za-z][A-Za-z0-9+.-]*://)")
 
 
 def load_bitwarden_csv(source: Path | str | bytes) -> ImportResult:
@@ -368,7 +386,7 @@ def load_bitwarden_csv(source: Path | str | bytes) -> ImportResult:
         kind = pick(row, "type").casefold() or "login"
         name = pick(row, "name")
         notes = pick(row, "notes")
-        uris = [uri.strip() for uri in pick(row, "login_uri").split(",") if uri.strip()]
+        uris = [uri.strip() for uri in _URI_SPLIT.split(pick(row, "login_uri")) if uri.strip()]
         base = {"title": name, "notes": notes, "folder": pick(row, "folder"), "favorite": truthy(pick(row, "favorite")),
                 "source_row": number}
         if kind == "note":

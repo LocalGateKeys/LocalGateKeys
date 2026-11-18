@@ -27,8 +27,8 @@ object Keyring {
     /** The format every write produces. */
     const val FORMAT: Long = 2
 
-    /** The formats a keyring may have to be read (1: members without signing keys). */
-    val READ_FORMATS: Set<Long> = setOf(1L, 2L)
+    /** The formats a keyring may have to be read (1: members without signing keys; 3: a share v2 keyring). */
+    val READ_FORMATS: Set<Long> = setOf(1L, 2L, 3L)
     const val KDF_NAME = "argon2id"
     const val KDF_MEMORY_KIB: Long = 131072
     const val KDF_ITERATIONS: Long = 4
@@ -49,8 +49,8 @@ object Keyring {
     private fun ascii(s: String): ByteArray = s.toByteArray(Charsets.UTF_8)
 
     private val PASSWORD_AAD = ascii("lgk-keyring-password-wrap-v1|")
-    private val DEVICE_AAD = ascii("lgk-keyring-device-wrap-v1|")
-    private val DEVICE_INFO = ascii("localgatekeys|sync|device-wrap|v1|")
+    internal val DEVICE_AAD = ascii("lgk-keyring-device-wrap-v1|")
+    internal val DEVICE_INFO = ascii("localgatekeys|sync|device-wrap|v1|")
     private val MAC_INFO = ascii("localgatekeys|sync|keyring-mac|v1|")
     internal val NAME_AAD = ascii("lgk-keyring-member-name-v1|")
     internal val NAME_INFO = ascii("localgatekeys|sync|member-name|v1|")
@@ -284,8 +284,18 @@ object Keyring {
         return groupKey(gid, epoch, plain)
     }
 
-    /** (eph, nonce, ct) wrap of [gk] to [exchangePublic]. Draws eph (32) then nonce (12). */
-    internal fun wrapDevice(gk: GroupKey, deviceId: String, exchangePublic: ByteArray, random: RandomSource): JsonValue {
+    /**
+     * (eph, nonce, ct) wrap of [gk] to [exchangePublic]. Draws eph (32) then nonce (12). [info] and [aadLabel]: the
+     * device wrap of G by default; the content wrap of C (share v2) passes its own labels.
+     */
+    internal fun wrapDevice(
+        gk: GroupKey,
+        deviceId: String,
+        exchangePublic: ByteArray,
+        random: RandomSource,
+        info: ByteArray = DEVICE_INFO,
+        aadLabel: ByteArray = DEVICE_AAD,
+    ): JsonValue {
         val ephRaw = draw(random, 32)
         val ephPublic: ByteArray
         val shared: ByteArray
@@ -297,7 +307,9 @@ object Keyring {
         }
         if (shared.none { it.toInt() != 0 }) throw KeyringException("bad-member-key", "exchange key unusable")
         val nonce = draw(random, NONCE_LEN)
-        val ct = CryptoBox.sealGcm(deviceKey(shared, gk.groupId, deviceId), nonce, gk.key, deviceAad(gk.groupId, gk.epoch, deviceId))
+        val key = CryptoBox.hkdf(shared, ascii(gk.groupId), info + ascii(deviceId), KEY_LEN)
+        val aad = aadLabel + ascii(gk.groupId) + BAR + epochBytes(gk.epoch) + BAR + ascii(deviceId)
+        val ct = CryptoBox.sealGcm(key, nonce, gk.key, aad)
         return JsonValue.Obj(
             mapOf(
                 "eph" to JsonValue.Str(Base64Std.encode(ephPublic)),
@@ -362,6 +374,37 @@ object Keyring {
         random: RandomSource,
         now: UnixClock,
     ): JsonValue = KeyringJoin.attach(ring, identity, name, stored, random, now) { passwordKey }
+
+    /**
+     * New group key, epoch + 1, new salt and a NEW sync password; drops the [remove] devices (desktop `rotate`).
+     * [strong]: the sync password rule (see [isStrongSyncPassword]); `weak-password` when it says no.
+     */
+    fun rotate(
+        ring: JsonValue,
+        trusted: GroupKey,
+        identity: DeviceIdentity,
+        newPassword: String,
+        remove: Collection<String>,
+        random: RandomSource,
+        strong: (String) -> Boolean,
+    ): Pair<JsonValue, GroupKey> =
+        KeyringRotate.rotate(ring, trusted, identity, newPassword, remove, random, strong, KeyringRotate.productionKdf)
+
+    /** [rotate] with the Argon2id step injected (tests pass the vector's outputs). */
+    internal fun rotate(
+        ring: JsonValue,
+        trusted: GroupKey,
+        identity: DeviceIdentity,
+        newPassword: String,
+        remove: Collection<String>,
+        random: RandomSource,
+        strong: (String) -> Boolean,
+        derive: KeyringRotate.KeyDerivation,
+    ): Pair<JsonValue, GroupKey> = KeyringRotate.rotate(ring, trusted, identity, newPassword, remove, random, strong, derive)
+
+    /** The desktop sync password rule: at least 12 characters and a strength score of 3 ("Strong") or more. */
+    fun isStrongSyncPassword(password: String, strength: app.localgatekeys.core.password.StrengthEstimator): Boolean =
+        KeyringRotate.isStrong(password, strength)
 
     /** Decrypt every member's name; null for a name that cannot be read. Call only on an already accepted keyring. */
     fun memberNames(ring: JsonValue, key: GroupKey): Map<String, String?> = MemberNames.memberNames(ring, key)

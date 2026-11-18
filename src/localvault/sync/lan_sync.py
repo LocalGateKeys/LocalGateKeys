@@ -19,8 +19,11 @@ Enrollment (spec "LAN enrollment")
 3. The inviter verifies it inside a ``PairingSession`` (one success consumes the
    offer, at most 5 failures counted only for requests that decrypt, 120 s TTL;
    a device id already in ``lan_peers``, the keyring members or the inviter's own
-   is refused as a failure; a full peer list is refused before anything is
-   consumed; a used or expired offer gets a clear refusal).  Then it asks: the
+   is refused as a failure, except a listed, unrevoked ``lan_peers`` device whose
+   request carries exactly its pinned signing and exchange keys: it left and pairs
+   again under its kept id, and on Accept its entry is replaced, not added; a full
+   peer list is refused without consuming anything, except for such a device;
+   a used or expired offer gets a clear refusal).  Then it asks: the
    screen shows the new device's name and the 6-digit verification code
    (``pairing.verification_code``) that the new device shows too, with Accept and
    Decline (``LanResponder.pending``, ``LanResponder.decide``).  Only Accept pins
@@ -30,13 +33,15 @@ Enrollment (spec "LAN enrollment")
    ``declined`` and the offer stays used up.  The new device waits up to
    ``ENROLL_REPLY_SECONDS`` for the answer.  The wait holds no sync gate.  After
    Accept the screen still offers Undo, which removes the device again
-   (``remove_lan_peer``, or a rotation in a cloud-folder group).  A version-1
+   (``remove_lan_peer``: the entry stays listed as revoked, so its id stays
+   reserved; or a rotation in a cloud-folder group).  A version-1
    request (an app without the Accept step) gets ``update-needed``.
    Frames for no armed offer, an expired one or another offer id are answered by
    :meth:`LanResponder.enroll_prefilter` without the sync gate.
 4. The new device verifies the reply against the QR-pinned inviter key, checks it
    pinned its own identity, and stores the group with its identity, install id
-   and the inviter as its LAN peer.
+   and the inviter as its LAN peer.  Its identity is new, or the one it kept when it
+   left this same group (with its counters continued; see :func:`enroll_from_qr`).
 
 There is no other key delivery: a device removed or rotated out never gets a
 newer key over LAN.  LAN-only peers cannot follow a rotation and re-pair; until
@@ -78,6 +83,17 @@ get ``too-large``.
   older app answers ``bad-message``, which removes it).  Documents are only sent in views to peers in
   ``attachment_peers``.  A responder cannot fetch: a document it receives waits
   (``attachment-missing``) until it syncs as initiator, or gets the file through the folder.
+
+* ``{"type":"features","features":[...]}`` (personal collections, sub-plan 07 Task 4): after a view
+  exchange the initiator sends its features (``FEATURES``, today ``["collections"]``) to a peer not yet
+  in ``collection_peers``; a responder of this version records the initiator's answer the same way and
+  replies with its own.  An older app answers ``bad-message`` (not capable).  Personal collection
+  states are put into views (and merged) only with peers listed in ``collection_peers``.
+* ``{"type":"heir-hello"}`` (emergency access, sub-plan 08): after the view exchange an initiator sends
+  it once to a peer not in ``heir_peers``.  A responder of this version records the initiator in
+  ``heir_peers`` and answers ``{"type":"heir-hello"}``, which records it on the initiator's side; an
+  older app or a phone answers ``bad-message`` (nothing is reported).  The emergency access plan
+  (``heir:plan``) is only sent in views to peers in ``heir_peers``.
 
 Format gating (2026-10-29): the initiator sends its view as format 2 (the
 generation and witness inline, no witness message) only to a peer listed in
@@ -138,6 +154,7 @@ from .pairing import (
     MAX_ENROLL_BYTES,
     PAIRING_TTL_SECONDS,
     DeviceIdentity,
+    EnrollmentFull,
     EnrollmentOutdated,
     EnrollmentRefused,
     EnrollmentRequest,
@@ -150,8 +167,10 @@ from .pairing import (
     build_enrollment_request,
     create_pairing_offer,
     enrollment_refusal,
+    enrollment_reveal,
     enrollment_transcript,
     open_enrollment_reply,
+    open_enrollment_reveal,
     parse_qr_payload,
     seal_enrollment_reply,
     verification_code,
@@ -160,6 +179,7 @@ from .runner import RunReport, SyncIssue, run_merge
 from .state import SyncState, SyncStateError
 from .transport import (
     MAX_MESSAGE_BYTES,
+    TRANSPORT_VERSION,
     LANEndpoint,
     PeerNotAnswering,
     PeerVersionMismatch,
@@ -172,16 +192,19 @@ from .vault_bridge import (
     BridgeError,
     SyncGroupState,
     _check_lease,
+    drop_kept_identity,
+    kept_identity_for,
     licenses_in_views,
     load_sync_state,
     document_refs,
     local_view,
     publishable,
+    save_rejoined_state,
     save_sync_state,
 )
 from .witness import Observation, observation, own_witness, prune, session_generation
 from .witness import check as witness_check
-from . import witness_memory
+from . import seen, witness_memory
 
 #: Raw view bytes per message when sending.
 CHUNK_BYTES = 512 * 1024
@@ -211,7 +234,12 @@ _FIELDS = {
     "witness": frozenset({"type", "group_id", "epoch", "view"}),
     "blob-get": frozenset({"type", "blob", "seq"}),
     "blob": frozenset({"type", "blob", "seq", "total", "size", "data"}),
+    "features": frozenset({"type", "features"}),
+    "heir-hello": frozenset({"type"}),
 }
+#: What this version tells a peer in a ``features`` message.
+FEATURES = ("collections",)
+MAX_FEATURES = 16
 #: Error reasons of the attachment messages (kept apart from ``ERROR_REASONS``, which the vectors pin).
 ATTACHMENT_ERROR_REASONS = ("no-blob",)
 #: Blob id of the capability probe (never a real blob).
@@ -240,6 +268,9 @@ _REPLY_ISSUES = {
 USED_OR_EXPIRED_MESSAGE = "This pairing code was used up or expired. Show a new code."
 DECLINED_MESSAGE = ("The other device declined, or nobody chose Accept there in time. "
                     "Show a new code and choose Accept when the codes match.")
+#: Rule 5 (keep the device id on rejoin): an older host refused this device's earlier id.
+PAIR_AGAIN_MESSAGE = ("The other device could not pair this device under its earlier name. "
+                      "Show a new code there and scan it again.")
 
 
 class LanSyncError(ValueError):
@@ -321,6 +352,11 @@ def parse_message(raw: bytes) -> dict[str, Any]:
             attachment_sync.parse_message(msg)
         except attachment_sync.AttachmentSyncError as exc:
             raise LanSyncError("too-large" if exc.reason == "too-large" else "bad-message") from None
+    if kind == "features":
+        feats = msg["features"]
+        if (not isinstance(feats, list) or len(feats) > MAX_FEATURES
+                or not all(isinstance(f, str) and 1 <= len(f) <= 32 for f in feats)):
+            raise LanSyncError("bad-message")
     if kind == "witness":
         if not isinstance(msg["group_id"], str) or not _is_int(msg["epoch"], 1) or not isinstance(msg["view"], str):
             raise LanSyncError("bad-message")
@@ -357,10 +393,12 @@ def _group_key(state: SyncGroupState) -> GroupKey:
 
 
 def peer_to_entry(peer: PairedDevice, *, endpoint: LANEndpoint | tuple[str, int] | None = None,
-                  name: str | None = None) -> dict[str, Any]:
+                  name: str | None = None, sealed: bool = False) -> dict[str, Any]:
     """The ``SyncGroupState.lan_peers`` entry for *peer* (``endpoint`` None: the peer always initiates).
 
     *name* is the name the device gave when it enrolled (display only, not authenticated by a key).
+    *sealed* stores ``"hello": 3``: the peer speaks the sealed hello, so its clear-text hello is
+    refused (the downgrade pin, ``SyncState.sealed_peers``).
     """
     if isinstance(endpoint, tuple):
         endpoint = LANEndpoint(*endpoint)
@@ -368,11 +406,19 @@ def peer_to_entry(peer: PairedDevice, *, endpoint: LANEndpoint | tuple[str, int]
     entry = {**peer.to_dict(), "endpoint": where}
     if name is not None:
         entry["name"] = name
+    if sealed:
+        entry["hello"] = TRANSPORT_VERSION
     return entry
 
 
 #: Fields of a ``lan_peers`` entry that are not part of the ``PairedDevice`` record.
-_ENTRY_EXTRAS = frozenset({"endpoint", "name"})
+_ENTRY_EXTRAS = frozenset({"endpoint", "name", "hello"})
+
+
+def _entry_sealed(entry: Mapping[str, Any]) -> bool:
+    """The entry pins its peer to the sealed hello (``"hello"`` is an integer of at least 3)."""
+    hello = entry.get("hello")
+    return type(hello) is int and hello >= TRANSPORT_VERSION
 
 
 def peer_from_entry(entry: Mapping[str, Any]) -> PairedDevice:
@@ -487,22 +533,29 @@ def refind_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, ins
 
 def remove_lan_peer(session: Any, lease: Any, device_id: str, *, install_id: str,
                     transport: SyncTransport | None = None) -> bool:
-    """Forget a LAN peer (and revoke it on a running *transport*); returns whether it was listed.
+    """Revoke a LAN peer (at once on a running *transport*); returns whether it was listed and not revoked yet.
 
+    The entry stays listed with ``"revoked": true`` (keys, name and address kept, like the iPhone,
+    Mac and Android ``LanPeers.revoking``), so its id stays reserved after a restart: a hello of
+    it is refused and it can never pair again under that id (only under a new one).  It is not
+    shown, dialled or counted as a device, but still counts against ``MAX_LAN_PEERS``.
     The peer keeps the key it already has; rotate the group (cloud folder) to cut it off.
     Removing a listed peer sets ``SyncGroupState.lan_removed`` (until the next key
     change), so a cloud folder added later gets a fresh key instead of this one
     (``folder_transport.add_folder_to_group``, audit M9).
     """
     state = _joined_state(session, lease, _check_install(install_id))
-    kept = tuple(p for p in state.lan_peers if p.get("device_id") != device_id)
     tstate = getattr(transport, "state", None)
     if isinstance(tstate, SyncState) and isinstance(device_id, str) and device_id:
         tstate.revoke_peer(device_id)
-    if len(kept) == len(state.lan_peers):
-        return False
+    entry = peer_entry(state, device_id)
+    if entry is None or entry.get("revoked") is True:
+        return False  # not listed, or already revoked (lan_removed is not set again after a key change)
+    entry["revoked"] = True
+    peers = tuple(entry if p.get("device_id") == device_id else p for p in state.lan_peers)
     _check_lease(session, lease)
-    save_sync_state(session, dataclasses.replace(state, lan_peers=kept, lan_removed=True))
+    save_sync_state(session, dataclasses.replace(state, lan_peers=peers, lan_removed=True,
+                                                 heir_peers=tuple(p for p in state.heir_peers if p != device_id)))
     return True
 
 
@@ -524,12 +577,20 @@ def transport_state(state: SyncGroupState, session: Any, lease: Any, *,
     *gate* (the sync service's ``SyncGate.hold``) is entered only for a block
     refill, the one step that reads and writes the vault; counters handed out
     from memory do not wait for it.  Order: gate, then this source's own lock.
+
+    Peers whose entry carries ``"hello": 3`` start pinned to the sealed hello
+    (``SyncState.sealed_peers``); a peer pinned later is saved the same way,
+    inside *gate* (``SyncState.on_sealed``).
     """
-    result = SyncState(identity=state.identity(), group_id=state.group_id)
+    result = SyncState(identity=state.identity(), group_id=state.group_id,
+                       sealed_peers={e["device_id"] for e in state.lan_peers
+                                     if _entry_sealed(e) and isinstance(e.get("device_id"), str)})
     result.enable()
     for entry in state.lan_peers:
         peer = peer_from_entry(entry)
-        if peer.group_id == state.group_id and not peer.revoked:
+        if peer.revoked:
+            result.revoke_peer(peer.device_id)  # removed (``remove_lan_peer``): refused after a restart too
+        elif peer.group_id == state.group_id:
             result.trust_peer(peer)
     now_us = clock or _clock_us
     device_id = state.device_id
@@ -562,7 +623,20 @@ def transport_state(state: SyncGroupState, session: Any, lease: Any, *,
             block["next"], block["last"] = start, last
             return take()
 
+    def save_sealed(peer_id: str) -> None:
+        with gate() if gate is not None else contextlib.nullcontext():
+            _check_lease(session, lease)
+            current = load_sync_state(session)
+            if current is None or current.device_id != device_id:
+                raise SyncStateError("The sync group of this vault changed")
+            entry = peer_entry(current, peer_id)
+            if entry is None or _entry_sealed(entry):
+                return
+            entry["hello"] = TRANSPORT_VERSION
+            save_sync_state(session, _with_peer(current, entry))
+
     result.counter_source = next_hello
+    result.on_sealed = save_sealed
     return result
 
 
@@ -609,13 +683,22 @@ def enroll_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, ins
 
     *endpoint* is this device's own listening endpoint, if it has one (a phone
     passes None and always initiates).  *name* is shown on the inviting device's
-    Accept prompt; *on_code* receives the 6-digit verification code before the
-    request is sent (show it: the inviting device shows the same code next to
-    Accept).  *timeout* defaults to ``ENROLL_REPLY_SECONDS``.  Raises
+    Accept prompt; *on_code* receives the 6-digit verification code (show it: the
+    inviting device shows the same code next to Accept).  For a version-2 offer
+    the code is known only once the inviting device has sent the reveal that
+    matches the QR's commitment (after this request verified there); a reply
+    without that reveal is refused.  For a version-1 offer (an older inviting
+    device) it is called before the request is sent.  *timeout* defaults to ``ENROLL_REPLY_SECONDS``.  Raises
     ``LanSyncError`` with reason ``already-joined``, ``bad-offer``,
     ``unreachable``, ``offer-used-or-expired`` (message
     ``USED_OR_EXPIRED_MESSAGE``), ``too-many-peers``, ``declined``,
-    ``update-needed`` or ``refused``.
+    ``update-needed``, ``refused`` or ``pair-again``.
+
+    A vault that left the offer's group on this installation pairs with its kept identity
+    (``vault_bridge.KeptIdentity``) and continues its counters; the kept identity is dropped once
+    the pairing succeeds, or when the inviting device answers with the plain refusal (a released
+    build refuses every id it knows): ``pair-again`` (``PAIR_AGAIN_MESSAGE``), and the next pairing
+    uses a new identity.
     """
     _check_install(install_id)
     _check_lease(session, lease)
@@ -627,7 +710,12 @@ def enroll_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, ins
     except PairingError as exc:
         raise LanSyncError("bad-offer", str(exc)) from exc
     when = time.time() if now is None else now
-    identity = DeviceIdentity.generate()
+    # Pairing again into the group this vault left reuses its kept identity (rule 3), so the other
+    # device keeps one entry for it; any other group gets a new identity and leaves the kept one alone.
+    kept = kept_identity_for(session, offer.group_id, install_id)
+    if kept is not None and kept.device_id == offer.inviter_device_id:
+        kept = None  # never pair with ourselves under one id
+    identity = kept.identity() if kept is not None else DeviceIdentity.generate()
     own = None if endpoint is None else (endpoint.host, endpoint.port)
     try:
         request = build_enrollment_request(offer, identity, endpoint=own, name=name, now=when)
@@ -637,16 +725,30 @@ def enroll_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, ins
         raise LanSyncError("bad-offer", str(exc)) from exc
     pinned = enrollment_transcript(offer, identity.device_id, identity.signing_public_key,
                                    identity.exchange_public_key, own, name)
-    if on_code is not None:
+    revealed: list[bytes] = []
+
+    def on_reveal(frame: bytes) -> None:
+        if revealed:
+            raise PairingError("A second reveal frame")
+        reveal = open_enrollment_reveal(offer, frame)  # must match the QR's commitment
+        revealed.append(reveal)
+        if on_code is not None:
+            on_code(verification_code(pinned, reveal))
+
+    if offer.commit is None and on_code is not None:
         on_code(verification_code(pinned))
     sender = transport if transport is not None else SyncTransport()
     try:
         reply = sender.enroll(LANEndpoint(offer.endpoint_host, offer.endpoint_port), request,
-                              timeout=ENROLL_REPLY_SECONDS if timeout is None else timeout)
+                              timeout=ENROLL_REPLY_SECONDS if timeout is None else timeout,
+                              **({} if offer.commit is None else {"on_interim": on_reveal}))
     except (TransportError, OSError) as exc:
         raise LanSyncError("unreachable", f"{type(exc).__name__}: {exc}") from exc
+    except PairingError as exc:
+        raise LanSyncError("refused", str(exc)) from exc
     try:
-        group_id, epoch, key = open_enrollment_reply(offer, identity, reply, endpoint=own, name=name)
+        group_id, epoch, key = open_enrollment_reply(offer, identity, reply, endpoint=own, name=name,
+                                                     reveal=revealed[0] if revealed else None)
     except EnrollmentRefused as exc:
         if exc.reason == "used-or-expired":
             raise LanSyncError("offer-used-or-expired", USED_OR_EXPIRED_MESSAGE) from exc
@@ -656,18 +758,31 @@ def enroll_from_qr(qr: str | Mapping[str, Any], session: Any, lease: Any, *, ins
             raise LanSyncError("declined", DECLINED_MESSAGE) from exc
         if exc.reason == "update-needed":
             raise LanSyncError("update-needed", "Update LocalGateKeys on this device to pair with the other one.") from exc
+        if kept is not None:
+            # A host on a released build refuses every id it already knows with the plain refusal
+            # (rule 5): forget the kept identity, so the next pairing uses a new one as before.
+            _check_lease(session, lease)
+            drop_kept_identity(session)
+            raise LanSyncError("pair-again", PAIR_AGAIN_MESSAGE) from exc
         raise LanSyncError("refused", str(exc)) from exc
     except PairingError as exc:
         raise LanSyncError("refused", str(exc)) from exc
     inviter = PairedDevice(offer.inviter_device_id, offer.group_id, offer.inviter_signing_public,
                            offer.inviter_exchange_public, offer.certificate_fingerprint, when,
                            identity.sign(pinned))
+    # A version-2 offer comes from a build that speaks the sealed hello: pin it at once.
     state = SyncGroupState(group_id, epoch, key, identity.protected_dict(), install_id=install_id,
-                           lan_peers=(peer_to_entry(inviter, endpoint=offer.endpoint),))
+                           lan_peers=(peer_to_entry(inviter, endpoint=offer.endpoint,
+                                                    sealed=offer.commit is not None),))
+    if kept is not None:
+        # The other devices refuse a hello (or folder file) of this id whose counter is not above
+        # the last one they accepted: continue the kept counters, never restart them lower.
+        state = kept.continue_counters(state)
     _check_lease(session, lease)
     if load_sync_state(session) is not None:
         raise LanSyncError("already-joined", "the vault joined a group meanwhile")
-    save_sync_state(session, state)
+    # A pairing into the kept group drops the kept identity: it is the live identity again.
+    save_rejoined_state(session, state, drop_kept=kept is not None)
     return state
 
 
@@ -742,12 +857,18 @@ def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
         return _error("unknown-peer"), RunReport(issues=(SyncIssue("unknown-peer", peer.device_id),))
     if msg["type"] == "next":
         return _next_chunk(inbox, peer.device_id, msg), None
-    if licence_only and msg["type"] in ("witness", "blob-get"):
+    if licence_only and msg["type"] in ("witness", "blob-get", "features", "heir-hello"):
         return _error("bad-message"), None  # what an older app answers: the peer carries on quietly
+    if msg["type"] == "heir-hello":
+        set_heir_peer(session, lease, peer.device_id, True)
+        return {"type": "heir-hello"}, None
     if msg["type"] == "witness":
         return _serve_witness(session, lease, state, peer.device_id, msg, now)
     if msg["type"] == "blob-get":
         return _serve_blob(session, lease, peer.device_id, msg, inbox, now), None
+    if msg["type"] == "features":
+        set_collection_peer(session, lease, peer.device_id, "collections" in msg["features"])
+        return {"type": "features", "features": list(FEATURES)}, None
     if msg["type"] != "view":
         return _error("bad-message"), None
     if msg["group_id"] != state.group_id:
@@ -779,7 +900,8 @@ def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
         inbox.outgoing.pop(peer.device_id, None)  # an empty view is always one chunk
         return reply, report
 
-    report = run_merge(session, lease, device_id=state.device_id, views=[view], now=now)
+    report = run_merge(session, lease, device_id=state.device_id, views=[view], now=now,
+                       collections=peer.device_id in state.collection_peers)
     note_peer_synced(session, lease, peer.device_id, report, now)
     inline = view.format == 2
     obs = observation(view)
@@ -788,7 +910,8 @@ def _serve(session: Any, lease: Any, peer: PairedDevice, request: bytes, *,
     if report.own_states is None:
         return _error("local-data"), report
     report = dataclasses.replace(report, own_states=publishable(
-        report.own_states, documents=peer.device_id in state.attachment_peers))
+        report.own_states, documents=peer.device_id in state.attachment_peers,
+        heir=peer.device_id in state.heir_peers))
     try:
         reply, out = _prepare_view(session, lease, report.own_states, now, inline=inline)
     except LanSyncError as exc:
@@ -962,16 +1085,20 @@ def _receive_chunk(inbox: LanInbox, peer_id: str, msg: Mapping[str, Any], now: f
     return b"".join(current.parts)
 
 
+
 def note_peer_synced(session: Any, lease: Any, peer_id: str, report: RunReport, now: float) -> bool:
     """Record ``peer_synced_at[peer_id] = now`` when a Wi-Fi merge changed records (local only).
 
     Same rule as Android's ``PeerSyncedAt``: an exchange that changed nothing leaves the time
-    (and the vault) as they were.  Whether the state was saved.
+    (and the vault) as they were.  Whether the state was saved.  Any exchange that merged
+    cleanly is also kept in memory (``peer_seen_at``), so the status shows syncs that changed nothing.
     """
-    if not (report.applied or report.deleted or report.conflicts):
-        return False
     state = load_sync_state(session)
     if state is None or peer_id == state.device_id:
+        return False
+    if report.own_states is not None:
+        seen.note(state.group_id, peer_id, int(now))
+    if not (report.applied or report.deleted or report.conflicts):
         return False
     new_state = state.synced_with([peer_id], int(now))
     if new_state == state:
@@ -979,6 +1106,36 @@ def note_peer_synced(session: Any, lease: Any, peer_id: str, report: RunReport, 
     _check_lease(session, lease)
     save_sync_state(session, new_state)
     return True
+
+
+def set_collection_peer(session: Any, lease: Any, peer_id: str, capable: bool) -> bool:
+    """Add *peer_id* to (or remove it from) ``collection_peers``; whether the state changed."""
+    state = load_sync_state(session)
+    if state is None:
+        return False
+    peers = set(state.collection_peers)
+    peers = peers | {peer_id} if capable else peers - {peer_id}
+    if peers == set(state.collection_peers) or (capable and len(peers) > MAX_LAN_PEERS):
+        return False
+    _check_lease(session, lease)
+    save_sync_state(session, dataclasses.replace(state, collection_peers=tuple(sorted(peers))))
+    return True
+
+
+def _exchange_features(call: Callable[..., dict[str, Any]], session: Any, lease: Any, peer_id: str) -> None:
+    """Tell a peer not yet in ``collection_peers`` this version's features and record its answer.
+
+    ``features`` lists what the peer reads; ``bad-message`` is an older app; anything else (a lost
+    connection, another error) says nothing and the next exchange asks again.
+    """
+    try:
+        reply = call({"type": "features", "features": list(FEATURES)})
+    except (LanSyncError, TransportError, SyncStateError, OSError):
+        return
+    if reply.get("type") == "features":
+        set_collection_peer(session, lease, peer_id, "collections" in reply.get("features", ()))
+    elif reply.get("type") == "error" and reply.get("reason") == "bad-message":
+        set_collection_peer(session, lease, peer_id, False)
 
 
 def set_attachment_peer(session: Any, lease: Any, peer_id: str, capable: bool) -> bool:
@@ -1091,6 +1248,39 @@ def _fetch_blobs(call: Callable[..., dict[str, Any]], session: Any, lease: Any, 
     if answered:
         set_attachment_peer(session, lease, peer_id, answered[-1])
     return issues
+
+
+def _probe_heir(call: Callable[..., dict[str, Any]], session: Any, lease: Any, peer_id: str) -> None:
+    """Ask a peer not yet in ``heir_peers`` once whether it reads the emergency access plan."""
+    state = load_sync_state(session)
+    if state is None or peer_id in state.heir_peers:
+        return
+    try:
+        reply = call({"type": "heir-hello"})
+    except (LanSyncError, PeerNotAnswering):
+        return  # review M2: the run still merges what it fetched; the next run asks again
+    if reply.get("type") == "heir-hello":
+        set_heir_peer(session, lease, peer_id, True)
+
+
+def set_heir_peer(session: Any, lease: Any, peer_id: str, capable: bool) -> bool:
+    """Add *peer_id* to (or remove it from) ``heir_peers``; whether the state changed."""
+    state = load_sync_state(session)
+    if state is None:
+        return False
+    peers = set(state.heir_peers)
+    if capable:
+        # Pruned on each add (review M3): a device no longer paired or in the group is dropped, so the cap never
+        # keeps a newly paired device out.
+        known = {p.get("device_id") for p in state.lan_peers if p.get("revoked") is not True} | set(state.members)
+        peers = {p for p in peers if p in known} | {peer_id}
+    else:
+        peers = peers - {peer_id}
+    if peers == set(state.heir_peers) or (capable and len(peers) > MAX_LAN_PEERS):
+        return False
+    _check_lease(session, lease)
+    save_sync_state(session, dataclasses.replace(state, heir_peers=tuple(sorted(peers))))
+    return True
 
 
 def _next_chunk(inbox: LanInbox, peer_id: str, msg: Mapping[str, Any]) -> dict[str, Any]:
@@ -1368,17 +1558,39 @@ class LanResponder:
             return True, enrollment_refusal()
         return False, None
 
-    def enroll(self, raw: bytes) -> bytes | None:
-        """Transport enrollment handler: verify, ask Accept/Decline, then pin and reply (or decline).
+    def enroll(self, raw: bytes, send: Callable[[bytes], None] | None = None) -> bytes | None:
+        """Transport enrollment handler: verify, reveal, ask Accept/Decline, then pin and reply (or decline).
 
-        The three steps are :meth:`enroll_verify`, :meth:`await_decision` and
-        :meth:`enroll_finish`; the sync service runs the first and the last inside
-        its gate and the wait outside it (``service._GatedEnrollment``).
+        The steps are :meth:`enroll_verify`, :meth:`enroll_reveal`,
+        :meth:`await_decision` and :meth:`enroll_finish`; the sync service runs the
+        first and the last inside its gate and the others outside it
+        (``service._GatedEnrollment``).  *send* sends the interim reveal frame.
         """
         first = self.enroll_verify(raw)
         if not isinstance(first, PendingEnrollment):
             return first
+        if not self.enroll_reveal(first, send):
+            return None
         return self.enroll_finish(first, self.await_decision(first))
+
+    def enroll_reveal(self, pending: PendingEnrollment, send: Callable[[bytes], None] | None) -> bool:
+        """Send the offer's reveal to the device whose request verified (a version-2 offer).
+
+        Only this one request (it consumed the offer) ever gets the reveal, and only after its
+        transcript is fixed, so its code cannot be chosen.  False when the device is gone (the
+        prompt is withdrawn).
+        """
+        frame = enrollment_reveal(pending.offer)
+        if frame is None or send is None:
+            return True
+        try:
+            send(frame)
+        except Exception:  # noqa: BLE001 - the connection dropped: nobody to answer
+            pending.decide(False)
+            if self.pending is pending:
+                self.pending = None
+            return False
+        return True
 
     def enroll_verify(self, raw: bytes) -> bytes | PendingEnrollment | None:
         """Verify one request; returns the reply for a refusal, or the ``PendingEnrollment`` to ask about.
@@ -1402,11 +1614,18 @@ class LanResponder:
         if offer.group_id != state.group_id or offer.inviter_device_id != state.device_id:
             self.stop_enrollment()
             return enrollment_refusal()
-        if len(state.lan_peers) >= MAX_LAN_PEERS:
+        known = self._known_keys(state)
+        full = len(state.lan_peers) >= MAX_LAN_PEERS
+        if full and not known:
             return enrollment_refusal("full")  # checked before anything is consumed
         try:
+            # A full list still lets a paired device pair again (same id and keys: it replaces its
+            # own entry); any other request gets "full" without counting or consuming the offer.
             peer, request = pairing.accept_enrollment(state.identity(), raw, now=now,
-                                                      reserved_ids=self._reserved_ids(state))
+                                                      reserved_ids=self._reserved_ids(state),
+                                                      known_keys=known, full=full)
+        except EnrollmentFull:
+            return enrollment_refusal("full")
         except EnrollmentOutdated:
             return enrollment_refusal("update-needed")
         except (PairingReplayError, PairingExpired):
@@ -1441,23 +1660,56 @@ class LanResponder:
             return enrollment_refusal()
         if offer.group_id != state.group_id or offer.inviter_device_id != state.device_id:
             return enrollment_refusal()
-        if len(state.lan_peers) >= MAX_LAN_PEERS:
+        # A paired device that left and pairs again with the same keys replaces its own entry
+        # (name, address, pairing time, hello pin); it does not count against the limit (rule 4).
+        same = _same_keys(self._known_keys(state).get(peer.device_id), peer)
+        if not same and len(state.lan_peers) >= MAX_LAN_PEERS:
             return enrollment_refusal("full")
-        if peer.device_id in self._reserved_ids(state):
+        if not same and peer.device_id in self._reserved_ids(state):
             return enrollment_refusal()  # the id was taken while the prompt was open
         endpoint = None if request.endpoint is None else LANEndpoint(*request.endpoint)
-        new_state = _with_peer(state, peer_to_entry(peer, endpoint=endpoint, name=request.name))
+        # A request for a version-2 offer comes from a build that speaks the sealed hello: pin it.
+        sealed = request.reveal is not None
+        new_state = _with_peer(state, peer_to_entry(peer, endpoint=endpoint, name=request.name, sealed=sealed))
         _check_lease(self.session, self.lease)
         save_sync_state(self.session, new_state)
         tstate = getattr(self._transport, "state", None)
         if isinstance(tstate, SyncState):
             tstate.trust_peer(peer)  # the new device can open sessions right away
+            if sealed:
+                tstate.sealed_peers.add(peer.device_id)  # already saved with the entry above
         self.enrolled = peer
         self.enrolled_offer = pending.offer_id
         return seal_enrollment_reply(state.identity(), offer, request, state.group_id, state.epoch, state.key)
 
+    def _known_keys(self, state: SyncGroupState) -> dict[str, tuple[bytes, bytes]]:
+        """Paired Wi-Fi peers that may pair again under their id: id -> pinned (signing, exchange) keys.
+
+        Only a listed, unrevoked peer of this group, never this device and never a revoked id.  An id
+        known only from the folder member list is not here (this device cannot compare its keys), so it
+        stays refused like every other reserved id.  Its counters, rollback memory and capability marks
+        are kept when it pairs again (only the ``lan_peers`` entry is replaced), so an old recorded
+        session of it still cannot be replayed.
+        """
+        revoked: set[str] = set()
+        tstate = getattr(self._transport, "state", None)
+        if isinstance(tstate, SyncState):
+            revoked = set(tstate.revoked_devices)
+        out: dict[str, tuple[bytes, bytes]] = {}
+        for entry in state.lan_peers:
+            try:
+                peer = peer_from_entry(entry)
+            except LanSyncError:
+                continue
+            if (peer.revoked or peer.group_id != state.group_id or peer.device_id == state.device_id
+                    or peer.device_id in revoked):
+                continue
+            out[peer.device_id] = (peer.signing_public, peer.exchange_public)
+        return out
+
     def _reserved_ids(self, state: SyncGroupState) -> set[str]:
-        """Device ids a new device may not take: listed peers, keyring members, this device, revoked ids."""
+        """Device ids a new device may not take: listed peers (revoked ones too, so a removed peer stays
+        out after a restart), keyring members, this device, and ids the running transport revoked."""
         reserved = ({p.get("device_id") for p in state.lan_peers} | set(state.members)
                     | {state.device_id}) - {None}
         tstate = getattr(self._transport, "state", None)
@@ -1467,6 +1719,14 @@ class LanResponder:
 
 
 # --- initiator ------------------------------------------------------------------------------------
+
+
+def _same_keys(pinned: tuple[bytes, bytes] | None, peer: PairedDevice) -> bool:
+    """*peer* carries exactly the *pinned* (signing, exchange) keys (compared in constant time)."""
+    if pinned is None:
+        return False
+    return bool(hmac.compare_digest(pinned[0], peer.signing_public)
+                & hmac.compare_digest(pinned[1], peer.exchange_public))
 
 
 def _reply_issue(reply: Mapping[str, Any]) -> SyncIssue:
@@ -1535,10 +1795,12 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
             inline = False
         else:
             try:
-                local = local_view(session, lease, device_id=state.device_id, now=now)
+                local = local_view(session, lease, device_id=state.device_id, now=now,
+                                   collections=peer_id in state.collection_peers)
             except BridgeError as exc:
                 return RunReport(issues=(SyncIssue("local-data", str(exc)),))
-            own = publishable(tuple(local[k] for k in sorted(local)), documents=peer_id in state.attachment_peers)
+            own = publishable(tuple(local[k] for k in sorted(local)), documents=peer_id in state.attachment_peers,
+                              heir=peer_id in state.heir_peers)
             inline = peer_id in state.witness_peers and session_generation(session) is not None
         first, out = _prepare_view(session, lease, own, now, inline=inline)
         reply = call(first, retry=False)  # an unreachable peer is reported at once
@@ -1556,6 +1818,7 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
             _check_lease(session, lease)
             return RunReport(licenses=licenses_in_views([view]))
         file_issues = _fetch_blobs(call, session, lease, peer_id, view)
+        _probe_heir(call, session, lease, peer_id)
     except LanSyncError as exc:
         return RunReport(issues=(SyncIssue("bad-reply" if exc.reason == "bad-message" else exc.reason,
                                            str(exc)),))
@@ -1566,10 +1829,14 @@ def sync_with(transport: SyncTransport, peer_id: str, session: Any, lease: Any, 
     except (TransportError, SyncStateError, OSError) as exc:
         return RunReport(issues=(SyncIssue("unreachable", f"{type(exc).__name__}: {exc}"),))
 
-    report = run_merge(session, lease, device_id=state.device_id, views=[view], now=now)
+    report = run_merge(session, lease, device_id=state.device_id, views=[view], now=now,
+                       collections=peer_id in state.collection_peers)
     note_peer_synced(session, lease, peer_id, report, now)
     report = dataclasses.replace(report, issues=(*file_issues, *report.issues))
     extra: tuple[SyncIssue, ...] = ()
+    if peer_id not in state.collection_peers:
+        # Before the witness: a change of collection_peers saves the vault, which the witness then covers.
+        _exchange_features(call, session, lease, peer_id)
     if inline:
         mem = witness_memory.memory(session, state.group_id, state.device_id)
         if mem is not None:

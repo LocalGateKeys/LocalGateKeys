@@ -25,7 +25,8 @@ final class PaletteModelTests: XCTestCase {
         XCTAssertEqual(Set(titles(tagged)), ["Lock box", "Locksmith"])
         XCTAssertTrue(tagged.allSatisfy { $0.group == .items })
         // @ → items in collections whose name matches (typed items only), at most 12.
-        let cols = [LocalData.Collection(id: "c1", name: "Household", createdAt: 0, updatedAt: 0), LocalData.Collection(id: "c2", name: "Office", createdAt: 0, updatedAt: 0)]
+        let cols = [CollectionCatalog.Collection(id: "c1", name: "Household", description: "", createdAt: 0, updatedAt: 0),
+                    CollectionCatalog.Collection(id: "c2", name: "Office", description: "", createdAt: 0, updatedAt: 0)]
         var many = items
         var members: [String: [String]] = ["a": ["c1"], "b": ["c2"], "c": ["c1"]]
         for i in 0..<20 { many.append(item("n\(i)", "note", title: "Note \(i)")); members["n\(i)"] = ["c1"] }

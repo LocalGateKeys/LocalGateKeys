@@ -13,11 +13,13 @@ from collections.abc import Iterable
 from typing import Any
 from urllib.parse import quote, urlencode
 
-from ..access_policy import normalized_policy
+from ..access_policy import enforced_policy, normalized_policy
+from ..agent_gate import agents_may_use
 from ..api.result import ApiError
 from ..totp import TotpError, match_migration_account, parse_migration_uri
 from ..vault import VaultError
 from ..i18n import t
+from .secrets import COPY_ONCE_SECONDS, _copy_once_used
 
 ENABLE_SIGN_IN_TEXT = ("loginExtras.localgatekeysMaySubmitASupported")
 USE_NEXT_TEXT = "loginExtras.copyAndRemoveTheFirst"
@@ -49,6 +51,9 @@ class LoginExtrasService:
     def _detail(session: Any, ref: dict[str, Any]) -> dict[str, Any]:
         if ref.get("source") != "credential":
             raise ApiError("invalid", t("loginExtras.chooseALogin"))
+        from .secrets import refuse_travel_hidden
+
+        refuse_travel_hidden(session, ref["id"])
         detail = session.credential_detail(ref["id"])
         if detail is None:
             raise ApiError("not_found", t("loginExtras.credentialIsNoLongerAvailable"))
@@ -79,10 +84,34 @@ class LoginExtrasService:
             detail.clear()
         self._controller.touch()
 
+    # ---------------------------------------------------------- copy once
+    @staticmethod
+    def _copy_once(detail: dict[str, Any]) -> bool:
+        return enforced_policy(detail).get("copy_once") is True
+
+    def _copy_once_auth(self, session: Any, ref: dict[str, Any], lease: Any) -> bool | None:
+        """Access rule "copy once" (contract 4.1), as ``SecretService.copy``: once a secret of this login was
+        released in this unlock session, the next one (an earlier password, a recovery code) needs the master
+        password. Returns True after that check; None when the login's usual check applies instead."""
+        detail = self._detail(session, ref)
+        try:
+            once = self._copy_once(detail)
+        finally:
+            detail.clear()
+        if not once or ref["id"] not in _copy_once_used(self._controller):
+            return None
+        self._auth.reauthenticate(t("access.copyAgain"), lease, allow_hello=False)
+        self._controller.require_lease(lease)
+        return True
+
+    def _clip(self, value: str, lease: Any, once_id: str | None) -> None:
+        """Copy a secret; under "copy once" with the short clipboard life, and it counts as this login's copy."""
+        self._auth._copy_secret(value, lease, once_id=once_id)
+
     # ------------------------------------------------------------- strict
     @staticmethod
     def _strict(detail: dict[str, Any]) -> bool:
-        return bool(normalized_policy(detail.get("policy")).get("require_master_password"))
+        return bool(enforced_policy(detail).get("require_master_password"))
 
     def _reauth_for(self, strict: bool, title: str, lease: Any, *, routine: bool = True) -> None:
         """A strict login ("Always ask for the master password") always asks for the master password,
@@ -135,18 +164,25 @@ class LoginExtrasService:
                 value.clear()
 
     def history_copy(self, ref: dict[str, Any], index: int, changed_at: int) -> dict[str, Any]:
-        session, lease, revision = self._revision_after_auth(
-            ref, t("loginExtras.enterYourMasterPasswordTo2"))
+        session, lease = self._session_lease()
+        once = self._copy_once_auth(session, ref, lease)
+        if once is None:
+            detail, _strict = self._authorized_detail(session, ref, lease, t("loginExtras.enterYourMasterPasswordTo2"))
+            once = self._copy_once(detail)
+        else:
+            detail = self._detail(session, ref)
+        revision = detail.get("revision")
+        detail.clear()
         values = self._history(session, ref["id"], revision)
         try:
             if not (0 <= index < len(values)) or int(values[index].get("changed_at") or 0) != int(changed_at):
                 raise ApiError("changed", t("loginExtras.passwordHistoryChangedCloseAnd"))
-            self._controller.require_lease(lease)
-            self._controller.clipboard.copy(values[index]["password"])
-            self._controller.touch()
+            self._clip(values[index]["password"], lease, ref["id"] if once else None)
         finally:
             for value in values:
                 value.clear()
+        if once:
+            return {"message": t("access.copyOnceCleared"), "clear_after": COPY_ONCE_SECONDS}
         return {"message": t("loginExtras.previousPasswordCopied")}
 
     def history_restore(self, ref: dict[str, Any], index: int, changed_at: int) -> dict[str, Any]:
@@ -204,8 +240,13 @@ class LoginExtrasService:
 
     def recovery_use_next(self, ref: dict[str, Any]) -> dict[str, Any]:
         session, lease = self._session_lease()
-        detail, _strict = self._authorized_detail(session, ref, lease,
-                                                  t("loginExtras.enterYourMasterPasswordTo5"), routine=False)
+        once = self._copy_once_auth(session, ref, lease)
+        if once is None:
+            detail, _strict = self._authorized_detail(session, ref, lease,
+                                                      t("loginExtras.enterYourMasterPasswordTo5"), routine=False)
+            once = self._copy_once(detail)
+        else:
+            detail = self._detail(session, ref)
         codes = list(detail.get("recovery_codes") or [])
         detail.clear()
         if not codes:
@@ -220,7 +261,7 @@ class LoginExtrasService:
             again.clear()
             if not current or current[0] != first:
                 raise ApiError("changed", t("loginExtras.theSavedCodesChangedOpen"))
-            self._controller.clipboard.copy(first)
+            self._clip(first, lease, ref["id"] if once else None)
             try:
                 session.consume_recovery_code(ref["id"], 0)
             except VaultError as exc:
@@ -294,19 +335,30 @@ class LoginExtrasService:
         session, _lease = self._session_lease()
         detail = self._detail(session, ref)
         try:
-            return {"policy": normalized_policy(detail.get("policy"))}
+            policy = normalized_policy(detail.get("policy"))
+            if detail.get("kind") == "web":
+                # "AI agents may use this login" (agent_gate): website logins only, off unless stored as true.
+                policy["ai_agents"] = agents_may_use(detail)
+            return {"policy": policy}
         finally:
             detail.clear()
 
     def policy_save(self, ref: dict[str, Any], changes: dict[str, Any]) -> dict[str, Any]:
         """Any rule change on a strict login, turning strict off included, needs the master password (no Hello)."""
         session, lease = self._session_lease()
-        detail, _strict = self._authorized_detail(session, ref, lease,
-                                                  t("loginExtras.enterYourMasterPasswordTo7"),
-                                                  routine=False)
+        detail, strict = self._authorized_detail(session, ref, lease,
+                                                 t("loginExtras.enterYourMasterPasswordTo7"),
+                                                 routine=False)
         before = normalized_policy(detail.get("policy"))
+        kind = detail.get("kind")
         detail.clear()
+        if "ai_agents" in changes:
+            changes = dict(changes)
+            saved = self._save_ai_agents(session, lease, ref, kind, changes.pop("ai_agents"))
+            if not any(key in before for key in changes):
+                return saved
         after = normalized_policy({**before, **{k: v for k, v in changes.items() if k in before}})
+        self._gate_access_rules(session, lease, before, after, strict=strict)
         if after.get("sign_in") == "enabled" and before.get("sign_in") != "enabled":
             if not self._port.confirm(t("loginExtras.enableSignInForThis"), t(ENABLE_SIGN_IN_TEXT)):
                 raise ApiError("cancelled", t("error.cancelled"))
@@ -323,6 +375,44 @@ class LoginExtrasService:
             revoked = int(revoke(ref["id"])) if callable(revoke) else 0
         if revoked:
             return {"message": t("loginExtras.policySavedRevoked", count=revoked)}
+        return {"message": t("loginExtras.accessPolicySavedItApplies")}
+
+    def _gate_access_rules(self, session: Any, lease: Any, before: dict[str, Any], after: dict[str, Any], *,
+                           strict: bool) -> None:
+        """The fill and master-password rules are also on the Access rules panel: changing them here cannot be an
+        easier path than ``AccessRulesService.save`` (finding M3). Tightening is Pro (and needs no prompt, as before:
+        it only makes the login harder to use); loosening confirms it's you (Windows Hello allowed), and a strict
+        login has already asked for the master password."""
+        fill_never = before.get("fill") == "never", after.get("fill") == "never"
+        master = bool(before.get("require_master_password")), bool(after.get("require_master_password"))
+        if fill_never[0] == fill_never[1] and master[0] == master[1]:
+            return
+        if (fill_never[1] and not fill_never[0]) or (master[1] and not master[0]):
+            from ..vault import ProFeatureRequired, require_pro_feature
+            from .licence_view import pro_required
+
+            try:
+                require_pro_feature(session, "access_policies")
+            except ProFeatureRequired as exc:
+                raise pro_required(self._port, exc) from None
+        loosens = (fill_never[0] and not fill_never[1]) or (master[0] and not master[1])
+        if loosens and not strict:
+            self._auth.reauthenticate(t("loginExtras.enterYourMasterPasswordTo7"), lease, allow_hello=True)
+            self._controller.require_lease(lease)
+
+    def _save_ai_agents(self, session: Any, lease: Any, ref: dict[str, Any], kind: Any, value: Any) -> dict[str, Any]:
+        """Turn "AI agents may use this login" on or off (agent_gate). Website logins only; a non-boolean is refused."""
+        if kind != "web":
+            raise ApiError("invalid", t("loginExtras.chooseALogin"))
+        if type(value) is not bool:
+            raise ApiError("invalid", t("loginExtras.chooseALogin"))
+        with self._write_lock:
+            self._controller.require_lease(lease)
+            try:
+                session.set_ai_agent_use(ref["id"], value)
+            except VaultError as exc:
+                raise ApiError("invalid", str(exc)) from None
+        self._controller.touch()
         return {"message": t("loginExtras.accessPolicySavedItApplies")}
 
     # -------------------------------------------------- Google Authenticator

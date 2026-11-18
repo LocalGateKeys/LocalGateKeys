@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 
 import { handle } from "../src/index.js";
 import { SERVICE_ACCOUNT, fakeGoogle, purchased } from "./fake-google.mjs";
-import { NOW, makeStoreEnv, postJson, verifyLicence } from "./store-helpers.mjs";
+import { NOW, makeStoreEnv, postJson, revokeKeys, verifyLicence } from "./store-helpers.mjs";
 
 const playEnv = (extra = {}) => makeStoreEnv({ PLAY_SERVICE_ACCOUNT_JSON: SERVICE_ACCOUNT, ...extra });
 
@@ -80,4 +80,26 @@ test("wrong_product_400", async () => {
   assert.equal((await claim(env, google, { purchaseToken: "tok-1", productId: "tip_jar" })).status, 400);
   assert.equal((await claim(env, google, { purchaseToken: "../../x", productId: "pro_unlimited" })).status, 400);
   assert.equal(google.calls.length, 0, "nothing asked of Google for a refused claim");
+});
+
+test("canceled_claim_records_missed_refund_once (scan F3)", async () => {
+  const env = playEnv();
+  const order = purchased();
+  const google = fakeGoogle({ "tok-1": order });
+  const lic = verifyLicence((await (await claim(env, google)).json()).licence);
+  // The RTDN was missed; Google now reports the purchase canceled to a later claim.
+  order.purchaseState = 1;
+  assert.equal((await claim(env, google)).status, 403);
+  const key = `revoke:${lic.license_id}:void-GPA.3300-1111-2222-33333`;
+  assert.deepEqual(revokeKeys(env), [key]);
+  assert.equal(env.LICENSES.meta.get(key).provider, "play");
+  assert.equal(env.LICENSES.meta.get(key).revoke, true);
+  assert.equal(env.CLAIMS.store.play_claims.get("GPA.3300-1111-2222-33333").revoked, 1);
+  // A repeat writes no second record.
+  assert.equal((await claim(env, google, undefined, NOW + 60000)).status, 403);
+  assert.deepEqual(revokeKeys(env), [key]);
+  // Without D1 it is still refused, and nothing is recorded.
+  const noD1 = { ...playEnv(), CLAIMS: undefined };
+  assert.equal((await claim(noD1, fakeGoogle({ "tok-1": purchased({ purchaseState: 1 }) }))).status, 403);
+  assert.deepEqual(revokeKeys(noD1), []);
 });

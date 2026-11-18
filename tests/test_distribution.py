@@ -164,17 +164,127 @@ def test_repair_writes_alias_into_manifests_and_real_image_into_pins(monkeypatch
     browser_bridge.repair_browser_bridge()
 
     alias = str(distribution.native_host_alias_path())
+    launcher = data / distribution.FIREFOX_HOST_LAUNCHER
     assert json.loads((data / f"{NATIVE_HOST_NAME}.json").read_text(encoding="utf-8"))["path"] == alias
-    assert json.loads((data / f"{NATIVE_HOST_NAME}.firefox.json").read_text(encoding="utf-8"))["path"] == alias
+    # Firefox cannot start the alias directly: it gets the launcher batch file.
+    assert json.loads((data / f"{NATIVE_HOST_NAME}.firefox.json").read_text(encoding="utf-8"))["path"] == str(launcher)
+    assert launcher.read_bytes() == distribution.firefox_native_host_launcher_script().encode("ascii")
     config = json.loads((data / "install.json").read_text(encoding="utf-8"))
     assert config["mode"] == "msix"
     assert config["native_host_path"] == str(host)
     assert config["native_host_launch_path"] == alias
+    assert config["firefox_native_host_launch_path"] == str(launcher)
     assert registered
+    # The pin and diagnostics see the package host behind both launch paths.
+    assert distribution.resolve_native_host_path(str(launcher)) == str(host)
+    assert distribution.resolve_native_host_path(alias) == str(host)
+
+    # Never touch the real HKCU from a test (this once deleted the developer's own browser registrations).
+    unregistered: list[bool] = []
+    monkeypatch.setattr(browser_bridge, "_unregister_manifest", lambda: unregistered.append(True))
+    browser_bridge.unregister_browser_bridge()
+    assert unregistered and not launcher.exists()
 
 
-def _fake_registry(existing: dict[str, str]):
+def test_firefox_launcher_runs_the_alias_through_localappdata(monkeypatch, tmp_path) -> None:
+    _frozen(monkeypatch, tmp_path / "app")
+    _unpackaged(monkeypatch)
+    assert distribution.firefox_native_host_launcher_path() is None
+    assert distribution.firefox_native_host_launcher_script() is None
+
+    _packaged(monkeypatch, tmp_path / "pkg", tmp_path / "Local With Space & 100%")
+    data = tmp_path / "data"
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(data))
+    script = distribution.firefox_native_host_launcher_script()
+    assert script == ("@setlocal DisableDelayedExpansion\r\n"
+                      f'@"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\{FAMILY}\\{distribution.NATIVE_HOST_ALIAS}" %*\r\n')
+    # Nothing from the user's environment is written into the file.
+    assert "Space" not in script and script.isascii()
+    assert distribution.firefox_native_host_launcher_path() == data / distribution.FIREFOX_HOST_LAUNCHER
+
+
+def test_firefox_launcher_with_unexpected_family_name_is_not_written(monkeypatch, tmp_path) -> None:
+    _frozen(monkeypatch, tmp_path / "pkg")
+    values = {"GetCurrentPackageFamilyName": 'Evil"&calc&_x', "GetCurrentPackagePath": str(tmp_path / "pkg")}
+    monkeypatch.setattr(distribution, "_current_package_string", values.get)
+    assert distribution.firefox_native_host_launcher_script() is None
+
+
+def test_resolver_ignores_a_changed_firefox_launcher(monkeypatch, tmp_path) -> None:
+    package = tmp_path / "pkg"
+    _frozen(monkeypatch, package)
+    _packaged(monkeypatch, package, tmp_path / "Local")
+    data = tmp_path / "data"
+    data.mkdir()
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(data))
+    launcher = data / distribution.FIREFOX_HOST_LAUNCHER
+    assert distribution.resolve_native_host_path(str(launcher)) == str(launcher)  # missing
+    launcher.write_bytes(distribution.firefox_native_host_launcher_script().encode("ascii") + b"@calc\r\n")
+    assert distribution.resolve_native_host_path(str(launcher)) == str(launcher)
+    launcher.write_bytes(distribution.firefox_native_host_launcher_script().encode("ascii"))
+    assert distribution.resolve_native_host_path(str(launcher)) == str(package / distribution.NATIVE_HOST_IMAGE)
+    other = tmp_path / "elsewhere" / distribution.FIREFOX_HOST_LAUNCHER
+    other.parent.mkdir()
+    other.write_bytes(launcher.read_bytes())
+    assert distribution.resolve_native_host_path(str(other)) == str(other)
+
+
+def test_pipe_pin_accepts_alias_for_chromium_and_launcher_for_firefox(monkeypatch, tmp_path) -> None:
+    package = tmp_path / "pkg"
+    _frozen(monkeypatch, package)
+    _packaged(monkeypatch, package, tmp_path / "Local")
+    data = tmp_path / "data"
+    data.mkdir()
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(data))
+    launcher = data / distribution.FIREFOX_HOST_LAUNCHER
+    launcher.write_bytes(distribution.firefox_native_host_launcher_script().encode("ascii"))
+    chromium = data / f"{NATIVE_HOST_NAME}.json"
+    firefox = data / f"{NATIVE_HOST_NAME}.firefox.json"
+    for manifest, path in ((chromium, distribution.native_host_alias_path()), (firefox, launcher)):
+        manifest.write_text(json.dumps({"name": NATIVE_HOST_NAME, "type": "stdio", "path": str(path)}),
+                            encoding="utf-8")
+    values = {
+        rf"Software\Google\Chrome\NativeMessagingHosts\{NATIVE_HOST_NAME}": str(chromium),
+        rf"Software\Microsoft\Edge\NativeMessagingHosts\{NATIVE_HOST_NAME}": str(chromium),
+        rf"Software\Mozilla\NativeMessagingHosts\{NATIVE_HOST_NAME}": str(firefox),
+    }
+    fake, _writes = _fake_registry(values)
+    monkeypatch.setitem(sys.modules, "winreg", fake)
+    monkeypatch.setattr(pipe_transport.os, "name", "nt")
+    found = pipe_transport._registered_native_host_paths()
+    assert sorted(found) == ["Chrome", "Edge", "Firefox"]
+    assert pipe_transport.ClientPinPolicy._registered_host(found) == str(package / distribution.NATIVE_HOST_IMAGE)
+
+
+def _fake_outside(monkeypatch: pytest.MonkeyPatch, real: dict[str, str], *, add_works: bool = True) -> list[tuple]:
+    """Stand-in for the out-of-package reg.exe: ``real`` is the hive browsers read."""
+
+    calls: list[tuple] = []
+
+    def run(*args: str) -> int | None:
+        calls.append(args)
+        key = args[1].removeprefix("HKCU\\")
+        if args[0] == "query":
+            return 0 if real.get(key, "").lower() == args[3].lower() else 1
+        if args[0] == "add" and add_works:
+            real[key] = args[6]
+            return 0
+        return 1
+
+    monkeypatch.setattr(browser_bridge, "_run_reg_outside_package", run)
+    return calls
+
+
+def _fake_registry(existing: dict[str, str], real: dict[str, str] | None = None):
+    """``existing`` is the package's view; writes also reach ``real`` when given."""
+
     writes: list[tuple[str, str]] = []
+
+    def set_value(key, _name, _reserved, _kind, value):
+        writes.append((key.path, value))
+        existing[key.path] = value
+        if real is not None:
+            real[key.path] = value
 
     class Key:
         def __init__(self, path: str) -> None:
@@ -195,35 +305,124 @@ def _fake_registry(existing: dict[str, str]):
         HKEY_CURRENT_USER="HKCU", REG_SZ=1,
         OpenKey=open_key, QueryValue=lambda key, _name: existing[key.path],
         CreateKey=lambda _root, path: Key(path),
-        SetValueEx=lambda key, _name, _reserved, _kind, value: writes.append((key.path, value)),
+        SetValueEx=set_value,
     )
     return fake, writes
 
 
-def test_packaged_registration_creates_missing_keys_but_never_overwrites(monkeypatch, tmp_path) -> None:
+CHROME_KEY = rf"Software\Google\Chrome\NativeMessagingHosts\{NATIVE_HOST_NAME}"
+EDGE_KEY = rf"Software\Microsoft\Edge\NativeMessagingHosts\{NATIVE_HOST_NAME}"
+FIREFOX_KEY = rf"Software\Mozilla\NativeMessagingHosts\{NATIVE_HOST_NAME}"
+
+
+def _packaged_registry(monkeypatch, tmp_path, inside: dict[str, str], real: dict[str, str] | None = None, **kw):
     _frozen(monkeypatch, tmp_path / "pkg")
     _packaged(monkeypatch, tmp_path / "pkg", tmp_path / "Local")
-    chrome, firefox = tmp_path / "host.json", tmp_path / "host.firefox.json"
-    chrome_key = rf"Software\Google\Chrome\NativeMessagingHosts\{NATIVE_HOST_NAME}"
-    edge_key = rf"Software\Microsoft\Edge\NativeMessagingHosts\{NATIVE_HOST_NAME}"
-    fake, writes = _fake_registry({chrome_key: str(chrome)})  # e.g. left by the Inno Setup build
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path / "data"))
+    real = dict(inside) if real is None else real
+    fake, writes = _fake_registry(inside, real)
     monkeypatch.setitem(sys.modules, "winreg", fake)
+    calls = _fake_outside(monkeypatch, real, **kw)
+    return writes, real, calls
+
+
+def _working_manifest(path: Path, launcher: Path | None = None) -> Path:
+    launcher = launcher or path.with_name("LocalGateKeysNativeHost.exe")
+    launcher.parent.mkdir(parents=True, exist_ok=True)
+    launcher.touch()
+    path.write_text(json.dumps({"name": NATIVE_HOST_NAME, "type": "stdio", "path": str(launcher)}), encoding="utf-8")
+    return path
+
+
+def test_packaged_registration_creates_missing_keys_and_keeps_a_matching_one(monkeypatch, tmp_path) -> None:
+    chrome, firefox = tmp_path / "host.json", tmp_path / "host.firefox.json"
+    writes, real, _calls = _packaged_registry(monkeypatch, tmp_path, {CHROME_KEY: str(chrome)})  # e.g. Inno Setup
 
     browser_bridge._register_manifest(chrome, firefox)
 
-    assert [path for path, _value in writes] == [edge_key, rf"Software\Mozilla\NativeMessagingHosts\{NATIVE_HOST_NAME}"]
+    assert [path for path, _value in writes] == [EDGE_KEY, FIREFOX_KEY]
+    assert real == {CHROME_KEY: str(chrome), EDGE_KEY: str(chrome), FIREFOX_KEY: str(firefox)}
 
 
-def test_packaged_registration_reports_a_foreign_value_without_writing_it(monkeypatch, tmp_path) -> None:
-    _frozen(monkeypatch, tmp_path / "pkg")
-    _packaged(monkeypatch, tmp_path / "pkg", tmp_path / "Local")
-    chrome_key = rf"Software\Google\Chrome\NativeMessagingHosts\{NATIVE_HOST_NAME}"
-    fake, writes = _fake_registry({chrome_key: str(tmp_path / "elsewhere.json")})
-    monkeypatch.setitem(sys.modules, "winreg", fake)
+def test_packaged_registration_keeps_a_working_other_install(monkeypatch, tmp_path) -> None:
+    other = _working_manifest(tmp_path / "Inno" / "host.json")
+    writes, real, calls = _packaged_registry(monkeypatch, tmp_path, {CHROME_KEY: str(other)})
 
     with pytest.raises(OSError, match="Google"):
         browser_bridge._register_manifest(tmp_path / "host.json", tmp_path / "host.firefox.json")
-    assert chrome_key not in [path for path, _value in writes]
+    assert CHROME_KEY not in [path for path, _value in writes]
+    assert real[CHROME_KEY] == str(other)
+    assert not [args for args in calls if args[0] == "add"]
+
+
+@pytest.mark.parametrize("kind", ["missing", "unreadable", "not_ours", "no_launcher"])
+def test_packaged_registration_replaces_a_stale_value(monkeypatch, tmp_path, kind) -> None:
+    stale = tmp_path / "old-data" / "com.localgatekeys.app.firefox.json"
+    stale.parent.mkdir()
+    if kind == "unreadable":
+        stale.write_text("{not json", encoding="utf-8")
+    elif kind == "not_ours":
+        _working_manifest(stale)
+        stale.write_text(json.dumps({"name": "org.other.host", "path": str(stale.with_name("LocalGateKeysNativeHost.exe"))}),
+                         encoding="utf-8")
+    elif kind == "no_launcher":
+        stale.write_text(json.dumps({"name": NATIVE_HOST_NAME, "path": str(tmp_path / "gone" / "host.cmd")}),
+                         encoding="utf-8")
+    chrome, firefox = tmp_path / "host.json", tmp_path / "host.firefox.json"
+    writes, real, calls = _packaged_registry(
+        monkeypatch, tmp_path, {CHROME_KEY: str(chrome), EDGE_KEY: str(chrome), FIREFOX_KEY: str(stale)})
+
+    browser_bridge._register_manifest(chrome, firefox)
+
+    assert writes == [(FIREFOX_KEY, str(firefox))]
+    assert real[FIREFOX_KEY] == str(firefox)
+    # Checked from outside the package; no fallback write was needed.
+    assert ("query", f"HKCU\\{FIREFOX_KEY}", "/f", str(firefox), "/d", "/e") in calls
+    assert not [args for args in calls if args[0] == "add"]
+
+
+def test_packaged_registration_rewrites_from_outside_when_the_write_stays_private(monkeypatch, tmp_path) -> None:
+    chrome, firefox = tmp_path / "host.json", tmp_path / "host.firefox.json"
+    real = {CHROME_KEY: str(chrome), EDGE_KEY: str(chrome), FIREFOX_KEY: str(tmp_path / "stale.json")}
+    inside = dict(real)
+    _frozen(monkeypatch, tmp_path / "pkg")
+    _packaged(monkeypatch, tmp_path / "pkg", tmp_path / "Local")
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path / "data"))
+    fake, _writes = _fake_registry(inside)  # copy-on-write: only the package's view changes
+    monkeypatch.setitem(sys.modules, "winreg", fake)
+    calls = _fake_outside(monkeypatch, real)
+
+    browser_bridge._register_manifest(chrome, firefox)
+
+    assert ("add", f"HKCU\\{FIREFOX_KEY}", "/ve", "/t", "REG_SZ", "/d", str(firefox), "/f") in calls
+    assert real[FIREFOX_KEY] == str(firefox)
+
+
+def test_packaged_registration_reports_needs_repair_when_the_real_value_stays_wrong(monkeypatch, tmp_path) -> None:
+    chrome, firefox = tmp_path / "host.json", tmp_path / "host.firefox.json"
+    real = {CHROME_KEY: str(chrome), EDGE_KEY: str(chrome), FIREFOX_KEY: str(tmp_path / "stale.json")}
+    _frozen(monkeypatch, tmp_path / "pkg")
+    _packaged(monkeypatch, tmp_path / "pkg", tmp_path / "Local")
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path / "data"))
+    fake, _writes = _fake_registry(dict(real))
+    monkeypatch.setitem(sys.modules, "winreg", fake)
+    _fake_outside(monkeypatch, real, add_works=False)
+
+    with pytest.raises(OSError, match="Mozilla"):
+        browser_bridge._register_manifest(chrome, firefox)
+    # The next start sees its own (private) value but still checks the real one.
+    with pytest.raises(OSError, match="Mozilla"):
+        browser_bridge._register_manifest(chrome, firefox)
+
+
+def test_packaged_registration_trusts_its_own_view_when_the_outside_check_cannot_run(monkeypatch, tmp_path) -> None:
+    chrome, firefox = tmp_path / "host.json", tmp_path / "host.firefox.json"
+    writes, _real, _calls = _packaged_registry(monkeypatch, tmp_path, {FIREFOX_KEY: str(tmp_path / "stale.json")})
+    monkeypatch.setattr(browser_bridge, "_run_reg_outside_package", lambda *_args: None)
+
+    browser_bridge._register_manifest(chrome, firefox)
+
+    assert (FIREFOX_KEY, str(firefox)) in writes
 
 
 def test_unpackaged_registration_still_overwrites(monkeypatch, tmp_path) -> None:

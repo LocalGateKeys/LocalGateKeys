@@ -1,5 +1,6 @@
 <script>
   /** Device sync: Wi-Fi and cloud-folder cards. Every action is one Python call; forms clear their passwords after it. */
+  import { dialog } from '../lib/dialog.js';
   import ErrorLogLink from './ErrorLogLink.svelte';
   import { call, on } from '../lib/api.js';
   import { formatNumber, t } from '../lib/i18n.svelte.js';
@@ -7,7 +8,8 @@
   import Button from './Button.svelte';
   import Field from './Field.svelte';
 
-  let { onclose, onlicence } = $props();
+  // onconnections: Devices & connections, which shares the sidebar's Sync & devices entry.
+  let { onclose, onlicence, onconnections = undefined } = $props();
   let view = $state(null);
   let form = $state(null); // {kind, title, intro, folder, twice, ...}
   let folder = $state(null); // {token, path}
@@ -24,6 +26,7 @@
   let confirm = $state(null); // {id, name, code, fingerprint, seconds, message, adding}: a device waits for Accept
   let firewall = $state(null); // {supported, allowed, profile, advice}
   let firewallBusy = $state(false);
+  let checklist = $state(null); // [text]: what to do after "I lost a device"
   let qrTimer = null;
   let viewportWidth = $state(typeof window === 'undefined' ? 1024 : window.innerWidth);
   // Whole CSS pixels per module: at most the size Python chose (≤ 260px) and about 60% of a narrow window.
@@ -87,6 +90,12 @@
       const info = await call('sync_remove_info', card);
       if (okOrToast(info)) form = { kind: 'remove', card, title: t('syncPage.removeTitle'), devices: info.devices,
         twice: info.needs_password, folder: false, intro: info.needs_password ? t('syncPage.removeNeedsPassword') : '' };
+    } else if (action === 'lost-device') {
+      const info = await call('sync_remove_info', card);
+      if (okOrToast(info)) form = { kind: 'lost', card, title: t('syncPage.lostTitle'), devices: info.devices,
+        twice: info.needs_password, folder: false,
+        intro: info.needs_password ? `${t('syncPage.lostIntroFolder')}\n\n${t('syncPage.removeNeedsPassword')}`
+          : t('syncPage.lostIntroWifi') };
     } else if (action === 'show-orphans') {
       const r = await call('sync_orphans');
       if (!okOrToast(r)) return;
@@ -130,12 +139,14 @@
     else if (f.kind === 'setup') result = await call('sync_folder_setup', f.action, folder?.token ?? '', pw, pw2);
     else if (f.kind === 'rotate') result = await call('sync_change_password', pw, pw2);
     else if (f.kind === 'remove') result = await call('sync_remove_device', f.card, picked[0] ?? '', pw, pw2);
+    else if (f.kind === 'lost') result = await call('sync_lost_device', f.card, picked[0] ?? '', pw, pw2);
     else if (f.kind === 'orphans') result = await call('sync_remove_orphans', picked, pw, pw2);
     else if (f.kind === 'qrtext') result = await call('sync_join_qr', text);
     else if (f.kind === 'refind') result = await call('sync_find_again_qr', text);
     else if (f.kind === 'wifi') result = await call('sync_wifi_enable', text);
     else if (f.kind === 'pick') result = await call('sync_wifi_enable', picked[0] ?? '');
     if (done(result) && f.folder) folder = null;
+    if (f.kind === 'lost' && result?.ok) checklist = result.checklist ?? [];
     if (f.kind === 'pick' && result?.ok) await showQr(); // the chosen address is saved: show the code now
   }
 
@@ -234,9 +245,10 @@
   }
 
   function toggle(id) { picked = picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id]; }
-  const needsPick = $derived(form && (form.kind === 'remove' || form.kind === 'orphans' || form.kind === 'pick'));
+  const removing = $derived(form && (form.kind === 'remove' || form.kind === 'lost'));
+  const needsPick = $derived(form && (removing || form.kind === 'orphans' || form.kind === 'pick'));
   const canSubmit = $derived(form && (!form.folder || folder) && (!needsPick || picked.length)
-    && (['qrtext', 'refind', 'wifi'].includes(form.kind) ? text.trim() : (form.kind === 'remove' && !form.twice) || form.kind === 'pick' || pw));
+    && (['qrtext', 'refind', 'wifi'].includes(form.kind) ? text.trim() : (removing && !form.twice) || form.kind === 'pick' || pw));
 </script>
 
 <svelte:window bind:innerWidth={viewportWidth} />
@@ -244,6 +256,7 @@
 <div class="sheet glass" role="dialog" aria-label={t('syncPage.title')}>
   <header>
     <h2>{t('syncPage.title')}</h2>
+    {#if onconnections}<Button label={t('nav.tool.connections')} onclick={onconnections} />{/if}
     <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if view && view.pro === false}
@@ -259,6 +272,7 @@
   {#if view && (view.pro !== false || view.licence_only)}
     <p class="muted">{view.intro}</p>
     {#if view.status_line}<p class="status" role="status">{view.status_line}<ErrorLogLink text={view.status_line} /></p>{/if}
+    {#if view.own_id}<p class="muted small">{view.own_id}</p>{/if}
     {#if view.rollback?.own}
       <div class="banner {view.rollback.own.severity}" role="alert" aria-label={view.rollback.own.title}>
         <strong>{view.rollback.own.title}</strong>
@@ -306,7 +320,7 @@
 </div>
 
 {#if form}
-  <div class="scrim" role="dialog" aria-modal="true" aria-label={form.title}>
+  <div class="scrim" role="dialog" aria-modal="true" use:dialog={{ onescape: () => (form = null) }} aria-label={form.title}>
     <form class="sheet-form glass" onsubmit={submit}>
       <h2>{form.title}</h2>
       {#if form.intro}<p class="muted pre">{form.intro}</p>{/if}
@@ -335,7 +349,7 @@
         {/if}
       {:else if form.kind === 'pick'}
         <!-- the address list above is the whole form -->
-      {:else if form.kind !== 'remove' || form.twice}
+      {:else if !removing || form.twice}
         <div class="group">
           <Field label={t('syncPage.syncPassword')} type="password" bind:value={pw} autocomplete="new-password" oninput={check} />
           {#if form.twice}<Field label={t('syncPage.enterAgain')} type="password" bind:value={pw2} autocomplete="new-password" oninput={check} />{/if}
@@ -355,7 +369,7 @@
 {/if}
 
 {#if qr}
-  <div class="scrim" role="dialog" aria-modal="true" aria-label={t('syncPage.pairTitle')}>
+  <div class="scrim" role="dialog" aria-modal="true" use:dialog={{ onescape: closeQr }} aria-label={t('syncPage.pairTitle')}>
     <div class="sheet-form glass qr">
       <h2>{t('syncPage.scanInstruction')}</h2>
       <div class="qr-row">
@@ -393,7 +407,7 @@
 {/if}
 
 {#if qr && confirm}
-  <div class="scrim" role="alertdialog" aria-modal="true" aria-label={t('syncPage.acceptTitle')}>
+  <div class="scrim" role="alertdialog" aria-modal="true" use:dialog={{ onescape: () => { if (!confirm.adding) decide(false); } }} aria-label={t('syncPage.acceptTitle')}>
     <div class="sheet-form glass">
       <h2>{t('syncPage.addDevice', { name: confirm.name })}</h2>
       <p class="muted">{confirm.message}</p>
@@ -410,7 +424,7 @@
 {/if}
 
 {#if paired}
-  <div class="scrim" role="dialog" aria-modal="true" aria-label={t('syncPage.pairedTitle')}>
+  <div class="scrim" role="dialog" aria-modal="true" use:dialog={{ onescape: () => (paired = null) }} aria-label={t('syncPage.pairedTitle')}>
     <div class="sheet-form glass">
       <h2>{t('syncPage.paired', { name: paired.name })}</h2>
       <p class="muted">{paired.message}</p>
@@ -423,8 +437,18 @@
   </div>
 {/if}
 
+{#if checklist}
+  <div class="scrim" role="dialog" aria-modal="true" use:dialog={{ onescape: () => (checklist = null) }} aria-label={t('syncPage.checklistTitle')}>
+    <div class="sheet-form glass">
+      <h2>{t('syncPage.checklistTitle')}</h2>
+      <ol class="checklist">{#each checklist as item, n (n)}<li>{item}</li>{/each}</ol>
+      <footer><Button label={t('common.ok')} variant="primary" onclick={() => (checklist = null)} /></footer>
+    </div>
+  </div>
+{/if}
+
 {#if qrProblem}
-  <div class="scrim" role="dialog" aria-modal="true" aria-label={t('syncPage.notListening')}>
+  <div class="scrim" role="dialog" aria-modal="true" use:dialog={{ onescape: () => (qrProblem = '') }} aria-label={t('syncPage.notListening')}>
     <div class="sheet-form glass">
       <h2>{t('syncPage.noPairingCode')}</h2>
       <p class="error" role="alert">{qrProblem}<ErrorLogLink text={qrProblem} /></p>
@@ -460,6 +484,7 @@
   .row { display: flex; gap: 8px; align-items: center; }
   .path { flex: 1; font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .picks { padding: 8px 12px; display: grid; gap: 6px; }
+  .checklist { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 13px; }
   textarea { min-height: 90px; background: var(--group); color: var(--text); border: 1px solid var(--separator); border-radius: 10px; padding: 8px;
     font: 12px ui-monospace, monospace; user-select: text; }
   .error { color: var(--danger); margin: 0; }

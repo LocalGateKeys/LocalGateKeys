@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expiry reminders (UX workstream 10). Translations from ios/Shared/Localizable.xcstrings; "iPhone" is "phone". -->
+    <string name="reminder_anonymous_body">Eine Erinnerung ist fällig</string>
+    <string name="reminder_named_body">%1$s ist fällig</string>
+    <string name="reminder_save_failed">Die Erinnerung konnte auf diesem Telefon nicht gespeichert werden.</string>
+    <string name="reminder_channel_name">Erinnerungen</string>
+    <string name="reminder_section">Erinnerung</string>
+    <string name="reminder_due">Fällig</string>
+    <string name="reminder_remind_me">Erinnere mich</string>
+    <string name="reminder_change">Erinnerung ändern</string>
+    <string name="reminder_remove">Erinnerung entfernen</string>
+    <string name="reminder_add">Erinnerung hinzufügen</string>
+    <string name="reminder_suggest_button">Vor dem Ablauf erinnern</string>
+    <string name="reminder_card_expires">Diese Karte läuft ab: %1$s.</string>
+    <string name="reminder_due_date">Fälligkeitsdatum</string>
+    <string name="reminder_on_the_day">Am Tag selbst</string>
+    <string name="reminder_upcoming">Demnächst</string>
+    <string name="reminder_nothing_upcoming">In den nächsten 30 Tagen steht nichts an.</string>
+    <string name="reminder_overdue_due">Überfällig · fällig %1$s</string>
+    <string name="reminder_due_on">Fällig %1$s</string>
+    <string name="reminder_snooze">Zurückstellen</string>
+    <string name="reminder_snooze_day">Einen Tag zurückstellen</string>
+    <string name="reminder_notifications_off">Mitteilungen sind für LocalGateKeys ausgeschaltet. Erinnerungen werden weiterhin hier angezeigt.</string>
+    <string name="reminder_settings_title">Erinnerungen</string>
+    <string name="reminder_show_names">Eintragsnamen in Mitteilungen anzeigen</string>
+    <string name="reminder_settings_footer">Fügen Sie eine Erinnerung für eine Karte, ein Dokument oder ein Abo hinzu. Aus: Mitteilungen lauten nur „Eine Erinnerung ist fällig“, sodass auf dem Sperrbildschirm nichts über den Eintrag zu sehen ist. An: Der Name des Eintrags kann auch auf dem Sperrbildschirm erscheinen, je nach der Einstellung Ihres Telefons für Mitteilungen auf dem Sperrbildschirm.</string>
+    <string name="reminder_editor_footer">Am jeweiligen Tag um 9:00 Uhr kommt eine Mitteilung. Sie lautet nur „Eine Erinnerung ist fällig“, solange Einstellungen › Erinnerungen keine Eintragsnamen anzeigt. Erinnerungen bleiben auf diesem Telefon und werden nie synchronisiert.</string>
+    <plurals name="reminder_days_before">
+        <item quantity="one">%1$d Tag vorher</item>
+        <item quantity="other">%1$d Tage vorher</item>
+    </plurals>
+</resources>

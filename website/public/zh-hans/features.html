@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>功能 | LocalGateKeys</title>
-  <meta name="description" content="LocalGateKeys 的功能（按版本列出）：加密保管库、浏览器和桌面填充、通行密钥、Windows Hello、双重验证码、导入、备份和设备同步。">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>功能：自动填充、通行密钥、双重验证码、同步</title>
+  <meta name="description" content="加密保险库、自动填充、通行密钥、双重验证码、安全分享、导入、备份与设备间同步。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/zh-hans/features">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/features">
@@ -20,7 +19,22 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/features">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/features">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/features">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/features">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/features">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="功能：自动填充、通行密钥、双重验证码、同步">
+  <meta property="og:description" content="加密保险库、自动填充、通行密钥、双重验证码、安全分享、导入、备份与设备间同步。">
+  <meta property="og:url" content="https://localgatekeys.app/zh-hans/features">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 标志：适用于 Windows、Mac 和 iPhone 的密码管理器。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="功能：自动填充、通行密钥、双重验证码、同步">
+  <meta name="twitter:description" content="加密保险库、自动填充、通行密钥、双重验证码、安全分享、导入、备份与设备间同步。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,32 +44,49 @@
   <a class="skip" href="#main">跳到正文</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../zh-hans/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../zh-hans/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="主导航">
+      <nav class="nav-wide" aria-label="主导航">
         <ul class="nav">
-          <li><a href="../zh-hans/features.html" aria-current="page">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../zh-hans/get-started.html">入门</a></li>
-          <li><a href="../zh-hans/help.html">指南</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/support.html">支持</a></li>
-          <li><a href="../buy.html">购买 Pro</a></li>
+          <li><a href="../zh-hans/features" aria-current="page">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help">指南</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>菜单</summary>
+        <nav aria-label="主导航">
+          <ul class="nav nav-stack">
+            <li><a href="../zh-hans/features" aria-current="page">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help">指南</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>语言</span></summary>
+        <ul class="lang-menu-list"><li><a href="../features" hreflang="en" lang="en">English</a></li><li><a href="../es/features" hreflang="es" lang="es">Español</a></li><li><a href="../it/features" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/features" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/features" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/features" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
   <main id="main">
 <div class="wrap page-head">
   <h1>全部功能，以及在哪里使用</h1>
-  <p class="lead">这一切都在您自己的设备上运行。免费版最多可保存 4 个项目；<a href="../zh-hans/pricing.html">Pro</a> 解除限制，并增加同步、双重验证码和文档。</p>
+  <p class="lead">这一切都在您自己的设备上运行：Windows 应用、浏览器扩展和 iPhone 应用。免费版最多可保存 7 个项目；<a href="../zh-hans/pricing">Pro</a> 取消限制，并增加同步、双重验证码和文档。</p>
 </div>
 <div class="wrap">
-  <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="LocalGateKeys 主页：密码健康状况、即将到来的提醒、显示实时双重验证码的一次性验证码卡片，以及带网站徽标的登录列表。" loading="lazy" decoding="async"></picture><figcaption>主页：密码健康状况、提醒、实时双重验证码和您的项目。演示保管库，账户均为虚构。</figcaption></figure>
+  <figure class="shot"><img src="../screenshots/home-vault-dark.webp" srcset="../screenshots/home-vault-dark-w720.webp 720w, ../screenshots/home-vault-dark-w1440.webp 1440w, ../screenshots/home-vault-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="LocalGateKeys 主页：密码健康状况、即将到来的提醒、显示实时双重验证码的一次性验证码卡片，以及带网站徽标的登录列表。" loading="lazy" decoding="async"><figcaption>主页：密码健康状况、提醒、实时双重验证码和您的项目。演示保管库，账户均为虚构。</figcaption></figure>
 </div>
 
 <div class="wrap page-body">
@@ -64,28 +95,31 @@
     <dl>
       <div><dt>在您的磁盘上加密</dt><dd>您保存的一切都使用由主密码保护的密钥加密，采用 Argon2id 和 AES-256-GCM。名称、用户名和网站同样会被加密，而不只是密码。</dd></div>
       <div><dt>不只是密码</dt><dd>网站和桌面应用登录、通行密钥、支付卡、银行账户、身份信息、安全笔记、文档、SSH 密钥、API 密钥、Wi-Fi 网络、书签、软件许可证、订阅、保修和购买记录，每种都有各自的字段。</dd></div>
-      <div><dt>文档（Pro）</dt><dd>将扫描件等文件保存在保管库中，每个最大 25 MB。每个文件都用各自的密钥加密。您可以预览文档、另存副本，或用其他应用打开。</dd></div>
+      <div><dt>文档（Pro）</dt><dd>将扫描件等文件保存在保管库中，每个最大 25 MB。每个文件都用各自的密钥加密。您可以预览文档、另存副本，或用其他应用打开。启用同步后，文件会以加密状态传送到您的其他设备。</dd></div>
       <div><dt>双重验证码（Pro）</dt><dd>保存网站的设置密钥后，LocalGateKeys 会在登录项顶部显示当前验证码，并在主页的“一次性验证码”卡片中显示。验证码遵循 TOTP 标准（RFC 6238）：6 至 8 位，15 至 120 秒，SHA-1、SHA-256 或 SHA-512。</dd></div>
-      <div><dt>通过二维码添加验证码</dt><dd>用 Win+Shift+S 截取网站双重验证设置页上的二维码并粘贴，或将其对准您的摄像头。Google Authenticator 导出的二维码同样适用。图像只在您的电脑上读取，绝不保存。</dd></div>
+      <div><dt>Apple Watch 上的验证码（Pro）</dt><dd>在 Apple Watch 上显示您选择的双重验证码，最多 10 个。手表只显示验证码，绝不显示密码，即使 iPhone 不在附近也能继续使用。</dd></div>
+      <div><dt>扫描二维码</dt><dd>选择“扫描二维码”，然后粘贴用 Win+Shift+S 截取的网站双重验证二维码，或拖入图像，或将其对准您的摄像头。Google Authenticator 导出的二维码同样适用。图像只在您的电脑上读取，绝不保存。</dd></div>
       <div><dt>密码生成器</dt><dd>8 至 256 个字符的随机密码，或 3 至 16 个单词的密码短语。</dd></div>
       <div><dt>密码健康</dt><dd>查看哪些已保存的密码较弱、重复使用、已超过一年，或缺少双重验证码。对照 Have I Been Pwned 的泄露检查默认关闭，需要您开启，只在您启动时运行，并且只发送哈希的五个字符，绝不发送密码。</dd></div>
       <div><dt>网站徽标和类型图标</dt><dd>每个项目都会显示网站图标、知名网站的内置徽标，或其类型的图标，让您一眼就能认出。</dd></div>
-      <div><dt>搜索和集合</dt><dd>通过命令面板（Ctrl+K）、筛选标签、收藏和您自己的集合查找项目。在搜索框中即可使用方向键、Enter 和 Ctrl+C 操作项目列表。</dd></div>
+      <div><dt>搜索、排序和集合</dt><dd>通过命令面板（Ctrl+K）、筛选标签、收藏和您自己的集合查找项目。可按标题、修改日期或创建日期排序，收藏项目排在最前。在搜索框中即可直接使用列表的方向键、Enter 和 Ctrl+C。</dd></div>
       <div><dt>回收站和撤销</dt><dd>删除的项目会进入回收站，确认删除的消息带有“撤销”按钮。回收站会在 30 天后自动清空，也可以保留全部内容，直到您手动清空。</dd></div>
-      <div><dt>密码历史</dt><dd>登录项的密码更改时，最近五个旧密码会保存在其加密历史中。</dd></div>
+      <div><dt>密码历史</dt><dd>登录的密码更改后，最多 10 个旧密码会在其加密历史中保留一年。您可以复制其中一个，或将其恢复。</dd></div>
+      <div><dt>已验证的网站</dt><dd>浏览器扩展会把已保存的网站标记为“已验证的网站”，并在您于相似地址（例如字母被调换的地址）登录或保存之前发出警告。检查在您的设备上进行，已保存的网站绝不会离开应用。Safari 只保存一份仅含网站名称的密封列表。在 Android 上，自动填充的保存提示也会显示同样的判断，并在保存到相似地址之前先询问您。</dd></div>
     </dl>
     <div class="shots">
-      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="在 LocalGateKeys 中打开的 GitHub 登录项，顶部是当前双重验证码，接着是用户名、隐藏的密码、网站、笔记和恢复代码。" loading="lazy" decoding="async"></picture><figcaption>当前双重验证码显示在登录项的顶部。</figcaption></figure>
-      <figure class="shot"><picture><source srcset="../screenshots/generator-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/generator-dark.webp" width="2880" height="1800" alt="密码生成器，生成一个随机的 20 位密码，可设置长度、字母、数字和符号。" loading="lazy" decoding="async"></picture><figcaption>生成器可生成随机密码或密码短语。</figcaption></figure>
-      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="安全中心显示得分为 77 分（满分 100），列出需要检查的弱密码、重复密码、无双重验证码的密码和旧密码，以及解锁和备份检查。" loading="lazy" decoding="async"></picture><figcaption>安全中心列出最需要优先处理的事项。</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/item-2fa-code-light.webp" srcset="../screenshots/item-2fa-code-light-w720.webp 720w, ../screenshots/item-2fa-code-light-w1440.webp 1440w, ../screenshots/item-2fa-code-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="在 LocalGateKeys 中打开的 GitHub 登录项，顶部是当前双重验证码，接着是用户名、隐藏的密码、网站、笔记和恢复代码。" loading="lazy" decoding="async"><figcaption>当前双重验证码显示在登录项的顶部。</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/generator-light.webp" srcset="../screenshots/generator-light-w720.webp 720w, ../screenshots/generator-light-w1440.webp 1440w, ../screenshots/generator-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="密码生成器，生成一个随机的 20 位密码，可设置长度、字母、数字和符号。" loading="lazy" decoding="async"><figcaption>生成器可生成随机密码或密码短语。</figcaption></figure>
+      <figure class="shot"><img src="../screenshots/security-center-dark.webp" srcset="../screenshots/security-center-dark-w720.webp 720w, ../screenshots/security-center-dark-w1440.webp 1440w, ../screenshots/security-center-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" alt="安全中心显示得分为 77 分（满分 100），列出需要检查的弱密码、重复密码、无双重验证码的密码和旧密码，以及解锁和备份检查。" loading="lazy" decoding="async"><figcaption>安全中心列出最需要优先处理的事项。</figcaption></figure>
     </div>
   </section>
 
   <section class="feature-group" aria-labelledby="f-move">
     <h2 id="f-move">导入和导出</h2>
     <dl>
-      <div><dt>从其他密码管理器导入</dt><dd>可导入 1Password、Bitwarden、LastPass、Dashlane、Proton Pass、KeePass 和 KeePassXC（包括 <code>.kdbx</code> 文件）、Chrome、Edge、Brave、Firefox 和 Safari 的导出文件，或任何其他 CSV 文件。写入任何内容之前，您会先检查每个项目，导入过程也绝不联网。</dd></div>
+      <div><dt>从其他密码管理器导入</dt><dd>可导入来自 1Password、Bitwarden、LastPass、Dashlane、Proton Pass、KeePass 和 KeePassXC（包括 <code>.kdbx</code> 文件）、Chrome、Edge、Brave、Firefox 和 Safari 的导出文件，或任何其他 CSV 文件。写入之前，您可以逐项检查，导入过程绝不联网。在 iPhone 上，可直接从 Apple 密码导入登录信息、双重验证码和通行密钥（iOS 26 及更高版本），也可导入许多密码管理器和验证器应用的文件。</dd></div>
       <div><dt>导出</dt><dd>可导出为加密的 KeePass KDBX 4 文件、兼容 Bitwarden 的 CSV 或 JSON，或 KeePass XML。每次导出都会先要求输入您的主密码。</dd></div>
+      <div><dt>安全共享单个项目</dt><dd>将登录信息或笔记以 <code>.lgkshare</code> 文件或二维码发送，并用六个单词的代码锁定，您需要通过其他方式告诉对方这个代码。它只能打开一次，输错三次代码就会销毁。通行密钥、文档和带有附件的项目无法共享。</dd></div>
     </dl>
   </section>
 
@@ -120,24 +154,67 @@
       <div><dt>定时加密备份</dt><dd>每天或每周，在您设定的时间进行。每份备份都是完整的加密文件，写入后会校验，并包含附件。</dd></div>
       <div><dt>额外副本保存到您选择的文件夹</dt><dd>让每份备份复制到 OneDrive、Google Drive、Dropbox 或 Proton Drive 文件夹，或任何其他位置。只会复制加密的备份文件，绝不复制正在使用的保管库。</dd></div>
       <div><dt>加密传输包</dt><dd>将选定的项目移到另一个保管库，使用由独立密码保护的加密文件。</dd></div>
+      <div><dt>手机备份</dt><dd>iPhone 和 Android 应用会用你选择的密码保存加密的 .lgkm 备份。可在任何 iPhone、Android 手机、Mac 或 PC 上恢复：它像同步一样合并，绝不会清空你的保险库。</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-emergency">
+    <h2 id="f-emergency">紧急访问与胁迫密码(Pro)</h2>
+    <dl>
+      <div><dt>紧急访问</dt><dd>把恢复短语拆成最多五份,交给您信任的人。您设定的份数(两到五份)凑齐即可恢复。每个人会收到一个签名文件、一个二维码或一张打印页。没有账户,也没有服务器:您与他们共享一个文件夹,例如云文件夹或U盘。</dd></div>
+      <div><dt>等待期与否决</dt><dd>需要访问的人在自己的 LocalGateKeys 中提出申请。过了您设定的等待期(1 到 30 天),应用会打开您最新加密备份的副本。在此之前,您的任何一台设备都可以说“不”。您也可以立刻批准。在手机上,流程以显示您的恢复短语结束;请在电脑上打开备份。</dd></div>
+      <div><dt>局限</dt><dd>应用之外没有任何东西能强制执行等待期或您的“不”。任何持有足够份数的人只要联手,就能立刻打开您的备份。请选择不会联手的人,并把各份分开保管。更换恢复短语后,旧的份数就失效了。</dd></div>
+      <div><dt>胁迫密码</dt><dd>第二个密码会打开一个带示例条目的逼真保管库,不会泄露真实保管库的任何信息。它打开期间,真实保管库会按您设定的小时数保持锁定,且不进行任何同步。它能让您的保管库不被从背后窥视的人或强迫您打开应用的人发现。但它无法对检查您文件的人隐瞒该功能的存在。适用于 Windows、Mac、iPhone 和 Android。</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-power">
+    <h2 id="f-power">高级用户工具</h2>
+    <dl>
+      <div><dt>备份还原测试</dt><dd>每周一次，LocalGateKeys 会把最新的备份还原到临时文件夹，检查它能否打开，然后删除该副本。如果备份使用的是旧密码，它会告诉你。</dd></div>
+      <div><dt>更改密码助手</dt><dd>打开更改网站密码的页面：来自精选列表、标准的 /.well-known/change-password 地址，或登录页面。它从不在第三方网站上填写内容。</dd></div>
+      <div><dt>多个保管库（Pro）</dt><dd>可以分开保管，例如“工作”和“个人”。免费版包含一个保管库。免费的 7 个项目上限按所有保管库合计计算。</dd></div>
+      <div><dt>可打印的保管库健康报告</dt><dd>一页可打印的报告，不包含密码，也不包含项目名称。</dd></div>
+      <div><dt>会过期且可撤销的共享</dt><dd>共享可设为 1 小时或 1 天后过期、仅可使用一次，并且可以撤销。这是尽力而为。</dd></div>
+      <div><dt>遗产包模板</dt><dd>面向遗嘱执行人的模板，位于紧急访问旁边。</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-dev">
+    <h2 id="f-dev">面向开发者和 AI 智能体</h2>
+    <dl>
+      <div><dt>AI 智能体可以登录，密码留在你的电脑上 (Pro)</dt><dd>Claude Code 等 MCP 智能体可以请求 LocalGateKeys 登录某个网站。每个请求都由你批准，浏览器扩展填写表单，智能体永远看不到密码。适在 Windows 上：使用 claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp；Store 版以 LocalGateKeysNativeHost.exe lgk 运行 lgk 命令行。 <a href="../zh-hans/news/2026-11-ai-agents">AI 智能体可以登录，密码留在你的电脑上</a></dd></div>
+      <div><dt>防篡改的访问日志</dt><dd>每条活动记录都通过哈希与上一条相连，因此日志被修改、截断或清空时，安全检查会显示出来。</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-sync">
     <h2 id="f-sync">设备间同步（Pro）</h2>
     <dl>
-      <div><dt>通过您的家庭 Wi-Fi</dt><dd>用一次性二维码配对一次电脑（电脑之间则粘贴其文本）。当两台电脑在同一网络中且都已解锁时，会通过经过认证的加密连接直接交换更改。不经过互联网。</dd></div>
-      <div><dt>通过您自己的云文件夹</dt><dd>如果您的电脑很少处于同一网络中，可以通过您已在使用的 OneDrive、Dropbox、Google Drive 或 iCloud Drive 文件夹同步，并由同步密码保护。服务商只会存储加密文件。两种方式可以同时使用。</dd></div>
-      <div><dt>同步的内容</dt><dd>网站和桌面应用登录，以及笔记和书签等其他项目。集合、文档和附件目前尚不同步。在两台电脑上同时进行的编辑会保留两个版本，删除操作会让项目在其他电脑上移入回收站。</dd></div>
-      <div><dt>iPhone</dt><dd>iPhone 应用可与您的 Windows 电脑同步。<a href="https://apps.apple.com/app/id6825488435">在 App Store 获取</a>。</dd></div>
+      <div><dt>通过您的家庭 Wi-Fi</dt><dd>用一次性二维码为电脑或 iPhone 配对一次（电脑之间则粘贴其文本）。当两台设备在同一网络中且都已解锁时，会通过经过认证的加密连接直接交换更改。不经过互联网。如果电脑的地址发生变化，点击“重新查找”即可重新连接，每台设备都会显示上次同步的时间。</dd></div>
+      <div><dt>通过您自己的云文件夹</dt><dd>如果您的设备很少处于同一网络中，可以通过您已在使用的云文件夹（例如 Dropbox 或 iCloud Drive）同步，并由同步密码保护。服务商只会存储加密文件。两种方式可以同时使用。</dd></div>
+      <div><dt>同步的内容</dt><dd>登录、笔记、银行卡等其他项目，以及附有文件的文档。集合保留在各台设备上。在两台设备上同时进行的编辑会保留两个版本，删除操作会让项目在其他设备上移入回收站。如果某台设备带回了保管库的旧副本，Windows 应用会向您发出警告，而不是接受它。</dd></div>
+      <div><dt>iPhone</dt><dd>iPhone 应用可与您的 Windows 电脑和 Mac同步。已购买 Pro 的 iPhone 与免费版电脑配对后，电脑会通过同步接管许可证并升级为 Pro。<a href="https://apps.apple.com/app/id6825488435">在 App Store 获取</a>。</dd></div>
+    </dl>
+  </section>
+
+  <section class="feature-group" aria-labelledby="f-iphone">
+    <h2 id="f-iphone">在 iPhone 上</h2>
+    <dl>
+      <div><dt>Safari 和应用中的 AutoFill</dt><dd>在 Safari 和其他应用中填充登录信息，建议显示在 QuickType 栏中，并可将 LocalGateKeys 用于通行密钥。在 iOS 18 及更高版本中，它还会在任何文本字段中填充银行卡、地址和其他信息。登录后，Safari 扩展会提议保存新的登录信息。</dd></div>
+      <div><dt>Face ID、Touch ID 或应用密码</dt><dd>保管库可用 Face ID、Touch ID 或 iPhone 密码打开，无需创建密码。如果别人知道您的密码，可以另外添加由 24 个单词的恢复短语支持的应用密码（可选）。</dd></div>
+      <div><dt>安全检查</dt><dd>“安全”标签页会为您的保管库打分，并列出弱密码、重复使用的密码、旧密码，以及可以使用双重验证码的登录。泄露检查在您开启之前保持关闭。</dd></div>
+      <div><dt>最近删除、历史记录和提醒</dt><dd>删除的项目会在“最近删除”中保留 30 天，点击“撤销”即可立即恢复。每个登录都保留密码历史，您还可以在银行卡、护照或证件到期前收到提醒。</dd></div>
+      <div><dt>附加文件（Pro）</dt><dd>将文档和照片附加到您的保管库，加密存储，并与您的其他设备同步。</dd></div>
+      <div><dt>十种语言</dt><dd>iPhone 应用支持英语、德语、西班牙语、意大利语、日语、韩语、荷兰语、波兰语、巴西葡萄牙语和简体中文。</dd></div>
     </dl>
   </section>
 
   <section class="feature-group" aria-labelledby="f-privacy">
     <h2 id="f-privacy">隐私</h2>
     <dl>
-      <div><dt>无需账户</dt><dd>您无需注册或登录。Pro 许可证是一个由您自己保管的密钥，在您的电脑上验证。</dd></div>
-      <div><dt>无遥测</dt><dd>应用不发送使用数据、崩溃报告或统计分析数据。</dd></div>
+      <div><dt>无需账户</dt><dd>您无需注册或登录。Pro 许可证是一个由您自己保管的密钥，在您的设备上验证。在 iPhone 上，Pro 是通过 App Store 购买的，应用只会向我们的许可证服务器发送 App Store 收据。</dd></div>
+      <div><dt>无遥测</dt><dd>这些应用不发送使用数据、崩溃报告或分析数据。</dd></div>
       <div><dt>严格离线模式</dt><dd>默认开启。它会阻止后台的互联网请求和泄露检查，检查更新前会先询问您。</dd></div>
       <div><dt>网站图标，由您决定</dt><dd>为了显示网站图标，应用会从该网站下载。这只会让该网站知道您在那里有账户，不会泄露其他信息。默认关闭：请在“设置”中开启“显示网站图标”（必须先关闭严格离线模式）。</dd></div>
       <div><dt>由您发起的更新检查</dt><dd>检查更新只会下载一个带签名的小文件。应用绝不会自行下载或安装任何东西。</dd></div>
@@ -149,43 +226,47 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>一款 Windows 密码管理器，把您的保管库保存在您自己的设备上。</p>
-        <p class="quiet">本网站不设置 Cookie，不运行统计分析，也不加载其他公司的任何内容。</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>适用于 Windows、Mac 和 iPhone 的密码管理器，让保管库留在您自己的设备上。</p>
+        <p class="quiet">本网站使用不依赖 Cookie 的 Cloudflare Web Analytics 统计页面访问量。网站不使用广告追踪器，也不设置 Cookie。</p>
       </div>
       <nav aria-label="产品">
         <h2>产品</h2>
         <ul>
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/licence.html">您的 Pro 许可证</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/download">下载</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/switch/">迁移</a></li>
+          <li><a href="../buy">购买 Pro</a></li>
+          <li><a href="../zh-hans/licence">您的 Pro 许可证</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">找回许可证</a></li>
         </ul>
       </nav>
       <nav aria-label="帮助">
         <h2>帮助</h2>
         <ul>
-          <li><a href="../zh-hans/help.html">用户指南</a></li>
-          <li><a href="../zh-hans/support.html">支持与常见问题</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">报告漏洞</a></li>
+          <li><a href="../zh-hans/help">用户指南</a></li>
+          <li><a href="../zh-hans/support">支持与常见问题</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../legal/vulnerability-disclosure">报告漏洞</a></li>
         </ul>
       </nav>
       <nav aria-label="法律">
         <h2>法律</h2>
         <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
         <ul>
-          <li><a href="../legal/eula.html">许可协议</a></li>
-          <li><a href="../legal/privacy.html">隐私政策</a></li>
-          <li><a href="../legal/terms-of-sale.html">销售条款</a></li>
-          <li><a href="../legal/refunds.html">退款政策</a></li>
+          <li><a href="../legal/eula">许可协议</a></li>
+          <li><a href="../legal/privacy">隐私政策</a></li>
+          <li><a href="../legal/terms-of-sale">销售条款</a></li>
+          <li><a href="../legal/refunds">退款政策</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。</p>
-      <p class="lang-switch" role="navigation" aria-label="语言"><a href="../features.html" hreflang="en" lang="en">English</a> · <a href="../es/features.html" hreflang="es" lang="es">Español</a> · <a href="../it/features.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/features.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/features.html" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a> · <a href="../ja/features.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/features.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/features.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/features.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/features.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。Apple、iPhone、Apple Watch、Face ID、Touch ID 和 Safari 是 Apple Inc. 在美国及其他国家/地区注册的商标。</p>
+      <nav class="lang-switch" aria-label="语言"><ul><li><a href="../features" hreflang="en" lang="en">English</a></li><li><a href="../es/features" hreflang="es" lang="es">Español</a></li><li><a href="../it/features" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/features" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/features" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/features" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/features" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/features" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/features" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/features" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/features" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

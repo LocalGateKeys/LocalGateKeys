@@ -43,6 +43,8 @@ class FaceObservation:
     centered: bool = False
     feature: tuple[float, ...] | None = None
     quality_reason: str = ""
+    # YuNet's five points in frame pixels: two eyes, nose tip, two mouth corners.
+    landmarks: tuple[tuple[float, float], ...] | None = None
 
     @property
     def usable(self) -> bool:
@@ -172,6 +174,7 @@ class FaceEngine:
         # not change the normalized yaw calculation.
         eye1_x, eye1_y, eye2_x, eye2_y = (float(face[i]) for i in range(4, 8))
         nose_x = float(face[8])
+        points = tuple((float(face[i]), float(face[i + 1])) for i in range(4, 14, 2))
         eye_distance = math.hypot(eye2_x - eye1_x, eye2_y - eye1_y)
         yaw = 0.0 if eye_distance < 1.0 else (nose_x - (eye1_x + eye2_x) / 2.0) / eye_distance
 
@@ -208,4 +211,4 @@ class FaceEngine:
                 raise
             except Exception as exc:
                 raise FaceModelError("Face alignment or recognition failed for this frame.") from exc
-        return FaceObservation(1, bbox, score, brightness, yaw, scale, centered, feature, reason)
+        return FaceObservation(1, bbox, score, brightness, yaw, scale, centered, feature, reason, points)

@@ -23,7 +23,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from .. import share
+from .. import share, share_revoke
 from ..api.result import ApiError
 from ..i18n import t
 
@@ -82,6 +82,7 @@ def preview_fields(item: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _without_local_refs(item: dict[str, Any]) -> dict[str, Any]:
     """Drop what only means something in this vault: linked document ids and local trust approvals."""
+    from ..agent_gate import agent_scope_stripped
     from ..transfer import LOCAL_TRUST_SCOPE_KEYS
 
     out = copy.deepcopy(item)
@@ -95,6 +96,8 @@ def _without_local_refs(item: dict[str, Any]) -> dict[str, Any]:
     if isinstance(scope, dict):
         for key in LOCAL_TRUST_SCOPE_KEYS:
             scope.pop(key, None)
+        agent_scope_stripped(scope)  # "AI agents may use this login" never travels to someone else's vault
+        scope.pop("access", None)  # access rules are the owner's (feature pack 2026-11-15, 4.3)
     return out
 
 
@@ -116,6 +119,10 @@ def _incoming(item: dict[str, Any]) -> dict[str, Any]:
 
 def _title(item: dict[str, Any]) -> str:
     return str(item.get("title") or item.get("label") or t("share.untitled"))
+
+
+# Share sheet "Expires in" choices (sub-plan 12); the 24 h lifetime stays the ceiling.
+EXPIRY_HOURS = (1, 24)
 
 
 class ShareService:
@@ -196,11 +203,14 @@ class ShareService:
                 self._delete(state, package_id, opened=False)
 
     # ------------------------------------------------------------------ send
-    def start(self, ref: dict[str, Any]) -> dict[str, Any]:
+    def start(self, ref: dict[str, Any], expires_hours: int | None = None, one_use: bool = False) -> dict[str, Any]:
         """Re-ask the master password, then seal the item. Returns the code and how it can travel."""
         session, lease = self._session()
         if ref.get("kind") in NOT_SHAREABLE_KINDS:
             raise ApiError("not_shareable", t("share.passkeysAndDocumentsWithFiles"))
+        from .secrets import refuse_travel_hidden
+
+        refuse_travel_hidden(session, ref.get("id"))
         self._auth.reauthenticate(t("share.confirmToShareThisItem"), lease, allow_hello=False)
         self._controller.require_lease(lease)
         if ref["source"] == "credential":
@@ -216,7 +226,10 @@ class ShareService:
             code = share.generate_code()
             outgoing = _outgoing(record)
             try:
-                data = share.seal(outgoing, code, sender=_sender_name(), now=self._now())
+                now = self._now()
+                hours = int(expires_hours) if expires_hours in EXPIRY_HOURS else None
+                data = share.seal(outgoing, code, sender=_sender_name(), now=now,
+                                  expires=now + hours * 3600 if hours else None, one_use=bool(one_use))
             except share.ShareError as exc:
                 raise ApiError(exc.reason.replace("-", "_"), str(exc)) from None
             title = _title(record)
@@ -226,7 +239,49 @@ class ShareService:
         handle = secrets.token_urlsafe(12)
         self._sealed = {handle: {"data": data, "title": title}}  # one pending share at a time
         return {"handle": handle, "code": code, "title": title, "size": len(data), "qr": share.fits_qr(data),
-                "qr_limit": share.QR_LIMIT, "expires_hours": share.LIFETIME // 3600}
+                "qr_limit": share.QR_LIMIT,
+                "expires_hours": min(share.LIFETIME // 3600, int(expires_hours or share.LIFETIME // 3600)),
+                "one_use": bool(one_use)}
+
+    def _sync_channel(self) -> tuple[Path, Any, dict[str, str]] | None:
+        """(sync dir, this device's identity, trusted member signing keys) of the personal sync group, or None."""
+        from ..sync.folder_transport import SYNC_DIR_NAME
+        from ..sync.keyring import member_signing_keys, parse_keyring
+        from ..sync.vault_bridge import load_sync_state
+
+        session = self._controller.session
+        state = load_sync_state(session) if session is not None else None
+        if state is None or not state.folder_path or state.keyring is None:
+            return None
+        trusted = member_signing_keys(parse_keyring(state.keyring))
+        return Path(state.folder_path) / SYNC_DIR_NAME, state.identity(), trusted
+
+    def _revoked_over_sync(self) -> set[str]:
+        """Package ids a trusted member of this vault's sync group revoked (best effort)."""
+        try:
+            channel = self._sync_channel()
+            return set() if channel is None else share_revoke.collect(channel[0], channel[2])
+        except Exception:  # noqa: BLE001 - sync not set up, unreadable or a damaged notice: nothing revoked
+            return set()
+
+    def revoke(self, handle: str) -> dict[str, Any]:
+        """Send a signed revoke notice for the pending share over sync (paired devices refuse to open it after)."""
+        self._session()
+        entry = self._sealed_for(handle)
+        try:
+            package_id = json.loads(entry["data"].decode("utf-8"))["id"]
+            channel = self._sync_channel()
+        except Exception:  # noqa: BLE001
+            channel = None
+        if channel is None:
+            raise ApiError("no_sync", t("share.revokeNeedsSync"))
+        sync_dir, identity, _trusted = channel
+        try:
+            share_revoke.publish(sync_dir, identity.signing_key, package_id, signer=identity.device_id,
+                                 now=self._now())
+        except (OSError, share_revoke.RevokeError) as exc:
+            raise ApiError("write_failed", str(exc)) from None
+        return {"message": t("share.revokeSent")}
 
     def _sealed_for(self, handle: str) -> dict[str, Any]:
         entry = self._sealed.get(str(handle or ""))
@@ -362,7 +417,8 @@ class ShareService:
             raise ApiError("gone", t("share.thisSharedItemIsNo"))
         data = self._package_path(package_id).read_bytes()
         try:
-            opened = share.open_package(data, code, now=self._now(), opened=state["opened"])
+            opened = share.open_package(data, code, now=self._now(), opened=state["opened"],
+                                        revoked=self._revoked_over_sync())
         except share.ShareError as exc:
             code_name = exc.reason
             if code_name == "wrong-code":
@@ -376,7 +432,7 @@ class ShareService:
                 self._write_state(state)
                 left = MAX_WRONG - meta["wrong"]
                 raise ApiError("wrong_code", t("share.wrongCodeTriesLeft", count=left)) from None
-            if code_name in ("expired", "already-opened", "not-shareable", "unsupported"):
+            if code_name in ("expired", "already-opened", "not-shareable", "unsupported", "revoked"):
                 self._delete(state, package_id, opened=False)
                 self._write_state(state)
             raise ApiError(code_name.replace("-", "_"), str(exc)) from None

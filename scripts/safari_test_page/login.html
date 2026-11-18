@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login lab</title>
+  <style>
+    body { font: 17px -apple-system, sans-serif; margin: 24px; }
+    label, input, button { display: block; width: 100%; box-sizing: border-box; margin-top: 8px; }
+    input, button { font-size: 17px; padding: 10px; }
+  </style>
+</head>
+<body>
+  <!-- Test page for ios/LocalGateKeysUITests/SafariShieldUITests.swift, served on 127.0.0.1 only by
+       scripts/ios_simulator_checks.sh. Nothing is sent anywhere: the form never leaves the page. -->
+  <h1>Login lab</h1>
+  <form action="done.html" method="get" autocomplete="on">
+    <label for="username">Email</label>
+    <input id="username" name="username" type="email" autocomplete="username">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password">
+    <button type="submit">Sign in</button>
+  </form>
+  <p id="done" hidden>Signed in</p>
+  <script>
+    // Sign in without leaving the page, as many sites do: the form goes away and "Signed in" shows.
+    document.querySelector("form").addEventListener("submit", event => {
+      event.preventDefault();
+      setTimeout(() => { event.target.remove(); document.getElementById("done").hidden = false; }, 300);
+    });
+  </script>
+</body>
+</html>

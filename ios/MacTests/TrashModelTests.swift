@@ -31,10 +31,11 @@ final class TrashModelTests: XCTestCase {
 
     /// Adds a login (with a stored meta, as after a sync) and returns its id.
     @discardableResult
-    private func addLogin(_ title: String, username: String = "sam") throws -> String {
+    private func addLogin(_ title: String, username: String = "sam", tags: [String] = []) throws -> String {
         var r = EditorModel.newRecord(kind: .web, now: 1_700_000_000, random: SystemRandomSource())
         let id = try XCTUnwrap(r["id"]?.stringValue)
         r["label"] = .string(title); r["username"] = .string(username); r["password"] = .string("pw-\(title)")
+        if !tags.isEmpty { r["tags"] = .array(tags.map { .string($0) }) }
         r["scope"] = .object(["origin": .string("https://\(title.lowercased()).example")])
         let normal = try Normalise.normalForm(ns: .entry, record: .object(r))
         var snap = try store.load()
@@ -48,6 +49,41 @@ final class TrashModelTests: XCTestCase {
     static let device = "0b6f3c1e-8a5d-4c2b-9f7e-1d2c3b4a5e6f"
 
     private func liveIDs() throws -> Set<String> { Set(VaultItem.items(from: try store.load()).map(\.id)) }
+
+    func testDeletingForGoodForgetsTheItemHistory() throws {
+        // Scan 2026-11-15 W-M5, A-M3: earlier versions (with old passwords) leave with the item.
+        let gone = try addLogin("Bank"), kept = try addLogin("Mail")
+        let m = model()
+        try m.moveToTrash(id: gone)
+        var data = try XCTUnwrap(local.localData)
+        data.itemHistory = [gone, kept].map {
+            ItemHistory.Row(snapshotID: "s-\($0)", itemID: $0, ns: "entry", createdAt: 1, changeType: "update", recordJSON: "{}")
+        }
+        try local.commitLocalData(data)
+        m.purgeExpired()
+        XCTAssertEqual(local.localData?.itemHistory.count, 2, "in Recently deleted: kept, it can still come back")
+        m.emptyAll()
+        XCTAssertEqual(local.localData?.itemHistory.map(\.itemID), [kept], "only the live item keeps its history")
+    }
+
+    func testTravelModeHidesRowsOfHiddenItems() throws {
+        // Final review S-M1: Recently deleted leaves out travel-hidden items as the list does (feature pack §2).
+        let hidden = try addLogin("Bank", tags: ["trip"]), shown = try addLogin("Mail")
+        let m = model()
+        try m.moveToTrash(id: hidden)
+        try m.moveToTrash(id: shown)
+        var data = try XCTUnwrap(local.localData)
+        data.travelMode = TravelMode(on: true, tags: ["trip"])
+        try local.commitLocalData(data)
+        XCTAssertEqual(m.rows.map(\.itemID), [shown])
+        XCTAssertEqual(m.restoreItems([hidden]), 0, "a hidden row can't be restored")
+        m.emptyAll()
+        XCTAssertEqual(local.localData?.trash.count, 1, "Empty leaves the hidden row alone")
+        data = try XCTUnwrap(local.localData)
+        data.travelMode = .off
+        try local.commitLocalData(data)
+        XCTAssertEqual(m.rows.map(\.itemID), [hidden])
+    }
 
     func testDeleteMovesToTrashAndTombstones() throws {
         let id = try addLogin("Bank")

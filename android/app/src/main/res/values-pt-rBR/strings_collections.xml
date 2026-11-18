@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Collections (sub-plan 07 Task 5l). -->
+<resources>
+    <string name="collections_title">Coleções</string>
+    <string name="collections_none">Ainda não há coleções.</string>
+    <string name="collections_footer">Notas, cartões e outros itens com tipo podem ser adicionados a coleções. Logins não.</string>
+    <string name="collections_add_starters">Adicionar coleções iniciais</string>
+    <string name="collections_new">Nova coleção</string>
+    <string name="collections_name">Nome</string>
+    <string name="collections_create">Criar</string>
+    <string name="collections_delete_title">Excluir a coleção?</string>
+    <string name="collections_delete_message">Os itens dela são mantidos.</string>
+    <string name="collections_view_only">Só ver</string>
+    <string name="collections_shared">Compartilhada</string>
+    <string name="collections_picker_footer">Um item pode estar em até 20 coleções.</string>
+    <string name="collections_all_items">Todos os itens</string>
+    <string name="collections_manage">Gerenciar coleções</string>
+    <string name="collections_filter">Coleção: %1$s</string>
+    <string name="collections_filter_clear">Mostrar todos os itens</string>
+    <string name="collections_filter_empty">Nenhum item nesta coleção.</string>
+    <string name="collections_read_only_item">Este item está em uma coleção compartilhada com você só para ver, então não pode ser alterado neste dispositivo.</string>
+    <string name="collections_read_only">Esta coleção foi compartilhada com você só para ver, então não pode ser alterada neste dispositivo.</string>
+    <string name="collections_shared_delete">Uma coleção compartilhada não pode ser excluída. Pare de compartilhá-la ou saia dela primeiro.</string>
+    <string name="collections_limit">Você pode ter no máximo 500 coleções.</string>
+    <string name="collections_not_member">Logins e documentos não podem ser adicionados a uma coleção.</string>
+    <string name="collections_bad_name">Este nome não pode ser usado.</string>
+    <string name="collections_gone">Essa coleção não existe mais.</string>
+    <string name="collections_failed">Não foi possível alterar a coleção.</string>
+    <string name="collections_empty_name">Digite um nome para a coleção.</string>
+    <string name="collections_long_name">Os nomes de coleção podem ter no máximo 100 caracteres.</string>
+    <string name="collections_duplicate">Já existe uma coleção com este nome.</string>
+    <string name="collections_too_many">Um item não pode pertencer a mais de 20 coleções.</string>
+    <string name="collections_read_failed">Não foi possível ler o cofre neste dispositivo.</string>
+    <string name="collection_starter_personal">Pessoal</string>
+    <string name="collection_starter_work">Trabalho</string>
+    <string name="collection_starter_travel">Viagens</string>
+    <string name="collection_starter_emergency">Emergência</string>
+</resources>

@@ -9,7 +9,7 @@ copy for each release.
 - [ ] Create the app in Play Console with app id `app.localgatekeys.android`.
 - [ ] In-app product `pro_unlimited`:
   - one-time (managed, non-consumable);
-  - US$4.99;
+  - US$29.99 (buyers at the earlier US$4.99 keep lifetime Pro);
   - **not** family-shared;
   - title and description from the upgrade sheet copy.
 - [ ] Store listing: name, short and full description, icon, feature graphic, phone screenshots (take them from the app
@@ -23,7 +23,11 @@ copy for each release.
   and the unused play-services location, base and tasks modules are excluded from the build. Check
   `:app:dependencies --configuration releaseRuntimeClasspath` before you answer. The app's only network use is TCP to
   the paired PC on the local network, Play Billing through the Play Store app, and
-  `https://licenses.localgatekeys.app/play/claim` (the licence server, purchase token only).
+  `https://licenses.localgatekeys.app/play/claim` (the licence server, purchase token only). The Wi-Fi host also
+  announces `_lgksync._tcp` over mDNS on the Wi-Fi network (API 33+: NsdManager; API 29-32: JmDNS 3.6.4, Apache-2.0,
+  whose only dependency is the SLF4J API already shipped with YubiKit). For that, API 29-32 declares the normal
+  permission `CHANGE_WIFI_MULTICAST_STATE` (`maxSdkVersion` 32, a Wi-Fi multicast lock held only while announcing);
+  `docs/store/PLAY_CHECKLIST.md` item 10 does not list it yet.
 - [ ] A new developer account needs a closed test with at least 12 testers for 14 days before production
   access.
 - [ ] Acknowledgements: `app/src/main/assets/licenses/argon2kt-LICENSE.txt` is the verbatim upstream LICENSE of
@@ -50,6 +54,8 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
             android\app\build\outputs\bundle\release\app-release.aab lgk-upload
   ```
   or add a local, uncommitted `signingConfig` that reads the keystore path and passwords from environment variables.
+- Enrolled 2026-11-17. Play app signing key SHA-256 `FE:95:CA:09:75:6E:5B:19:00:AD:D1:E6:CA:27:00:F4:5B:2C:11:36:EA:FC:07:20:D1:4A:43:32:05:ED:4B:BC`; upload key SHA-256
+  `BF:11:EB:3C:AF:20:AD:C4:51:EE:A5:40:C4:ED:34:38:8A:C4:7F:8F:34:7A:75:82:8F:0F:F5:5E:5D:25:84:A1`.
 - [ ] If the upload key is lost, ask Google for an upload key reset in Play Console. The app signing key is not
   affected.
 
@@ -96,7 +102,7 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
   as a file to the other device (Quick Share, a messenger or Files); there, open the `.lgkshare` from Files: the app
   opens (after the unlock) on Receive with "Shared by Android phone". Type the words with dashes or capitals: the
   preview shows kind, title and user name only; Add to vault adds it as a new item that syncs. Open the same file
-  again: "already opened". Three wrong codes delete it. On the free plan with 4 items, Add shows the Pro sheet.
+  again: "already opened". Three wrong codes delete it. On the free plan with 7 items, Add shows the Pro sheet.
   Show as a QR code on a small item and scan it in Settings › Receive a shared item › Scan QR code. Passkeys and
   files have no Share button. After the share sheet returns, `adb shell run-as app.localgatekeys.android ls
   cache/open-documents` is empty, and `no_backup/share-inbox` is empty after Add or Reject. `adb logcat` shows
@@ -111,7 +117,7 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
   app.localgatekeys.android ls no_backup` shows `editor-draft.bin`, and its bytes contain none of the typed text.
 - [ ] Import from other apps (task 5c), on a real phone from the Files app / Downloads: Settings › Import from a
   file with a Chrome passwords CSV, a Bitwarden password-protected .json (a wrong password asks again) and a
-  1Password .1pux. The review shows Add / Skip / Replace, the free plan stops at 4 items with "Needs Pro", Import
+  1Password .1pux. The review shows Add / Skip / Replace, the free plan stops at 7 items with "Needs Pro", Import
   saves once, the items show in the vault and reach the PC at the next sync; importing the same file again adds
   nothing. A LastPass or KeePass file says to import it on the PC. Android's Credential Manager import is not offered.
 - [ ] App password (task 7): Settings › App password › Use an app password; a weak password is refused, the 24
@@ -145,17 +151,17 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
   ordinary app is filled as that app (its web domain is not trusted).
 - [ ] Part C save: sign in with a new login in Chrome; Android asks to save to LocalGateKeys; unlock, Save; the login
   shows in the vault and reaches the PC at the next sync. Sign in with a changed password: "Update password", the old
-  one is in the password history. In an app: the save sheet asks for the website. Free plan with 4 items: Save shows
+  one is in the password history. In an app: the save sheet asks for the website. Free plan with 7 items: Save shows
   the limit message, Update still works.
 - [ ] Part C passkeys (Android 14+, `LGK_API34`+ emulator and the owner's phone): system Settings › Passwords,
   passkeys & accounts lists LocalGateKeys as a provider; turn it on. On webauthn.io in Chrome: register (fingerprint),
   the passkey item appears; sync to the PC and sign in there with the desktop's passkey support; create one on the PC,
   sync, and sign in on the phone. "Offer LocalGateKeys for passkeys" off: LocalGateKeys is not offered. Free plan
   full: creation offers no LocalGateKeys entry (Android shows other providers); sign-in still works.
-- [ ] Part C privileged browsers: replace `app/src/main/assets/privileged_browsers.json` with Google's published
-  `gpm_passkeys_privileged_apps.json` (Chrome, Edge, Firefox, Brave, Samsung, ...) and check the Chrome release
-  fingerprint in the bundled file. Until then only Chrome stable is treated as a browser for passkeys: any other
-  browser signs as an app (`android:apk-key-hash:` origin) and websites refuse it.
+- [ ] Privileged browsers: compare `app/src/main/assets/privileged_browsers.json` with Google's current list
+  (`https://www.gstatic.com/gpm-passkeys-privileged-apps/apps.json`) and take any new entries. Check the Chrome
+  release fingerprint (`F0:FD:6C:5B:...:DB:83`) is unchanged. Last matched exactly on 2026-11-01 (98 signatures).
+  A browser missing from the list signs passkeys as an app (`android:apk-key-hash:` origin) and websites refuse it.
 - [ ] Part C Chrome's clientDataJSON: when Chrome passes its own clientDataHash the response carries `{}` as
   clientDataJSON (Chrome replaces it). Confirm webauthn.io registration and sign-in succeed; if Chrome rejects the
   placeholder, build clientDataJSON from the request origin instead.
@@ -193,5 +199,57 @@ Never commit a keystore, its passwords or a `keystore.properties` (`.gitignore` 
       sync starts; the PC stored no phone items before that. Offline at purchase: the claim happens at the next
       launch. Refund the test purchase: the next claim is refused (no retries) and the PC's weekly revocation list
       removes Pro there. Privacy and Licence Agreement open `/legal/app/` pages (after the site deploy)
+- [ ] Device removal (2026-10-31, unit-tested only), phone + PC (+ a second phone or the PC as the removed device) in
+  one cloud-folder group: Sync shows "Devices in this sync group" with names; on the free plan Remove shows the Pro
+  message and the upgrade sheet. With Pro, Remove on the PC's row: a weak, mismatched or the current sync password is
+  refused with the desktop's message and nothing changes; a NEW strong password removes it: "... was removed from
+  sync.", the folder holds `LocalGateKeys Sync/removed/<id>.lgkremoved` and the keyring no longer lists it; the other
+  kept device picks up the new key at its next sync. Remove a device… with two checked removes both in one change.
+- [ ] Device removal, "I lost a device…": the checklist shows (change passwords, encrypted copy, erase only when it
+  goes online, Wi-Fi-only not erased, sign it out of the cloud account, Find my device); picking a device and a new
+  password removes it like Remove.
+- [ ] Device removal, the removed phone: remove this phone from the PC (Windows app, Remove device). Open the app on
+  the phone (locked, unlock not needed): within a few seconds it locks/erases and the unlock screen starts fresh with
+  "A vault was erased from this phone" once; `adb shell run-as app.localgatekeys.android ls files` has no `Vault`,
+  `vault-key.bin`, `secrets.bin` or `Vault.sync-watch.json`, `no_backup/fill-index.bin` is gone, and the Android
+  Keystore key is gone (`adb shell run-as ... ` cannot open the old vault). A backup exported earlier through the
+  system picker is still in Files and restores. Repeat while unlocked (Sync now): same result.
+- [ ] Device removal, setting off: Settings › Security › "Erase this device if it is removed from sync" off, remove
+  the phone from the PC, Sync now: the Sync screen shows "Another of your devices removed this phone from sync ..."
+  first, nothing is erased; Leave sync deletes `files/Vault.sync-watch.json`, and removing it again later never
+  erases. A phone that was only dropped (no notice, e.g. an unconfirmed member) shows the old rejoin messages only.
+- [ ] Device removal, unconfirmed members: join a third device with the sync password from another device; the phone
+  lists it as "Added by another device, not confirmed"; These are my devices confirms it; an unconfirmed one loses
+  access at the next Remove (named in the keep-list text) and gets no notice. Check all of the above in German and
+  one CJK language for clipped text.
+- [ ] iPhone parity shell (2026-11-01): four tabs Vault, Sync, Security, Settings in the glass bar; in German,
+  Polish and Portuguese the labels shrink and are not cut; at font scale 2.0 only icons show. Vault's Search button
+  opens the search with the keyboard up; Back and the arrow close it; recent searches and recent items show; an item
+  opened from search returns to the same results. Ctrl+K (hardware keyboard) lists the `>` actions; Security check,
+  Recently deleted, Open Autofill settings and Sync settings each go to the right place. Settings > Sync and the
+  empty vault's Import card switch tabs. Back on Sync, Security or Settings returns to Vault.
+- [ ] Security check (2026-11-01): the score and the weak / reused / old / no-2FA rows match the iPhone for the same
+  vault; open a finding, Change password opens the site and comes back locked or unlocked as Auto-lock says; Dismiss
+  hides the item from that row, Restore brings it back. Breach check: refused while Strict offline mode is on, refused
+  while Breach checks is off; with both allowed, the confirmation names Have I Been Pwned, the check runs with
+  progress and can be cancelled, and `adb logcat` shows no password, hash or title. Airplane mode: "could not check".
+- [ ] Recently deleted and Undo (2026-11-01): delete a website login from its editor (Edit › Delete) and a kind the
+  phone cannot edit (for example a desktop login) from its detail screen, as on the iPhone (the detail offers Delete
+  only for those): the Undo toast is solid (no list text shows through) and undoes it; after the toast, Settings >
+  Recently deleted lists it, Restore brings it back (and it reaches the PC at the next sync), Delete forever and
+  Empty remove it. A deleted document (Pro) opens again after Restore. Free plan with 7 items: Restore says it needs
+  Pro. Changing "Keep deleted items for" updates every row's "N days left" at once. Retention: set 1 day, change the
+  phone date forward 2 days, unlock: gone.
+  `run-as app.localgatekeys.android ls files/Vault` shows `local-data.bin`, whose bytes contain no title; Erase vault
+  removes it.
+- [ ] Expiry reminders (2026-11-01): on a card, add a reminder due today with 0 days: on Android 13+ the
+  notification permission is asked once; at the next 09:00 (or within seconds if already past 09:00) a notification
+  says "A reminder is due" (with "Show item names" on, the item's name). On the lock screen: with names off always the
+  generic text; with names on, the generic text when the phone hides sensitive lock-screen content (Settings ›
+  Notifications › sensitive notifications off), otherwise the name (Android 16's default shows it; Settings › Reminders
+  says so). If the reminder fires while the Allow dialog is still open, its notification comes once Allow is tapped.
+  Tap it locked: unlock, then the item opens; unlocked and in front (also from the notification shade): the item opens. Restart the phone: the reminder still fires.
+  Upcoming reminders show on the Security tab. `run-as ... cat no_backup/reminder-alarms.json` shows only ids and days
+  (a name only with names on). Erase vault cancels the alarms and removes the file.
 - [ ] Do not promote to production before the Part C device checks above pass, or hide Settings › Autofill first.
 - [ ] Promote internal → closed → production when the checks pass.

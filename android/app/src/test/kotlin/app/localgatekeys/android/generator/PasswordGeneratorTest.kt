@@ -117,12 +117,38 @@ class PasswordGeneratorTest {
     @Test fun options_are_saved_as_json_with_the_iphone_keys() {
         val json = GeneratorOptions(mode = GeneratorOptions.Mode.PASSPHRASE, words = 9).toJson()
         assertEquals(
-            "{\"appendNumber\":false,\"avoidAmbiguous\":true,\"capitalize\":false,\"digits\":true,\"exclude\":\"\"," +
+            "{\"answerWords\":3,\"appendNumber\":false,\"avoidAmbiguous\":true,\"capitalize\":false,\"digits\":true,\"exclude\":\"\"," +
                 "\"length\":20,\"lowercase\":true,\"minDigits\":1,\"minSymbols\":1,\"mode\":\"passphrase\"," +
                 "\"separator\":\"-\",\"symbolSet\":\"!@#\$%^&*()-_=+[]{}:,.?\",\"symbols\":true,\"uppercase\":true,\"words\":9}",
             json,
         )
         assertEquals(GeneratorOptions(mode = GeneratorOptions.Mode.PASSPHRASE, words = 9), GeneratorOptions.fromJson(json))
+    }
+
+    // ---- security-answer mode ----
+
+    private fun answer(words: Int): List<String> =
+        PasswordGenerator(SystemRandomSource()).generate(GeneratorOptions(mode = GeneratorOptions.Mode.ANSWER, answerWords = words)).split(" ")
+
+    @Test fun answer_mode_word_count() {
+        assertEquals(3, GeneratorOptions().answerWords)
+        assertEquals(3, PasswordGenerator(SystemRandomSource()).generate(GeneratorOptions(mode = GeneratorOptions.Mode.ANSWER)).split(" ").size)
+        assertEquals(2, answer(1).size); assertEquals(2, answer(2).size)
+        assertEquals(6, answer(6).size); assertEquals(6, answer(99).size)
+    }
+
+    @Test fun answer_mode_charset() {
+        repeat(50) { assertTrue(Regex("[a-z]+( [a-z]+)+").matches(answer(4).joinToString(" "))) }
+    }
+
+    @Test fun answer_words_from_eff_list() {
+        val list = PassphraseWordlist.packaged.toSet()
+        repeat(50) { assertTrue(list.containsAll(answer(6))) }
+    }
+
+    @Test fun options_saved_before_answer_words_still_load() {
+        val old = GeneratorOptions(words = 9).toJson().replace("\"answerWords\":3,", "")
+        assertEquals(GeneratorOptions(words = 9), GeneratorOptions.fromJson(old))
     }
 
     /** Swift's synthesised Decodable needs every key with its type: anything else gives the defaults. */

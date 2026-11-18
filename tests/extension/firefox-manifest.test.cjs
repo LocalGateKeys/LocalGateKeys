@@ -21,57 +21,71 @@ test("Chromium manifest: shim first, all frames, CSP, gecko id, static host acce
   assert.ok(chromeManifest.permissions.includes("activeTab"));
   assert.equal(chromeManifest.background.service_worker, "background.js");
   assert.equal(chromeManifest.background.scripts, undefined, "Chrome 106+ must not see background.scripts");
-  // No extension URL is reachable from web pages (in-page icons are inline SVG): nothing to probe.
-  assert.equal(chromeManifest.web_accessible_resources, undefined);
+  // The only extension URL web pages may load is the panel frame, behind a
+  // per-session dynamic URL on Chromium (in-page icons are inline SVG).
+  assert.deepEqual(chromeManifest.web_accessible_resources, [{ resources: ["panel.html"], matches: chromeManifest.host_permissions, use_dynamic_url: true }]);
   assert.equal(fs.existsSync(path.join(EXT, "auto-mode.js")), false, "orphaned auto-mode.js removed");
 });
 
 test("firefoxManifest() swaps the background model and drops Chromium-only keys", () => {
   const ff = firefoxManifest(chromeManifest);
-  assert.deepEqual(ff.background, { scripts: ["api.js", "background.js"] });
+  assert.deepEqual(ff.background, { scripts: ["api.js", "lookalike.js", "background.js"] });
   assert.equal(ff.key, undefined);
   assert.equal(ff.minimum_chrome_version, undefined);
   assert.equal(ff.permissions.includes("favicon"), false);
   assert.ok(ff.permissions.includes("nativeMessaging") && ff.permissions.includes("activeTab"));
-  assert.deepEqual(ff.content_scripts, chromeManifest.content_scripts.filter(cs => !cs.js.some(f => f.startsWith("webauthn-"))));
+  // Every content script carries over unchanged, the passkey pair included.
+  assert.deepEqual(ff.content_scripts, chromeManifest.content_scripts);
   assert.deepEqual(ff.host_permissions, chromeManifest.host_permissions);
   assert.equal(ff.content_security_policy.extension_pages, chromeManifest.content_security_policy.extension_pages);
   assert.equal(ff.browser_specific_settings.gecko.id, "localgatekeys@localgatekeys.app");
-  assert.equal(ff.web_accessible_resources, undefined, "no web-accessible resources in the Firefox build");
-  assert.equal(firefoxManifest({ ...chromeManifest, web_accessible_resources: [{ resources: ["icons/icon32.png"], matches: ["https://*/*"] }] }).web_accessible_resources, undefined);
+  // Firefox keeps the panel frame but has no use_dynamic_url (its host is a
+  // random per-install UUID); the key is dropped.
+  assert.deepEqual(ff.web_accessible_resources, [{ resources: ["panel.html"], matches: chromeManifest.host_permissions }]);
+  assert.equal(firefoxManifest({ ...chromeManifest, web_accessible_resources: undefined }).web_accessible_resources, undefined);
+  assert.equal(chromeManifest.web_accessible_resources[0].use_dynamic_url, true, "input manifest is not mutated");
   assert.equal(chromeManifest.background.scripts, undefined, "input manifest is not mutated");
 });
 
-test("passkey scripts: MAIN wrapper and ISOLATED bridge at document_start on Chromium (111+), stripped from Firefox", () => {
-  const passkey = chromeManifest.content_scripts.filter(cs => cs.js.some(f => f.startsWith("webauthn-")));
-  assert.equal(passkey.length, 2);
+function assertPasskeyScripts(manifest, label) {
+  const passkey = manifest.content_scripts.filter(cs => cs.js.some(f => f.startsWith("webauthn-")));
+  assert.equal(passkey.length, 2, label);
   const [main, bridge] = passkey;
-  assert.deepEqual(main.js, ["webauthn-page.js"]);
-  assert.equal(main.world, "MAIN");
-  assert.deepEqual(bridge.js, ["api.js", "webauthn-bridge.js"]);
-  assert.equal(bridge.world, "ISOLATED");
+  assert.deepEqual(main.js, ["webauthn-page.js"], label);
+  assert.equal(main.world, "MAIN", label);
+  assert.deepEqual(bridge.js, ["api.js", "webauthn-bridge.js"], label);
+  assert.equal(bridge.world, "ISOLATED", label);
   for (const cs of passkey) {
-    assert.equal(cs.run_at, "document_start");
-    assert.equal(cs.all_frames, true);
-    assert.deepEqual(cs.matches, chromeManifest.host_permissions);
+    assert.equal(cs.run_at, "document_start", label);
+    assert.equal(cs.all_frames, true, label);
+    assert.deepEqual(cs.matches, chromeManifest.host_permissions, label);
   }
+}
+
+test("passkey scripts: MAIN wrapper and ISOLATED bridge at document_start in every frame, on Chromium (111+) and Firefox (128+)", () => {
+  assertPasskeyScripts(chromeManifest, "chromium");
   assert.equal(chromeManifest.minimum_chrome_version, "111", "manifest world: MAIN needs Chrome 111");
   const ff = firefoxManifest(chromeManifest);
-  assert.ok(ff.content_scripts.every(cs => cs.js.every(f => !f.startsWith("webauthn-"))));
-  assert.equal(ff.content_scripts.length, chromeManifest.content_scripts.length - 2);
+  assertPasskeyScripts(ff, "firefox");
+  assert.equal(ff.content_scripts.length, chromeManifest.content_scripts.length);
+  // world: "MAIN" content scripts need Firefox 128.
+  const [major] = ff.browser_specific_settings.gecko.strict_min_version.split(".").map(Number);
+  assert.ok(major >= 128, "world: MAIN needs Firefox 128");
 });
 
 test("build() copies the extension and writes the Firefox manifest", () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), "lgk-ff-"));
   try {
     build(out);
-    for (const name of ["api.js", "heuristics.js", "login-safety.js", "content.js", "background.js", "popup.html", "popup.js", "manifest.json"]) {
+    for (const name of ["api.js", "heuristics.js", "login-safety.js", "content.js", "background.js", "lookalike.js", "psl-min.json", "THIRD-PARTY-NOTICES.txt", "popup.html", "popup.js", "manifest.json",
+      "webauthn-page.js", "webauthn-bridge.js"]) {
       assert.ok(fs.existsSync(path.join(out, name)), name);
     }
     assert.ok(fs.existsSync(path.join(out, "icons", "icon32.png")));
     assert.equal(fs.existsSync(path.join(out, "build-firefox-manifest.cjs")), false);
     const written = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
-    assert.deepEqual(written.background, { scripts: ["api.js", "background.js"] });
+    assert.deepEqual(written.background, { scripts: ["api.js", "lookalike.js", "background.js"] });
+    assertPasskeyScripts(written, "written firefox manifest");
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }

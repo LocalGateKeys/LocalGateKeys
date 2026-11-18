@@ -3,6 +3,7 @@ package app.localgatekeys.android.autofill
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import app.localgatekeys.core.sync.StoreSnapshot
+import app.localgatekeys.core.sync.TravelMode
 import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -65,16 +66,41 @@ class FillIndexStore(private val file: File) {
         }
     }
 
-    /** Rebuilt from [s], keeping this phone's app pairings to items that still exist. */
-    fun rebuild(s: StoreSnapshot) {
-        val apps = read()?.apps ?: emptyMap()
-        write(FillIndex.build(s, apps))
+    /**
+     * Rebuilt from [s], keeping this phone's app pairings to items that still exist; [isPro] (this phone's Pro state now)
+     * decides [FillIndex.freeFull]; [travel] null keeps the stored travel mode (set it at unlock and when it changes).
+     */
+    fun rebuild(s: StoreSnapshot, isPro: Boolean, travel: TravelMode.Setting? = null): Unit = synchronized(lock) {
+        // Read and write under one lock, so a rebuild that keeps the stored travel mode never overwrites one that
+        // just set it (the unlock's list load and its travel rebuild run at the same time).
+        next(read(), s, isPro, travel)?.let { write(it) }
+        Unit
     }
 
-    /** Pairs [packageName] with [itemId] (the person chose that login for that app). */
-    fun pair(s: StoreSnapshot, packageName: String, itemId: String) {
-        val current = read() ?: FillIndex.build(s)
-        write(FillIndex.build(s, current.paired(packageName, itemId).apps))
+    /**
+     * Pairs [packageName] with [itemId] (the person chose that login for that app). [isPro] null keeps the stored
+     * [FillIndex.freeFull] (a fill adds no item).
+     */
+    fun pair(s: StoreSnapshot, packageName: String, itemId: String, isPro: Boolean? = null): Unit = synchronized(lock) {
+        // No stored index: this phone's travel mode is unknown here, so nothing is written (hidden logins are never
+        // listed); the next unlock writes the index with it.
+        val current = read() ?: return@synchronized
+        val paired = FillIndex.build(s, current.paired(packageName, itemId).apps, isPro, current.travel)
+        write(if (isPro == null) paired.copy(freeFull = current.freeFull) else paired)
+    }
+
+    companion object {
+        /**
+         * The index a rebuild writes: [travel] null keeps the stored one's travel mode; with no stored index it is
+         * unknown, so nothing is written (null) rather than listing travel-hidden logins (scan A-L2).
+         */
+        fun next(current: FillIndex?, s: StoreSnapshot, isPro: Boolean, travel: TravelMode.Setting?): FillIndex? {
+            val t = travel ?: current?.travel ?: return null
+            return FillIndex.build(s, current?.apps ?: emptyMap(), isPro, t)
+        }
+
+        private const val ALIAS = "fill-index-v1"
+        private val AAD = "LGK-FILL-INDEX-1".toByteArray(Charsets.US_ASCII)
     }
 
     /** True when the file (and its temp copy) is gone; the key is deleted best effort. */
@@ -88,10 +114,5 @@ class FillIndexStore(private val file: File) {
             // gone already
         }
         !file.exists() && !tmp.exists()
-    }
-
-    private companion object {
-        const val ALIAS = "fill-index-v1"
-        val AAD = "LGK-FILL-INDEX-1".toByteArray(Charsets.US_ASCII)
     }
 }

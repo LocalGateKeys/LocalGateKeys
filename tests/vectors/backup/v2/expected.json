@@ -5,7 +5,7 @@
   ],
   "backup_password": "fixture backup password 2026",
   "created_at": 1793000000,
-  "full_sha256": "d69e1b1b9d05af752c4d08f74210949d1715cdf3d201358e274936228c786f17",
+  "full_sha256": "5a59bebd64979b7072d233f2f2871335de1f6c22055b001404524e4cf79ea8f3",
   "kdf": {
     "memory_cost_kib": 8192,
     "parallelism": 1,
@@ -36,8 +36,8 @@
       {
         "kind": "settings",
         "member": "data/00000001.bin",
-        "sha256": "88e62ade92103c4ea551f3e0af0adea9b44fcc745aeae71c928080aa181d5e44",
-        "size": 1356,
+        "sha256": "3b521741e4268b6c04985dd7a4b22a9b4f3ec4f54d9076eda9d1480a786f8362",
+        "size": 1654,
         "target": "settings.json"
       },
       {

@@ -12,8 +12,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const SOURCE_DIR = __dirname;
-const PASSKEY_SCRIPTS = new Set(["webauthn-page.js", "webauthn-bridge.js"]);
-const SKIP = new Set([path.basename(__filename), "manifest.json", ...PASSKEY_SCRIPTS]);
+const SKIP = new Set([path.basename(__filename), "manifest.json"]);
 // Build tooling (build-*.cjs) never ships inside the add-on.
 const isBuildScript = name => /^build-.*\.cjs$/.test(name);
 
@@ -23,19 +22,28 @@ function firefoxManifest(chromeManifest) {
   delete m.key;
   delete m.minimum_chrome_version;
   if (!m.browser_specific_settings?.gecko?.id) throw new Error("manifest.json lacks browser_specific_settings.gecko.id");
-  // No service workers for extension backgrounds; load the shim first.
+  // No service workers for extension backgrounds; load the shim and the
+  // lookalike classifier (Chromium pulls both in with importScripts) first.
   const worker = m.background?.service_worker;
   if (!worker) throw new Error("manifest.json lacks background.service_worker");
-  m.background = { scripts: ["api.js", worker] };
+  m.background = { scripts: ["api.js", "lookalike.js", worker] };
   // Firefox has no favicon permission / _favicon endpoint. background.js then
   // sends no site_icon and the desktop app uses its neutral icon.
   m.permissions = (m.permissions || []).filter(p => p !== "favicon");
-  // Passkeys are Chromium-only in this release: drop the MAIN-world wrapper
-  // and its bridge, so Firefox pages keep their native WebAuthn untouched.
-  m.content_scripts = (m.content_scripts || []).filter(cs => !(cs.js || []).some(f => PASSKEY_SCRIPTS.has(f)));
-  // No web-accessible resources: the in-page icons are inline SVG, and a
-  // static moz-extension:// URL would let pages fingerprint the extension.
-  delete m.web_accessible_resources;
+  // Content scripts carry over unchanged, the passkey pair included: the
+  // MAIN-world wrapper (webauthn-page.js) needs Firefox 128 (manifest.json's
+  // gecko strict_min_version), and its ISOLATED bridge sends a per-document
+  // key that background.js uses in place of Chromium's documentId.
+  // The only web-accessible resource is panel.html, the frame content.js
+  // draws its panels in (so no vault text is in the page's DOM). The page
+  // never gets its URL: the frame sits in a closed shadow root. Firefox has
+  // no use_dynamic_url (its moz-extension:// host is already a random
+  // per-install UUID), so the key is dropped to keep the manifest clean.
+  m.web_accessible_resources = (m.web_accessible_resources || []).map(entry => {
+    const { use_dynamic_url, ...rest } = entry;
+    return rest;
+  });
+  if (!m.web_accessible_resources.length) delete m.web_accessible_resources;
   return m;
 }
 

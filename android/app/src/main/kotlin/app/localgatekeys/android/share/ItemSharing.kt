@@ -75,9 +75,11 @@ object ShareText {
             "wrong-code" -> R.string.share_that_code_does_not_open
             "future-date" -> R.string.share_the_shared_item_has_a
             "expired" -> R.string.share_this_shared_item_expired_ask
+            "revoked" -> R.string.share_revoked
             "content-not-shareable" -> R.string.share_this_shared_item_holds_content
             "not-a-share-qr" -> R.string.share_this_qr_code_is_not
             "gone" -> R.string.share_refusal_gone
+            "pending-waiting" -> R.string.share_refusal_pending
             else -> R.string.share_failed
         },
     )
@@ -98,11 +100,28 @@ object ItemSharing {
     fun canShare(item: VaultItem): Boolean =
         item.kind != "document" && Share.isShareable(JsonValue.Obj(item.record))
 
-    /** Seals [item] under a fresh code. Throws [ShareException] (`not-shareable`, `too-large`). */
-    fun prepare(item: VaultItem, clock: UnixClock, random: RandomSource, sender: String = SyncWording.DEVICE_NAME): OutgoingShare {
+    /** The sender's "Expires in" choices (LGKSHARE v1.1); the default is one day. */
+    enum class Lifetime(val seconds: Long) { HOUR(3600), DAY(Share.LIFETIME) }
+
+    /**
+     * Seals [item] under a fresh code, expiring after [lifetime], opened at most once when [oneUse]. Throws
+     * [ShareException] (`not-shareable`, `too-large`).
+     */
+    fun prepare(
+        item: VaultItem,
+        clock: UnixClock,
+        random: RandomSource,
+        sender: String = SyncWording.DEVICE_NAME,
+        lifetime: Lifetime = Lifetime.DAY,
+        oneUse: Boolean = false,
+    ): OutgoingShare {
         if (item.kind == "document") throw ShareException("not-shareable", "Passkeys and files cannot be shared.", "passkeys-files")
         val code = Share.generateCode(random)
-        return OutgoingShare(Share.seal(withoutLocalRefs(JsonValue.Obj(item.record)), code, sender, clock.now, random), code)
+        val now = clock.now
+        // A full day is the format's own lifetime: no explicit expiry, so the bytes stay plain v1 unless one-use.
+        val expires = if (lifetime == Lifetime.DAY) null else now + lifetime.seconds
+        val bytes = Share.seal(withoutLocalRefs(JsonValue.Obj(item.record)), code, sender, now, random, expires = expires, oneUse = oneUse)
+        return OutgoingShare(bytes, code)
     }
 
     private val LOCAL_TRUST_SCOPE_KEYS = listOf(
@@ -174,7 +193,13 @@ object ItemSharing {
  * into [dir] at once; each copy is deleted after Add or Reject, after three wrong codes, and once it is older than a day
  * ([purge], at start). [openedFile] holds the ids opened on this phone, kept two days (a package lives one).
  */
-class ShareInbox(private val dir: File, private val openedFile: File, private val clock: UnixClock) {
+class ShareInbox(
+    private val dir: File,
+    private val openedFile: File,
+    private val clock: UnixClock,
+    /** Package ids of verified revoke notices from the sync folder (best effort: none without sync). */
+    private val revoked: () -> Set<String> = { emptySet() },
+) {
     /** One received package waiting for its code. */
     class Pending internal constructor(val header: ShareHeader, internal val file: File?) {
         var wrongCodes: Int = 0
@@ -187,13 +212,36 @@ class ShareInbox(private val dir: File, private val openedFile: File, private va
     private val _pending = MutableStateFlow<Pending?>(null)
     val pending: StateFlow<Pending?> = _pending.asStateFlow()
 
+    /** A delivered file refused on arrival (e.g. already opened or burned here): Receive opens and says why, once. */
+    private val _refused = MutableStateFlow<ShareException?>(null)
+    val refused: StateFlow<ShareException?> = _refused.asStateFlow()
+
+    fun refuse(e: ShareException) { _refused.value = e }
+
+    fun clearRefusal() { _refused.value = null }
+
     /**
-     * A delivered package (file bytes or QR text). Checks the clear header first (`malformed`, `unsupported`), then
-     * keeps a private copy. Replaces any earlier pending package (whose copy is deleted).
+     * A delivered package (file bytes or QR text). Checks the clear header first (`malformed`, `unsupported`, and
+     * `already-opened` for a package opened or burned here, so no code is asked for), then keeps a private copy.
+     * Replaces any earlier pending package (whose copy is deleted) when [replacePending]: the person scanned or picked
+     * it on the Receive page. A file delivered by another app ([replacePending] false) never replaces one that is still
+     * waiting: the same package again keeps the waiting one (and its wrong-code count), another one is refused
+     * (`pending-waiting`) so the person can open it again after Add or Reject.
      */
     @Synchronized
-    fun accept(data: ByteArray, keepFile: Boolean): Pending {
+    fun accept(data: ByteArray, keepFile: Boolean, replacePending: Boolean = true): Pending {
         val header = Share.readHeader(data)
+        if (header.id in openedIds()) {
+            throw ShareException("already-opened", "This shared item was already opened on this device.")
+        }
+        if (!replacePending) {
+            restore() // a package delivered in an earlier run is still waiting too
+            val waiting = _pending.value
+            if (waiting != null) {
+                if (waiting.header.id == header.id) return waiting
+                throw ShareException("pending", "Another shared item is still waiting on this device.", "pending-waiting")
+            }
+        }
         discardLocked()
         val file = if (keepFile) {
             if (!dir.mkdirs() && !dir.isDirectory) throw java.io.IOException("inbox")
@@ -227,7 +275,12 @@ class ShareInbox(private val dir: File, private val openedFile: File, private va
     fun open(p: Pending, code: String): OpenedShare {
         val data = memory[p] ?: throw ShareException("malformed", "The shared item is no longer here.", "gone")
         try {
-            return Share.open(data, code, clock.now, openedIds())
+            val revokedIds = try {
+                revoked()
+            } catch (e: Exception) {
+                emptySet()
+            }
+            return Share.open(data, code, clock.now, openedIds(), revokedIds)
         } catch (e: ShareException) {
             when (e.reason) {
                 "wrong-code" -> {
@@ -235,7 +288,7 @@ class ShareInbox(private val dir: File, private val openedFile: File, private va
                     // Burned: the same package delivered again is refused, so the count cannot be reset.
                     if (p.wrongCodes >= MAX_WRONG_CODES) opened(p)
                 }
-                "already-opened", "expired", "malformed", "unsupported", "not-shareable" -> discard(p)
+                "already-opened", "expired", "revoked", "malformed", "unsupported", "not-shareable" -> discard(p)
             }
             throw e
         }

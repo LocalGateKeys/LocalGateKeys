@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_codes_name">Vastgezette codes</string>
+    <string name="widget_codes_description">Je vastgezette tweestapscodes.</string>
+    <string name="widget_codes_locked">Ontgrendel om codes te zien</string>
+    <string name="widget_codes_empty">Zet een code vast in LocalGateKeys</string>
+    <string name="detail_pin_code">Tonen in widget</string>
+    <string name="detail_pin_code_note">De widget op het beginscherm toont deze code zolang LocalGateKeys ontgrendeld is, tot de automatische vergrendeling.</string>
+    <string name="detail_pin_full">Je kunt maximaal %1$d codes vastzetten.</string>
+    <string name="widget_codes_locked_immediately">Zet automatisch vergrendelen op 1 minuut of langer om hier codes te zien</string>
+    <string name="detail_pin_code_note_immediately">Automatisch vergrendelen staat op Direct: LocalGateKeys vergrendelt zodra je de app verlaat en de widget kan deze code niet tonen. Zet het in Instellingen op 1 minuut of langer om de code op het beginscherm te zien.</string>
+    <string name="tile_codes_name">Code kopiëren</string>
+    <string name="tile_codes_empty">Geen vastgezette codes</string>
+    <string name="tile_codes_locked">Ontgrendel om te kopiëren</string>
+    <string name="tile_codes_locked_subtitle">Vergrendeld</string>
+    <string name="tile_codes_tap_to_copy">Tik om te kopiëren</string>
+    <string name="tile_codes_copied">Gekopieerd</string>
+    <string name="tile_codes_no_code">Geen code</string>
+</resources>

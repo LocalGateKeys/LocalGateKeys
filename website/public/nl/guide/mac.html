@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys voor Mac: handleiding</title>
+  <meta name="description" content="LocalGateKeys op de Mac: de kluis, automatisch invullen, passkeys, 2FA-codes, importeren, back-ups en synchronisatie.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/nl/guide/mac">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/mac">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/mac">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/mac">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/mac">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/mac">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/mac">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/mac">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/mac">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/mac">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/mac">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/mac">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/mac">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys voor Mac: handleiding">
+  <meta property="og:description" content="LocalGateKeys op de Mac: de kluis, automatisch invullen, passkeys, 2FA-codes, importeren, back-ups en synchronisatie.">
+  <meta property="og:url" content="https://localgatekeys.app/nl/guide/mac">
+  <meta property="og:locale" content="nl_NL">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Het LocalGateKeys-logo: een wachtwoordbeheerder voor Windows, Mac en iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys voor Mac: handleiding">
+  <meta name="twitter:description" content="LocalGateKeys op de Mac: de kluis, automatisch invullen, passkeys, 2FA-codes, importeren, back-ups en synchronisatie.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Naar de inhoud</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../nl/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Hoofdmenu">
+        <ul class="nav">
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Hoofdmenu">
+          <ul class="nav nav-stack">
+            <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/support">Support</a></li>
+          <li><a class="nav-cta" href="../../nl/download">Downloaden</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Taal</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys voor Mac</h1>
+  <p class="lead">Stapsgewijze hulp bij elk scherm en elke functie op dit apparaat. Elke kop is een link die je kunt delen.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Platforms">
+    <ul><li><a class="help-tab" href="../../nl/guide/windows">Windows</a></li><li><a class="help-tab" href="../../nl/guide/mac" aria-current="page">Mac</a></li><li><a class="help-tab" href="../../nl/guide/iphone">iPhone en iPad</a></li><li><a class="help-tab" href="../../nl/guide/android">Android</a></li><li><a class="help-tab" href="../../nl/guide/extension">Browserextensie</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Goed om te weten, op elk apparaat</h2>
+    <ul>
+      <li><strong>Je kluis blijft op je apparaten.</strong> Er is geen account en geen LocalGateKeys-server die je wachtwoorden bewaart.</li>
+      <li><strong>Niemand kan je hoofdwachtwoord of app-wachtwoord opnieuw instellen.</strong> Stel een herstelzin in en bewaar die op papier.</li>
+      <li><strong>Free</strong> bevat tot 7 items. <strong>Pro</strong> (US$29.99, eenmalig betaald) geeft onbeperkt items, tweestapscodes, bestanden en synchronisatie. Bewerken, verwijderen en invullen van items die je al hebt wordt nooit geblokkeerd.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="mac" aria-labelledby="mac-title">
+    <h2 class="panel-title" id="mac-title">Onderwerpen Mac</h2>
+
+    <p class="panel-lead">De zijbalk toont je items (<strong>Alle items</strong>, <strong>Favorieten</strong>, <strong>Recent gebruikt</strong>, elk soort en je verzamelingen) en de hulpmiddelen <strong>Beveiligingscentrum</strong>, <strong>Generator</strong>, <strong>Synchronisatie en apparaten</strong>, <strong>Importeren en exporteren</strong> en <strong>Prullenbak</strong>, met <strong>Instellingen</strong> onderaan. Het <strong>Herstelcentrum</strong> open je via Instellingen › Back-ups, en <strong>Apparaten en verbindingen</strong> via Synchronisatie en apparaten.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Onderwerpen Mac">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Op dit tabblad</summary>
+          <ol>
+            <li><a href="#mac-setup">De kluis maken</a></li>
+            <li><a href="#mac-unlock">Ontgrendelen en vergrendelen</a></li>
+            <li><a href="#mac-items">Items</a></li>
+            <li><a href="#mac-2fa">Tweestapscodes</a></li>
+            <li><a href="#mac-security">Beveiligingscentrum</a></li>
+            <li><a href="#mac-autofill">Automatisch invullen en Safari</a></li>
+            <li><a href="#mac-import">Importeren en exporteren</a></li>
+            <li><a href="#mac-backups">Back-ups</a></li>
+            <li><a href="#mac-sync">Synchronisatie</a></li>
+            <li><a href="#mac-share">Delen</a></li>
+            <li><a href="#mac-pro">Pro</a></li>
+            <li><a href="#mac-settings">Instellingen</a></li>
+            <li><a href="#mac-keys">Sneltoetsen</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="mac-setup">
+          <h3><a href="#mac-setup">De kluis maken</a></h3>
+          <ol>
+            <li>Open LocalGateKeys, typ twee keer een hoofdwachtwoord en kies <strong>Kluis maken</strong>.</li>
+            <li>Daarna volgt de configuratie: <strong>Touch ID instellen</strong>, je wachtwoorden <strong>Importeren…</strong>, <strong>Herstelzin openen</strong> en <strong>Apparaten en verbindingen openen</strong> voor Safari en Automatisch invullen.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="mac-unlock">
+          <h3><a href="#mac-unlock">Ontgrendelen en vergrendelen</a></h3>
+          <ul>
+            <li><strong>Touch ID</strong>: Instellingen › Beveiliging › Ontgrendeling › <strong>Touch ID</strong>. Wijzig je vingerafdrukken, gebruik dan één keer het hoofdwachtwoord.</li>
+            <li><strong>Hoofdwachtwoord wijzigen</strong>: Instellingen › Ontgrendelen. Je items blijven zoals ze zijn.</li>
+            <li><strong>Herstelzin</strong>: stel hem in in het <strong>Herstelcentrum</strong> en bevestig drie woorden. Vergeet je het hoofdwachtwoord, kies dan op het vergrendelscherm <strong>Hoofdwachtwoord vergeten?</strong> › <strong>Herstellen met je herstelzin</strong>.</li>
+            <li><strong>Vergrendelen</strong>: <kbd>⌘</kbd><kbd>L</kbd>. Instellingen › Vergrendelen stelt vergrendelen bij inactiviteit, met het scherm, bij sluimerstand en een maximale sessieduur in. Je kiest ook wat telt als activiteit voor vergrendelen bij inactiviteit.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-items">
+          <h3><a href="#mac-items">Items</a></h3>
+          <ul>
+            <li><strong>Nieuw item</strong> (<kbd>⌘</kbd><kbd>N</kbd>) biedt dezelfde soorten als de iPhone, plus <strong>Bestand toevoegen…</strong> (Pro).</li>
+            <li>Kopieer met <kbd>⌘</kbd><kbd>C</kbd> (wachtwoord), <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> (gebruikersnaam), <kbd>⌘</kbd><kbd>T</kbd> (2FA-code).</li>
+            <li><strong>Veld toevoegen</strong> voor aangepaste velden, <strong>Tags</strong> en <strong>Verzamelingen</strong> (die synchroniseren met je andere apparaten).</li>
+            <li><kbd>⌫</kbd> verplaatst een item naar Onlangs verwijderd. Open <strong>Prullenbak</strong> in de zijbalk en gebruik <strong>Geselecteerde herstellen</strong> of <strong>Prullenbak legen</strong>.</li>
+            <li>Bijgevoegde bestanden openen met Snelle weergave na Touch ID of het hoofdwachtwoord.</li>
+            <li><strong>Generator</strong>: willekeurig wachtwoord (kies tekensets, vermijd tekens die op elkaar lijken) of wachtwoordzin (hoofdletters, getal toevoegen, scheidingsteken).</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-2fa">
+          <h3><a href="#mac-2fa">Tweestapscodes</a> <span class="badge-pro">Pro</span></h3>
+          <p>Kies <strong>QR-code scannen…</strong>, dan <strong>Afbeelding kiezen…</strong>, plak een schermafbeelding met <kbd>⌘</kbd><kbd>V</kbd> (kopieer er een met <kbd>⌃</kbd><kbd>⇧</kbd><kbd>⌘</kbd><kbd>4</kbd>) of sleep een afbeelding erin. Codes worden in Safari ingevuld via Automatisch invullen.</p>
+        </article>
+
+        <article class="topic" id="mac-security">
+          <h3><a href="#mac-security">Beveiligingscentrum</a></h3>
+          <p>Toont zwakke, hergebruikte en oude wachtwoorden. <strong>Alle wachtwoorden controleren</strong> zoekt naar lekken zodra je Instellingen › Privacy › <strong>Lekcontroles</strong> aanzet (en de strikte offlinemodus uit staat).</p>
+        </article>
+
+        <article class="topic" id="mac-autofill">
+          <h3><a href="#mac-autofill">Automatisch invullen, passkeys en Safari</a></h3>
+          <ol>
+            <li>Open <strong>Apparaten en verbindingen</strong>.</li>
+            <li><strong>Open instellingen voor Automatisch invullen</strong> en zet LocalGateKeys aan onder Systeeminstellingen › Automatisch invullen en wachtwoorden.</li>
+            <li><strong>Open Safari-instellingen</strong> en zet de LocalGateKeys-extensie aan onder Safari › Instellingen › Extensies.</li>
+          </ol>
+          <p>Om een login in Safari in te vullen, klik je in het veld voor gebruikersnaam of wachtwoord. Safari toont daaronder je LocalGateKeys-logins: kies er een en bevestig met Touch ID of je hoofdwachtwoord. Passkeys en 2FA-codes worden op dezelfde manier aangeboden, en Automatisch invullen werkt ook in andere Mac-apps.</p>
+          <p>De Safari-extensie biedt na het inloggen aan een nieuwe login op te slaan. Controleer wat hij heeft opgevangen wanneer je LocalGateKeys de volgende keer ontgrendelt. Andere browsers worden op de Mac nog niet ondersteund.</p>
+          <p>Geen logins te zien? Open <strong>Apparaten en verbindingen</strong> en controleer of Automatisch invullen aan staat. Op dezelfde pagina van Systeeminstellingen kun je Wachtwoorden uitzetten, zodat alleen LocalGateKeys logins aanbiedt.</p>
+          <p>Sluit LocalGateKeys af wanneer je <strong>Apparaten en verbindingen</strong> opent? Werk de app dan bij via de Mac App Store.</p>
+        </article>
+
+        <article class="topic" id="mac-import">
+          <h3><a href="#mac-import">Importeren en exporteren</a></h3>
+          <ul>
+            <li><strong>Apple Wachtwoorden</strong> (macOS 26): logins, 2FA en passkeys, gecontroleerd vóór het importeren.</li>
+            <li>Bestanden: Bitwarden <code>.json</code> (ook met wachtwoord beveiligd), 1Password <code>.1pux</code>, KeePass <code>.kdbx</code> en CSV met <strong>Kolommen kiezen</strong>.</li>
+            <li><code>.lgkm</code>-back-ups van iPhone en Android: kies <strong>Alle nieuwe toevoegen</strong>, <strong>Bij dubbele beide houden</strong> of <strong>Alles overslaan</strong>. Er wordt niets gewist.</li>
+            <li>Exporteer een versleutelde back-up, of een CSV (onversleuteld, vraagt eerst).</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-backups">
+          <h3><a href="#mac-backups">Back-ups</a></h3>
+          <p>In het <strong>Herstelcentrum</strong>:</p>
+          <ul>
+            <li><strong>Volledige back-up</strong>: <strong>Maak…</strong> een <code>.lgk</code>-bestand, of <strong>Herstel…</strong> er een (dat vervangt de kluis). Werkt tussen Mac en Windows. Er blijft een veiligheidskopie bewaard, dus <strong>Terugzetten…</strong> maakt een herstel ongedaan.</li>
+            <li><strong>Geplande back-ups</strong>: hoe vaak, weekdag, tijd, hoeveel er bewaard blijven, map en spiegelmap, en een back-upwachtwoord (12+ tekens).</li>
+            <li><strong>Herstelkit…</strong>: een bestand dat je laatste back-up beschrijft, om erbij te bewaren. <strong>Noodkit afdrukken…</strong> drukt een pagina af die zegt waar je kluis en back-ups staan en hoe je ze herstelt.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-sync">
+          <h3><a href="#mac-sync">Synchronisatie</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>Wifi (dit netwerk)</strong>: <strong>Wifi-synchronisatie inschakelen</strong>, dan <strong>QR-code tonen…</strong>. Als een apparaat deelneemt, controleer je de code en kies je <strong>Accepteren</strong> of <strong>Weigeren</strong>. Herken je het daarna niet, kies dan <strong>Ongedaan maken</strong>.</li>
+            <li><strong>Deelnemen met een code</strong>: kies op het andere apparaat <strong>QR-code tonen</strong> en dan <strong>Codetekst kopiëren</strong>, en plak de tekst hier.</li>
+            <li><strong>Cloudmap</strong>: neem deel aan een groep of maak er een in een map zoals Dropbox of iCloud Drive, met het synchronisatiewachtwoord. OneDrive en Google Drive zijn voorlopig niet beschikbaar, tot een probleem met Apple is opgelost.</li>
+            <li><strong>Synchronisatie verlaten…</strong> / <strong>Synchronisatie op deze Mac resetten…</strong>.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="mac-share">
+          <h3><a href="#mac-share">Delen</a></h3>
+          <p>Selecteer een item en kies <strong>Delen…</strong>. Om te ontvangen kies je Wijzig › <strong>Een gedeeld item ontvangen…</strong> (of zoek het met <kbd>⌘</kbd><kbd>K</kbd>), open of sleep het bestand (of plak de QR-tekst) en typ de zes woorden. Passkeys en items met een bijgevoegd bestand kunnen niet worden gedeeld.</p>
+        </article>
+
+        <article class="topic" id="mac-pro">
+          <h3><a href="#mac-pro">Pro</a></h3>
+          <p>Koop Pro in Instellingen › Abonnement. Eén aankoop geldt voor de iPhone- en de Mac-app; gebruik <strong>Aankopen herstellen</strong> op het andere apparaat. Een gratis Mac die synchroniseert met een Pro-iPhone toont <em>Pro via je gesynchroniseerde apparaten</em>.</p>
+        </article>
+
+        <article class="topic" id="mac-settings">
+          <h3><a href="#mac-settings">Instellingen</a></h3>
+          <p>Instellingen zijn gelijk in het hoofdvenster en met <kbd>⌘</kbd><kbd>,</kbd>, en de hulpmiddelen blijven onderaan de zijbalk zichtbaar. Instellingen › Back-ups bevat het schema, de <strong>Wekelijkse hersteltest</strong> en hoeveel automatische back-ups je bewaart; Herstelcentrum, Licentie en Installatie opnieuw tonen openen vanuit beide vensters. Andere instellingen: wat telt als activiteit voor automatisch vergrendelen, vragen voor het kopiëren van een 2FA-code, documenten uit de kluis in andere apps openen, je eigen sneltoets voor Snelle toegang en Help-links.</p>
+          <p><strong>Dwangwachtwoord</strong> (Pro), in Instellingen › Dwangwachtwoord: een tweede hoofdwachtwoord voor als iemand je dwingt te ontgrendelen. Het opent een aparte kluis met alleen de items die je kiest, en je kluis weigert daarna zijn hoofdwachtwoord voor het aantal uren dat je instelt.</p>
+        </article>
+
+        <article class="topic" id="mac-keys">
+          <h3><a href="#mac-keys">Sneltoetsen</a></h3>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>K</kbd></th><td>Alles doorzoeken</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>N</kbd></th><td>Nieuw item</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>L</kbd></th><td>Vergrendelen</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>C</kbd></th><td>Wachtwoord kopiëren</td></tr>
+              <tr><th scope="row"><kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd></th><td>Gebruikersnaam kopiëren</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>T</kbd></th><td>2FA-code kopiëren</td></tr>
+              <tr><th scope="row"><kbd>⌫</kbd></th><td>Naar Recent verwijderd</td></tr>
+              <tr><th scope="row"><kbd>⌘</kbd><kbd>/</kbd></th><td>Alle sneltoetsen</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../nl/help">De hele handleiding op één pagina</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Een wachtwoordmanager voor Windows, Mac en iPhone die je kluis op je eigen apparaten bewaart.</p>
+        <p class="quiet">Deze website telt bezoeken met Cloudflare Web Analytics, dat geen cookies gebruikt. Ze gebruikt geen advertentietrackers en plaatst geen cookies.</p>
+      </div>
+      <nav aria-label="Product">
+        <h2>Product</h2>
+        <ul>
+          <li><a href="../../nl/features">Functies</a></li>
+          <li><a href="../../nl/pricing">Prijzen</a></li>
+          <li><a href="../../nl/download">Downloaden</a></li>
+          <li><a href="../../nl/get-started">Aan de slag</a></li>
+          <li><a href="../../nl/switch/">Overstappen</a></li>
+          <li><a href="../../buy">Pro kopen</a></li>
+          <li><a href="../../nl/licence">Je Pro-licentie</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Licentie terugvinden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Hulp">
+        <h2>Hulp</h2>
+        <ul>
+          <li><a href="../../nl/help">Handleiding</a></li>
+          <li><a href="../../nl/support">Support en veelgestelde vragen</a></li>
+          <li><a href="../../nl/security">Beveiliging</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Een kwetsbaarheid melden</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Juridisch">
+        <h2>Juridisch</h2>
+        <p class="quiet">Deze documenten zijn in het Engels, en de Engelse versie is van toepassing en bindend.</p>
+        <ul>
+          <li><a href="../../legal/eula">Licentieovereenkomst</a></li>
+          <li><a href="../../legal/privacy">Privacybeleid</a></li>
+          <li><a href="../../legal/terms-of-sale">Verkoopvoorwaarden</a></li>
+          <li><a href="../../legal/refunds">Terugbetalingsbeleid</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contact: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows is een handelsmerk van de Microsoft-groep van bedrijven. Chrome is een handelsmerk van Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID en Safari zijn handelsmerken van Apple Inc., geregistreerd in de VS en andere landen.</p>
+      <nav class="lang-switch" aria-label="Taal"><ul><li><a href="../../guide/mac" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/mac" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/mac" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/mac" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/mac" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/mac" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/mac" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/mac" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/mac" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/mac" hreflang="nl" lang="nl" aria-current="true">Nederlands</a></li><li><a href="../../fr/guide/mac" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

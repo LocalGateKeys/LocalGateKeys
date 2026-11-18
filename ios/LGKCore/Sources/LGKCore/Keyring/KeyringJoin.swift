@@ -2,9 +2,10 @@ extension Keyring {
     /// `ring` (authenticated under `gk`) plus `identity` and its wrap; `prev_mac` carried over. Written as
     /// format 2: the new entry lists this device's signing key and proof, and a format-1 member gets
     /// `signing_public` and `signing_proof` null. Draws the device wrap (eph 32, nonce 12), then the name
-    /// nonce (12); the Ed25519 proof draws nothing from `random`.
+    /// nonce (12); the Ed25519 proof draws nothing from `random`. `replacing`: the member entry already listed under
+    /// this device id is rewritten where it stands (a rejoin with the kept identity) instead of a new one appended.
     static func withMember(_ ring: JSONValue, gk: GroupKey, identity: DeviceIdentity, name: String,
-                           random: RandomSource, now: UnixClock) throws -> JSONValue {
+                           random: RandomSource, now: UnixClock, replacing: Bool = false) throws -> JSONValue {
         let addedAt = now.now
         guard addedAt >= 0, addedAt <= maxInt else { throw KeyringError("bad-fields", "added_at") }
         var body = obj(ring)
@@ -24,8 +25,15 @@ extension Keyring {
             "signing_proof": .string(Base64.encode(proof)),
             "added_at": .int(addedAt),
         ])
-        body["format"] = .int(format)   // a format-1 keyring is written back as format 2
-        body["members"] = .array(arr(body["members"]).map(asFormat2) + [entry])
+        // A format-1 keyring is written back as format 2; a share v2 keyring (format 3) stays format 3.
+        body["format"] = .int(max(format, int(body["format"]) ?? format))
+        var members = arr(body["members"]).map(asFormat2)
+        if replacing, let i = members.firstIndex(where: { str(obj($0)["device_id"]) == identity.deviceID }) {
+            members[i] = entry
+        } else {
+            members.append(entry)
+        }
+        body["members"] = .array(members)
         var wraps = obj(body["device_wraps"]); wraps[identity.deviceID] = wrap
         body["device_wraps"] = .object(wraps)
         return try finish(body, key: gk)
@@ -52,19 +60,33 @@ extension Keyring {
     }
 
     /// `join` with the Argon2id step injectable (tests pass a known key); the key is derived only after the cheap checks.
+    /// `share`: `ring` may be a share keyring; its metadata and owner signature are carried unchanged (the new member
+    /// stays unapproved until the owner signs again).
+    /// `rejoin`: a device joining again with its kept identity. When the keyring still lists that device id with the
+    /// same exchange key, that entry is rewritten in place (it does not count against the member limit); any other
+    /// entry under the id is still `already-member`.
     static func join(_ ring: JSONValue, identity: DeviceIdentity, name: String, random: RandomSource, now: UnixClock,
+                     share: Bool = false, rejoin: Bool = false,
                      passwordKey: () throws -> [UInt8]) throws -> (JSONValue, GroupKey) {
-        try verifyStructure(ring)
+        try verifyStructure(ring, share: share)
         try checkIdentity(identity)
         _ = try checkName(name)
         let members = arr(obj(ring)["members"])
-        if members.contains(where: { str(obj($0)["device_id"]) == identity.deviceID }) {
+        let listed = members.contains(where: { str(obj($0)["device_id"]) == identity.deviceID })
+        if listed && !(rejoin && listsSameExchangeKey(ring, identity)) {
             throw KeyringError("already-member", "device is already a member")
         }
-        guard members.count < maxMembers else { throw KeyringError("too-many-members", "the group already has 16 devices") }
+        guard listed || members.count < maxMembers else { throw KeyringError("too-many-members", "the group already has 16 devices") }
         let gk = try unwrap(ring, passwordKey: try passwordKey())
         guard macOK(ring, key: gk) else { throw KeyringError("tampered", "keyring MAC does not verify under the group key") }
-        return (try withMember(ring, gk: gk, identity: identity, name: name, random: random, now: now), gk)
+        return (try withMember(ring, gk: gk, identity: identity, name: name, random: random, now: now, replacing: listed), gk)
+    }
+
+    /// True when every entry of `ring` under `identity`'s device id lists its exchange key (and at least one does).
+    static func listsSameExchangeKey(_ ring: JSONValue, _ identity: DeviceIdentity) -> Bool {
+        let own = Base64.encode(identity.exchangePublicKey)
+        let entries = arr(obj(ring)["members"]).map { obj($0) }.filter { str($0["device_id"]) == identity.deviceID }
+        return !entries.isEmpty && entries.allSatisfy { str($0["exchange_public"]) == own }
     }
 
     /// Add a device that already holds `stored` (e.g. from Wi-Fi enrollment) to `ring`.

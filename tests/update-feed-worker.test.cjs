@@ -71,7 +71,7 @@ test("HEAD returns headers without a body", async () => {
 
 test("refuses a feed larger than the client's 64 KB cap", async () => {
   const { response } = await call("/stable.json", { objects: { "stable.json": "x".repeat(65537) } });
-  assert.equal(response.status, 500);
+  assert.equal(response.status, 503);
 });
 
 test("missing objects are 404", async () => {
@@ -135,7 +135,7 @@ test("revocations.json allows up to 1 MiB, the client's bound, and no more", asy
   const ok = await call("/revocations.json", { objects: { "revocations.json": "x".repeat(1024 * 1024) } });
   assert.equal(ok.response.status, 200);
   const big = await call("/revocations.json", { objects: { "revocations.json": "x".repeat(1024 * 1024 + 1) } });
-  assert.equal(big.response.status, 500);
+  assert.equal(big.response.status, 503);
 });
 
 test("404 for other json", async () => {

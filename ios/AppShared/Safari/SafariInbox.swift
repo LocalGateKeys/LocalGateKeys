@@ -96,6 +96,41 @@ public struct SafariInbox: Sendable {
         return (good, damaged.sorted())
     }
 
+    /// How many entries are waiting and not yet past `lifetime` at `now`, for the toolbar badge. Each blob is
+    /// authenticated (a damaged, renamed or other-key blob is not counted, as in `entries()`), but only its
+    /// `captured_at` is read from the canonical JSON, whose first key it is: no origin, username or password
+    /// string is ever built, and the opened bytes are zeroed. Reads only; nothing is deleted.
+    public func count(now t: Int64) -> Int {
+        var n = 0
+        for (id, url) in blobFiles() {
+            guard let data = try? Data(contentsOf: url),
+                  var plain = try? SealedBlob.open(Array(data), key: key, aad: Self.aadPrefix + id) else { continue }
+            let capturedAt = Self.capturedAt(plain)
+            for i in plain.indices { plain[i] = 0 }
+            if let capturedAt, !Self.isExpired(capturedAt: capturedAt, now: t) { n += 1 }
+        }
+        return n
+    }
+
+    /// `captured_at` from the start of an opened blob, `{"captured_at":<int>,"origin":"`; nil otherwise.
+    static func capturedAt(_ plain: [UInt8]) -> Int64? {
+        let head = Array(#"{"captured_at":"#.utf8), next = Array(#","origin":""#.utf8)
+        guard plain.count > head.count, plain.starts(with: head) else { return nil }
+        var i = head.count
+        let negative = plain[i] == UInt8(ascii: "-")
+        if negative { i += 1 }
+        let digitsStart = i
+        var value: Int64 = 0
+        while i < plain.count, plain[i] >= UInt8(ascii: "0"), plain[i] <= UInt8(ascii: "9"), i - digitsStart < 19 {
+            let (m, o1) = value.multipliedReportingOverflow(by: 10)
+            let (s, o2) = m.addingReportingOverflow(Int64(plain[i] - UInt8(ascii: "0")))
+            if o1 || o2 { return nil }
+            value = s; i += 1
+        }
+        guard i > digitsStart, plain[i...].starts(with: next) else { return nil }
+        return negative ? -value : value
+    }
+
     /// Deletes the blobs of `ids`. Ids that are not lowercase UUIDs (and so name no inbox file) are skipped.
     public func remove(ids: [String]) {
         for id in ids where Self.isEntryID(id) {

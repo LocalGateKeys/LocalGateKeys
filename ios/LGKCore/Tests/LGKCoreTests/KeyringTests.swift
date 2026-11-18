@@ -107,7 +107,12 @@ final class KeyringTests: XCTestCase {
         XCTAssertEqual(reason { try Keyring.parse(Array("{\"x\":NaN}".utf8)) }, "bad-json")
         XCTAssertEqual(reason { try Keyring.parse([UInt8](repeating: 0x20, count: 256 * 1024 + 1)) }, "too-large")
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":2.0").utf8)) }, "bad-format")
-        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":3").utf8)) }, "bad-format")
+        // Format 3 is a share v2 keyring: a personal one (no share fields, no `content`) is malformed.
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":3").utf8)) }, "bad-fields")
+        // A later format is said apart first (the app asks for an update), for a share keyring too.
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":4").utf8)) }, "newer-format")
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2,", with: "\"format\":4,\"metadata\":1,").utf8)) }, "newer-format")
+        XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":0").utf8)) }, "bad-format")
         // Format 1 has no member signing fields.
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"format\":2", with: "\"format\":1").utf8)) }, "bad-fields")
         XCTAssertEqual(reason { try Keyring.parse(Array(text.replacingOccurrences(of: "\"epoch\":1", with: "\"epoch\":0").utf8)) }, "bad-epoch")

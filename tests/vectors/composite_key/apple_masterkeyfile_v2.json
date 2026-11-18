@@ -1,0 +1,1 @@
+{"factors":[{"challenge":"8ff1cea205f4a70d02ee27547315185615502ef7370f266128d11baed71b829c","check":"010308fba8257624","kind":"yubikey-hmac","slot":1}],"kdf":{"memory_kib":8192,"parallelism":1,"time_cost":1},"nonce":"uhcLV3+13lKugaii","salt":"v3oEUPCCrmJSlDeMez2cLQ==","sealed_key":"xbh3Jbhs0fubayBg2N47zrt+RF0CqQaRZag4k7G9g4RlV9noi2K0NgsREftHnn3p","version":2}

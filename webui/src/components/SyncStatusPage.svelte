@@ -38,6 +38,7 @@
       <ul class="devices">
         <li>
           <div class="name">{status.this_device?.name ?? t('syncStatusPage.thisPc')} <span class="tag">{t('syncStatusPage.thisDevice')}</span></div>
+          {#if status.this_device?.id_text}<div class="muted">{status.this_device.id_text}</div>{/if}
           <div class="muted">{status.this_device?.last_text}</div>
         </li>
         {#each status.devices as d (d.id)}

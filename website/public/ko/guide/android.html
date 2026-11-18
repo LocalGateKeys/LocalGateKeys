@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys Android용 사용자 가이드</title>
+  <meta name="description" content="LocalGateKeys Android 앱의 작동 방식: 설정, 자동 입력, 2단계 인증 코드, 가져오기, 백업, 동기화.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/android">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/android">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/android">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/android">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/android">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/android">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys Android용 사용자 가이드">
+  <meta property="og:description" content="LocalGateKeys Android 앱의 작동 방식: 설정, 자동 입력, 2단계 인증 코드, 가져오기, 백업, 동기화.">
+  <meta property="og:url" content="https://localgatekeys.app/ko/guide/android">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 로고: Windows, Mac, iPhone용 비밀번호 관리자.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys Android용 사용자 가이드">
+  <meta name="twitter:description" content="LocalGateKeys Android 앱의 작동 방식: 설정, 자동 입력, 2단계 인증 코드, 가져오기, 백업, 동기화.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../ko/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="메인">
+        <ul class="nav">
+          <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/help">가이드</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/support">지원</a></li>
+          <li><a class="nav-cta" href="../../ko/download">다운로드</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>메뉴</summary>
+        <nav aria-label="메인">
+          <ul class="nav nav-stack">
+            <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/help">가이드</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/support">지원</a></li>
+          <li><a class="nav-cta" href="../../ko/download">다운로드</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>언어</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko" aria-current="true">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Android용 LocalGateKeys</h1>
+  <p class="lead">이 기기의 모든 화면과 기능을 단계별로 안내합니다. 모든 제목은 공유할 수 있는 링크입니다.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="플랫폼">
+    <ul><li><a class="help-tab" href="../../ko/guide/windows">Windows</a></li><li><a class="help-tab" href="../../ko/guide/mac">Mac</a></li><li><a class="help-tab" href="../../ko/guide/iphone">iPhone 및 iPad</a></li><li><a class="help-tab" href="../../ko/guide/android" aria-current="page">Android</a></li><li><a class="help-tab" href="../../ko/guide/extension">브라우저 확장 프로그램</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>모든 기기에서 알아 두면 좋은 점</h2>
+    <ul>
+      <li><strong>보관함은 사용자의 기기에만 있습니다.</strong> 계정이 없으며 비밀번호를 보관하는 LocalGateKeys 서버도 없습니다.</li>
+      <li><strong>마스터 비밀번호나 앱 비밀번호는 누구도 재설정할 수 없습니다.</strong> 복구 문구를 설정하고 종이에 적어 보관하십시오.</li>
+      <li><strong>Free</strong>는 항목을 최대 7개까지 보관합니다. <strong>Pro</strong>(US$29.99, 한 번 결제)는 무제한 항목, 2단계 인증 코드, 파일, 동기화를 제공합니다. 이미 있는 항목의 편집, 삭제, 입력은 절대 차단되지 않습니다.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Android 주제</h2>
+    <p class="callout-soon"><strong>출시 예정.</strong> Android 앱은 아직 Google Play에 없습니다. 이 가이드는 앱이 어떻게 작동할지 보여 줍니다.</p>
+    <p class="panel-lead">앱에는 <strong>보관함</strong>, <strong>동기화</strong>, <strong>보안</strong>, <strong>설정</strong>의 네 가지 탭이 있습니다. 검색은 보관함 탭 상단의 돋보기입니다.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Android 주제">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">이 탭의 내용</summary>
+          <ol>
+            <li><a href="#and-setup">처음 시작과 잠금 해제</a></li>
+            <li><a href="#and-apppw">앱 비밀번호와 복구</a></li>
+            <li><a href="#and-items">항목</a></li>
+            <li><a href="#and-search">검색과 작업</a></li>
+            <li><a href="#and-generator">비밀번호 생성기</a></li>
+            <li><a href="#and-2fa">2단계 인증 코드</a></li>
+            <li><a href="#and-autofill">자동 입력</a></li>
+            <li><a href="#and-passkeys">패스키</a></li>
+            <li><a href="#and-import">가져오기</a></li>
+            <li><a href="#and-backups">백업</a></li>
+            <li><a href="#and-sync">동기화</a></li>
+            <li><a href="#and-share">공유</a></li>
+            <li><a href="#and-settings">설정과 Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">처음 시작과 잠금 해제</a></h3>
+          <p>보관함은 휴대폰의 지문, 얼굴 또는 화면 잠금으로 열립니다. (휴대폰에 화면 잠금이 있어야 합니다.) 간단한 설정이 이어집니다: 지문으로 잠금 해제, <strong>가져오기…</strong>, 선택 사항인 앱 비밀번호, <strong>자동 채우기 설정 열기</strong>. 어떤 단계든 건너뛸 수 있으며, <em>설정 마무리</em> 카드로 돌아올 수 있습니다.</p>
+          <p>설정 › 잠금 및 보안에서 <strong>앱을 나간 후 자동 잠금</strong>(즉시부터 1시간까지)과 <strong>사용하지 않을 때 잠금</strong>(1~30분 또는 안 함)을 설정하고 <strong>지금 잠금</strong>을 사용할 수 있습니다. 앱은 최근 앱 화면에서 숨겨집니다.</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">앱 비밀번호와 복구 문구</a></h3>
+          <ol>
+            <li>설정 › 잠금 및 보안 › <strong>앱 비밀번호 사용</strong>을 켜고 비밀번호를 정한 다음 <strong>계속</strong>을 탭합니다. 그때부터는 화면 잠금이 아니라 이 비밀번호로 LocalGateKeys를 엽니다.</li>
+            <li>24단어 복구 문구를 적어 두고 <strong>적어 두었습니다</strong>를 탭한 다음, 요청한 단어를 입력하고 <strong>앱 비밀번호 켜기</strong>를 탭합니다.</li>
+          </ol>
+          <p>잊으셨습니까? <strong>앱 비밀번호를 잊으셨나요?</strong>를 탭하고 24단어를 입력한 다음 새 비밀번호를 정합니다. <strong>앱 비밀번호 변경</strong>과, 끄기 위한 <strong>앱 비밀번호 사용</strong> 스위치는 설정 › 잠금 및 보안에 있습니다.</p>
+          <p class="note">Google 백업에서 휴대폰을 복원한 후에는 보관함을 열 수 없습니다(키가 백업되지 않기 때문입니다). <strong>새로 시작</strong>을 선택한 다음 PC와 동기화하여 모든 것을 되찾으십시오.</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">항목</a></h3>
+          <ul>
+            <li><strong>+</strong>를 탭하고 유형을 선택합니다: 웹사이트 로그인, 메모, 결제 카드, 신원 정보, 은행 계좌, 구매, 구독, 보증, Wi-Fi 네트워크, 라이선스, API 키, SSH 키, 북마크.</li>
+            <li>항목을 열어 필드를 복사하거나 <strong>웹사이트 열기</strong>, <strong>편집</strong>, <strong>삭제</strong>, <strong>즐겨찾기에 추가</strong>를 할 수 있습니다.</li>
+            <li><strong>비밀번호 기록</strong>: 이전 비밀번호를 복사하거나 복원합니다.</li>
+            <li><strong>파일 추가</strong>(Pro): 사진을 찍거나 사진 또는 파일을 선택합니다. 각각 최대 25MB입니다.</li>
+            <li>제목이나 날짜순, 즐겨찾기 우선으로 <strong>정렬</strong>합니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">검색과 작업</a></h3>
+          <p>보관함 탭의 돋보기를 탭하고 이름을 입력하거나 <code>&gt;</code>로 시작하여 백업 내보내기, 비밀번호 생성, 비밀번호 가져오기, 잠금, 공유 항목 받기, 페어링용 QR 코드 스캔, 지금 동기화 같은 작업을 사용합니다.</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">비밀번호 생성기</a></h3>
+          <p><strong>비밀번호</strong>(길이, 대문자와 소문자, 숫자, 기호, 비슷한 문자 피하기) 또는 <strong>암호 문구</strong>(단어, 대문자 사용, 숫자 추가, 구분자). <strong>다시 생성</strong>한 다음 <strong>복사</strong>합니다.</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">2단계 인증 코드</a> <span class="badge-pro">Pro</span></h3>
+          <p>로그인을 편집하고 2FA 필드 옆의 <strong>QR 코드 스캔</strong>을 탭하거나 설정 키를 입력합니다. 코드는 항목과 <strong>코드</strong> 행에 표시되며, 탭하면 복사됩니다.</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">자동 입력</a></h3>
+          <ol>
+            <li>설정 › 자동 완성 › <strong>자동 완성 설정 열기</strong>에서 LocalGateKeys를 선택합니다. (열리지 않으면 휴대폰 설정에서 <em>자동 완성 서비스</em>를 검색하십시오.)</li>
+            <li>앱이나 웹사이트에서 로그인 상자를 탭하고 제안 목록에서 로그인을 선택합니다. 요청하면 잠금을 해제합니다.</li>
+            <li>새로운 곳에 로그인한 후 <em>로그인을 저장하시겠습니까?</em>에서 <strong>저장</strong>을 선택하거나, 비밀번호가 바뀌었다면 <strong>비밀번호 업데이트</strong>를 선택합니다.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">패스키</a></h3>
+          <p>설정 › 자동 채우기 › <strong>패스키에 LocalGateKeys 제안</strong>을 켭니다. 사이트나 앱이 패스키를 제안하면 LocalGateKeys를 선택하고, 이후에는 <strong>패스키 사용</strong>으로 로그인합니다.</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">가져오기</a></h3>
+          <p>설정 › 동기화 및 데이터 › <strong>파일에서 가져오기</strong> › <strong>내보내기 파일 선택</strong>: Chrome, Edge, Brave, Firefox, Apple 암호, Bitwarden <code>.json</code>(비밀번호로 보호된 파일 포함), 1Password <code>.1pux</code> 또는 모든 CSV. 모두 검토한 다음 가져옵니다. 그 후 내보낸 파일을 삭제하십시오.</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">백업</a></h3>
+          <p><strong>백업 내보내기…</strong>는 직접 정한 비밀번호(복구할 수 없음)로 암호화한 <code>.lgkm</code> 파일을 저장합니다. <strong>백업에서 복원…</strong>은 파일을 열어 미리 보기를 표시하며 더 최신 항목을 덮어쓰지 않습니다. PC 및 iPhone과도 작동합니다.</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">PC와 동기화</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>PC의 Wi-Fi 카드에서 <strong>QR 코드 표시</strong>를 선택합니다.</li>
+            <li>휴대폰에서 동기화 탭 › <strong>QR 코드 스캔</strong>(또는 <strong>코드 텍스트 붙여넣기</strong>).</li>
+            <li>두 기기에 같은 코드가 표시되는지 확인하고 PC에서 수락합니다.</li>
+          </ol>
+          <p>또는 동기화 비밀번호로 Dropbox나 Nextcloud에서 <strong>폴더에 참여…</strong>합니다. PC에도 Pro가 필요합니다.</p>
+          <p class="note">OneDrive와 Google Drive는 Apple 관련 문제가 해결될 때까지 현재 동기화에 사용할 수 없습니다. Dropbox, Nextcloud 또는 Wi-Fi 동기화를 사용하십시오.</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">공유</a></h3>
+          <p>항목을 열고 공유를 탭한 다음 <strong>파일로 보내기…</strong> 또는 <strong>QR 코드로 표시</strong>를 선택하고, 여섯 단어는 따로 알려 줍니다. 받기: 설정 › 동기화 및 데이터 › <strong>공유 항목 받기</strong>에서 여섯 단어를 입력하고 <strong>열기</strong>, <strong>보관함에 추가</strong>를 차례로 탭합니다. 공유는 24시간 안에 한 번만 열 수 있으며, 코드를 세 번 틀리면 삭제됩니다. 패스키와 파일은 공유할 수 없습니다.</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">설정과 Pro</a></h3>
+          <ul>
+            <li><strong>모양</strong>: 시스템, 라이트 또는 다크, 그리고 이니셜.</li>
+            <li><strong>잠금 및 보안</strong>에는 <strong>클립보드 지우기 시간</strong>, <strong>개인정보 보호</strong>에는 <strong>누를 때까지 비밀번호 숨기기</strong>, <strong>동기화 및 데이터</strong>에는 <strong>이 휴대폰의 보관함 지우기</strong>(이 휴대폰만)가 있습니다. Android에서는 앱이 열려 있을 때만 클립보드를 확인할 수 있으므로, 빠른 설정 타일에서 복사했거나 다른 앱으로 전환하기 직전에 복사한 내용은 다음에 LocalGateKeys를 열 때 지워집니다.</li>
+            <li><strong>Pro</strong>(설정 맨 위): <strong>업그레이드</strong>로 Google Play에서 한 번 구매하고, 같은 Google 계정의 다른 휴대폰에서 <strong>구매 복원</strong>, <strong>키 복사</strong>로 Windows도 잠금 해제합니다.</li>
+            <li><strong>강요 대비 비밀번호</strong>(Pro): 누군가 잠금 해제를 강요할 때 쓰는 두 번째 앱 비밀번호입니다. 고른 항목만 있는 별도의 보관함이 열리고, 내 보관함은 설정한 시간 동안 앱 비밀번호를 거부합니다. 먼저 앱 비밀번호를 켠 다음 설정의 <strong>강요 대비 비밀번호</strong>에서 설정하세요.</li>
+            <li><strong>CXF 파일로 내보내기…</strong>는 고른 로그인, 메모, 패스키를 다른 비밀번호 관리자가 가져올 수 있는 Credential Exchange 파일로 저장합니다. 파일은 암호화되지 않습니다.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../ko/help">전체 사용자 가이드를 한 페이지에서 보기</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>보관함을 내 기기에 두는 Windows, Mac 및 iPhone용 비밀번호 관리자입니다.</p>
+        <p class="quiet">이 웹사이트는 쿠키를 사용하지 않는 Cloudflare Web Analytics로 페이지 방문 수를 집계합니다. 광고 추적기를 사용하지 않으며 쿠키를 설정하지 않습니다.</p>
+      </div>
+      <nav aria-label="제품">
+        <h2>제품</h2>
+        <ul>
+          <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/download">다운로드</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/switch/">갈아타기</a></li>
+          <li><a href="../../buy">Pro 구매</a></li>
+          <li><a href="../../ko/licence">내 Pro 라이선스</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">라이선스 복구</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="도움말">
+        <h2>도움말</h2>
+        <ul>
+          <li><a href="../../ko/help">사용자 가이드</a></li>
+          <li><a href="../../ko/support">지원 및 FAQ</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">취약점 신고</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="법률">
+        <h2>법률</h2>
+        <p class="quiet">이 문서는 영어로 작성되어 있으며, 적용되고 구속력을 갖는 것은 영어본입니다.</p>
+        <ul>
+          <li><a href="../../legal/eula">라이선스 계약</a></li>
+          <li><a href="../../legal/privacy">개인정보 처리방침</a></li>
+          <li><a href="../../legal/terms-of-sale">판매 약관</a></li>
+          <li><a href="../../legal/refunds">환불 정책</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. 문의: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows는 Microsoft 그룹 회사의 상표입니다. Chrome은 Google LLC의 상표입니다. Apple, iPhone, Apple Watch, Face ID, Touch ID, Safari는 미국 및 기타 국가에 등록된 Apple Inc.의 상표입니다.</p>
+      <nav class="lang-switch" aria-label="언어"><ul><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko" aria-current="true">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

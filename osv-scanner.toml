@@ -1,0 +1,5 @@
+# OSV-Scanner (.github/workflows/security.yml). Each ignore needs a reason and an expiry.
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+ignoreUntil = 2026-12-31T00:00:00Z
+reason = "picomatch ReDoS: only a dev dependency of the web UI build (vite, vitest, tinyglobby); never bundled, no fixed release on 2026-11-18. Same entry as scripts/security_ignore.txt."

@@ -1,0 +1,376 @@
+{
+  "cases": [
+    {
+      "device_class": "phone",
+      "expected": {
+        "autofill": true,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": false,
+        "reauth": false
+      },
+      "name": "no access",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": true,
+        "copy_once": true,
+        "expired": false,
+        "phone_view": false,
+        "reauth": false
+      },
+      "name": "copy once",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "copy": "once"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "phone",
+      "expected": {
+        "autofill": false,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": true,
+        "reauth": false
+      },
+      "name": "view only on phones, on a phone",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "phones": "view"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": true,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": true,
+        "reauth": false
+      },
+      "name": "view only on phones, on a computer",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "phones": "view"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": true,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": false,
+        "reauth": false
+      },
+      "name": "expires tomorrow",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "expires": "2026-11-16"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": false,
+        "copy_once": false,
+        "expired": true,
+        "phone_view": false,
+        "reauth": true
+      },
+      "name": "expires today",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "expires": "2026-11-15"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "phone",
+      "expected": {
+        "autofill": false,
+        "copy_once": false,
+        "expired": true,
+        "phone_view": false,
+        "reauth": true
+      },
+      "name": "expired yesterday",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "expires": "2026-11-14"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": true,
+        "copy_once": true,
+        "expired": false,
+        "phone_view": false,
+        "reauth": false
+      },
+      "name": "unknown copy value is once",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "copy": "twice"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": false,
+        "copy_once": true,
+        "expired": false,
+        "phone_view": true,
+        "reauth": true
+      },
+      "name": "unknown key: every rule on",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "biometric_only": true,
+            "copy": "normal"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": false,
+        "copy_once": false,
+        "expired": true,
+        "phone_view": false,
+        "reauth": true
+      },
+      "name": "malformed date is expired now",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "expires": "2027-02-30"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": false,
+        "copy_once": false,
+        "expired": true,
+        "phone_view": false,
+        "reauth": true
+      },
+      "name": "YYYYMMDD is not accepted here",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {
+            "expires": "20271231"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "phone",
+      "expected": {
+        "autofill": false,
+        "copy_once": true,
+        "expired": false,
+        "phone_view": true,
+        "reauth": true
+      },
+      "name": "access not an object: every rule on",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": "x",
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "phone",
+      "expected": {
+        "autofill": true,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": false,
+        "reauth": false
+      },
+      "name": "empty access object is no rule",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "scope": {
+          "access": {},
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": true,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": true,
+        "reauth": true
+      },
+      "name": "strict policy and phone view on a computer",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "policy": {
+          "require_master_password": true
+        },
+        "scope": {
+          "access": {
+            "phones": "view"
+          },
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    },
+    {
+      "device_class": "computer",
+      "expected": {
+        "autofill": false,
+        "copy_once": false,
+        "expired": false,
+        "phone_view": false,
+        "reauth": false
+      },
+      "name": "fill never",
+      "record": {
+        "id": "10000000-0000-4000-8000-000000000800",
+        "kind": "web",
+        "label": "Bank",
+        "password": "p",
+        "policy": {
+          "fill": "never"
+        },
+        "scope": {
+          "origin": "https://bank.example"
+        },
+        "username": "u"
+      },
+      "today": "2026-11-15"
+    }
+  ]
+}

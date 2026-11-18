@@ -26,9 +26,14 @@ struct GeneratorPopover: View {
             Picker("Type", selection: $model.options.mode) {
                 Text("Password").tag(GeneratorOptions.Mode.password)
                 Text("Passphrase").tag(GeneratorOptions.Mode.passphrase)
+                Text("Answer").tag(GeneratorOptions.Mode.answer)
             }
             .pickerStyle(.segmented).labelsHidden()
-            if model.options.mode == .password { passwordOptions } else { passphraseOptions }
+            switch model.options.mode {
+            case .password: passwordOptions
+            case .passphrase: passphraseOptions
+            case .answer: answerOptions
+            }
         }
         .padding(16)
         .frame(width: 360, alignment: .leading)
@@ -79,6 +84,10 @@ struct GeneratorPopover: View {
             Toggle("Avoid look-alike characters", isOn: $model.options.avoidAmbiguous)
         }
         .toggleStyle(.checkbox)
+    }
+
+    private var answerOptions: some View {
+        Stepper("Words: \(model.options.answerWords)", value: $model.options.answerWords, in: PasswordGenerator.answerWordsRange)
     }
 
     private var passphraseOptions: some View {

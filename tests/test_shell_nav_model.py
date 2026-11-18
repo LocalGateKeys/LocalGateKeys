@@ -31,7 +31,8 @@ def test_collections_then_pinned_views():
                    {"id": "v2", "name": "x", "pinned": False},
                    {"id": "v3", "name": "y", "pinned": True, "disabled": True}],
                   unlocked=True)[2]
-    assert [e.token for e in g.entries] == ["collection:c1", "view:v1"]
+    assert [e.token for e in g.entries] == ["collection:c1", "view:v1", None]
+    assert (g.entries[-1].label, g.entries[-1].action) == ("Manage collections", "collections_clicked")
 
 
 def test_tools_route_to_webview_pages():
@@ -39,10 +40,26 @@ def test_tools_route_to_webview_pages():
 
     home = (Path(__file__).resolve().parents[1] / "webui/src/screens/Home.svelte").read_text(encoding="utf-8")
     assert [e.label for e in TOOLS_ENTRIES] == [
-        "Security center", "Reminders", "Sync", "Devices & connections", "Licence", "Import & export",
-        "Scan QR code", "Activity", "Trash"]
+        "Security center", "Generator", "Sync & devices", "Devices & connections", "Import & export", "Trash"]
     assert all(e.action and e.token is None and (f"{e.action}:" in home or f"'{e.action}'" in home)
                for e in TOOLS_ENTRIES)
+
+
+def test_removed_tools_stay_reachable():
+    """Each page that left the Tools list keeps a visible path in the WebView UI."""
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[1] / "webui/src"
+    security = (src / "components/SecurityPage.svelte").read_text(encoding="utf-8")
+    sync = (src / "components/SyncPage.svelte").read_text(encoding="utf-8")
+    menu = (src / "components/ImportExportMenu.svelte").read_text(encoding="utf-8")
+    overview = (src / "components/Overview.svelte").read_text(encoding="utf-8")
+    assert "onroute('activity')" in security
+    assert "onconnections" in sync
+    assert "route: 'scan-qr'" in menu
+    assert "onreminders" in overview
+    groups = build_nav([], [], [], unlocked=True)
+    assert any(e.action == "collections_clicked" for g in groups for e in g.entries)
 
 
 def test_locked_hides_counts_and_types():

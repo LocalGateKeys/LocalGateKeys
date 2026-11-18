@@ -8,6 +8,7 @@ Layout (inside the folder the user picks: OneDrive, Dropbox, iCloud Drive...)::
       signatures/<device_id>.lgksig  the writer's Ed25519 signature of that view
       witness/<device_id>.lgksync  witness file (format 2, no records) next to a format-1 view
       witness/<device_id>.lgksig   the writer's signature of that witness file
+      removed/<device_id>.lgkremoved  signed removal notice of a removed device (``removal.py``)
 
 Each device writes only its own file and reads everyone else's.  The cloud
 provider sees ciphertext, file names (device ids), sizes and timestamps.
@@ -76,7 +77,8 @@ One run (``FolderSync.run_once``)
    member id seen at this epoch.  Everything else (provider conflict copies
    such as ``<id> (1).lgksync`` or ``<id>-DESKTOP-ABC.lgksync``, unknown files,
    files of non-members) is counted in one ``ignored-file`` issue that lists at
-   most 20 names; hidden ``.*.tmp`` files (in-flight atomic writes) are skipped
+   most 20 names; emergency access files (``heir_flow.is_heir_file``) are skipped
+   silently; hidden ``.*.tmp`` files (in-flight atomic writes) are skipped
    silently, and this device's own leftover temp files are deleted.  Every file
    is decoded with ``expected_device_id``.  Per-file issues never stop the run:
    ``epoch-mismatch`` (written under another epoch; ignored until that device
@@ -159,7 +161,13 @@ One run (``FolderSync.run_once``)
    witness file is written again (same counter, no state save).  A change of
    generation alone never rewrites the own file (each write saves the vault,
    which raises the generation again).
-10. Adopting a new epoch (here or by ``rotate_folder_group``) clears every
+10. Removal notices (2026-10-30, ``removal.py``): every run writes the removal watch file next to
+   the vault from the trusted state (deleted when the state is gone).  A run that stops without a
+   trusted keyring adds ``removal-notice`` (detail: the signer) when a notice for this device verifies
+   against the trusted keyring's member signing keys and the folder keyring no longer lists it; the
+   app decides about erasing (``app.device_removal``).  ``rotate_folder_group`` writes a notice for
+   each member in ``remove`` (never for the unconfirmed members it also drops).
+11. Adopting a new epoch (here or by ``rotate_folder_group``) clears every
    peer's last-seen counter, digest and signing key: only members of the new
    epoch can write files for it, so a counter or key forged under the old key
    by a removed member stops mattering.
@@ -170,7 +178,12 @@ Joining, creating, rotating, leaving
 ``leave_folder_group`` are the UI entry points; they raise ``FolderSyncError``
 with a stable ``reason`` (a ``KeyringError`` keeps its reason, a weak password
 is ``weak-password``, an I/O error is ``folder-error``; the original exception
-is the ``__cause__``).  Create and join always make a fresh device identity.
+is the ``__cause__``).  Create makes a fresh device identity; so does join, except
+that a vault that left this same group on this installation reuses its kept identity
+(``vault_bridge.KeptIdentity``) when the keyring still lists it with the same keys and no
+removal notice names it: its member entry is rewritten in place
+(``keyring.rejoin_with_password``) and its view and hello counters continue, so the other
+members see the same device again instead of a second one.
 Join and rotate re-read the keyring bytes immediately before writing and abort
 with ``keyring-changed`` if another device wrote it meanwhile; a write that
 still slips through that window is undone by the restore rule above.
@@ -193,7 +206,8 @@ save failed), the earlier keyring is put back (none, for a new one) as long as
 the folder still holds exactly the bytes written.  If even that fails, a retry
 still works: an attach of a device that the keyring already lists with its own
 key and a wrap of the stored group key succeeds without rewriting the keyring.
-``leave_folder_group`` clears this device's sync state and keeps its own file
+``leave_folder_group`` clears this device's sync state (keeping its identity and counters as
+the kept identity) and keeps its own file
 in the folder: the file may hold edits the other members have not merged yet
 (the leaving device synced, then left before they ran), and deleting it would
 lose those edits for the group.  It does NOT rotate (it cannot: rotating needs
@@ -204,6 +218,46 @@ epochs.
 
 Sync is not Pro-gated (licensing revision 2); this module has no licensing
 dependency.
+
+Share groups (sub-plan 07)
+--------------------------
+``FolderSync(root, install_id=..., share=<ShareGroup or group id>)`` runs a share group in its
+own folder (same layout) instead of the personal group (``share_group.py`` holds its state):
+
+* Pro only.  Without Pro only the keyring step below runs (a repair, an adoption, the owner's removal of
+  this device: security actions, like removing a member), then the run stops with ``pro-required``: no
+  view is read or written.  Never a licence (``licence_round`` is empty).
+* Keyring: the folder's keyring is adopted with ``share_group.adopt_keyring`` (owner signature,
+  pinned owner/collection/mode, growth-only within an epoch).  On the owner's device, a folder
+  keyring that others grew while the owner's own approvals waited to be written is merged
+  (``share_group.reconcile_owner_keyring``: approvals re-signed over the grown roster, the new
+  joiners pending) and written (``keyring-merged``).  A missing keyring, or one this
+  device's trusted keyring grows from (an older epoch, or fewer members/approvals), is replaced by
+  the trusted one (``keyring-restored``).  Anyone who can write to the folder could otherwise stop
+  the share for everyone (``share_group.restores_over``): the owner's device writes its trusted
+  keyring back over any folder keyring it cannot adopt or reconcile, bytes that do not parse and a
+  keyring naming another group included (only a later epoch signed by the pinned owner key is
+  left alone; another group's keyring is reported as ``other-group-replaced``, so two owners writing
+  over each other in one folder show up); a member's device writes back over a keyring of its trusted epoch that does not
+  authenticate (MAC or owner signature).  An authenticated keyring of that epoch that does not grow
+  (a concurrent join) still stops a member's run, and a member never writes over another group's
+  keyring (``folder-has-other-group``).  A rotation that dropped this device: the owner's removal notice
+  for it (``removed/``) is verified (pinned owner key only) and ``share_group.apply_share_removal``
+  moves the collection's items to the trash and leaves the group (``share-removed``, detail: the
+  collection id); without a valid notice the run stops with ``rejoin-required``.  A member whose
+  pending join was lost to another join at the same moment (``share_group.superseded_join``)
+  stops with ``superseded`` (join again).  Other refusals stop with their reason.
+* Approval: a device the owner has not approved yet adopts the keyring and stops there
+  (``awaiting-approval``): it merges no peer view and writes no own view.  Share v2 views are
+  sealed with the content key (``share_group.view_key``) that only approved devices can open, so the
+  share password alone opens no item; share v1 views are still sealed with the group key until the
+  owner upgrades the share.  A keyring of a later format stops the run (``update-required``) and is
+  never written over.
+* Peers: only members the owner approved (and the owner), each view signed with its keyring
+  key (the owner's with its pinned key).  Read-only shares: a member merges only the owner's view
+  and the owner merges none, so only the owner's edits flow, whatever a member's file holds.
+* ``run_merge`` with the share's ``collection_id`` (the vault bridge's namespace filter), then the
+  own view (format 1, signed, no witness, documents never) under the reserved counter.
 """
 from __future__ import annotations
 
@@ -237,23 +291,27 @@ from .group import (
 )
 from .keyring import (
     MAX_KEYRING_BYTES,
+    READ_FORMATS,
     KeyringError,
     WeakSyncPassword,
     accept_keyring,
+    approved_members,
     attach_with_password,
     create_for_existing_group,
     create_group,
     join_with_password,
+    listed_with_key,
     member_names,
     member_signing_keys,
     open_with_device_wrap,
     parse_keyring,
+    rejoin_with_password,
     rotate,
 )
 from .pairing import DeviceIdentity
 from .runner import RunReport, SyncIssue, run_merge
-from .attachment_flow import (folder_capable, import_missing, publish_folder_blobs, referenced_blobs,
-                              write_capability)
+from .attachment_flow import (collections_capable, folder_capable, import_missing, publish_folder_blobs,
+                              referenced_blobs, write_capability, write_collections_capability)
 from .attachment_sync import BlobFolder
 from .vault_bridge import (
     publishable,
@@ -262,16 +320,21 @@ from .vault_bridge import (
     MAX_MEMBERS_SEEN,
     MAX_PEERS_SEEN,
     TOMBSTONE_MAX_AGE_DAYS,
+    KeptIdentity,
     SyncGroupState,
     _check_lease,
     clear_sync_state,
+    epoch_reset_fields,
+    kept_identity_for,
     licenses_in_views,
     load_sync_state,
+    save_rejoined_state,
     save_sync_state,
 )
 from .witness import Observation, observation, own_witness, prune, session_generation
 from .witness import check as witness_check
-from . import witness_memory
+from . import removal, seen, witness_memory
+from ..heir_flow import is_heir_file
 
 SYNC_DIR_NAME = "LocalGateKeys Sync"
 KEYRING_NAME = "keyring.lgkkeys"
@@ -458,11 +521,18 @@ class FolderSync:
     sync.
     """
 
-    def __init__(self, root: Path | str, *, install_id: str,
+    def __init__(self, root: Path | str, *, install_id: str, share: Any = None,
                  _kdf_override: tuple[int, int, int] | None = None) -> None:
         self.root = Path(root)
         self.install_id = _check_install(install_id)
         self._kdf_override = _kdf_override
+        #: The share group this folder syncs (``share_group.ShareGroup`` or its id), None: the personal group.
+        self.share_group_id: str | None = None
+        if share is not None:
+            group_id = share if isinstance(share, str) else getattr(share, "group_id", None)
+            if not is_valid_id(group_id):
+                raise ValueError("share group id is malformed")
+            self.share_group_id = group_id
 
     @property
     def sync_dir(self) -> Path:
@@ -626,6 +696,18 @@ class FolderSync:
             return [SyncIssue(kind, detail)], None, None, None
         return [], gk, ring, raw
 
+    def _removal_issues(self, state: SyncGroupState, watch: Path | None) -> tuple[SyncIssue, ...]:
+        """``removal-notice`` when a member this device trusted signed that it was removed (never raises).
+
+        Checked only when the run stops without a trusted keyring; the watch file is refreshed from
+        the trusted state first, so the app's locked check sees the same thing.
+        """
+        fresh = removal.watch_from_state(state, self.root)
+        if fresh is None:
+            return ()
+        notice = removal.check(removal.refresh_watch(watch, fresh), install_id=self.install_id)
+        return () if notice is None else (SyncIssue("removal-notice", notice.signer),)
+
     @staticmethod
     def _unlisted(ring: Mapping[str, Any], state: SyncGroupState) -> bool:
         """True if *ring* does not list this device or lacks its wrap.
@@ -654,6 +736,23 @@ class FolderSync:
         except KeyringError:
             return False
         return other.key != trusted.key
+
+    def write_removal_notice(self, identity: DeviceIdentity, group_id: str, device_id: str, epoch: int, *,
+                             now: int) -> bool:
+        """Write the signed notice that *device_id* was removed at *epoch*; False if it could not be written.
+
+        Best effort: the rotation already happened; without the notice the removed device only stops
+        syncing (it is never erased).
+        """
+        try:
+            data = removal.make_notice(identity.signing_key, group_id=group_id, device_id=device_id,
+                                       epoch=epoch, signer=identity.device_id, now=now)
+            folder = self.sync_dir / removal.REMOVED_DIR_NAME
+            folder.mkdir(exist_ok=True)
+            _atomic_write(folder / removal.notice_name(device_id), data)
+        except (OSError, removal.RemovalError):
+            return False
+        return True
 
     # --- device files ------------------------------------------------------------------
 
@@ -694,6 +793,8 @@ class FolderSync:
         for name in names:
             if name.startswith(".") and name.endswith(".tmp"):
                 continue  # an in-flight atomic write
+            if is_heir_file(name):
+                continue  # emergency access files (heir_flow), when its folder is this one: not a peer
             dev = name[: -len(DEVICE_SUFFIX)] if name.endswith(DEVICE_SUFFIX) else ""
             if dev == own_id:
                 continue
@@ -882,6 +983,8 @@ class FolderSync:
         advanced, every round reads every peer view again.
         """
         _check_lease(session, lease)
+        if self.share_group_id is not None:
+            return RunReport()  # a share never carries a licence
         state = load_sync_state(session)
         if state is None:
             return RunReport(issues=(SyncIssue("not-joined"),))
@@ -906,8 +1009,13 @@ class FolderSync:
     def run_once(self, session: Any, lease: Any, *, now: int) -> RunReport:
         """One full folder sync; see the module docstring."""
         _check_lease(session, lease)
+        if self.share_group_id is not None:
+            return self._share_run(session, lease, now=now)
         state = load_sync_state(session)
+        watch = _watch_path(session)
         if state is None:
+            if watch is not None:
+                removal.forget_watch(watch)  # left or reset: a later notice must not erase this vault
             return RunReport(issues=(SyncIssue("not-joined"),))
         if state.install_id != self.install_id:
             return RunReport(issues=(SyncIssue("rejoin-required", "install-mismatch"),))
@@ -916,10 +1024,16 @@ class FolderSync:
 
         issues, gk, ring, ring_bytes = self._trusted_keyring(state)
         if gk is None or ring is None or ring_bytes is None:
-            return RunReport(issues=tuple(issues) or (SyncIssue("keyring-corrupt"),))
+            return RunReport(issues=(*(issues or (SyncIssue("keyring-corrupt"),)),
+                                     *self._removal_issues(state, watch)))
 
         current = _member_ids(ring)
         unacked = _unacked_members(state, current)
+        if watch is not None:  # what the app checks for a removal notice, also while locked
+            trusted = removal.watch_from_state(dataclasses.replace(state, epoch=gk.epoch, keyring=ring_bytes,
+                                                                   unacked_members=unacked), self.root)
+            if trusted is not None:
+                removal.refresh_watch(watch, trusted)
         if gk.epoch != state.epoch:
             # Members a rotation removed are dropped from the LAN peer list as well.  The key
             # changed, so a Wi-Fi peer removed earlier no longer holds it (lan_removed).
@@ -964,7 +1078,13 @@ class FolderSync:
         # Document files first: a document is applied only once its file was imported.
         issues.extend(import_missing(session, lease, [s for v in peers.views for s in v.states],
                                      lambda ref: blobs.read(ref.blob)))
-        report = run_merge(session, lease, device_id=state.device_id, views=peers.views, now=now)
+        # Personal collections sync only when every other member wrote a valid signed collections
+        # capability file: the view file is read by all of them (an older app would refuse the states).
+        col_signers = {**state.view_signers, **peers.signers, **ring_keys}
+        collections = all(collections_capable(self.sync_dir, gk, d, col_signers.get(d))
+                          for d in current - {state.device_id})
+        report = run_merge(session, lease, device_id=state.device_id, views=peers.views, now=now,
+                           collections=collections)
         issues.extend(report.issues)
         _check_lease(session, lease)
         own_generation = session_generation(session)
@@ -1007,8 +1127,11 @@ class FolderSync:
             signers = {d: k for d, k in signers.items() if d in members}
         # Documents are published only when every other member wrote a valid signed capability file.
         documents = all(folder_capable(self.sync_dir, gk, d, signers.get(d)) for d in others)
+        # The emergency access plan only when every other member advertised the heir feature (sub-plan 08).
+        heir = all(folder_capable(self.sync_dir, gk, d, signers.get(d), feature="heir") for d in others)
         if report.own_states is not None:
-            report = dataclasses.replace(report, own_states=publishable(report.own_states, documents=documents))
+            report = dataclasses.replace(report, own_states=publishable(report.own_states, documents=documents,
+                                                                        heir=heir))
         new_state = dataclasses.replace(state, last_seen=last_seen, peer_digests=digests,
                                         members_epoch=gk.epoch, members=tuple(sorted(members)),
                                         keyring=ring_bytes, unacked_members=unacked, view_signers=signers,
@@ -1057,8 +1180,20 @@ class FolderSync:
         wrote = False
         try:
             write_capability(self.sync_dir, gk, state.device_id, identity.signing_key, own_key, now=now)
+            write_collections_capability(self.sync_dir, gk, state.device_id, identity.signing_key, own_key,
+                                         now=now)
+            write_capability(self.sync_dir, gk, state.device_id, identity.signing_key, own_key, now=now,
+                             feature="heir")
         except (OSError, ValueError) as exc:
             issues.append(SyncIssue("write-failed", f"capability: {exc}"))
+        # Heartbeats: when each device last ran here, even with no changes (shown on the sync status only).
+        try:
+            seen.write_heartbeat(self.sync_dir, gk, state.device_id, identity.signing_key, now=int(now))
+        except (OSError, ValueError, SyncFormatError) as exc:
+            issues.append(SyncIssue("write-failed", f"heartbeat: {exc}"))
+        trusted = {**signers, **_paired_keys(state), **ring_keys}
+        seen.read_peers(self.sync_dir, gk, state.group_id, sorted(d for d in others if is_safe_device_id(d)),
+                        trusted, now=int(now))
         if needs_write and report.own_states is not None and documents:
             issues.extend(publish_folder_blobs(session, blobs, report.own_states, now=now))  # before the view
         if report.own_states is not None and others <= {v.header["device_id"] for v in peers.views}:
@@ -1090,14 +1225,221 @@ class FolderSync:
         return dataclasses.replace(report, issues=tuple(issues), wrote=wrote)
 
 
-def _epoch_reset(state: SyncGroupState) -> dict[str, Any]:
-    """Fields cleared when this device moves to a new epoch: per-peer counters, digests and signing keys.
+    # --- share groups (module docstring "Share groups") -------------------------------
 
-    Only members of the new epoch can write files for it, so a counter or key forged by a
-    member that the rotation removed no longer blocks anyone.  This device's own key stays.
-    """
-    own = {d: k for d, k in state.view_signers.items() if d == state.device_id}
-    return {"last_seen": {}, "peer_digests": {}, "view_signers": own, "witness_counters": {}}
+    def publish_share_notice(self, device_id: str, notice: bytes) -> bool:
+        """Write the owner's removal *notice* for *device_id* (``share_group.remove_member``); False on failure."""
+        try:
+            folder = self.sync_dir / removal.REMOVED_DIR_NAME
+            folder.mkdir(parents=True, exist_ok=True)
+            _atomic_write(folder / removal.notice_name(device_id), notice)
+        except (OSError, removal.RemovalError):
+            return False
+        return True
+
+    def _share_removed(self, session: Any, lease: Any, state: SyncGroupState, folder_raw: bytes,
+                       reason: str) -> RunReport:
+        """The folder's keyring no longer lets this device in: act on the owner's notice, if there is one."""
+        from . import share_group as sg
+
+        collection_id = sg.share_info(session, state.group_id)["collection_id"]
+        notice = self._read_share_notice(state.device_id)
+        if notice is None:
+            return RunReport(issues=(SyncIssue("rejoin-required", reason),))
+        _check_lease(session, lease)
+        try:
+            sg.apply_share_removal(session, state.group_id, notice, folder_raw)
+        except removal.RemovalError as exc:
+            return RunReport(issues=(SyncIssue("rejoin-required", f"{reason}; notice refused ({exc.reason})"),))
+        except sg.ShareGroupError as exc:  # trash or history full: nothing changed, the next run retries
+            return RunReport(issues=(SyncIssue(exc.reason, str(exc)),))
+        return RunReport(issues=(SyncIssue("share-removed", collection_id),))
+
+    def _read_share_notice(self, device_id: str) -> bytes | None:
+        """The removal notice for *device_id* in the folder, None when missing or unreadable (folder I/O only)."""
+        try:
+            path = self.sync_dir / removal.REMOVED_DIR_NAME / removal.notice_name(device_id)
+            return _read_bounded(path, removal.MAX_NOTICE_BYTES)
+        except (OSError, removal.RemovalError):
+            return None
+
+    def _share_keyring(self, session: Any, lease: Any, state: SyncGroupState,
+                       issues: list[SyncIssue]) -> RunReport | None:
+        """Bring the folder keyring and the trusted one together; a report means the run stops."""
+        from . import share_group as sg
+
+        stored = state.keyring
+        if stored is None:
+            return RunReport(issues=(SyncIssue("keyring-corrupt", "no trusted keyring"),))
+        try:
+            raw: bytes | None = self.read_keyring_bytes()
+        except FileNotFoundError:
+            raw = None
+        except OSError as exc:
+            return RunReport(issues=(SyncIssue("keyring-unreadable", str(exc)),))
+        if raw == stored:
+            return None
+        kdf = self._kdf_override
+        folder_ring: dict | None = None
+        other_group = False
+        if raw is not None:
+            try:
+                folder_ring = parse_keyring(raw)
+                if type(folder_ring.get("format")) is int and folder_ring["format"] > max(READ_FORMATS):
+                    # A later app version wrote it: never write an older keyring over it.
+                    return RunReport(issues=(SyncIssue("update-required", KEYRING_NAME),))
+            except KeyringError as exc:
+                # Bytes that do not parse: the owner writes its keyring back; a member waits for it.
+                if not sg.restores_over(session, state.group_id, raw, _kdf_override=kdf):
+                    return RunReport(issues=(SyncIssue("keyring-corrupt", str(exc)),))
+                folder_ring = None
+            if folder_ring is not None and folder_ring.get("group_id") != state.group_id:
+                if not sg.restores_over(session, state.group_id, raw, _kdf_override=kdf):
+                    return RunReport(issues=(SyncIssue("folder-has-other-group", KEYRING_NAME),))
+                other_group = isinstance(folder_ring.get("group_id"), str)
+                folder_ring = None
+        if raw is not None and folder_ring is not None:
+            try:
+                _check_lease(session, lease)
+                sg.adopt_keyring(session, state.group_id, raw, _kdf_override=self._kdf_override)
+                return None
+            except sg.ShareGroupError as exc:
+                if exc.reason == "removed":
+                    return self._share_removed(session, lease, state, raw, exc.reason)
+                return RunReport(issues=(SyncIssue(exc.reason, str(exc)),))
+            except KeyringError as exc:
+                _check_lease(session, lease)
+                if sg.reconcile_owner_keyring(session, state.group_id, raw, _kdf_override=self._kdf_override):
+                    # The owner's approvals, re-signed over the folder's grown roster: write that.
+                    stored = sg.share_keyring(session, state.group_id)
+                    issues.append(SyncIssue("keyring-merged", KEYRING_NAME))
+                elif sg.grows_from(folder_ring, parse_keyring(stored)):
+                    pass  # the folder is behind this device: the trusted keyring is written back below
+                elif sg.superseded_join(session, state.group_id, raw, _kdf_override=self._kdf_override):
+                    # Someone joined at the same moment and this device's join was lost: join again.
+                    return RunReport(issues=(SyncIssue("superseded", state.group_id),))
+                elif sg.restores_over(session, state.group_id, raw, _kdf_override=kdf):
+                    pass  # the owner's keyring over anything else; a member's over a copy that fails to authenticate
+                else:
+                    if exc.reason in _REJOIN_REASONS:
+                        return self._share_removed(session, lease, state, raw, exc.reason)
+                    return RunReport(issues=(SyncIssue(_keyring_kind(exc.reason), str(exc)),))
+        try:
+            self.write_keyring(parse_keyring(stored), expected=raw)
+        except FolderSyncError as exc:
+            return RunReport(issues=(SyncIssue(exc.reason, str(exc)),))
+        except OSError as exc:
+            return RunReport(issues=(SyncIssue("write-failed", f"keyring: {exc}"),))
+        if raw is not None and not any(i.kind == "keyring-merged" for i in issues):
+            # Another share's keyring that the owner replaced is said apart (final review A1): two owners
+            # of different groups in one folder would otherwise overwrite each other without a word.
+            issues.append(SyncIssue("other-group-replaced" if other_group else "keyring-restored", KEYRING_NAME))
+        return None
+
+    def _share_run(self, session: Any, lease: Any, *, now: int) -> RunReport:
+        """One run of a share group's folder (module docstring "Share groups")."""
+        from . import share_group as sg
+
+        group_id = self.share_group_id
+        if group_id is None:
+            return RunReport(issues=(SyncIssue("not-joined"),))
+        try:
+            info = sg.share_info(session, group_id)
+            state = sg.share_state(session, group_id)
+        except sg.ShareGroupError as exc:
+            kind = "not-joined" if exc.reason == "not-joined" else "state-corrupt"
+            return RunReport(issues=(SyncIssue(kind, group_id),))
+        pro = sg.share_sync_allowed()
+        if state.install_id != self.install_id:
+            return RunReport(issues=(SyncIssue("rejoin-required", "install-mismatch"),))
+        if not self.root.is_dir():
+            return RunReport(issues=(SyncIssue("folder-missing", str(self.root)),))
+        issues: list[SyncIssue] = []
+        stop = self._share_keyring(session, lease, state, issues)
+        if not pro:
+            # Pro ended: the keyring step above still ran (a repair is a security action, like removing a
+            # member, final review A2); no view is read or written.
+            reported = stop.issues if stop is not None else tuple(issues)
+            return RunReport(issues=(*reported, SyncIssue("pro-required", group_id)))
+        if stop is not None:
+            return stop
+        _check_lease(session, lease)
+        state = sg.share_state(session, group_id)
+        ring = parse_keyring(state.keyring)  # trusted: written or adopted above
+        own, owner = state.device_id, info["owner"]
+        approved = set(approved_members(ring) or ()) | {owner}
+        try:
+            # Share v2: the content key only approved devices hold; share v1: the group key.
+            gk = sg.view_key(session, group_id) if own in approved else None
+        except KeyringError as exc:
+            return RunReport(issues=(*issues, SyncIssue("tampered", str(exc))))
+        if gk is None:
+            # Not approved yet: the keyring was adopted above, but no peer view is merged and no own
+            # view is written until the owner lets this device in (share v2: it cannot open them either).
+            issues.append(SyncIssue("awaiting-approval", group_id))
+            return RunReport(issues=tuple(issues))
+        if info["shared_mode"] == "read":
+            members = {owner} - {own}  # only the owner's edits flow; the owner reads nobody
+        else:
+            members = approved - {own}
+        members = {d for d in members if is_safe_device_id(d)}
+        ring_keys = {d: k for d, k in member_signing_keys(ring).items() if d in members}
+        if owner in members:
+            ring_keys[owner] = info["owner_key"]
+        peers = self.read_peers(gk, own, members, state.last_seen, state.peer_digests, now=now,
+                                signers={d: k for d, k in state.view_signers.items() if d in members},
+                                keyring_keys=ring_keys)
+        issues.extend(peers.issues)
+        report = run_merge(session, lease, device_id=own, views=peers.views, now=now,
+                           known_devices=approved | set(state.last_seen), collection_id=info["collection_id"])
+        issues.extend(report.issues)
+        _check_lease(session, lease)
+        identity = state.identity()
+        own_key = base64.b64encode(identity.signing_public_key).decode("ascii")
+        keep = approved | {own}
+        last_seen = {d: c for d, c in {**state.last_seen, **peers.seen}.items() if d in keep}
+        digests = {d: h for d, h in {**state.peer_digests, **peers.digests}.items() if d in keep}
+        signers = {d: k for d, k in {**state.view_signers, **peers.signers, **ring_keys}.items() if d in keep}
+        new_state = dataclasses.replace(state, last_seen=last_seen, peer_digests=digests, view_signers=signers)
+        accepted = [d for d, c in peers.seen.items() if c > state.last_seen.get(d, -1)]
+        new_state = new_state.synced_with(accepted, int(now))
+        own_file = self._own_file_status(gk, state, report.own_states, now)
+        file_counter = own_file.counter
+        if own_file.present and not own_file.self_signed and file_counter > state.own_counter:
+            issues.append(SyncIssue("own-file-rewritten", f"{own}{DEVICE_SUFFIX}"))
+            if file_counter - state.own_counter > MAX_COUNTER_JUMP:
+                file_counter = state.own_counter
+        counter = max(state.own_counter, file_counter) + 1
+        needs_write = own_file.needs_write and report.own_states is not None
+        if needs_write and counter > _MAX_INT53:
+            issues.append(SyncIssue("counter-exhausted", f"own counter {counter - 1}"))
+            needs_write = False
+        if needs_write:
+            new_state = dataclasses.replace(new_state, own_counter=counter,
+                                            view_signers={**new_state.view_signers, own: own_key})
+        if new_state != state:
+            _check_lease(session, lease)
+            sg.save_share_state(session, group_id, new_state)  # reserve the counter before writing
+        wrote = False
+        if needs_write and report.own_states is not None:
+            _check_lease(session, lease)
+            try:
+                self.write_own(gk, own, report.own_states, counter, now=now, signing_key=identity.signing_key)
+                wrote = True
+            except SyncFormatError as exc:
+                issues.append(SyncIssue("too-large", str(exc)))
+            except (OSError, ValueError) as exc:
+                issues.append(SyncIssue("write-failed", str(exc)))
+        return dataclasses.replace(report, issues=tuple(issues), wrote=wrote)
+
+
+def _watch_path(session: Any) -> Path | None:
+    """The removal watch file next to the session's vault (``removal.watch_path``), if it has one."""
+    path = getattr(session, "path", None)
+    return removal.watch_path(path) if isinstance(path, (str, os.PathLike)) else None
+
+
+_epoch_reset = epoch_reset_fields  # moved to vault_bridge (shared with share groups)
 
 
 def _paired_keys(state: SyncGroupState) -> dict[str, str]:
@@ -1126,6 +1468,23 @@ def _unacked_members(state: SyncGroupState, current: set[str]) -> tuple[str, ...
 
 
 # --- group operations for the UI ------------------------------------------------------------
+
+
+def _may_rejoin(fs: FolderSync, ring: Mapping[str, Any], kept: KeptIdentity) -> bool:
+    """Whether a join may reuse *kept*: the keyring still lists it with its keys and no removal notice names it.
+
+    A keyring that does not list it (a rotation dropped it), lists it with another key, or a removal
+    notice for it in the folder (checked by name only: a planted one can only cost the old id) all mean
+    the kept identity is not used again (rule 6).
+    """
+    identity = kept.identity()
+    if not listed_with_key(ring, identity) or not is_safe_device_id(kept.device_id):
+        return False
+    notice = fs.sync_dir / removal.REMOVED_DIR_NAME / removal.notice_name(kept.device_id)
+    try:
+        return not notice.exists()
+    except OSError:
+        return False
 
 
 def _healthy_member(ring: dict, state: SyncGroupState, kdf: tuple[int, int, int] | None) -> bool:
@@ -1184,7 +1543,11 @@ def create_folder_group(root: Path | str, session: Any, lease: Any, password: st
 def join_folder_group(root: Path | str, session: Any, lease: Any, password: str, device_name: str, *,
                       install_id: str, now: int | None = None, ui_released: UiRelease | None = None,
                       run: bool = True, _kdf_override: tuple[int, int, int] | None = None) -> RunReport:
-    """Join the group in *root* with the sync password (fresh device identity), then run once.
+    """Join the group in *root* with the sync password, then run once.
+
+    The device identity is fresh, or the kept one when this vault left this same group on this
+    installation and the folder still lists that identity with its keys (``_may_rejoin``).  Any
+    join of the kept group drops the kept identity.
 
     Refuses a folder of another group than the one this vault is in
     (``different-group``) and a healthy membership of the same group
@@ -1204,15 +1567,29 @@ def join_folder_group(root: Path | str, session: Any, lease: Any, password: str,
             except FileNotFoundError:
                 raise FolderSyncError("no-group", "no sync group in this folder") from None
             ring = parse_keyring(raw)
+        if "metadata" in ring:
+            # A shared collection's keyring (sub-plan 07): joining it as device sync would publish
+            # every personal item to the people it is shared with.
+            raise FolderSyncError("share-group", "this folder holds a shared collection, not device sync")
         state = load_sync_state(session)
+        # The identity this vault had in this group before it left (rule 3); only when not joined.
+        kept = kept_identity_for(session, ring.get("group_id"), install_id) if state is None else None
         with free():
             if state is not None:
                 if state.group_id != ring.get("group_id"):
                     raise FolderSyncError("different-group", "this vault already syncs with another group")
                 if state.install_id == install_id and _healthy_member(ring, state, _kdf_override):
                     raise FolderSyncError("already-joined", "this vault is already a member")
-            identity = DeviceIdentity.generate()
-            new_ring, gk = join_with_password(ring, password, identity, device_name, _kdf_override=_kdf_override)
+            reuse = kept is not None and _may_rejoin(fs, ring, kept)
+            if reuse:
+                # Same id, same keys: the member entry is rewritten in place (rule 6).
+                identity = kept.identity()
+                new_ring, gk = rejoin_with_password(ring, password, identity, device_name,
+                                                    _kdf_override=_kdf_override)
+            else:
+                identity = DeviceIdentity.generate()
+                new_ring, gk = join_with_password(ring, password, identity, device_name,
+                                                  _kdf_override=_kdf_override)
             written = fs.write_keyring(new_ring, expected=raw)
         same = state is not None
         # Counters seen at another epoch are dropped (see ``_epoch_reset``); the new identity signs afresh.
@@ -1231,8 +1608,13 @@ def join_folder_group(root: Path | str, session: Any, lease: Any, password: str,
             # removed Wi-Fi peer; a newer key is not.
             lan_removed=bool(same and state.lan_removed and gk.key == state.key),
         )
+        if reuse:
+            # Peers refuse a file of this id whose counter is not above the last one they accepted.
+            new_state = kept.continue_counters(new_state)
         _check_lease(session, lease)
-        save_sync_state(session, new_state)
+        # Joining the kept group drops the kept identity either way: it is live again, or this folder
+        # says it can no longer be used (removed, another key) and the join made a new one.
+        save_rejoined_state(session, new_state, drop_kept=kept is not None)
         if same and state.install_id == install_id:
             # Our previous identity's file on this installation is obsolete.
             with free(), contextlib.suppress(OSError, ValueError):
@@ -1292,6 +1674,8 @@ def rotate_folder_group(root: Path | str, session: Any, lease: Any, new_password
             lan_ids = {p.get("device_id") for p in state.lan_peers}
             # A LAN-only peer (never in the keyring) is removed from the LAN list only.
             ring_drop = [d for d in drop if d in _member_ids(ring) or d not in lan_ids]
+            # Only members the user chose get a signed removal notice (never the unconfirmed ones below).
+            notify = sorted({d for d in drop if d in _member_ids(ring) and d != state.device_id})
             # Members nobody confirmed never receive the new key.
             unconfirmed = sorted(_member_ids(ring) - kept - set(drop) - {state.device_id})
             ring_drop += unconfirmed
@@ -1320,6 +1704,9 @@ def rotate_folder_group(root: Path | str, session: Any, lease: Any, new_password
                 for suffix in (DEVICE_SUFFIX, SIGNATURE_SUFFIX):
                     with contextlib.suppress(FileNotFoundError):
                         fs.witness_file(dev, suffix).unlink()
+            for dev in notify:
+                if is_safe_device_id(dev):
+                    fs.write_removal_notice(identity, state.group_id, dev, gk.epoch, now=_now(now))
     if not run:
         return RunReport()
     return fs.run_once(session, lease, now=_now(now))
@@ -1486,7 +1873,10 @@ def acknowledge_members(session: Any, lease: Any, device_ids: Iterable[str], *, 
 
 
 def leave_folder_group(session: Any, lease: Any, *, install_id: str) -> bool:
-    """Clear this vault's sync state; this device's own file stays in the folder.
+    """Clear this vault's sync state, keeping its identity for a rejoin; its own file stays in the folder.
+
+    The identity and its counters are kept (``vault_bridge.KeptIdentity``) only for a state joined
+    on this installation and never in the duress vault; a later Leave replaces it.
 
     Local items stay.  Returns whether there was a state to clear.  The own
     file is NOT deleted: the other members may not have merged its last edits
@@ -1499,8 +1889,16 @@ def leave_folder_group(session: Any, lease: Any, *, install_id: str) -> bool:
     state = load_sync_state(session)
     if state is None:
         return False
+    # Keep the identity so a later join of this same group comes back under the same device id
+    # (rule 1).  Only an identity joined on this installation: a vault copied from another PC must
+    # never reuse that PC's id.  The duress vault never keeps one.
+    from ..duress import is_decoy
+
+    keep = None
+    if state.install_id == install_id and not is_decoy(session):
+        keep = KeptIdentity.of(state)
     _check_lease(session, lease)
-    clear_sync_state(session)
+    clear_sync_state(session, keep=keep)
     return True
 
 

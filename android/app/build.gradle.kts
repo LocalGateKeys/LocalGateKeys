@@ -17,7 +17,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -86,6 +86,12 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.con
     dependsOn(copyAppAssets)
 }
 
+// Lint reads every asset directory too; without this, lintVital (part of assembleRelease and bundleRelease) fails
+// Gradle's implicit-dependency check.
+tasks.matching { it.name.contains("Lint") || it.name.startsWith("lint") }.configureEach {
+    dependsOn(copyAppAssets, copyVectors)
+}
+
 dependencies {
     implementation(project(":lgk-core"))
     implementation(platform(libs.androidx.compose.bom))
@@ -112,6 +118,10 @@ dependencies {
     implementation(libs.androidx.credentials)
     // Inline autofill suggestions in the keyboard (API 30+): the suggestion chip layout.
     implementation(libs.androidx.autofill)
+    // App password factors: a YubiKey's HMAC-SHA1 challenge-response over NFC or USB (YubiKit, Apache-2.0).
+    implementation(libs.yubikit.core)
+    implementation(libs.yubikit.android)
+    implementation(libs.yubikit.yubiotp)
     // Pro: the one-time product pro_unlimited through the Play Store app (the only Google Play dependency).
     implementation(libs.play.billing) {
         // Ruling 23: no Google telemetry uploader (datatransport/CCT, firebase-encoders with it) and none of the Play
@@ -125,6 +135,12 @@ dependencies {
         exclude(group = "com.google.android.gms", module = "play-services-base")
         exclude(group = "com.google.android.gms", module = "play-services-tasks")
     }
+    // Sub-plan 06: the home-screen widget for pinned codes (Glance) and its expiry job (WorkManager, which Glance uses too).
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.work.runtime)
+    // Phone Wi-Fi host before API 33: announces _lgksync._tcp on the Wi-Fi address only (NsdManager cannot be bound to
+    // one network there). Apache-2.0; its only dependency is slf4j-api, already here through YubiKit (no logger bound).
+    implementation(libs.jmdns)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 

@@ -8,13 +8,13 @@
 
 Effective date: {{EFFECTIVE_DATE}}
 
-This End User Licence Agreement ("Agreement") is between you and {{COMPANY_NAME}}, {{COMPANY_ADDRESS}} ("we", "us"). It applies to the LocalGateKeys software for Windows, its browser extension, its local browser helper and, when available, the LocalGateKeys iPhone app (together, the "Software"). By installing or using the Software you accept this Agreement. If you do not accept it, do not install or use the Software.
+This End User Licence Agreement ("Agreement") is between you and {{COMPANY_NAME}}, {{COMPANY_ADDRESS}} ("we", "us"). It applies to the LocalGateKeys software for Windows, its browser extension, its local browser helper and, when available, the LocalGateKeys iPhone and Android apps (together, the "Software"). By installing or using the Software you accept this Agreement. If you do not accept it, do not install or use the Software.
 
 ## 1. Plain-language summary
 
 This summary is for convenience; the numbered sections below are what apply.
 
-- The Free Edition has no time limit and holds up to 4 items in your vault. Device sync, two-factor codes and attachments are Pro Features.
+- The Free Edition has no time limit and holds up to 7 items in your vault. Device sync, two-factor codes and attachments are Pro Features.
 - Pro removes the item limit. It is a one-time purchase that includes all future updates. There is no subscription and nothing to renew.
 - Your vault stays on your devices. We cannot see it, recover it or reset your master password.
 - **Keeping your vault safe and backed up is your responsibility.** If you lose your master password, your recovery phrase and your backups, your vault cannot be recovered by anyone, and we are not responsible for that loss.
@@ -55,7 +55,7 @@ This summary is for convenience; the numbered sections below are what apply.
 
 ## 2. Definitions
 
-- **"Free Edition"** means the Software without a valid Licence File. It allows no more than 4 live items in a vault (items in the trash do not count) and does not include the Pro Features.
+- **"Free Edition"** means the Software without a valid Licence File. It allows no more than 7 live items in a vault (items in the trash do not count) and does not include the Pro Features.
 - **"Pro Edition"** means the Software with a valid Licence File, which removes the item limit and includes the Pro Features.
 - **"Pro Features"** means device sync (over your network or through a cloud folder), adding or changing two-factor (one-time) codes, and adding or replacing attachments (documents).
 - **"Licence File"** means the digitally signed licence we issue to you after you buy Pro, whether as a licence key (beginning `LGK1-`) or as a file.
@@ -66,7 +66,7 @@ This summary is for convenience; the numbered sections below are what apply.
 
 Subject to this Agreement, we grant you a free, non-exclusive, non-transferable, worldwide licence to install and use the Free Edition on any number of Devices, for personal or business purposes.
 
-The item limit only stops new items from being added. If a vault holds more than 4 items without a valid Licence File (for example after an upgrade from an older version, after a sync, or after a licence is revoked), every existing item remains usable, editable and fillable.
+The item limit only stops new items from being added. If a vault holds more than 7 items without a valid Licence File (for example after an upgrade from an older version, after a sync, or after a licence is revoked), every existing item remains usable, editable and fillable.
 
 Without a valid Licence File, device sync does not run and you cannot add or change two-factor codes or add or replace attachments. Two-factor codes, attachments and synced data already in a vault stay usable, viewable and exportable, and you can remove them.
 
@@ -79,6 +79,8 @@ Without a valid Licence File, device sync does not run and you cannot add or cha
 4.3 **Perpetual use.** Your licence does not expire, unless this Agreement is terminated under section 13 or your Licence File is revoked under section 5.3.
 
 4.4 **One person.** A Pro licence is for one individual. A business that buys Pro for its staff needs one licence per person who uses it.
+
+4.5 **Buying Pro in an app store.** In the iPhone app you can buy Pro through the App Store, and in the Android app through Google Play. The store takes the payment and its terms apply to the purchase. Pro is a one-time purchase (in Google Play, the product `pro_unlimited`, US$29.99 or the local price the store shows), not a subscription. After the purchase the app sends the store's purchase record to our licence server, which checks it with the store and issues your Licence File, so the same purchase also unlocks Pro on your other devices. Refunds and cancellations of store purchases are handled by the store under its own rules, and our refund policy does not apply to them; if the store refunds or reverses a purchase, we revoke the Licence File under section 5.3. Your statutory consumer rights are not affected.
 
 ## 5. Licence File and checks
 
@@ -114,7 +116,7 @@ The Software includes open-source components that are licensed to you under thei
 
 ## 9. Third-party services
 
-The Software works with products of other companies, such as Microsoft Windows, Google Chrome, Microsoft Edge, Apple iOS and cloud-drive services. Their terms apply to your use of them. If you obtained the Software from the Microsoft Store or Apple App Store, that store's terms also apply, and where they conflict with this Agreement in respect of the store, the store's terms prevail.
+The Software works with products of other companies, such as Microsoft Windows, Google Chrome, Microsoft Edge, Apple iOS, Google Android and cloud-drive services. Their terms apply to your use of them. If you obtained the Software from the Microsoft Store, Apple App Store or Google Play, that store's terms also apply, and where they conflict with this Agreement in respect of the store, the store's terms prevail.
 
 ## 10. Updates and support
 

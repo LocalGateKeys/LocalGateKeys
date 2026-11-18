@@ -3,6 +3,14 @@ import UniformTypeIdentifiers
 import AppShared
 @testable import LocalGateKeys
 
+/// Answers the CXF export's owner check (Face ID, Touch ID or the passcode) and records each prompt's reason.
+@MainActor
+private final class OwnerCheck {
+    var answer = false
+    private(set) var reasons: [String] = []
+    func ask(_ reason: String) -> Bool { reasons.append(reason); return answer }
+}
+
 /// The iPhone Import & Export page: every format the Mac reads is detected and opens the review; encrypted
 /// files ask for their password, a generic CSV asks for its columns; nothing is written before Import.
 @MainActor
@@ -40,6 +48,10 @@ final class ImportExportModelTests: XCTestCase {
         let out = await m.commitReview()
         XCTAssertEqual(out?.created, 1)
         XCTAssertNil(m.review)
+        // Feature pack §6.1: the import report follows the review; closing it ends the import step.
+        XCTAssertNotNil(m.report)
+        XCTAssertTrue(m.hasImportStep)
+        m.closeReport()
         XCTAssertFalse(m.hasImportStep)
         XCTAssertEqual(store.commits, 1)
         XCTAssertEqual(committed, 1, "the sync is told about the import")
@@ -173,6 +185,65 @@ final class ImportExportModelTests: XCTestCase {
         await m.importFile(url: url)
         XCTAssertNil(m.review)
         XCTAssertEqual(m.message, ImportError.tooLarge.message)
+    }
+
+    /// CSV export asks the same owner check as CXF, also with the app password off (scan APL-I2).
+    func testCSVExportAsksTheOwnerFirst() async {
+        let store = MemoryStore()
+        let importer = VaultImporter(store: store, isPro: { true }, now: { [now] in now }, random: SystemRandomSource())
+        let exporter = VaultExporter(store: store, isPro: { true }, appVersion: "1.0", fallbackDeviceID: { "device-1" },
+                                     now: { [now] in now }, random: SystemRandomSource())
+        let check = OwnerCheck()
+        let m = ImportExportModel(importer: importer, exporter: exporter, confirmOwner: { check.ask($0) })
+        let declined = await m.confirmCSVExport()
+        XCTAssertFalse(declined)
+        XCTAssertEqual(check.reasons.count, 1)
+        check.answer = true
+        let allowed = await m.confirmCSVExport()
+        XCTAssertTrue(allowed)
+    }
+
+    func testCXFExportAsksTheOwnerFirst() async throws {
+        let store = MemoryStore()
+        let importer = VaultImporter(store: store, isPro: { true }, now: { [now] in now }, random: SystemRandomSource())
+        _ = try importer.importCandidates([
+            ImportCandidate(title: "Example", kind: .login(LoginFields(url: "https://example.com", username: "ada",
+                                                                     password: "pw-one", notes: "", otpauth: nil))),
+            ImportCandidate(title: "Other", kind: .login(LoginFields(url: "https://other.example", username: "bob",
+                                                                   password: "pw-two", notes: "", otpauth: nil))),
+        ], unsupported: 0)
+        let exporter = VaultExporter(store: store, isPro: { true }, appVersion: "1.0", fallbackDeviceID: { "device-1" },
+                                     now: { [now] in now }, random: SystemRandomSource())
+        let check = OwnerCheck()
+        let m = ImportExportModel(importer: importer, exporter: exporter, confirmOwner: { check.ask($0) })
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent(VaultExporter.cxfFileName(now)).path
+        try? FileManager.default.removeItem(atPath: path)
+        m.loadCXFChoices()
+        XCTAssertEqual(m.cxfChoices.map(\.title), ["Example", "Other"])
+        let chosen = m.cxfChoices.filter { $0.title == "Example" }.map(\.id)
+
+        // Nothing chosen: refused before the prompt.
+        let none = await m.exportCXF(ids: [])
+        XCTAssertNil(none)
+        XCTAssertEqual(m.cxfMessage, VaultExporter.cxfFailure(.chooseItems))
+        XCTAssertEqual(check.reasons, [])
+
+        // Declined: no file.
+        let declined = await m.exportCXF(ids: chosen)
+        XCTAssertNil(declined)
+        XCTAssertEqual(m.cxfMessage, ImportExportModel.cxfDeclined)
+        XCTAssertEqual(check.reasons, [ImportExportModel.cxfReason])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: path))
+
+        check.answer = true
+        let made = await m.exportCXF(ids: chosen)
+        let url = try XCTUnwrap(made)
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        XCTAssertNil(m.cxfMessage)
+        let data = try Data(contentsOf: url)
+        let r = try CXFImport.candidates(fromAccountJSON: data)
+        XCTAssertEqual(r.candidates.map(\.title), ["Example"])
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("pw-two"))
     }
 
     func testPickerAllowsEveryExportType() {

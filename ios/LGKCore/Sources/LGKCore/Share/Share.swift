@@ -1,7 +1,7 @@
 import Foundation
 
 /// A package cannot be made or opened; `reason` is one of the spec's codes (`bad-code`, `malformed`,
-/// `unsupported`, `already-opened`, `wrong-code`, `expired`, `not-shareable`, `too-large`).
+/// `unsupported`, `already-opened`, `wrong-code`, `expired`, `not-shareable`, `too-large`, `revoked`).
 public struct ShareError: Error, Equatable, Sendable {
     public let reason: String
     public let message: String
@@ -141,9 +141,17 @@ public enum Share {
     }
 
     /// The `.lgkshare` bytes for one item. `packageID`, `salt` and `nonce` are for vectors only.
+    /// v1.1: `expires` (unix seconds) shortens the 24 h lifetime, never lengthens it; `oneUse` adds `"one_use": true`.
+    /// Without either the bytes are those of v1.
     public static func seal(item: [String: JSONValue], code: String, sender: String, now: Int64,
+                            expires: Int64? = nil, oneUse: Bool = false,
                             random: any RandomSource = SystemRandomSource(),
                             packageID: String? = nil, salt: [UInt8]? = nil, nonce: [UInt8]? = nil) throws -> [UInt8] {
+        var expiresAt = now + lifetime
+        if let expires {
+            guard expires > now else { throw ShareError.damaged }
+            expiresAt = min(expiresAt, expires)
+        }
         let trimmedScalars = sender.trimmingCharacters(in: .whitespacesAndNewlines).unicodeScalars.prefix(senderLimit)
         var trimmed = ""
         trimmed.unicodeScalars.append(contentsOf: trimmedScalars)
@@ -154,8 +162,10 @@ public enum Share {
             "format": .string(format), "version": .int(version), "id": .string(packageID ?? randomUUID(random)),
             "sender": .string(name), "kdf": kdfObject(salt: salt), "nonce": .string(Base64.encode(nonce)),
         ]
-        let payload: JSONValue = .object(["version": .int(version), "created_at": .int(now),
-                                          "expires_at": .int(now + lifetime), "item": .object(try cleanItem(item))])
+        var body: [String: JSONValue] = ["version": .int(version), "created_at": .int(now),
+                                         "expires_at": .int(expiresAt), "item": .object(try cleanItem(item))]
+        if oneUse { body["one_use"] = .bool(true) }
+        let payload: JSONValue = .object(body)
         var key = try key(code, salt: salt)
         defer { for i in key.indices { key[i] = 0 } }
         let ciphertext = try CryptoBox.sealGCM(key: key, nonce: nonce,
@@ -199,8 +209,10 @@ public enum Share {
         return Header(id: id, sender: sender, envelope: envelope)
     }
 
-    /// Decrypts and checks one package. `opened` holds the package ids this device already opened.
-    public static func open(_ data: [UInt8], code: String, now: Int64, opened: Set<String> = []) throws -> Opened {
+    /// Decrypts and checks one package. `opened` holds the package ids this device already opened; `revoked` the
+    /// ids of verified revoke notices (`ShareRevoke`), best effort.
+    public static func open(_ data: [UInt8], code: String, now: Int64, opened: Set<String> = [],
+                            revoked: Set<String> = []) throws -> Opened {
         let header = try readHeader(data)
         let envelope = header.envelope
         if opened.contains(header.id) {
@@ -218,17 +230,26 @@ public enum Share {
             throw ShareError("wrong-code", String(localized: "That code does not open this item. Check the six words.", bundle: .module))
         }
         guard let value = try? CanonicalJSON.parse(plain), case .object(let payload) = value,
-              payload["version"] == .int(version), Set(payload.keys) == ["version", "created_at", "expires_at", "item"],
-              case .int(let created)? = payload["created_at"], case .int(let expires)? = payload["expires_at"],
-              expires == created + lifetime else {
+              payload["version"] == .int(version),
+              Set(payload.keys) == ["version", "created_at", "expires_at", "item"]
+                || (Set(payload.keys) == ["version", "created_at", "expires_at", "item", "one_use"]
+                    && payload["one_use"] == .bool(true)),
+              case .int(let created)? = payload["created_at"], case .int(let embedded)? = payload["expires_at"],
+              created < embedded, embedded <= created + lifetime else {
             throw ShareError.damaged
         }
+        // v1.1 (LGKSHARE_V1.md): an embedded expiry earlier than the 24 h lifetime wins; one_use is kept by the
+        // receiver through `opened` like every package.
+        let expires = min(embedded, created + lifetime)
         if created > now + clockSkew {
             throw ShareError("malformed", String(localized: "The shared item has a date in the future. Check this device's clock.", bundle: .module))
         }
         if now >= expires { throw ShareError("expired", String(localized: "This shared item expired. Ask for it to be shared again.", bundle: .module)) }
         guard case .object(let item)? = payload["item"], let clean = try? cleanItem(item), clean == item else {
             throw ShareError("not-shareable", String(localized: "This shared item holds content that cannot be shared.", bundle: .module))
+        }
+        if revoked.contains(header.id) {
+            throw ShareError("revoked", String(localized: "The sender revoked this shared item.", bundle: .module))
         }
         return Opened(id: header.id, sender: header.sender, createdAt: created, expiresAt: expires, item: item)
     }

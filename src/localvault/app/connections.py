@@ -73,7 +73,7 @@ class ConnectionsService:
                 t("connections.actionNeeded"), "warning")
         browsers = []
         if registrations:
-            for browser in ("Chrome", "Edge"):
+            for browser in ("Chrome", "Edge", "Firefox"):
                 state = str(registrations.get(browser, "not_registered"))
                 browsers.append({"browser": browser, "state": t(FRIENDLY[state]) if state in FRIENDLY else state.replace("_", " ").title(),
                                  "ok": state == "ready"})

@@ -1,7 +1,9 @@
+# Builds the frozen executables (LocalGateKeys, LocalGateKeysNativeHost, lgk), their SBOM and release
+# manifest. build_msix_package.ps1 packages them. Windows ships only through the Microsoft Store: the
+# Inno Setup installer was removed on 2026-11-18, so this script never builds a setup program. The name
+# is kept to avoid churn.
 [CmdletBinding()]
 param(
-    # Inno Setup 6 compiler. Auto-detected from the standard install locations.
-    [string]$IsccPath = "",
     # Isolated output directory (build-personal/, dist-personal/, dist-installer/
     # are created beneath it). Defaults to the source checkout.
     [string]$OutputRoot = "",
@@ -31,8 +33,7 @@ param(
     # interpreter and its bundled OpenSSL ship with it). Release builds fail
     # below it; other builds warn.
     [string]$MinimumPythonVersion = "3.14.9",
-    # Build and self-check both frozen executables, produce the SBOM and the
-    # manifest, but do not run Inno Setup (CI smoke, machines without Inno).
+    # Accepted for older command lines; has no effect (no installer is built).
     [switch]$SkipInstaller,
     # Skip SBOM generation (not recommended for a release).
     [switch]$SkipSbom,
@@ -56,7 +57,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 if (-not $IsWindows -and $env:OS -ne "Windows_NT") {
-    throw "The personal installer can only be built on Windows."
+    throw "The frozen executables can only be built on Windows."
 }
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -79,7 +80,7 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
     $OutputBase = (Resolve-Path -LiteralPath $requestedOutput -ErrorAction Stop).Path
 }
 # Another account that can write the output folder could swap a DLL or an exe
-# between PyInstaller writing it and Inno Setup / signtool packaging it, and the
+# between PyInstaller writing it and signtool / the MSIX build packaging it, and the
 # result ships to users. Folders created directly under C:\ inherit
 # "Authenticated Users: Modify", so refuse any folder where an account other
 # than this user, SYSTEM or Administrators has a write-type allow entry
@@ -226,7 +227,7 @@ if ($Signing) {
 } elseif (-not [string]::IsNullOrWhiteSpace($SignToolPath) -or $PSBoundParameters.ContainsKey('PfxPassword')) {
     throw "Signing options were given without -CertificateThumbprint or -PfxPath."
 } else {
-    Write-Warning "UNSIGNED build: no -CertificateThumbprint or -PfxPath was supplied. Windows SmartScreen and browsers will warn about the executables and the installer. Do not publish an unsigned release."
+    Write-Warning "UNSIGNED build: no -CertificateThumbprint or -PfxPath was supplied. Windows SmartScreen and browsers will warn about the executables. Do not publish an unsigned release."
 }
 
 if ($Signing -or $Release) {
@@ -373,27 +374,6 @@ foreach ($path in @(
     New-Item -ItemType Directory -Force -Path $path | Out-Null
 }
 
-# Generate the installer script inside the isolated output root. The checked
-# in template uses paths relative to the source checkout; copying it verbatim
-# would make an isolated build read stale payloads or fail to find assets.
-$IssTemplate = Join-Path $Root "build-personal\LocalGateKeys-Personal.iss"
-if (-not (Test-Path -LiteralPath $IssTemplate -PathType Leaf)) {
-    throw "Installer script template was not found: $IssTemplate"
-}
-# The generated script gets its own name: with the default OutputRoot the build
-# directory is the template's directory, and writing to the template's own path
-# baked this machine's absolute paths into the tracked file.
-$IssScript = Join-Path $BuildRoot "LocalGateKeys-Personal.generated.iss"
-$IssText = [IO.File]::ReadAllText($IssTemplate)
-$IssReplacements = [ordered]@{
-    "OutputDir=..\dist-installer" = "OutputDir=$InstallerRoot"
-    "SetupIconFile=..\assets\icons\localgatekeys.ico" = "SetupIconFile=$(Join-Path $Root 'assets\icons\localgatekeys.ico')"
-    'Source: "..\dist-personal\LocalGateKeys\*"' = 'Source: "' + (Join-Path $DistRoot 'LocalGateKeys\*') + '"'
-    'Source: "..\dist-personal\LocalGateKeysNativeHost\*"' = 'Source: "' + (Join-Path $DistRoot 'LocalGateKeysNativeHost\*') + '"'
-    'Source: "..\assets\*"' = 'Source: "' + (Join-Path $Root 'assets\*') + '"'
-    'Source: "..\browser-extension\*"' = 'Source: "' + (Join-Path $Root 'browser-extension\*') + '"'
-    'Source: "..\THIRD-PARTY-NOTICES.txt"' = 'Source: "' + (Join-Path $Root 'THIRD-PARTY-NOTICES.txt') + '"'
-}
 # The notices must describe the dependencies being packaged (audit 2026-10-24 I-23).
 & $Python (Join-Path $Root "scripts\generate_third_party_notices.py") --check
 if ($LASTEXITCODE -ne 0) {
@@ -401,34 +381,6 @@ if ($LASTEXITCODE -ne 0) {
     if ($Release) { throw $message }
     Write-Warning $message
 }
-foreach ($Placeholder in $IssReplacements.Keys) {
-    if (-not $IssText.Contains($Placeholder)) {
-        throw "Installer template is missing the expected line '$Placeholder': $IssTemplate"
-    }
-    $IssText = $IssText.Replace($Placeholder, $IssReplacements[$Placeholder])
-}
-# Windows shows AppVersion in Installed apps: take it from the app, not the template.
-# Not "| Select-Object -First 1": that stops the pipeline and kills Python (exit -1).
-$AppVersion = "$(& $Python -c "import sys; sys.path.insert(0, r'$Root\src'); from localvault.version import APP_VERSION; print(APP_VERSION)")".Trim()
-if ($LASTEXITCODE -ne 0 -or "$AppVersion" -notmatch '^\d+\.\d+\.\d+$') {
-    throw "Could not read APP_VERSION from src\localvault\version.py."
-}
-$VersionDefine = [regex]'(?m)^#define AppVersion "[^"]*"'
-if (-not $VersionDefine.IsMatch($IssText)) {
-    throw "Installer template is missing the '#define AppVersion' line: $IssTemplate"
-}
-$IssText = $VersionDefine.Replace($IssText, "#define AppVersion `"$AppVersion-personal`"", 1)
-# With a certificate in the store, let Inno Setup sign Setup.exe and the
-# generated uninstaller through its SignTool hook (defined on the ISCC command
-# line below). PFX mode signs the installer afterwards instead so the PFX
-# password is never placed in the Inno command string.
-$InnoSigns = $Signing -and -not [string]::IsNullOrWhiteSpace($CertificateThumbprint)
-if ($InnoSigns) {
-    $IssText = $IssText.Replace("[Setup]`r`n", "[Setup]`r`nSignTool=lgksign`r`nSignedUninstaller=yes`r`n")
-    $IssText = $IssText.Replace("[Setup]`n", "[Setup]`nSignTool=lgksign`nSignedUninstaller=yes`n")
-    if ($IssText -notmatch 'SignTool=lgksign') { throw "Could not inject the SignTool directive into the installer script." }
-}
-[IO.File]::WriteAllText($IssScript, $IssText, [Text.UTF8Encoding]::new($false))
 
 function Get-PythonVersionOf([string]$Distribution) {
     $value = & $Python -c "import importlib.metadata as m, sys; sys.stdout.write(m.version(sys.argv[1]))" $Distribution 2>$null
@@ -459,9 +411,13 @@ try {
     & $Python -m PyInstaller --clean --noconfirm --distpath $DistRoot --workpath (Join-Path $BuildRoot "native") (Join-Path $Root "LocalGateKeysNativeHost.spec")
     if ($LASTEXITCODE -ne 0) { throw "LocalGateKeysNativeHost PyInstaller build failed." }
 
+    & $Python -m PyInstaller --clean --noconfirm --distpath $DistRoot --workpath (Join-Path $BuildRoot "cli") (Join-Path $Root "LocalGateKeysCli.spec")
+    if ($LASTEXITCODE -ne 0) { throw "lgk PyInstaller build failed." }
+
     $Required = @(
         (Join-Path $DistRoot "LocalGateKeys\LocalGateKeys.exe"),
-        (Join-Path $DistRoot "LocalGateKeysNativeHost\LocalGateKeysNativeHost.exe")
+        (Join-Path $DistRoot "LocalGateKeysNativeHost\LocalGateKeysNativeHost.exe"),
+        (Join-Path $DistRoot "lgk\lgk.exe")
     )
     foreach ($path in $Required) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing build output: $path" }
@@ -470,7 +426,7 @@ try {
     # Sign both frozen executables before anything hashes or packages them.
     if ($Signing) { Invoke-CodeSign $Required }
 
-    # Check both frozen payloads before compiling a successful-looking installer.
+    # Check both frozen payloads before anything packages them.
     # No profile is loaded, native key created, biometric read or GUI displayed.
     foreach ($exe in $Required) {
         $process = Start-Process -FilePath $exe -ArgumentList "--check-build" -Wait -PassThru -WindowStyle Hidden
@@ -504,54 +460,6 @@ try {
         Write-Warning "SBOM generation skipped (-SkipSbom)."
     }
 
-    $Installer = Join-Path $InstallerRoot "LocalGateKeys-Setup-Personal.exe"
-    $InstallerRow = $null
-    $InnoVersion = $null
-    if ($SkipInstaller) {
-        Write-Host "Skipping Inno Setup (-SkipInstaller): frozen executables were built and self-checked." -ForegroundColor Yellow
-    } else {
-        if (-not $IsccPath) {
-            # @() keeps a single match an array; otherwise [0] is its first character.
-            $Candidates = @(@(
-                "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
-                "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
-                "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
-            ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) })
-            if ($Candidates) { $IsccPath = $Candidates[0] }
-        }
-        if (-not $IsccPath -or -not (Test-Path -LiteralPath $IsccPath -PathType Leaf)) {
-            throw "Inno Setup 6 ISCC.exe was not found. Pass -IsccPath explicitly, or use -SkipInstaller."
-        }
-        $InnoVersion = (Get-Item -LiteralPath $IsccPath).VersionInfo.ProductVersion
-
-        # /O is required because the .iss file has a historical relative default;
-        # it keeps an explicit OutputRoot fully isolated from retained artifacts.
-        $IsccArguments = @("/O$InstallerRoot")
-        if ($InnoSigns) {
-            # $q = quote, $f = file placeholder (Inno Setup SignTool syntax).
-            $IsccArguments += ('/Slgksign=$q' + $SignToolPath + '$q sign /fd SHA256 /td SHA256 /tr ' + $TimestampUrl + ' /sha1 ' + $CertificateThumbprint + ' $f')
-        }
-        $IsccArguments += $IssScript
-        & $IsccPath @IsccArguments
-        if ($LASTEXITCODE -ne 0) { throw "Inno Setup build failed." }
-
-        if (-not (Test-Path -LiteralPath $Installer -PathType Leaf)) {
-            throw "Installer was not produced: $Installer"
-        }
-        if ($Signing) {
-            # Inno may already have signed Setup.exe (store certificate mode);
-            # otherwise sign it now. Either way the result must verify.
-            if (-not (Test-Signed $Installer)) { Invoke-CodeSign @($Installer) } else { Assert-Signed @($Installer) }
-        }
-        $Hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $Installer).Hash.ToUpperInvariant()
-        $HashFile = Join-Path $InstallerRoot "LocalGateKeys-Setup-Personal.sha256"
-        [IO.File]::WriteAllText($HashFile, "$Hash  LocalGateKeys-Setup-Personal.exe`r`n", [Text.ASCIIEncoding]::new())
-        $InstallerRow = [ordered]@{
-            path = "dist-installer/LocalGateKeys-Setup-Personal.exe"
-            size = [int64](Get-Item -LiteralPath $Installer).Length
-            sha256 = $Hash
-        }
-    }
 
     function Get-ArtifactManifestRows([string]$Directory, [string]$BasePath) {
         $rows = New-Object System.Collections.Generic.List[object]
@@ -578,7 +486,6 @@ try {
         pip = Get-PythonVersionOf "pip"
         setuptools = Get-PythonVersionOf "setuptools"
         cyclonedx_bom = Get-PythonVersionOf "cyclonedx-bom"
-        inno_setup = $InnoVersion
         signtool = if ($Signing) { (Get-Item -LiteralPath $SignToolPath).VersionInfo.FileVersion } else { $null }
         windows = [string][Environment]::OSVersion.Version
     }
@@ -605,7 +512,7 @@ try {
         upx = $false
         dependency_source = $DependencySource
         tools = $Tools
-        installer = $InstallerRow
+        installer = $null
         sbom = $SbomRow
         model_manifest = [ordered]@{ name = [IO.Path]::GetFileName($FetchManifestPath); size = [int64](Get-Item -LiteralPath $FetchManifestPath).Length; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $FetchManifestPath).Hash.ToUpperInvariant() }
         payload = @(Get-ArtifactManifestRows $DistRoot $OutputBase)
@@ -616,12 +523,7 @@ try {
     [IO.File]::WriteAllText($ManifestTemp, (($Manifest | ConvertTo-Json -Depth 6) + [Environment]::NewLine), $Utf8NoBom)
     Move-Item -LiteralPath $ManifestTemp -Destination $ReleaseManifest -Force
 
-    if ($InstallerRow) {
-        Write-Host "Built clean personal installer: $Installer" -ForegroundColor Green
-        Write-Host "SHA256: $($InstallerRow.sha256)"
-    } else {
-        Write-Host "Built frozen executables under: $DistRoot" -ForegroundColor Green
-    }
+    Write-Host "Built frozen executables under: $DistRoot" -ForegroundColor Green
     if ($SbomRow) { Write-Host "SBOM: $SbomPath" }
     Write-Host "Manifest: $ReleaseManifest"
     if (-not $Signing) { Write-Warning "UNSIGNED build (manifest records signed: false)." }

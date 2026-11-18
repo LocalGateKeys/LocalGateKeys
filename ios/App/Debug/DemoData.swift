@@ -16,10 +16,10 @@ enum DemoData {
     private static func id(_ n: Int) -> String { String(format: "de000000-0000-4000-8000-%012d", n) }
 
     private static func web(_ n: Int, _ origin: String, _ user: String, totp: String? = nil, favorite: Bool = false,
-                            password: String? = nil) -> (Namespace, JSONValue) {
+                            password: String? = nil, scheme: String = "https") -> (Namespace, JSONValue) {
         var r: [String: JSONValue] = ["id": .string(id(n)), "kind": .string("web"), "label": .string(origin),
                                       "username": .string(user), "password": .string(password ?? "demo-Pass-\(n)-orbit"),
-                                      "scope": .object(["origin": .string("https://\(origin)")]),
+                                      "scope": .object(["origin": .string("\(scheme)://\(origin)")]),
                                       "favorite": .bool(favorite), "tags": .array([])]
         if let totp {
             r["totp"] = .object(["secret": .string(totp), "algorithm": .string("SHA1"), "digits": .int(6), "period": .int(30)])
@@ -60,11 +60,38 @@ enum DemoData {
         item(20, "bookmark", "Docs", ["url": .string("https://example.com/docs")]),
     ]
 
-    /// Adds every demo record that is not already there, in one commit.
+    /// The Safari UI test's local page (`scripts/safari_test_page/`), saved only when the test asks for it
+    /// (`LGK_DEMO_LOCAL_SITE=1`), so screenshots never show it. Its port is `LGK_DEMO_LOCAL_PORT` (default 8765, the
+    /// port `scripts/ios_simulator_checks.sh` serves on unless `LGK_SAFARI_PORT` says otherwise); another port gets
+    /// its own record id, since seeding never changes a record that is already there.
+    static var localTestSite: (Namespace, JSONValue) {
+        let port = Int(ProcessInfo.processInfo.environment["LGK_DEMO_LOCAL_PORT"] ?? "").flatMap { (1...65535).contains($0) ? $0 : nil } ?? 8765
+        return web(port == 8765 ? 22 : 100_000 + port, "loginlab.localhost:\(port)", "tester@example.com", password: "demo-Local-orbit-21")
+    }
+    /// `LGK_DEMO_SLIM=1` (the Safari toolbar UI test): a vault under the free limit, since the Safari extension never
+    /// sees `LGK_DEBUG_PRO` and answers "full" (a prompt without Save) for a new login in a full free vault. Only the
+    /// first demo login (the favourite `-LGKScreen item` opens) and, when asked, the local test site are seeded, and
+    /// the other demo records an earlier launch left are removed. Records that are not demo records are kept.
+    private static var slim: Bool { ProcessInfo.processInfo.environment["LGK_DEMO_SLIM"] == "1" }
+    private static var seeded: [(Namespace, JSONValue)] {
+        let base = slim ? [records[0]] : records
+        return ProcessInfo.processInfo.environment["LGK_DEMO_LOCAL_SITE"] == "1" ? base + [localTestSite] : base
+    }
+
+    /// Adds every demo record that is not already there, in one commit (in slim mode it also drops the others).
     static func seed(into store: any ItemStore, now: Int64) throws {
         var snap = try store.load()
         var added = false
-        for (i, (ns, raw)) in records.enumerated() {
+        if slim {
+            let keep = Set(seeded.compactMap { entry -> String? in
+                guard case .object(let r) = entry.1, case .string(let rid)? = r["id"] else { return nil }
+                return rid
+            })
+            for rid in snap.records.keys where rid.hasPrefix("de000000-0000-4000-8000-") && !keep.contains(rid) {
+                snap.records[rid] = nil; snap.meta[rid] = nil; added = true
+            }
+        }
+        for (i, (ns, raw)) in seeded.enumerated() {
             guard case .object(var r) = raw, case .string(let rid)? = r["id"], snap.records[rid] == nil else { continue }
             r["created_at"] = .int(now - Int64(86_400 * (i + 1))); r["updated_at"] = .int(now - Int64(3_600 * (i + 1)))
             snap.records[rid] = Wrapper.make(ns: ns, record: try Normalise.normalForm(ns: ns, record: .object(r)))

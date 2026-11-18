@@ -91,7 +91,8 @@ class AppSettingsTest {
         assertEquals(
             listOf(
                 "autoLockDelaySeconds", "settings.idleLockSeconds", "settings.clipboardExpirySeconds",
-                "settings.concealFieldsInDetail", "settings.showCodesRow", "settings.copyCodeOnFill", "settings.appearance",
+                "settings.concealFieldsInDetail", "settings.showCodesRow", "settings.pinnedCodeIds", "settings.copyCodeOnFill",
+                "settings.appearance",
                 "settings.generatorOptions", "settings.erasePending", "settings.initials", "settings.planFullRevision",
                 "settings.listSort", "settings.listFavoritesFirst", "settings.importCardDismissed",
                 "settings.unlockFailures", "settings.unlockFailureAt",
@@ -100,6 +101,19 @@ class AppSettingsTest {
                 "settings.setupDone", "settings.setupSeen", "settings.setupCardHidden",
                 // Part C autofill and passkey switches.
                 "settings.autofillSuggestions", "settings.passkeyProvider",
+                // Device removal: erase on a signed removal notice, and the one-time notice after it.
+                "settings.eraseOnSyncRemoval", "settings.deviceErasedNotice",
+                // Notes: Markdown formatting switch.
+                "settings.notesShowFormatting",
+                // App password key file (its location only) and "Always ask for the key file / YubiKey" (Android only).
+                "settings.unlockKeyFileUri", "settings.unlockKeyFileName", "settings.factorsAlwaysAsk",
+                // Sub-plan 07: the Vault list's Collections filter (the iPhone's settings.vaultCollection; "vault" is a
+                // flagged word in key names here, so it follows settings.listSort).
+                "settings.listCollection",
+                // Phone Wi-Fi host mode (2026-11-13): "Host Wi-Fi sync on this phone".
+                "settings.wifiHostOn", "settings.wifiHostPort",
+                // Review 2026-11-15: "Show in keyboard" (inline autofill) and the Vault list's autofill banner.
+                "settings.autofillInline", "settings.autofillBannerDismissed",
             ),
             AppSettings.Key.all,
         )
@@ -115,6 +129,21 @@ class AppSettingsTest {
                 assertFalse(k, k.lowercase().contains(bad))
             }
         }
+    }
+
+    @Test fun wifi_host_port_round_trips_and_ignores_invalid_ports() {
+        val d = MemoryStore()
+        val s = AppSettings(d)
+        assertEquals(null, s.wifiHostPort)
+        s.wifiHostPort = 47821
+        assertEquals(47821, AppSettings(d).wifiHostPort)
+        s.wifiHostPort = 0
+        assertEquals(null, AppSettings(d).wifiHostPort)
+        s.wifiHostPort = 51000
+        d.putLong(AppSettings.Key.WIFI_HOST_PORT, 70_000)
+        assertEquals(null, AppSettings(d).wifiHostPort)
+        s.wifiHostPort = null
+        assertEquals(null, d.getLong(AppSettings.Key.WIFI_HOST_PORT))
     }
 
     @Test fun initials_setting_round_trips_and_is_capped() {

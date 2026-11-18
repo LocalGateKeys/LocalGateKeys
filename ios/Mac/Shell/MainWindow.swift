@@ -55,11 +55,18 @@ struct MainWindow: View {
     private let extras: LoginExtrasModel
     /// Strict logins (`require_master_password`) release secrets only after the master password.
     @State private var gate: StrictItemGate
+    /// Emergency access's master password prompt (shown over the Recovery centre's emergency sheet, so not `gate`,
+    /// whose sheet hangs on this window).
+    @State private var emergencyGate: StrictItemGate
     private let passwords: (any MasterPasswordService)?
     /// Mac-local data (Recently deleted, activity); nil only in tests that don't need it.
     private let local: (any LocalDataHosting)?
     private let activity: ActivityRecorder?
+    /// Item history in the detail pane (feature pack §1); nil without local data.
+    private let history: MacItemHistoryModel?
     @State private var trash: TrashModel?
+    /// Security centre › Clean-up (feature pack §3).
+    @State private var cleanUp: MacCleanUpModel
     @State private var connections: ConnectionsModel
     @State private var syncPage: SyncPageModel
     /// The Import & export page (imports, phone backup restore, exports).
@@ -72,8 +79,8 @@ struct MainWindow: View {
     private let credentialExchange: MacCredentialExchangeInbox
     /// Reminders on typed items (nil without local data).
     @State private var reminders: RemindersModel?
-    /// Mac-local collections and memberships (nil without local data).
-    @State private var collections: CollectionsModel?
+    /// The vault's collections and memberships, from the item store (nil without local data, as in some tests).
+    @State private var collections: MacCollectionsModel?
     @State private var managingCollections = false
     /// The item waiting for "Move to Recently deleted?".
     @State private var confirmingDelete: VaultItem?
@@ -98,18 +105,27 @@ struct MainWindow: View {
          isUnlocked: @escaping @MainActor () -> Bool = { MainWindow.isUnlocked(MacAppEnvironment.lockState) },
          autoLockRemaining: @escaping () -> TimeInterval?,
          onLock: @escaping () -> Void) {
-        _list = State(initialValue: VaultListModel(store: store))
+        let list = VaultListModel(store: store)
+        // Travel mode (feature pack §2): hidden items leave the list, search, the codes strip and the checks.
+        list.hidden = MacAccess.travelHidden
+        _list = State(initialValue: list)
         _sidebar = State(initialValue: SidebarModel())
         self.isUnlocked = isUnlocked
         _settingsModel = State(initialValue: MacSettingsModel(settings: .shared, pro: pro, passwords: passwords, local: local))
         let upgrade = UpgradePrompt()
         self.local = local; self.activity = activity; self.safari = safari; self.sync = sync
-        _trash = State(initialValue: local.map { local in
+        history = local.map { local in
+            MacItemHistoryModel(store: store, rows: { local.localData?.itemHistory ?? [] }, isPro: { pro.isPro })
+        }
+        let trashModel = local.map { local in
             TrashModel(store: store, local: local, isPro: { pro.isPro }, onNeedsPro: { upgrade.show($0) }, activity: activity)
-        })
+        }
+        _trash = State(initialValue: trashModel)
+        _cleanUp = State(initialValue: MacCleanUpModel(store: store, trash: trashModel, local: local, isPro: { pro.isPro },
+                                                       onNeedsPro: { upgrade.show($0) }))
         notifier?.markUnlocked()
         _reminders = State(initialValue: local.map { RemindersModel(local: $0, notifier: notifier, activity: activity) })
-        let collections = local.map { CollectionsModel(local: $0, activity: activity) }
+        let collections = local.map { MacCollectionsModel(store: store, local: $0, activity: activity) }
         _collections = State(initialValue: collections)
         let overview = OverviewModel(cache: strengthCache)
         overview.reminders = reminders
@@ -120,10 +136,17 @@ struct MainWindow: View {
         self.passwords = passwords
         let gate = StrictItemGate(passwords: passwords)
         _gate = State(initialValue: gate)
-        _importExport = State(initialValue: ImportExportModel(
+        _emergencyGate = State(initialValue: StrictItemGate(passwords: passwords))
+        let importModel = ImportExportModel(
             store: store, isPro: { pro.isPro }, gate: gate,
             fallbackDeviceID: { try MacSyncEnvironment.keychain.installID(random: SystemRandomSource()) }, local: local,
-            blobs: AttachmentFiles.localFolder()))
+            blobs: AttachmentFiles.localFolder(),
+            removalWatch: SyncDependencies.watchFileURL(in: MacAppEnvironment.vaultDirectory()))
+        // Undo of an import moves what it added to Recently deleted, one item at a time (feature pack §6.1).
+        if let trashModel {
+            importModel.moveToTrash = { ids in ids.filter { id in (try? trashModel.moveToTrash(id: id)) != nil } }
+        }
+        _importExport = State(initialValue: importModel)
         let fullBackup: MacFullBackup? = profile.flatMap { profile in
             passwords.map { MacFullBackup(store: store, profile: profile, passwords: $0, gate: gate, local: local,
                                           attachmentFolder: AttachmentFiles.localFolder()) }
@@ -165,7 +188,8 @@ struct MainWindow: View {
                     } else if tool == .settings {
                         ShellPanel {
                             MacSettingsView(model: settingsModel, onRecoveryCentre: { openRecoveryCentre(nil) },
-                                            onShowSetup: { onboarding.showAgain() })
+                                            onShowSetup: { onboarding.showAgain() }, scheduleModel: recovery.scheduleModel,
+                                            onLicence: { sidebar.selection = .tool(.licence) })
                         }
                     } else if tool == .securityCentre {
                         ShellPanel {
@@ -174,7 +198,15 @@ struct MainWindow: View {
                                                onSettings: { sidebar.selection = .tool(.settings) },
                                                onImportExport: { sidebar.selection = .tool(.importExport) },
                                                backup: recovery.status,
-                                               onRecoveryCentre: { openRecoveryCentre($0) })
+                                               onRecoveryCentre: { openRecoveryCentre($0) },
+                                               accessLogOK: local?.localData.map { $0.verifyEventsChain().ok },
+                                               onActivity: { sidebar.selection = .tool(.activity) },
+                                               onCleanUp: { sidebar.selection = .tool(.cleanUp) })
+                        }
+                    } else if tool == .cleanUp {
+                        ShellPanel {
+                            MacCleanUpPage(model: cleanUp, onOpen: { openFromCleanUp($0) },
+                                           onBack: { sidebar.selection = .tool(.securityCentre) })
                         }
                     } else if tool == .trash, let trash {
                         ShellPanel { TrashView(model: trash, onSettings: { sidebar.selection = .tool(.settings) }) }
@@ -183,13 +215,25 @@ struct MainWindow: View {
                     } else if tool == .activity, local != nil {
                         ShellPanel { ActivityView(events: local?.localData?.events ?? []) }
                     } else if tool == .devices {
-                        ShellPanel { ConnectionsView(model: connections, onOpenSync: { sidebar.selection = .tool(.sync) }) }
+                        ShellPanel {
+                            SyncAndDevicesTabs(selection: sidebar.selection, onSelect: { sidebar.selection = .tool($0) }) {
+                                ConnectionsView(model: connections, onOpenSync: { sidebar.selection = .tool(.sync) })
+                            }
+                        }
                     } else if tool == .sync {
-                        ShellPanel { SyncPage(model: syncPage) }
+                        ShellPanel {
+                            SyncAndDevicesTabs(selection: sidebar.selection, onSelect: { sidebar.selection = .tool($0) }) {
+                                SyncPage(model: syncPage)
+                            }
+                        }
                     } else if tool == .importExport {
                         ShellPanel { ImportExportPage(model: importExport) }
                     } else if tool == .recoveryCentre {
-                        ShellPanel { RecoveryCentrePage(model: recovery, onImportExport: { sidebar.selection = .tool(.importExport) }) }
+                        ShellPanel { RecoveryCentrePage(model: recovery, onImportExport: { sidebar.selection = .tool(.importExport) },
+                                                           emergency: EmergencyAccess.live(store: store, sync: syncPage.coordinator),
+                                                           emergencyGate: emergencyGate, estateStore: store,
+                                                           onNeedsPro: { upgrade.show(.itemLimit) },
+                                                           onVaultChange: { list.reload() }) }
                     } else if tool == .licence {
                         ShellPanel { LicencePage(pro: pro, clipboard: clipboard) }
                     } else {
@@ -229,6 +273,8 @@ struct MainWindow: View {
     private func windowSheets(_ content: some View) -> some View {
         content
         .onChange(of: credentialExchange.pending) { _, _ in takeCredentialExchange() }
+        // A token taken while the page was busy waits in the model; read it once the page is free.
+        .onChange(of: importExport.busy) { _, busy in if !busy { Task { await importExport.importFromApplePasswords() } } }
         .sheet(item: $sharing) { item in
             MacShareSheet(item: item, onClose: { sharing = nil }).macThemed()
         }
@@ -244,12 +290,15 @@ struct MainWindow: View {
         .sheet(isPresented: $upgrade.shown) {
             MacUpgradeSheet(pro: pro, reason: upgrade.reason, onClose: { upgrade.shown = false }).macThemed()
         }
-        .sheet(item: Binding(get: { gate.pending }, set: { if $0 == nil { gate.cancel() } })) { request in
+        // While the Collections sheet is open its own sheet shows the prompt (sharing asks for the master password).
+        .sheet(item: Binding(get: { managingCollections ? nil : gate.pending }, set: { if $0 == nil { gate.cancel() } })) { request in
             StrictItemSheet(gate: gate, request: request).macThemed()
         }
-        .sheet(isPresented: $managingCollections) {
+        .sheet(isPresented: $managingCollections, onDismiss: { collections?.reload(); list.reload() }) {
             if let collections {
-                CollectionsView(model: collections, onClose: { managingCollections = false }).macThemed()
+                CollectionsView(model: collections, sync: syncPage.coordinator, gate: gate, pro: pro,
+                                onChange: { list.reload() },
+                                onClose: { managingCollections = false }).macThemed()
             }
         }
         .overlay(alignment: .top) {
@@ -323,7 +372,7 @@ struct MainWindow: View {
         .onAppear {
             list.reload(); sidebar.items = list.items; overview.items = list.items; installKeyMonitor()
             reminders?.items = list.items; reminders?.prune()
-            collections?.items = list.items; collections?.prune(); syncCollections()
+            collections?.reload(); syncCollections()
             if let snap = try? store.load() { pro.update(from: snap) }
             pro.vaultUnlocked(store: store)   // an App Store purchase not yet claimed as a licence is claimed now
             takeCredentialExchange()
@@ -332,6 +381,7 @@ struct MainWindow: View {
                                updatePro: { pro.update(from: $0) })
             }
             recovery.backup?.afterChange = importExport.afterChange
+            cleanUp.onChange = { [list] in list.reload() }
             overview.backup = recovery.status
             // A phrase or password change relocked and reopened the window: go back to the page it was on.
             if passwords?.takeRotationReturn() == true, let tool = Self.lastTool { sidebar.selection = .tool(tool) }
@@ -340,6 +390,23 @@ struct MainWindow: View {
                 if case .tool(let tool) = sidebar.selection { Self.lastTool = tool } else { Self.lastTool = nil }
             }
             #if DEBUG
+            // `LGK_MAC_SEED_DOCUMENT=<name>.pdf` adds a one-page PDF document item titled <name> once (UI tests of
+            // Open in another app, MacDocumentUITests).
+            if let name = ProcessInfo.processInfo.environment["LGK_MAC_SEED_DOCUMENT"], !name.isEmpty {
+                let title = (name as NSString).deletingPathExtension
+                if !list.items.contains(where: { $0.title == title }) {
+                    let pdf = NSMutableData()
+                    var box = CGRect(x: 0, y: 0, width: 300, height: 200)
+                    if let consumer = CGDataConsumer(data: pdf as CFMutableData),
+                       let ctx = CGContext(consumer: consumer, mediaBox: &box, nil) {
+                        ctx.beginPDFPage(nil); ctx.setFillColor(NSColor.systemTeal.cgColor); ctx.fill(box.insetBy(dx: 40, dy: 40))
+                        ctx.endPDFPage(); ctx.closePDF()
+                    }
+                    _ = DocumentFiles.add(data: pdf as Data, fileName: name, title: title, isPro: true, store: store,
+                                          blobs: AttachmentFiles.localFolder(), clock: SystemClock(), random: SystemRandomSource())
+                    list.reload()
+                }
+            }
             // Debug builds only: `LGK_MAC_SELECT=<title>` opens that item (screenshots).
             if let title = ProcessInfo.processInfo.environment["LGK_MAC_SELECT"] {
                 selectedID = shown.first { $0.title == title }?.id
@@ -356,10 +423,14 @@ struct MainWindow: View {
             // `LGK_MAC_PALETTE=<query>` opens the palette with that query; `LGK_MAC_SHORTCUTS=1` the shortcuts sheet.
             if let q = ProcessInfo.processInfo.environment["LGK_MAC_PALETTE"] { openPalette(); palette?.query = q }
             if ProcessInfo.processInfo.environment["LGK_MAC_SHORTCUTS"] == "1" { showingShortcuts = true }
+            // `LGK_MAC_HIDE_SETUP=1` closes the setup pages and hides the setup chip (store screenshots in any language).
+            if ProcessInfo.processInfo.environment["LGK_MAC_HIDE_SETUP"] == "1" { onboarding.closePages(); onboarding.hideCard() }
             // `LGK_MAC_TOOL=settings` opens Settings in the window; `LGK_MAC_UPGRADE=1` shows the Pro sheet.
             if ProcessInfo.processInfo.environment["LGK_MAC_TOOL"] == "settings" { sidebar.selection = .tool(.settings) }
             // `LGK_MAC_TOOL=security` opens the Security centre.
             if ProcessInfo.processInfo.environment["LGK_MAC_TOOL"] == "security" { sidebar.selection = .tool(.securityCentre) }
+            // `LGK_MAC_TOOL=cleanup` opens Security centre › Clean-up.
+            if ProcessInfo.processInfo.environment["LGK_MAC_TOOL"] == "cleanup" { sidebar.selection = .tool(.cleanUp) }
             if ProcessInfo.processInfo.environment["LGK_MAC_UPGRADE"] == "1" { upgrade.show(.itemLimit) }
             // `LGK_MAC_TOOL=trash` opens Recently deleted, `activity` the Activity history.
             if ProcessInfo.processInfo.environment["LGK_MAC_TOOL"] == "trash" { sidebar.selection = .tool(.trash) }
@@ -373,29 +444,36 @@ struct MainWindow: View {
                let c = sidebar.collections.first(where: { $0.name == name }) { sidebar.selection = .collection(c.id) }
             #endif
         }
-        .onAppear { takeQuickAccess() }
+        .onAppear { takeQuickAccess(); takePage() }
+        // SSH agent signatures are approved through this window's gate while it is shown (unlocked).
+        .onAppear { MacSSHAgent.shared.attach(gate) }
+        .onDisappear { MacSSHAgent.shared.detach(gate) }
+        // A lock closes this window: an AI agent's approval on screen is a no.
+        .onDisappear { MacAgentGate.shared.lockReset() }
         .onChange(of: QuickAccessBridge.shared.pending) { _, _ in takeQuickAccess() }
+        .onChange(of: QuickAccessBridge.shared.pendingPage) { _, _ in takePage() }
         .onChange(of: QuickAccessBridge.shared.paletteRequests) { _, _ in openPalette() }
-        .onDisappear { pro.vaultLocked(); palette = nil; gate.lockReset(); importExport.reset(); if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }; keyMonitor = nil }
+        .onDisappear { pro.vaultLocked(); palette = nil; gate.lockReset(); emergencyGate.lockReset(); importExport.reset(); if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }; keyMonitor = nil }
         .onChange(of: local?.localData?.trash.count) { _, _ in
             // A restore wrote items back: show them and recount the free plan.
             list.reload()
-            collections?.prune()   // a purge lets its memberships go
+            collections?.reload()   // a restore brings its collections back
             if let snap = try? store.load() { pro.update(from: snap) }
         }
         .onChange(of: list.items) { _, items in
             sidebar.items = items; overview.items = items; overview.reconcileChip()
             // A deleted item takes its reminders (and their notifications) with it.
             reminders?.items = items; reminders?.prune()
-            collections?.items = items; collections?.prune()
+            collections?.reload()
         }
         .onChange(of: sync?.syncRevision) { _, _ in
             // A sync run finished (or a peer's merge was served): show what it brought.
             Self.afterSync(store: store, list: list, reminders: reminders, collections: collections,
                            updatePro: { pro.update(from: $0) })
         }
-        .onChange(of: local?.localData?.collections) { _, _ in syncCollections() }
-        .onChange(of: local?.localData?.memberships) { _, _ in syncCollections() }
+        // The sidebar's Collections group and filter follow the store's collections (sub-plan 07).
+        .onChange(of: collections?.collections) { _, _ in syncCollections() }
+        .onChange(of: collections?.memberships) { _, _ in syncCollections() }
         .onChange(of: local?.localData?.reminders) { _, now in
             // Coming up and the Expiring chip follow reminder changes live.
             overview.reminders = now ?? []; overview.reconcileChip()
@@ -411,11 +489,17 @@ struct MainWindow: View {
             .onChange(of: overview.activeChip) { _, _ in keepSelectionVisible() }
             .onChange(of: sidebar.selection) { _, _ in keepSelectionVisible() }
             .onChange(of: list.query) { _, _ in keepSelectionVisible() }
+            .onReceive(NotificationCenter.default.publisher(for: MacAccess.travelModeChanged)) { _ in
+                list.reload(); collections?.reload()
+                if let id = selectedID, !list.items.contains(where: { $0.id == id }) { selectedID = nil }
+            }
     }
 
     /// The Passwords app handed over an export: open Import & export and read it into the review.
     private func takeCredentialExchange() {
         guard isUnlocked(), let token = credentialExchange.take() else { return }
+        // A duress session (sub-plan 08) imports nothing from the Passwords app: the export is dropped unread.
+        guard !DuressSession.shared.isOpen else { return }
         sidebar.selection = .tool(.importExport)
         importExport.receivedExchange(token: token)
         Task { await importExport.importFromApplePasswords() }
@@ -423,13 +507,14 @@ struct MainWindow: View {
 
     // MARK: middle panel
 
-    /// After each completed sync run: reload the list, drop reminders and collection memberships of items
-    /// that are gone, and update Pro from the store (a desktop licence received through sync unlocks it).
+    /// After each completed sync run: reload the list and the collections (they sync as their own states), drop
+    /// reminders of items that are gone, and update Pro from the store (a desktop licence received through sync
+    /// unlocks it).
     static func afterSync(store: any ItemStore, list: VaultListModel, reminders: RemindersModel?,
-                          collections: CollectionsModel?, updatePro: (StoreSnapshot) -> Void) {
+                          collections: MacCollectionsModel?, updatePro: (StoreSnapshot) -> Void) {
         list.reload()
         reminders?.items = list.items; reminders?.prune()
-        collections?.items = list.items; collections?.prune()
+        collections?.reload()
         if let snap = try? store.load() { updatePro(snap) }
     }
 
@@ -438,7 +523,7 @@ struct MainWindow: View {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass").foregroundStyle(theme.textFaint)
-                    TextField("Search this profile", text: $list.query)
+                    TextField(String(localized: "search.placeholder.vault", defaultValue: "Search your vault"), text: $list.query)
                         .textFieldStyle(.plain).focused($searchFocused)
                         .onKeyPress(.downArrow) {
                             // ↓ moves into the results.
@@ -458,9 +543,6 @@ struct MainWindow: View {
             .foregroundStyle(theme.text)
             .padding(.bottom, 10)
 
-            if isUnlocked(), let text = onboarding.cardText {
-                MacSetupCard(text: text, onOpen: { onboarding.showAgain() }, onHide: { onboarding.hideCard() })
-            }
             itemList
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
@@ -478,7 +560,8 @@ struct MainWindow: View {
     private var listHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
             if showsOverview {
-                OverviewCards(model: overview, onGenerator: { sidebar.selection = .tool(.generator) },
+                OverviewCards(model: overview,
+                              onReminders: reminders == nil ? nil : { sidebar.selection = .tool(.reminders) },
                               onBackup: { openRecoveryCentre(nil) })
                 CodesStrip(model: overview, items: list.items, onCopy: copyCode).padding(.top, 14)
             }
@@ -487,7 +570,9 @@ struct MainWindow: View {
                 Text(countLabel).font(.system(size: 12)).foregroundStyle(theme.textFaint)
             }
             .padding(.horizontal, 2).padding(.top, showsOverview ? 16 : 6).padding(.bottom, 8)
-            FilterChips(model: overview).padding(.bottom, 8)
+            FilterChips(model: overview, setup: isUnlocked() ? onboarding.cardText : nil,
+                        onSetup: { onboarding.showAgain() }, onHideSetup: { onboarding.hideCard() })
+                .padding(.bottom, 8)
         }
     }
 
@@ -500,7 +585,7 @@ struct MainWindow: View {
             Text(error).foregroundStyle(theme.danger)
         } else {
             ItemListView(items: shown, selection: guardedSelection, focused: $listFocused, onOpen: { _ in listFocused = true },
-                         tag: { overview.tag(for: $0) }, header: AnyView(listHeader),
+                         tag: { overview.tag(for: $0) }, header: AnyView(listHeader), rowActions: rowActions,
                          emptyText: list.query.isEmpty && overview.activeChip == nil ? String(localized: "No items here yet.") : String(localized: "No items match your search."))
         }
     }
@@ -513,19 +598,21 @@ struct MainWindow: View {
                           onSaved: finishedEditing, onCancel: requestCancel)
                 .id(ObjectIdentifier(model))
         } else if let item = selectedItem {
+            let readOnly = collections?.isReadOnly(itemID: item.id) ?? false
             DetailPanel(item: item, clipboard: clipboard, gate: gate,
                         onToggleFavourite: { toggleFavourite(item) },
                         onCopied: { _ in copied(item) },
-                        onEdit: MacEditorSession.canEdit(item) ? { startEdit(item) } : nil,
-                        onDelete: trash != nil && !editor.isActive ? { confirmingDelete = item } : nil,
+                        onEdit: MacEditorSession.canEdit(item) && !readOnly ? { startEdit(item) } : nil,
+                        onDelete: trash != nil && !editor.isActive && !readOnly ? { confirmingDelete = item } : nil,
                         reminders: reminders,
                         extras: extras, store: store,
                         onExtrasSaved: { extrasSaved(item) },
                         onRevealed: { activity?.record(.credentialReveal, itemID: item.id, count: 1) },
-                        collectionNames: CollectionsModel.canBeMember(item)
-                            ? (collections?.collections.filter { sidebar.memberships[item.id]?.contains($0.id) ?? false }.map(\.name) ?? [])
-                            : [],
-                        onShare: Share.canShare(item.record) ? { shareItem(item) } : nil)
+                        collectionNames: collections?.names(of: item.id) ?? [],
+                        onShare: Share.canShare(item.record) ? { shareItem(item) } : nil,
+                        onSetExpiry: item.kind == "api_key" && !editor.isActive && !readOnly ? { date in setExpiry(item, date) } : nil,
+                        readOnly: readOnly,
+                        pro: pro.isPro, onNeedsPro: { upgrade.show(.access) }, history: history, local: local)
                 .id(item.id)
         } else {
             Text("Select an item")
@@ -534,10 +621,11 @@ struct MainWindow: View {
         }
     }
 
-    /// The sidebar's Collections group follows the local data; a deleted collection's row falls back to All items.
+    /// The sidebar's Collections group follows the store's collections; a deleted collection's row falls back to All
+    /// items.
     private func syncCollections() {
-        sidebar.collections = local?.localData?.collections ?? []
-        sidebar.memberships = local?.localData?.memberships ?? [:]
+        sidebar.collections = collections?.collections ?? []
+        sidebar.memberships = collections?.memberships ?? [:]
         if case .collection(let id) = sidebar.selection, !sidebar.collections.contains(where: { $0.id == id }) {
             sidebar.selection = .all
         }
@@ -560,6 +648,8 @@ struct MainWindow: View {
 
     /// Opening the editor shows a strict login's secrets, so it asks first.
     private func startEdit(_ item: VaultItem) {
+        // View only here (a shared collection): never opened for editing.
+        if collections?.isReadOnly(itemID: item.id) == true { saveError = EditorModel.readOnlyItemText; return }
         gate.release(item, action: String(localized: "Edit")) { editorIsNew = false; editor.startEdit(item) }
     }
 
@@ -634,6 +724,7 @@ struct MainWindow: View {
     /// After Save: the list reloads and the saved item is selected (shown under All items if hidden).
     private func finishedEditing(_ id: String?) {
         list.reload()
+        collections?.reload()   // the editor's picked collections were saved with the item
         if let snap = try? store.load() { pro.update(from: snap) }
         guard let id else { return }
         activity?.record(editorIsNew ? .itemCreate : .itemUpdate, itemID: id)
@@ -645,6 +736,8 @@ struct MainWindow: View {
         do {
             try ItemActions.setFavourite(id: item.id, !item.favorite, store: store, clock: SystemClock())
             activity?.record(.itemUpdate, itemID: item.id)
+        } catch ItemActions.Failure.readOnly {
+            saveError = EditorModel.readOnlyItemText
         } catch {
             saveError = String(localized: "The item could not be saved on this device.")
         }
@@ -662,6 +755,7 @@ struct MainWindow: View {
     /// ⌫ or the Delete button: asks first (`confirmingDelete`), then moves the item to Recently deleted.
     private func requestDelete() -> Bool {
         guard trash != nil, !editor.isActive, let item = selectedItem else { return false }
+        if collections?.isReadOnly(itemID: item.id) == true { saveError = EditorModel.readOnlyItemText; return true }
         confirmingDelete = item
         return true
     }
@@ -673,6 +767,8 @@ struct MainWindow: View {
             if selectedID == item.id { selectedID = nil }
             showToast(String(localized: "Moved to Recently deleted"))
         } catch TrashModel.Failure.notFound {
+        } catch TrashModel.Failure.readOnly {
+            saveError = EditorModel.readOnlyItemText
         } catch TrashModel.Failure.compensation {
             saveError = TrashModel.compensationMessage
         } catch {
@@ -683,6 +779,13 @@ struct MainWindow: View {
     }
 
     /// Recovery codes or custom fields were saved from the detail panel.
+    /// "Set expiry from token": the editor's own save writes `expires`, then the list reloads (reminders read it).
+    private func setExpiry(_ item: VaultItem, _ date: String) -> SaveResult {
+        let result = ItemDetailModel.setExpiry(date, item: item, store: store, pro: pro)
+        if result == .saved { extrasSaved(item) }
+        return result
+    }
+
     private func extrasSaved(_ item: VaultItem) {
         activity?.record(.itemUpdate, itemID: item.id)
         list.reload()
@@ -738,6 +841,12 @@ struct MainWindow: View {
     private func showToast(_ text: String) {
         toastTask?.cancel()
         withAnimation(.easeOut(duration: 0.15)) { toast = text }
+        // VoiceOver hears the toast too ("Password copied, clears in 60 seconds").
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow {
+            NSAccessibility.post(element: window, notification: .announcementRequested,
+                                 userInfo: [.announcement: text,
+                                            .priority: NSAccessibilityPriorityLevel.high.rawValue])
+        }
         toastTask = Task {
             try? await Task.sleep(for: .seconds(1.6))
             guard !Task.isCancelled else { return }
@@ -773,8 +882,17 @@ struct MainWindow: View {
             showingShortcuts = true
             return true
         }
-        guard mods.contains(.command), let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
-        guard event.window?.isKeyWindow == true, selectedItem != nil, !confirmingPasswordCopy else { return false }
+        guard mods.contains(.command),
+              let key = Self.shortcutKey(characters: event.charactersIgnoringModifiers, keyCode: event.keyCode) else { return false }
+        // ⌘C in a text field copies its selected text. Sent here: SwiftUI matches the Item menu's ⌘C (Copy password,
+        // greyed out while a field has focus) before Edit › Copy and swallows the key, so the field never copied.
+        if let action = Self.textFieldAction(key: key, modifiers: mods, inTextField: event.window?.firstResponder is NSText),
+           event.window?.isKeyWindow == true {
+            return NSApp.sendAction(action, to: nil, from: event.window)
+        }
+        // Not while a sheet is up: a sheet's own window, or the main window with a sheet attached.
+        guard let window = event.window, window.isKeyWindow, Self.isUnobstructed(window),
+              selectedItem != nil, !confirmingPasswordCopy else { return false }
         let responder: CopyShortcutPolicy.Responder =
             event.window?.firstResponder is NSText ? .text : (listFocused ? .itemList : .other)
         guard CopyShortcutPolicy.intercepts(key: key, shift: mods.contains(.shift), responder: responder,
@@ -788,6 +906,32 @@ struct MainWindow: View {
         case ("t", [.command]): return copyCode()
         default: return false
         }
+    }
+
+    /// The Latin letter of a ⌘ shortcut. On non-Latin layouts (Greek, Cyrillic) the characters are not a–z, so
+    /// fall back to the physical ANSI key: C (keyCode 8) and T (keyCode 17).
+    static func shortcutKey(characters: String?, keyCode: UInt16) -> String? {
+        if let c = characters?.lowercased(), c.unicodeScalars.count == 1, let scalar = c.unicodeScalars.first,
+           scalar.value >= 0x61, scalar.value <= 0x7A {   // a–z
+            return c
+        }
+        switch keyCode {
+        case 8: return "c"
+        case 17: return "t"
+        default: return characters?.lowercased()
+        }
+    }
+
+    /// The edit action a text field gets for a ⌘ key the Item menu also uses: ⌘C copies the field's selection.
+    /// Nil outside a text field and for every other key (⇧⌘C and ⌘T keep their Item menu meaning).
+    static func textFieldAction(key: String, modifiers: NSEvent.ModifierFlags, inTextField: Bool) -> Selector? {
+        guard inTextField, key == "c", modifiers == [.command] else { return nil }
+        return #selector(NSText.copy(_:))
+    }
+
+    /// True when `window` is not a sheet and has no sheet attached.
+    static func isUnobstructed(_ window: NSWindow) -> Bool {
+        window.sheetParent == nil && window.attachedSheet == nil && !window.isSheet
     }
 
     /// `?` (with or without ⇧, as keyboards differ) outside a text field opens the shortcuts sheet.
@@ -858,6 +1002,16 @@ struct MainWindow: View {
         }
     }
 
+    /// Clean-up's Open: shows that item in All items (as a palette row does).
+    private func openFromCleanUp(_ id: String) {
+        guard list.items.contains(where: { $0.id == id }) else { return }
+        sidebar.selection = .all
+        list.query = ""
+        overview.activeChip = nil
+        guardedSelection.wrappedValue = id
+        listFocused = true
+    }
+
     /// Steps finished elsewhere count as done: Touch ID unlock on, a recovery phrase set (it was confirmed by
     /// retyping three of its words when it was made).
     private func detectSetup() {
@@ -918,28 +1072,68 @@ struct MainWindow: View {
 
     private func copyPassword() {
         guard let item = selectedItem, let p = Self.password(of: item) else { return }
-        gate.releaseRoutine(item, action: String(localized: "Copy password")) { clipboard.copy(p, concealed: true); copied(item) }
+        gate.releaseCopy(item, action: String(localized: "Copy password"), routine: true) { clipboard.copy(p, concealed: true, limit: $0); copied(item) }
     }
 
     @discardableResult private func copyCode() -> Bool {
         guard let item = selectedItem, Self.hasCode(item) else { return false }
-        gate.release(item, action: String(localized: "Copy one-time code")) { copyCode(of: item) }
+        gate.releaseCopy(item, action: String(localized: "Copy one-time code")) { copyCode(of: item, limit: $0) }
         return true
     }
 
     /// A tile of the codes strip: hidden codes ask for the master password first.
     private func copyCode(_ entry: CodeEntry) {
         guard let item = list.items.first(where: { $0.id == entry.id }) else { return }
-        gate.release(item, action: String(localized: "Copy one-time code")) { copyCode(of: item) }
+        gate.releaseCopy(item, action: String(localized: "Copy one-time code")) { copyCode(of: item, limit: $0) }
     }
 
-    @discardableResult private func copyCode(of item: VaultItem) -> Bool {
+    @discardableResult private func copyCode(of item: VaultItem, limit: TimeInterval? = nil) -> Bool {
         guard case .object(let t)? = item.record["totp"], let secret = t["secret"]?.stringValue else { return false }
         func int(_ k: String, _ d: Int) -> Int { if case .int(let n)? = t[k] { return Int(n) }; return d }
         guard let code = try? TOTP.code(secret: secret, algorithm: t["algorithm"]?.stringValue ?? "SHA1", digits: int("digits", 6),
                                         period: int("period", 30), at: SystemClock().now) else { return false }
-        clipboard.copy(code, concealed: true); copied(item)
+        // Settings › Locking › Ask before releasing 2FA codes (Windows `totp_confirm`).
+        guard MacTOTPConfirm.allow(title: item.title) else { return true }
+        clipboard.copy(code, concealed: true, limit: limit); copied(item)
         return true
+    }
+
+    /// The selected row's copy buttons and every row's right-click menu: the same gates as the copy shortcuts.
+    private var rowActions: ItemRowActions {
+        ItemRowActions(
+            copyUsername: { item in
+                guard item.isLogin, !item.username.isEmpty else { return nil }
+                return { gate.release(item, action: String(localized: "Copy username")) { clipboard.copy(item.username, concealed: false); copied(item) } }
+            },
+            copyPassword: { item in
+                guard let p = Self.password(of: item) else { return nil }
+                return { gate.releaseCopy(item, action: String(localized: "Copy password"), routine: true) { clipboard.copy(p, concealed: true, limit: $0); copied(item) } }
+            },
+            copyCode: { item in
+                guard Self.hasCode(item) else { return nil }
+                return { gate.releaseCopy(item, action: String(localized: "Copy one-time code")) { copyCode(of: item, limit: $0) } }
+            },
+            edit: { item in
+                guard !editor.isActive, MacEditorSession.canEdit(item), collections?.isReadOnly(itemID: item.id) != true else { return nil }
+                return { selectedID = item.id; startEdit(item) }
+            },
+            moveToTrash: { item in
+                guard trash != nil, !editor.isActive, collections?.isReadOnly(itemID: item.id) != true else { return nil }
+                return { confirmingDelete = item }
+            })
+    }
+
+    /// A page asked for from the ⌘, Settings window, shown once the vault is open.
+    private func takePage() {
+        guard let request = QuickAccessBridge.shared.pendingPage, isUnlocked() else { return }
+        QuickAccessBridge.shared.pendingPage = nil
+        switch request.page {
+        case .recoveryCentre: openRecoveryCentre(nil)
+        case .licence: sidebar.selection = .tool(.licence)
+        case .showSetup: onboarding.showAgain()
+        case .shortcuts: showingShortcuts = true
+        case .connections: sidebar.selection = .tool(.devices)
+        }
     }
 
     /// A copy asked for from the menu bar: the same gate and clipboard as the list's copy commands. A strict
@@ -954,10 +1148,10 @@ struct MainWindow: View {
             gate.release(item, action: String(localized: "Copy username")) { clipboard.copy(item.username, concealed: false); copied(item) }
         case .password:
             guard let p = Self.password(of: item) else { return }
-            gate.releaseRoutine(item, action: String(localized: "Copy password")) { clipboard.copy(p, concealed: true); copied(item) }
+            gate.releaseCopy(item, action: String(localized: "Copy password"), routine: true) { clipboard.copy(p, concealed: true, limit: $0); copied(item) }
         case .code:
             guard Self.hasCode(item) else { return }
-            gate.release(item, action: String(localized: "Copy one-time code")) { copyCode(of: item) }
+            gate.releaseCopy(item, action: String(localized: "Copy one-time code")) { copyCode(of: item, limit: $0) }
         }
         if gate.pending != nil { QuickAccessBridge.activate() }
     }
@@ -1013,6 +1207,27 @@ struct PillButtonStyle: ButtonStyle {
     }
 }
 
+/// Sync & devices (UX refresh): one sidebar row for Sync and Devices & connections, switched by tabs on top.
+struct SyncAndDevicesTabs<Content: View>: View {
+    let selection: SidebarSelection
+    let onSelect: (Tool) -> Void
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: Binding(get: { selection == .tool(.devices) ? Tool.devices : Tool.sync },
+                                          set: { onSelect($0) })) {
+                Text(Tool.sync.title).tag(Tool.sync)
+                Text(Tool.devices.title).tag(Tool.devices)
+            }
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
+            .padding(.top, 12).padding(.bottom, 4)
+            .accessibilityLabel(Tool.sync.sidebarTitle)
+            content.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
 /// The screen for a tool that has none yet.
 struct ComingLater: View {
     let title: String
@@ -1030,10 +1245,12 @@ struct ComingLater: View {
 /// The free plan's refusal (Task 8 shows the Pro sheet instead).
 @MainActor @Observable
 final class UpgradePrompt {
-    static let itemLimitMessage = String(localized: "The free plan holds 4 items. Upgrade to Pro to add more.")
+    static let itemLimitMessage = String(localized: "The free plan holds \(ItemLimit.freeItems) items. Upgrade to Pro to add more.")
     static let twoFactorMessage = String(localized: "Adding or changing a 2FA code needs Pro.")
     /// Windows `PRO_REQUIRED`, "this Mac" for "this PC".
     static let syncMessage = String(localized: "Device sync is part of LocalGateKeys Pro. Everything already on this Mac stays here and keeps working; with Pro, sync resumes where it left off.")
+    /// Sub-plan 12: the free plan holds one vault (profile) on this Mac; Pro adds Work, Personal and more.
+    static let profilesMessage = String(localized: "The free plan holds one vault on this Mac. Upgrade to Pro to add Work, Personal and more.")
     var shown = false
     private(set) var reason: ProReason = .itemLimit
     var message: String { Self.message(reason) }
@@ -1043,6 +1260,10 @@ final class UpgradePrompt {
         case .twoFactor: twoFactorMessage
         case .sync: syncMessage
         case .attachments: DocumentFiles.proMessage
+        case .profiles: profilesMessage
+        case .travel: String(localized: "Travel mode is part of Pro.")
+        case .hygiene: String(localized: "Cleaning up many items at once is part of Pro.")
+        case .access: String(localized: "Access rules are part of Pro.")
         }
     }
     func show(_ reason: ProReason) { self.reason = reason; shown = true }

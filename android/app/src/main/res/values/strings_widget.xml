@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sub-plan 06: the pinned-codes home-screen widget and the detail screen's "Show in widget" switch. -->
+    <string name="widget_codes_name">Pinned codes</string>
+    <string name="widget_codes_description">Your pinned two-factor codes.</string>
+    <string name="widget_codes_locked">Unlock to show codes</string>
+    <string name="widget_codes_empty">Pin a code in LocalGateKeys</string>
+    <string name="detail_pin_code">Show in widget</string>
+    <string name="detail_pin_code_note">The home-screen widget shows this code while LocalGateKeys is unlocked, until it locks automatically.</string>
+    <string name="detail_pin_full">You can pin up to %1$d codes.</string>
+    <string name="widget_codes_locked_immediately">Set Auto-lock to 1 minute or longer to see codes here</string>
+    <string name="detail_pin_code_note_immediately">Auto-lock is set to Immediately, so LocalGateKeys locks when you leave it and the widget cannot show this code. Set Auto-lock to 1 minute or longer in Settings to see it on the home screen.</string>
+    <!-- Sub-plan 06: the Quick Settings tile (it never shows a code). -->
+    <string name="tile_codes_name">Copy code</string>
+    <string name="tile_codes_empty">No pinned codes</string>
+    <string name="tile_codes_locked">Unlock to copy</string>
+    <string name="tile_codes_locked_subtitle">Locked</string>
+    <string name="tile_codes_tap_to_copy">Tap to copy</string>
+    <string name="tile_codes_copied">Copied</string>
+    <string name="tile_codes_no_code">No code</string>
+</resources>

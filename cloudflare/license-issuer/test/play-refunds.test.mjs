@@ -5,8 +5,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 
-import worker, { handle } from "../src/index.js";
-import { VOIDED_CURSOR_KEY, syncVoided } from "../src/play.js";
+import worker, { handle, runVoidedSync } from "../src/index.js";
+import { VOIDED_CURSOR_KEY, VOIDED_RESUME_KEY, syncVoided } from "../src/play.js";
 import { PURCHASE_URL, SERVICE_ACCOUNT, fakeGoogle, purchased } from "./fake-google.mjs";
 import { NOW, makeStoreEnv, postJson, revokeKeys, verifyLicence } from "./store-helpers.mjs";
 
@@ -41,6 +41,7 @@ function googleWith(purchases, voidedPages = []) {
       const params = new URL(url).searchParams;
       fetchImpl.voidedQueries = [...(fetchImpl.voidedQueries ?? []), Object.fromEntries(params)];
       const page = voidedPages[Number(params.get("token") ?? 0)];
+      if (page === "expired") return new Response("{}", { status: 400 });
       return Response.json(page ?? {});
     }
     return new Response("{}", { status: 404 });
@@ -200,4 +201,106 @@ test("canceled_type2_active_purchase_not_revoked", async () => {
   assert.deepEqual(revokeKeys(env), []);
   assert.equal(env.CLAIMS.store.play_claims.get("GPA.3300-1111-2222-33333").revoked, 0);
   assert.equal((await claim(env, fetchImpl)).license_id, lic.license_id);
+});
+
+test("unacknowledged_purchase_not_claimed", async () => {
+  const env = playEnv();
+  assert.equal(await claim(env, googleWith({ "tok-1": purchased({ acknowledgementState: 0 }) })), 400);
+  assert.equal(typeof (await claim(env, googleWith({ "tok-1": purchased() }))), "object");
+});
+
+// Sales alerts: pushed only once a refund is confirmed and recorded, once per order or purchase token.
+function recording(fetchImpl, sent) {
+  return async (url, init) => {
+    if (typeof url === "string" && url.startsWith("https://ntfy.sh/")) {
+      sent.push(init.headers.Title);
+      return new Response("ok");
+    }
+    return fetchImpl(url, init);
+  };
+}
+
+test("play_refund_alert_only_after_confirmed_revoke_and_once", async () => {
+  const env = { ...playEnv(), SALES_NTFY_TOPIC: "t" };
+  const order = purchased();
+  const google = googleWith({ "tok-1": order });
+  const sent = [];
+  const fetchImpl = recording(google, sent);
+  await claim(env, google);
+  const voided = { voidedPurchaseNotification: { purchaseToken: "tok-1", orderId: order.orderId, productType: 2, refundType: 1 } };
+  // Not canceled yet, unknown token: no push.
+  assert.equal((await push(env, fetchImpl, voided)).status, 200);
+  assert.equal((await push(env, fetchImpl, { voidedPurchaseNotification: { purchaseToken: "tok-other" } })).status, 200);
+  assert.deepEqual(sent, []);
+  // D1 missing: 503 for redelivery, still no push.
+  const noD1 = { ...env, CLAIMS: undefined };
+  order.purchaseState = 1;
+  assert.equal((await push(noD1, fetchImpl, voided)).status, 503);
+  assert.deepEqual(sent, []);
+  // Confirmed and recorded: one push, and none on redelivery.
+  assert.equal((await push(env, fetchImpl, voided)).status, 200);
+  assert.equal((await push(env, fetchImpl, voided)).status, 200);
+  assert.equal((await push(env, fetchImpl, canceled())).status, 200);
+  assert.deepEqual(sent, ["LocalGateKeys Pro refunded"]);
+});
+
+test("play_sold_alert_deduped_on_purchase_token", async () => {
+  const env = { ...playEnv(), SALES_NTFY_TOPIC: "t" };
+  const sent = [];
+  const fetchImpl = recording(googleWith({ "tok-1": purchased() }), sent);
+  const bought = (purchaseToken) => ({ oneTimeProductNotification: { notificationType: 1, purchaseToken, sku: "pro_unlimited" } });
+  await push(env, fetchImpl, bought("tok-1"));
+  await push(env, fetchImpl, bought("tok-1"));
+  await push(env, fetchImpl, bought("tok-2"));
+  assert.deepEqual(sent, ["LocalGateKeys Pro sold", "LocalGateKeys Pro sold"]);
+});
+
+// Scan F5: a backlog past one run's page budget is resumed, never skipped.
+const voidedPage = (i, next) => ({
+  voidedPurchases: [{ orderId: `GPA.page-${i}`, voidedTimeMillis: String(NOW - 100000 + i) }],
+  ...(next === undefined ? {} : { tokenPagination: { nextPageToken: String(next) } }),
+});
+
+test("voided_cron_resumes_a_backlog_past_the_page_budget (scan F5)", async () => {
+  const env = { ...playEnv(), SALES_NTFY_TOPIC: "t" };
+  const pages = [0, 1, 2, 3, 4].map((i) => voidedPage(i, i < 4 ? i + 1 : undefined));
+  const sent = [];
+  const google = googleWith({}, pages);
+  const fetchImpl = recording(google, sent);
+  const deps = { now: NOW, fetch: fetchImpl, voided: { maxPages: 2 } };
+  // Run 1 reads pages 0-1, keeps the cursor, saves page 2 and alerts once.
+  assert.equal(await runVoidedSync(env, deps), 2);
+  assert.equal(env.LICENSES.data.get(VOIDED_CURSOR_KEY), undefined);
+  const resume = JSON.parse(env.LICENSES.data.get(VOIDED_RESUME_KEY));
+  assert.equal(resume.token, "2");
+  assert.deepEqual(sent, ["LocalGateKeys Play refund check incomplete"]);
+  // Run 2 continues at page 2 with the same start time; the same backlog does not alert again.
+  assert.equal(await runVoidedSync(env, { ...deps, now: NOW + 86400000 }), 2);
+  const queries = google.voidedQueries;
+  assert.equal(queries[2].token, "2");
+  assert.equal(queries[2].startTime, queries[0].startTime);
+  assert.equal(sent.length, 1);
+  // Run 3 finishes: every page handled, the cursor moves to the newest entry, the resume is gone.
+  assert.equal(await runVoidedSync(env, { ...deps, now: NOW + 2 * 86400000 }), 1);
+  for (let i = 0; i < 5; i++) assert.equal(env.CLAIMS.store.play_claims.get(`GPA.page-${i}`).revoked, 1, `page ${i}`);
+  assert.equal(env.LICENSES.data.get(VOIDED_CURSOR_KEY), String(NOW - 100000 + 4));
+  assert.equal(env.LICENSES.data.has(VOIDED_RESUME_KEY), false);
+});
+
+test("voided_cron_stops_on_its_time_budget and restarts a refused page token (scan F5)", async () => {
+  const env = playEnv();
+  const pages = [voidedPage(0, 1), voidedPage(1, 2), voidedPage(2)];
+  const fetchImpl = googleWith({}, pages);
+  let t = 0;
+  const clock = () => (t += 1000);
+  // Budget of 2.5 s on a clock that moves 1 s per check: two pages, then it stops.
+  assert.equal(await syncVoided(env, fetchImpl, NOW, { clock, budgetMs: 2500 }), 2);
+  assert.equal(JSON.parse(env.LICENSES.data.get(VOIDED_RESUME_KEY)).token, "2");
+  // Google no longer accepts the saved token: the query starts again from its first page.
+  pages[2] = "expired";
+  pages[0] = voidedPage(0, 1);
+  pages[1] = voidedPage(1);
+  assert.equal(await syncVoided(env, fetchImpl, NOW + 1000), 2);
+  assert.equal(env.LICENSES.data.has(VOIDED_RESUME_KEY), false);
+  assert.equal(env.LICENSES.data.get(VOIDED_CURSOR_KEY), String(NOW - 100000 + 1));
 });

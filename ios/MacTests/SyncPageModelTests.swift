@@ -206,6 +206,33 @@ final class SyncPageModelTests: XCTestCase {
         XCTAssertEqual(model.info, "Sync was reset on this Mac.")
     }
 
+    /// Design 2026-11-17: Leave keeps this Mac's identity in the group (sealed in the vault's store), creating another
+    /// group leaves it alone, and Reset drops it.
+    func testLeaveKeepsThisMacsIdentityAndResetDropsIt() async throws {
+        let lock = await unlockedLock()
+        try joinWiFiGroup(lock)
+        let joined = try XCTUnwrap(try lock.store?.load().sync)
+        let pro = ProModel(purchases: NoPurchases(), licenseKeys: [:])
+        let (model, scheduler) = page(lock, pro: pro)
+        await scheduler.settled()
+        model.reload()
+        model.requestLeave()
+        await model.confirm(); await model.confirm()
+        XCTAssertNil(try lock.store?.load().sync)
+        let kept = try XCTUnwrap(try lock.store?.load().keptIdentity)
+        XCTAssertEqual(kept.identity, joined.identity)
+        XCTAssertEqual(kept.groupID, joined.groupID)
+
+        try joinWiFiGroup(lock)   // another group: a new identity, the kept one stays
+        XCTAssertNotEqual(try lock.store?.load().sync?.deviceID, kept.deviceID)
+        XCTAssertEqual(try lock.store?.load().keptIdentity, kept)
+        model.reload()
+        model.requestReset()
+        await model.confirm(); await model.confirm()
+        XCTAssertNil(try lock.store?.load().sync)
+        XCTAssertNil(try lock.store?.load().keptIdentity, "Reset drops it")
+    }
+
     func testLeaveSurvivesAlertDismissOrder() async throws {
         // The alert clears `confirmation` as it closes, before the button's Task runs.
         let lock = await unlockedLock()
@@ -255,7 +282,7 @@ final class SyncPageModelTests: XCTestCase {
     }
 
     func testQRImageScannableSize() throws {
-        let image = try XCTUnwrap(SyncPageModel.qrImage("lgk-pair:" + String(repeating: "A", count: 600)))
+        let image = try XCTUnwrap(QRImage.make("lgk-pair:" + String(repeating: "A", count: 600)))
         XCTAssertGreaterThanOrEqual(image.size.width, 200, "large enough to scan from a phone")
         XCTAssertLessThanOrEqual(image.size.width, 260)
         XCTAssertEqual(image.size.width, image.size.height)

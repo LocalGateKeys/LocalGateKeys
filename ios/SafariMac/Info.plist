@@ -20,8 +20,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>LGKAppGroup</key>
-	<string>$(LGK_APP_GROUP)</string>
+	<key>LGKSafariAppGroup</key>
+	<string>$(LGK_SAFARI_APP_GROUP)</string>
 	<key>LGKSafariKeychainGroup</key>
 	<string>$(LGK_SAFARI_KEYCHAIN_GROUP)</string>
 	<key>NSExtension</key>

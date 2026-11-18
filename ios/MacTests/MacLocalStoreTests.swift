@@ -119,10 +119,12 @@ final class MacLocalStoreTests: XCTestCase {
         XCTAssertEqual(badFiles().count, 1)
     }
 
-    func testFirstUseHasStarterCollections() {
+    /// First use starts empty: no starter collections, which come only from "Add starter collections" (sub-plan 07).
+    func testFirstUseStartsWithoutCollections() {
         let (d, msg) = MacLocalStore(directory: dir, localKey: Array(repeating: 2, count: 32)).load()
         XCTAssertNil(msg)
-        XCTAssertEqual(d.collections.map(\.name), LocalData.starterCollections)
+        XCTAssertEqual(d.collections, [])
+        XCTAssertEqual(d.starterCollectionIDs, [])
     }
 
     func testCorruptLocalDataResetsWithoutBlockingUnlock() async throws {

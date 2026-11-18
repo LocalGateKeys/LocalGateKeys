@@ -48,6 +48,9 @@ struct SafariPendingSave: Identifiable, Equatable, Sendable {
     let username: String
     let change: Change
     let capturedAt: Int64
+    /// The app's own phishing check of `origin` against every saved URL row, nil when it is not a lookalike: also
+    /// covers a save the extension could not check (no site list yet).
+    var warning: String? = nil
 }
 
 /// The review sheet's words, shared by the iPhone sheet (`SafariReviewSheet`) and the Mac one
@@ -63,6 +66,16 @@ enum SafariReviewCopy {
     /// look-alike host is visible.
     static func detail(_ item: SafariPendingSave) -> String {
         (item.change == .new ? String(localized: "New login") : String(localized: "Updates the saved password")) + " \u{00B7} " + item.origin
+    }
+
+    /// The warning line for a lookalike origin (`SafariImporter.review`), nil otherwise.
+    static func warning(_ verdict: LookalikeVerdict, lookalike: Lookalike) -> String? {
+        guard verdict.kind == "lookalike" else { return nil }
+        if let matched = verdict.matched {
+            let host = lookalike.host(matched) ?? matched
+            return String(localized: "Looks like \(host), a different site where your login is saved.")
+        }
+        return String(localized: "This address mixes letters from different alphabets, a common phishing trick.")
     }
 }
 
@@ -86,12 +99,16 @@ struct SafariImporter: Sendable {
     let clock: any UnixClock
     let isPro: Bool
     let random: any RandomSource
+    /// The phishing check of each waiting origin, with the bundled Public Suffix List.
+    let lookalike: Lookalike
 
     static let historyLimit = VaultImporter.historyLimit
 
     init(store: any ItemStore, inbox: SafariInbox, clock: any UnixClock, isPro: Bool,
-         random: any RandomSource = SystemRandomSource()) {
+         random: any RandomSource = SystemRandomSource(),
+         lookalike: Lookalike = Lookalike(rules: SafariSaveService.bundledMatcher().rules)) {
         self.store = store; self.inbox = inbox; self.clock = clock; self.isPro = isPro; self.random = random
+        self.lookalike = lookalike
     }
 
     /// What waits for confirmation, oldest first. Expires old entries; deletes entries whose password is
@@ -101,6 +118,7 @@ struct SafariImporter: Sendable {
         inbox.expire()
         let snapshot = try store.load()
         var pending: [SafariPendingSave] = [], drop: [String] = []
+        let saved = SafariSites.urlRows(records: snapshot.records)
         for entry in inbox.entries().entries {
             guard let origin = try? Origin.canonicalize(entry.origin) else { drop.append(entry.id); continue }
             var change = SafariPendingSave.Change.new
@@ -111,8 +129,10 @@ struct SafariImporter: Sendable {
                 if old.utf8.elementsEqual(entry.password.utf8) { drop.append(entry.id); continue }
                 change = .update
             }
+            let verdict = lookalike.classify(origin, saved: saved)
             pending.append(SafariPendingSave(id: entry.id, origin: origin, username: entry.username, change: change,
-                                             capturedAt: entry.capturedAt))
+                                             capturedAt: entry.capturedAt,
+                                             warning: SafariReviewCopy.warning(verdict, lookalike: lookalike)))
         }
         inbox.remove(ids: drop)
         return pending

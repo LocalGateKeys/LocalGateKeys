@@ -73,6 +73,10 @@ def _decode(value: Any, size: int) -> bytes:
 
 def _context(record: dict[str, Any]) -> bytes:
     public = {name: record[name] for name in ("version", "scheme", "profile", "context", "id")}
+    if record.get("oaep") == "PKCS1":
+        # Bind the weakest padding into the AEAD so a sidecar edit cannot switch an
+        # OAEP record to PKCS#1 v1.5. (OAEP SHA-256 <-> SHA-1 swaps only fail to decrypt.)
+        public["oaep"] = "PKCS1"
     return b"LocalGateKeys|local-unlock|v1|" + json.dumps(
         public, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -169,17 +173,22 @@ def prepare_enrollment(profile_id: str, context: str, hwnd: int, cancelled: thre
             provider.create(record_id, hwnd)
             created = True
             _cancel_check(cancelled)
-            oaep_hash = OAEP_HASHES[0]
-            try:
-                wrapped = provider.wrap(record_id, secret)
-            except NativeError as exc:
-                if exc.code != NTE_INVALID_PARAMETER:
-                    raise
-                oaep_hash = OAEP_HASHES[1]
-                wrapped = provider.wrap(record_id, secret, oaep_hash)
-            # Exercise a real, freshly verified private-key operation before opt-in.
-            recovered = (provider.unwrap(record_id, wrapped, hwnd) if oaep_hash == OAEP_HASHES[0]
-                         else provider.unwrap(record_id, wrapped, hwnd, oaep_hash))
+            # Providers differ in the paddings they accept (0x80090027 = invalid
+            # parameter). Try each in order of strength; a refusal comes before any
+            # Hello prompt, so the user still sees one prompt.
+            for position, oaep_hash in enumerate(OAEP_HASHES):
+                last = position == len(OAEP_HASHES) - 1
+                try:
+                    wrapped = (provider.wrap(record_id, secret) if position == 0
+                               else provider.wrap(record_id, secret, oaep_hash))
+                    # Exercise a real, freshly verified private-key operation before opt-in.
+                    recovered = (provider.unwrap(record_id, wrapped, hwnd) if position == 0
+                                 else provider.unwrap(record_id, wrapped, hwnd, oaep_hash))
+                    break
+                except NativeError as exc:
+                    if exc.code != NTE_INVALID_PARAMETER or last:
+                        raise
+                    _cancel_check(cancelled)
             try:
                 _cancel_check(cancelled)
                 if not secrets.compare_digest(secret, recovered):

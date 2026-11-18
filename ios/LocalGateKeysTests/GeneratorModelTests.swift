@@ -33,6 +33,19 @@ final class GeneratorModelTests: XCTestCase {
         XCTAssertEqual(m.value, first, "appearing again keeps the value")
     }
 
+    func testAnswerMode() {
+        let m = model(); m.start()
+        m.options.mode = .answer
+        XCTAssertEqual(m.value.split(separator: " ").count, 3, "three words by default")
+        XCTAssertEqual(m.value, m.value.lowercased())
+        XCTAssertFalse(m.value.contains { $0.isNumber }, "no digits")
+        m.options.answerWords = 5
+        XCTAssertEqual(m.value.split(separator: " ").count, 5)
+        m.options.answerWords = 9
+        XCTAssertEqual(m.value.split(separator: " ").count, 6, "capped at six words")
+        XCTAssertEqual(GeneratorDefaults(settings: settings).load().mode, .answer, "the mode is remembered")
+    }
+
     func test_regenerate_changes_the_value() {
         let m = model(); m.start()
         let first = m.value

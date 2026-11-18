@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LocalGateKeys</title>
-  <meta name="description" content="一款 Windows 密码管理器，把加密保管库保存在您自己的设备上。无需账户，没有 LocalGateKeys 服务器，无遥测。">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f2f5f9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#07111f" media="(prefers-color-scheme: dark)">
+  <title>LocalGateKeys：离线密码管理器</title>
+  <meta name="description" content="适用于 Windows、Mac、iPhone 的密码管理器，保险库只在你的设备上。7 个项目内免费，Pro 一次性 US$29.99。">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
   <meta name="referrer" content="no-referrer">
   <link rel="canonical" href="https://localgatekeys.app/zh-hans/">
   <link rel="alternate" hreflang="en" href="https://localgatekeys.app/">
@@ -20,7 +19,24 @@
   <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/">
   <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/">
   <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/">
   <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys：离线密码管理器">
+  <meta property="og:description" content="适用于 Windows、Mac、iPhone 的密码管理器，保险库只在你的设备上。7 个项目内免费，Pro 一次性 US$29.99。">
+  <meta property="og:url" content="https://localgatekeys.app/zh-hans/">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 标志：适用于 Windows、Mac 和 iPhone 的密码管理器。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys：离线密码管理器">
+  <meta name="twitter:description" content="适用于 Windows、Mac、iPhone 的密码管理器，保险库只在你的设备上。7 个项目内免费，Pro 一次性 US$29.99。">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"LocalGateKeys","applicationCategory":"SecurityApplication","operatingSystem":"Windows 10, Windows 11, macOS, iOS","url":"https://localgatekeys.app/zh-hans/","inLanguage":"zh-Hans","description":"适用于 Windows、Mac、iPhone 的密码管理器，保险库只在你的设备上。7 个项目内免费，Pro 一次性 US$29.99。","image":"https://localgatekeys.app/brand/og-image.png","offers":[{"@type":"Offer","name":"LocalGateKeys Free","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"LocalGateKeys Pro","price":"29.99","priceCurrency":"USD","url":"https://localgatekeys.app/pricing"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"LocalGateKeys","url":"https://localgatekeys.app/","logo":"https://localgatekeys.app/brand/icon-256.png","email":"support@localgatekeys.app"}</script>
   <link rel="icon" href="../brand/icon.svg" type="image/svg+xml">
   <link rel="icon" href="../brand/icon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="../brand/icon-256.png">
@@ -30,237 +46,324 @@
   <a class="skip" href="#main">跳到正文</a>
   <header class="site-header">
     <div class="wrap header-row">
-      <a class="brand" href="../zh-hans/index.html">
-        <img src="../brand/icon.svg" alt="" width="36" height="36">
+      <a class="brand" href="../zh-hans/">
+        <img src="../brand/icon.svg" alt="" width="30" height="30">
         <span>LocalGateKeys</span>
       </a>
-      <nav aria-label="主导航">
+      <nav class="nav-wide" aria-label="主导航">
         <ul class="nav">
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../zh-hans/get-started.html">入门</a></li>
-          <li><a href="../zh-hans/help.html">指南</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/support.html">支持</a></li>
-          <li><a href="../buy.html">购买 Pro</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help">指南</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
         </ul>
       </nav>
+      <details class="nav-menu">
+        <summary>菜单</summary>
+        <nav aria-label="主导航">
+          <ul class="nav nav-stack">
+            <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/help">指南</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/support">支持</a></li>
+          <li><a class="nav-cta" href="../zh-hans/download">下载</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>语言</span></summary>
+        <ul class="lang-menu-list"><li><a href="../" hreflang="en" lang="en">English</a></li><li><a href="../es/" hreflang="es" lang="es">Español</a></li><li><a href="../it/" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
     </div>
   </header>
 
   <main id="main">
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <h1>留在您电脑上的密码管理器。</h1>
-      <p class="promise">您的保管库就在您的设备上，我们从不查看。加密副本是通过您的家庭 Wi-Fi、您自己的云文件夹，还是哪里都不去，由您决定。</p>
-      <ul class="no-list" aria-label="LocalGateKeys 没有的东西">
-        <li>无账户</li>
-        <li>没有 LocalGateKeys 服务器</li>
-        <li>无遥测</li>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="wrap">
+    <h1 id="hero-title">您的密码。您的设备。无需账户。</h1>
+    <p class="lead">一款密码管理器，把保险库保存在您的 PC、Mac 和手机上，并通过您自己的 Wi-Fi 或云文件夹同步。7 个项目以内免费。Pro 一次付款 US$29.99，所有更新永久免费。</p>
+    <ul class="hero-get" aria-label="获取应用">
+      <li><a class="get-tile" href="https://apps.microsoft.com/detail/9PNWCNLQ6597"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 3h8.4v8.4H3zM12.6 3H21v8.4h-8.4zM3 12.6h8.4V21H3zM12.6 12.6H21V21h-8.4z"/></svg><span class="get-text"><span class="get-os">Windows</span><span class="get-store">Microsoft Store</span></span></a></li>
+      <li><a class="get-tile" href="https://apps.apple.com/app/id6825488435"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">Mac</span><span class="get-store">Mac App Store</span></span></a></li>
+      <li><a class="get-tile" href="https://apps.apple.com/app/id6825488435"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span class="get-text"><span class="get-os">iPhone</span><span class="get-store">App Store</span></span></a></li>
+      <li><span class="get-tile is-soon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M4.5 18a7.5 7.5 0 0 1 15 0zM8.1 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0zM13.8 14.6a1.05 1.05 0 1 0 2.1 0a1.05 1.05 0 1 0-2.1 0z"/><path d="M8 11.6 6.3 8.7M16 11.6l1.7-2.9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="get-text"><span class="get-os">Android</span><span class="get-store">即将推出</span></span></span></li>
+    </ul>
+    <p class="hero-price">7 个项目以内免费。Pro 一次性 US$29.99，无需订阅。</p>
+    <p class="hero-ext">
+      <span class="hero-ext-label">浏览器扩展</span>
+      <a href="https://microsoftedge.microsoft.com/addons/detail/localgatekeys/oclkjglnfefdmhddgicmbadaoehakbjj">添加到 Edge</a>
+      <a href="https://chromewebstore.google.com/detail/localgatekeys/fcilinmkccknaoeobcdnploacggajbdg">添加到 Chrome</a>
+      <a href="https://addons.mozilla.org/firefox/addon/localgatekeys/">添加到 Firefox</a>
+      <a href="../zh-hans/download">查看全部下载</a>
+    </p>
+    <ul class="facts" aria-label="LocalGateKeys 没有的东西">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>无账户</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>没有 LocalGateKeys 服务器</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>无遥测</li>
+    </ul>
+  </div>
+</section>
+
+<section class="gallery" aria-labelledby="gallery-title">
+  <h2 id="gallery-title" class="visually-hidden">应用</h2>
+  <nav aria-label="显示应用的设备">
+    <ul class="dock glass">
+      <li><a href="#shots-win"><span class="dot" aria-hidden="true"></span>Windows</a></li>
+      <li><a href="#shots-mac"><span class="dot" aria-hidden="true"></span>Mac</a></li>
+      <li><a href="#shots-ios"><span class="dot" aria-hidden="true"></span>iPhone</a></li>
+      <li><a href="#shots-ipad"><span class="dot" aria-hidden="true"></span>iPad</a></li>
+      <li><a href="#shots-android"><span class="dot ring" aria-hidden="true"></span>Android</a></li>
+    </ul>
+  </nav>
+
+  <div class="film">
+    <div class="strip" role="region" aria-label="应用" data-viewer-label="应用截图。使用箭头按钮或左右方向键切换。" data-count="第 {n} 张截图，共 {total} 张" tabindex="0">
+      <div class="track">
+
+        <div class="group" id="shots-win" role="group" aria-label="Windows 截图">
+          <div class="divider glass">
+            <h3>Windows</h3>
+            <p><span class="state">Microsoft Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="../screenshots/home-vault-dark.webp" srcset="../screenshots/home-vault-dark-w720.webp 720w, ../screenshots/home-vault-dark-w1440.webp 1440w, ../screenshots/home-vault-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" fetchpriority="high" decoding="async" alt="LocalGateKeys 主页：密码健康状况、即将到来的提醒、显示实时双重验证码的一次性验证码卡片，以及带网站徽标的登录列表。"><figcaption>主页：密码健康、提醒、实时双重验证码和您的项目。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/item-2fa-code-light.webp" srcset="../screenshots/item-2fa-code-light-w720.webp 720w, ../screenshots/item-2fa-code-light-w1440.webp 1440w, ../screenshots/item-2fa-code-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" loading="lazy" decoding="async" alt="在 LocalGateKeys 中打开的 GitHub 登录项，顶部是当前双重验证码，接着是用户名、隐藏的密码、网站、笔记和恢复代码。"><figcaption>当前双重验证码显示在登录项的顶部。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/security-center-dark.webp" srcset="../screenshots/security-center-dark-w720.webp 720w, ../screenshots/security-center-dark-w1440.webp 1440w, ../screenshots/security-center-dark.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" loading="lazy" decoding="async" alt="安全中心显示得分为 77 分（满分 100），列出需要检查的弱密码、重复密码、无双重验证码的密码和旧密码，以及解锁和备份检查。"><figcaption>安全中心列出最需要优先处理的事项。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/generator-light.webp" srcset="../screenshots/generator-light-w720.webp 720w, ../screenshots/generator-light-w1440.webp 1440w, ../screenshots/generator-light.webp 2880w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="2880" height="1800" loading="lazy" decoding="async" alt="Windows 上的密码生成器。"><figcaption>生成器可创建高强度密码或口令短语。</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-mac" role="group" aria-label="Mac 截图">
+          <div class="divider glass">
+            <h3>Mac</h3>
+            <p><span class="state">Mac App Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="../screenshots/platforms/mac-01-vault.webp" srcset="../screenshots/platforms/mac-01-vault-w720.webp 720w, ../screenshots/platforms/mac-01-vault.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="浅色模式下的 Mac 保险库，显示一次性验证码和打开的 GitHub 登录。"><figcaption>所有内容一个列表，验证码置顶。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/mac-03-sync.webp" srcset="../screenshots/platforms/mac-03-sync-w720.webp 720w, ../screenshots/platforms/mac-03-sync.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="浅色模式下的 Mac 同步页面:Wi-Fi 同步、已配对设备和云文件夹。"><figcaption>通过你自己的 Wi-Fi 或自选的云文件夹同步。没有 LocalGateKeys 服务器。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/mac-04-security.webp" srcset="../screenshots/platforms/mac-04-security-w720.webp 720w, ../screenshots/platforms/mac-04-security.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="深色模式下的 Mac 安全中心,得分 75,并列出待修复的问题。"><figcaption>一个分数,外加下一步该修复的内容。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/mac-05-settings.webp" srcset="../screenshots/platforms/mac-05-settings-w720.webp 720w, ../screenshots/platforms/mac-05-settings.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1031" loading="lazy" decoding="async" alt="浅色模式下的 Mac 设置:菜单栏、快速访问快捷键和登录时打开。"><figcaption>无跟踪、无广告、无需账户。锁定方式由你决定。</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-ios" role="group" aria-label="iPhone 截图">
+          <div class="divider glass">
+            <h3>iPhone</h3>
+            <p><span class="state">App Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame tall"><img src="../screenshots/platforms/ios-01-vault.webp" width="640" height="1391" loading="lazy" decoding="async" alt="浅色模式下的 iPhone 保险库，显示验证码行和登录项。"><figcaption>所有内容一个列表，验证码置顶。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/ios-02-edit.webp" width="640" height="1391" loading="lazy" decoding="async" alt="深色模式下在 iPhone 上编辑 GitHub 登录项,包含双重验证密钥。"><figcaption>在列表旁直接编辑任意登录项,验证码也一并管理。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/ios-03-sync.webp" width="640" height="1391" loading="lazy" decoding="async" alt="浅色模式下的 iPhone 同步页面,提供 Wi-Fi 和云文件夹选项。"><figcaption>通过你自己的 Wi-Fi 或自选的云文件夹同步。没有 LocalGateKeys 服务器。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/ios-04-security.webp" width="640" height="1391" loading="lazy" decoding="async" alt="深色模式下的 iPhone 安全页面,得分 75。"><figcaption>一个分数,外加下一步该修复的内容。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/ios-05-settings.webp" width="640" height="1391" loading="lazy" decoding="async" alt="浅色模式下的 iPhone 设置,Pro 已激活,并显示各个设置分区。"><figcaption>无跟踪、无广告、无需账户。锁定方式由你决定。</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-ipad" role="group" aria-label="iPad 截图">
+          <div class="divider glass">
+            <h3>iPad</h3>
+            <p><span class="state">App Store</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame wide"><img src="../screenshots/platforms/ipad-01-items.webp" srcset="../screenshots/platforms/ipad-01-items-w720.webp 720w, ../screenshots/platforms/ipad-01-items.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="浅色模式、三栏布局的 iPad 保险库，显示 GitHub 登录及其一次性验证码。"><figcaption>所有内容一个列表，验证码置顶。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/ipad-02-edit.webp" srcset="../screenshots/platforms/ipad-02-edit-w720.webp 720w, ../screenshots/platforms/ipad-02-edit.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="在深色模式的 iPad 上，于保险库列表旁编辑 GitHub 登录。"><figcaption>在列表旁直接编辑任意登录项,验证码也一并管理。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/ipad-03-sync.webp" srcset="../screenshots/platforms/ipad-03-sync-w720.webp 720w, ../screenshots/platforms/ipad-03-sync.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="浅色模式下的 iPad 同步界面，提供 Wi-Fi 和云文件夹选项。"><figcaption>通过你自己的 Wi-Fi 或自选的云文件夹同步。没有 LocalGateKeys 服务器。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/ipad-04-security.webp" srcset="../screenshots/platforms/ipad-04-security-w720.webp 720w, ../screenshots/platforms/ipad-04-security.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="深色模式下的 iPad 安全界面，得分 75。"><figcaption>一个分数,外加下一步该修复的内容。</figcaption></figure>
+          <figure class="frame wide"><img src="../screenshots/platforms/ipad-05-settings.webp" srcset="../screenshots/platforms/ipad-05-settings-w720.webp 720w, ../screenshots/platforms/ipad-05-settings.webp 1600w" sizes="(max-width: 700px) 100vw, (max-width: 1300px) 90vw, 1200px" width="1600" height="1200" loading="lazy" decoding="async" alt="浅色模式下的 iPad 设置，旁边是保险库侧边栏。"><figcaption>无跟踪、无广告、无需账户。锁定方式由你决定。</figcaption></figure>
+        </div>
+
+        <div class="group" id="shots-android" role="group" aria-label="Android 截图">
+          <div class="divider glass">
+            <h3>Android</h3>
+            <p><span class="state">即将推出</span><span class="n" aria-live="polite"></span></p>
+          </div>
+          <figure class="frame tall"><img src="../screenshots/platforms/android-vault.webp" width="640" height="1422" loading="lazy" decoding="async" alt="列出登录信息和笔记的 Android 保管库。"><figcaption>登录信息、银行卡和笔记。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/android-detail.webp" width="640" height="1422" loading="lazy" decoding="async" alt="在 Android 上打开的登录，带有复制按钮。"><figcaption>一键复制。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/android-generator.webp" width="640" height="1422" loading="lazy" decoding="async" alt="Android 密码生成器。"><figcaption>高强度密码或口令短语。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/android-sync.webp" width="640" height="1422" loading="lazy" decoding="async" alt="Android 同步屏幕。"><figcaption>通过您自己的云文件夹同步。</figcaption></figure>
+          <figure class="frame tall"><img src="../screenshots/platforms/android-settings.webp" width="640" height="1422" loading="lazy" decoding="async" alt="Android 的“设置”标签页。"><figcaption>所有设置，集中一处。</figcaption></figure>
+        </div>
+
+      </div>
+    </div>
+    <div class="controls">
+      <button class="arrow prev" type="button" aria-label="上一张截图"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="arrow next" type="button" aria-label="下一张截图"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+  <p class="demo-note">使用虚构账户的演示保管库。使用箭头查看更多。</p>
+  <p class="showcase-more"><a class="text-link" href="../zh-hans/get-started">如何开始</a></p>
+</section>
+
+<section class="section" id="sync" aria-labelledby="routes-title">
+  <div class="wrap split">
+    <div class="split-head">
+      <h2 id="routes-title">加密副本去哪里，由您决定</h2>
+      <p>每台设备都保存自己的加密保管库。除非您设置，否则任何内容都不会离开设备。电脑与 iPhone 之间的同步属于 Pro。</p>
+    </div>
+    <div class="split-body">
+      <ul class="routes">
+        <li>
+          <div><h3>哪里都不去</h3><span class="when">默认设置，所有版本均如此</span></div>
+          <p>保管库留在您的设备上。定时备份是加密文件，可保存在您喜欢的任何位置，包括 U 盘或同步文件夹。</p>
+        </li>
+        <li>
+          <div><h3>您的家庭 Wi-Fi</h3><span class="when">Pro</span></div>
+          <p>用一次性二维码为您的电脑和 iPhone 配对一次。当它们处于同一网络且已解锁时，会通过加密连接直接相互同步。不涉及互联网连接。</p>
+        </li>
+        <li>
+          <div><h3>您自己的云文件夹</h3><span class="when">Pro，需要您开启</span></div>
+          <p>将同步指向您已在使用的云文件夹（例如 Dropbox 或 iCloud Drive），并由同步密码保护。您的云服务商存储的是它无法读取的加密文件。我们完全不参与。</p>
+        </li>
       </ul>
-      <div class="actions">
-        <a class="button primary store-button" href="https://apps.microsoft.com/detail/9PNWCNLQ6597"><svg class="ms-logo" viewBox="0 0 23 23" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg><span>从 Microsoft Store 获取</span></a>
-        <a class="button" href="../zh-hans/download.html">其他下载</a>
-        <a class="button store-button" href="https://apps.apple.com/app/id6825488435"><svg class="apple-logo" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg><span>获取 iPhone 版</span></a>
-        <a class="button" href="../zh-hans/pricing.html">比较免费版和 Pro</a>
-      </div>
     </div>
-
-    <svg class="rings" viewBox="0 0 520 520" role="img" aria-labelledby="rings-title rings-desc">
-      <title id="rings-title">您的保管库可以去哪里</title>
-      <desc id="rings-desc">您的保管库位于中心，在您的电脑上。内圈是您的家庭 Wi-Fi，第二台电脑可以在其中直接同步；iPhone 应用已在 App Store 上架。外圈是您自己的云文件夹，里面只会有加密文件。LocalGateKeys 的服务器在两个圈之外，从不查看您的保管库。</desc>
-      <defs>
-        <linearGradient id="hero-arc" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#67E8F9"/>
-          <stop offset=".55" stop-color="#3B82F6"/>
-          <stop offset="1" stop-color="#1D3FBF"/>
-        </linearGradient>
-      </defs>
-
-      <circle class="ring ring-dash" cx="260" cy="260" r="215"/>
-      <circle class="ring" cx="260" cy="260" r="140"/>
-      <circle class="arc" cx="260" cy="260" r="140" transform="rotate(-200 260 260)"/>
-
-      <circle class="core" cx="260" cy="260" r="62"/>
-      <g class="core-ink" transform="translate(260 256) scale(.5)"><circle cx="0" cy="-36" r="40"/><path d="M-24 -8 H24 L40 94 H-40 Z"/></g>
-      <text class="label halo" x="260" y="348" text-anchor="middle">您的保管库</text>
-      <text class="sub keep halo" x="260" y="368" text-anchor="middle">在这台电脑上</text>
-
-      <text class="sub keep halo" x="260" y="408" text-anchor="middle">家庭 Wi-Fi</text>
-
-      <circle class="node" cx="392" cy="212" r="20"/>
-      <path class="glyph" d="M381 204 h22 v14 h-22 z M388 223 h8 M392 218 v5"/>
-      <text class="label halo" x="420" y="208">第二台电脑</text>
-      <text class="sub halo" x="420" y="225">直接同步</text>
-
-      <circle class="node" cx="180" cy="375" r="20"/>
-      <path class="glyph" d="M174 364 h12 a2 2 0 0 1 2 2 v18 a2 2 0 0 1 -2 2 h-12 a2 2 0 0 1 -2 -2 v-18 a2 2 0 0 1 2 -2 z M178 382 h4"/>
-      <text class="label halo" x="152" y="380" text-anchor="end">iPhone</text>
-      <text class="sub halo" x="152" y="397" text-anchor="end">已在 App Store 上架</text>
-
-      <circle class="node node-cloud" cx="84" cy="137" r="20"/>
-      <path class="glyph glyph-cloud" d="M73 131 h8 l3 3 h11 v12 h-22 z"/>
-      <text class="label halo" x="30" y="92">您的云文件夹</text>
-      <text class="sub halo" x="30" y="109">只保存加密文件</text>
-
-      <circle class="ring ring-dash" cx="486" cy="490" r="14"/>
-      <line class="strike" x1="476" y1="500" x2="496" y2="480"/>
-      <text class="outside halo" x="462" y="487" text-anchor="end">LocalGateKeys 服务器</text>
-      <text class="sub keep halo" x="462" y="508" text-anchor="end">从不查看您的保管库</text>
-    </svg>
   </div>
 </section>
-<section class="shot-band">
+
+<section class="section" id="features" aria-labelledby="features-title">
   <div class="wrap">
-    <figure class="shot"><picture><source srcset="../screenshots/home-vault-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/home-vault-dark.webp" width="2880" height="1800" alt="LocalGateKeys 主页：密码健康状况、即将到来的提醒、显示实时双重验证码的一次性验证码卡片，以及带网站徽标的登录列表。" loading="lazy" decoding="async"></picture><figcaption>主页：密码健康状况、提醒、实时双重验证码和您的项目。演示保管库，账户均为虚构。</figcaption></figure>
+    <h2 id="features-title">它每天为您做的事</h2>
+    <ul class="features">
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8.5h18M6 6.3h.01M8.5 6.3h.01M7 14h4M14.5 12.5v3"/></svg>
+        <div>
+          <h3>在 Chrome 和 Edge 中填充登录信息</h3>
+          <p>浏览器扩展通过一个小型本地辅助程序与您电脑上的 LocalGateKeys 应用通信。它只提供为您当前所在网站保存的登录项。它还会填充双重验证码、地址和支付卡，并在您登录后提示保存新的登录项。</p>
+          <p>通行密钥同样可用：网站可以将通行密钥保存到您的保管库并用它登录，每一个都需要您在桌面应用中批准。</p>
+          <p class="feature-note">扩展绝不会收到您的整个保管库，也没有任何请求离开您的电脑。</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 10.5h6M16 10.5h1.5"/></svg>
+        <div>
+          <h3>也适用于 Windows 应用</h3>
+          <p>桌面应用填充适用于游戏启动器等 Windows 程序的登录窗口。您只需绑定一次窗口；此后，密码框旁边的填充按钮或快捷键就会填充已保存的字段。</p>
+          <p class="feature-note">它只读取 Windows 公开的窗口辅助功能信息。它绝不记录您的键盘输入，绝不向其他程序注入代码，并且在应用或窗口发生变化时拒绝填充。</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2.5h4"/></svg>
+        <div>
+          <h3>内置双重验证码 <span class="pro-mark">Pro</span></h3>
+          <p>将网站的双重验证设置密钥与其登录信息一起保存，当前验证码就会显示在登录信息顶部和主页的一次性验证码卡片中。可以通过截图或摄像头扫描网站的二维码，也可以从 Google Authenticator 迁移验证码。在 iPhone 上，您可以将选择的验证码显示在 Apple Watch 上。</p>
+          <p class="feature-note">验证码在您自己的设备上计算。双重验证码属于 Pro。</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6L12 3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>
+        <div>
+          <h3>检查您的密码</h3>
+          <p>生成器可创建高强度密码或口令短语。密码健康会显示哪些已保存的密码较弱、重复使用、过旧或缺少双重验证码，iPhone 应用则会为同一项检查打分。如果您开启，由您发起的泄露检查会将它们与已知泄露进行比对，只发送哈希值的五个字符。</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>
+        <div>
+          <h3>iPhone 上也有</h3>
+          <p>iPhone 应用可在 Safari 和其他应用中填充登录信息，在 iOS 18 及更高版本中还可在任何文本字段中填充银行卡和身份信息。它提供安全检查、密码历史、到期提醒，以及带“撤销”的“最近删除”，并可用 Face ID、Touch ID 或可选的应用密码打开。</p>
+          <p class="feature-note">它与您的电脑同步，在 iPhone 上购买 Pro 也会解锁 Windows。</p>
+        </div>
+      </li>
+      <li class="feature">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M14 14h2.5v2.5H14zM18.5 18.5H20.5M14 20.5h2.5M20.5 14v2"/></svg>
+        <div>
+          <h3>安全共享单个项目</h3>
+          <p>将登录信息或笔记以文件或二维码发送，并用六个单词的代码锁定，您需要通过其他方式（例如电话）告诉对方这个代码。</p>
+          <p class="feature-note">它只能打开一次，输错三次代码就会销毁。</p>
+        </div>
+      </li>
+    </ul>
   </div>
 </section>
 
-<section class="band">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>浅色与深色外观</h2>
-      <p>LocalGateKeys 会跟随您的 Windows 主题，您也可以自行选择。所有截图展示的都是演示保管库，账户均为虚构。</p>
-    </div>
-    <div class="gallery">
-      <figure><a href="../screenshots/campaign-generator-light.webp"><img src="../screenshots/campaign-generator-light.webp" width="1920" height="1080" alt="浅色主题下的密码生成器：一键生成强密码。" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="../screenshots/campaign-security-dark.webp"><img src="../screenshots/campaign-security-dark.webp" width="1920" height="1080" alt="深色主题下的安全中心：看看最先该处理什么。" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="../screenshots/campaign-two-factor-light.webp"><img src="../screenshots/campaign-two-factor-light.webp" width="1920" height="1080" alt="显示实时双重验证码的登录项，浅色主题。" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="../screenshots/campaign-autofill-dark.webp"><img src="../screenshots/campaign-autofill-dark.webp" width="1920" height="1080" alt="在 Windows 应用中选择要填充的账户，深色主题。" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="../screenshots/campaign-one-vault-light.webp"><img src="../screenshots/campaign-one-vault-light.webp" width="1920" height="1080" alt="一个支付卡项目：登录、通行密钥、支付卡、身份信息、笔记和 Wi-Fi 都在同一个保管库中。" loading="lazy" decoding="async"></a></figure>
-      <figure><a href="../screenshots/campaign-light-or-dark.webp"><img src="../screenshots/campaign-light-or-dark.webp" width="1920" height="1080" alt="深色和浅色主题下的解锁界面，支持 Windows Hello 解锁。" loading="lazy" decoding="async"></a></figure>
-    </div>
-    <p class="actions"><a class="button" href="../zh-hans/get-started.html">如何开始</a></p>
-  </div>
-</section>
-
-<section class="band band-tint">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>加密副本去哪里，由您决定</h2>
-      <p class="lead">每台设备都保存自己的加密保管库。除非您设置，否则任何内容都不会离开设备。电脑之间的同步属于 Pro。</p>
-    </div>
-    <div class="routes">
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="r" cx="32" cy="32" r="29"/><circle class="r" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>哪里都不去</h3>
-        <p class="who">默认设置，所有版本均如此</p>
-        <p>保管库留在这台电脑上。定时备份是加密文件，由您随意存放，包括 U 盘或同步文件夹。</p>
-      </div>
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="r" cx="32" cy="32" r="29"/><circle class="on" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>您的家庭 Wi-Fi</h3>
-        <p class="who">Pro</p>
-        <p>用一次性配对码为您的电脑配对一次。当它们处于同一网络且已解锁时，会通过加密连接直接相互同步。不涉及互联网连接。</p>
-      </div>
-      <div class="route">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="on" cx="32" cy="32" r="29"/><circle class="r" cx="32" cy="32" r="19"/><circle class="dot" cx="32" cy="32" r="9"/></svg>
-        <h3>您自己的云文件夹</h3>
-        <p class="who">Pro，需要您开启</p>
-        <p>将同步指向您已在使用的 OneDrive、Dropbox、Google Drive 或 iCloud Drive 文件夹，并由同步密码保护。您的云服务商存储的是它无法读取的加密文件。我们完全不参与。</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="band">
+<section class="section band" id="price" aria-labelledby="price-title">
   <div class="wrap split">
-    <div>
-      <h2>在 Chrome 和 Edge 中填充登录信息</h2>
-      <p>浏览器扩展通过一个小型本地辅助程序与您电脑上的 LocalGateKeys 应用通信。它只提供为您当前所在网站保存的登录项。它还会填充双重验证码、地址和支付卡，并在您登录后提示保存新的登录项。</p>
-      <p>通行密钥同样可用：网站可以将通行密钥保存到您的保管库并用它登录，每一个都需要您在桌面应用中批准。</p>
-      <p>扩展绝不会收到您的整个保管库，也没有任何请求离开您的电脑。</p>
-      <figure class="shot shot-small"><img src="../screenshots/browser-fill.webp" width="480" height="540" alt="登录页面上的 LocalGateKeys 浏览器扩展，为该网站提供两个已保存的账户。" loading="lazy" decoding="async"><figcaption>扩展只提供为您当前所在网站保存的登录项。</figcaption></figure>
+    <div class="split-head">
+      <h2 id="price-title">前 7 个项目免费</h2>
+      <p>免费版提供浏览器和 Windows 应用填充、通行密钥、Windows Hello、恢复短语、安全共享、导入和定时加密备份，最多 7 个项目，不限时间。Pro 增加无限项目、同步、双重验证码（也可在 Apple Watch 上使用）和文档。</p>
     </div>
-    <div>
-      <h2>也适用于 Windows 应用</h2>
-      <p>桌面应用填充适用于游戏启动器等 Windows 程序的登录窗口。您只需绑定一次窗口；此后，密码框旁边的填充按钮或快捷键就会填充已保存的字段。</p>
-      <p>它只读取 Windows 公开的窗口辅助功能信息。它绝不记录您的键盘输入，绝不向其他程序注入代码，并且在应用或窗口发生变化时拒绝填充。</p>
-    </div>
-  </div>
-</section>
-
-<section class="band band-tint">
-  <div class="wrap split">
-    <div>
-      <h2>内置双重验证码</h2>
-      <p>将网站的双重验证设置密钥与其登录项一起保存，LocalGateKeys 就会在登录项顶部显示当前验证码。主页上的“一次性验证码”卡片会列出全部验证码。添加密钥的方式：粘贴网站二维码的截图、将二维码对准摄像头，或从 Google Authenticator 导出文件导入。</p>
-      <p>验证码在您的电脑上计算。双重验证码属于 Pro。</p>
-      <figure class="shot"><picture><source srcset="../screenshots/item-2fa-code-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/item-2fa-code-dark.webp" width="2880" height="1800" alt="在 LocalGateKeys 中打开的 GitHub 登录项，顶部是当前双重验证码，接着是用户名、隐藏的密码、网站、笔记和恢复代码。" loading="lazy" decoding="async"></picture><figcaption>当前双重验证码显示在登录项的顶部。</figcaption></figure>
-    </div>
-    <div>
-      <h2>检查您的密码</h2>
-      <p>生成器可生成强密码或密码短语。密码健康会显示哪些已保存的密码较弱、重复使用、陈旧或缺少双重验证码。如果您开启，由您发起的泄露检查会将它们与已知泄露进行比对，只发送哈希的五个字符。</p>
-      <figure class="shot"><picture><source srcset="../screenshots/security-center-light.webp" media="(prefers-color-scheme: light)"><img src="../screenshots/security-center-dark.webp" width="2880" height="1800" alt="安全中心显示得分为 77 分（满分 100），列出需要检查的弱密码、重复密码、无双重验证码的密码和旧密码，以及解锁和备份检查。" loading="lazy" decoding="async"></picture><figcaption>安全中心列出最需要优先处理的事项。</figcaption></figure>
-    </div>
-  </div>
-</section>
-
-<section class="band">
-  <div class="wrap split">
-    <div>
-      <h2>前 4 个项目免费</h2>
-      <p>免费版提供浏览器和 Windows 应用填充、通行密钥、Windows Hello、恢复短语、导入和定时加密备份，最多 4 个项目，不限时间。Pro 增加无限项目、同步、双重验证码和文档。</p>
-      <p>Pro 只需一次付款 US$4.99 即可解除限制，并包含今后所有更新。无订阅，无需续费。</p>
-      <div class="actions">
-        <a class="button primary" href="https://localgatekeys.app/buy">购买 Pro</a>
-        <a class="button" href="../zh-hans/pricing.html">查看价格</a>
-        <a class="button" href="../zh-hans/features.html">全部功能</a>
+    <div class="split-body">
+      <div class="price-card glass">
+        <p class="plate-label">LocalGateKeys Pro</p>
+        <p class="price">US$29.99，一次付清。</p>
+        <p class="price-terms">一次付款。所有更新，永久免费。无订阅。</p>
+        <div class="actions">
+          <a class="button primary" href="https://localgatekeys.app/buy">购买 Pro</a>
+          <a class="text-link" href="../zh-hans/pricing">查看价格</a>
+          <a class="text-link" href="../zh-hans/features">全部功能</a>
+        </div>
       </div>
     </div>
-    <div>
-      <h2>坦诚谈安全</h2>
+  </div>
+</section>
+
+<section class="section" id="security" aria-labelledby="security-title">
+  <div class="wrap split">
+    <div class="split-head">
+      <h2 id="security-title">坦诚谈安全</h2>
       <p>保管库使用 Argon2id 和 AES-256-GCM，设计以通俗的语言写明，包括它无法防范什么。</p>
       <div class="actions">
-        <a class="button" href="../zh-hans/security.html">阅读安全模型</a>
+        <a class="button" href="../zh-hans/security">阅读安全模型</a>
       </div>
+    </div>
+    <div class="split-body">
+      <dl class="spec-rows glass">
+        <div><dt>由主密码生成密钥</dt><dd>Argon2id</dd></div>
+        <div><dt>保管库加密</dt><dd>AES-256-GCM</dd></div>
+        <div><dt>是否需要账户</dt><dd>不需要</dd></div>
+        <div><dt>保管库的位置</dt><dd>您的设备</dd></div>
+      </dl>
     </div>
   </div>
 </section>
+
+<script src="../hero.js"></script>
   </main>
 
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-about">
-        <p class="footer-brand">LocalGateKeys</p>
-        <p>一款 Windows 密码管理器，把您的保管库保存在您自己的设备上。</p>
-        <p class="quiet">本网站不设置 Cookie，不运行统计分析，也不加载其他公司的任何内容。</p>
+        <p class="footer-brand"><img src="../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>适用于 Windows、Mac 和 iPhone 的密码管理器，让保管库留在您自己的设备上。</p>
+        <p class="quiet">本网站使用不依赖 Cookie 的 Cloudflare Web Analytics 统计页面访问量。网站不使用广告追踪器，也不设置 Cookie。</p>
       </div>
       <nav aria-label="产品">
         <h2>产品</h2>
         <ul>
-          <li><a href="../zh-hans/features.html">功能</a></li>
-          <li><a href="../zh-hans/pricing.html">价格</a></li>
-          <li><a href="../zh-hans/download.html">下载</a></li>
-          <li><a href="../zh-hans/licence.html">您的 Pro 许可证</a></li>
+          <li><a href="../zh-hans/features">功能</a></li>
+          <li><a href="../zh-hans/pricing">价格</a></li>
+          <li><a href="../zh-hans/download">下载</a></li>
+          <li><a href="../zh-hans/get-started">入门</a></li>
+          <li><a href="../zh-hans/switch/">迁移</a></li>
+          <li><a href="../buy">购买 Pro</a></li>
+          <li><a href="../zh-hans/licence">您的 Pro 许可证</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">找回许可证</a></li>
         </ul>
       </nav>
       <nav aria-label="帮助">
         <h2>帮助</h2>
         <ul>
-          <li><a href="../zh-hans/help.html">用户指南</a></li>
-          <li><a href="../zh-hans/support.html">支持与常见问题</a></li>
-          <li><a href="../zh-hans/security.html">安全</a></li>
-          <li><a href="../legal/vulnerability-disclosure.html">报告漏洞</a></li>
+          <li><a href="../zh-hans/help">用户指南</a></li>
+          <li><a href="../zh-hans/support">支持与常见问题</a></li>
+          <li><a href="../zh-hans/security">安全</a></li>
+          <li><a href="../legal/vulnerability-disclosure">报告漏洞</a></li>
         </ul>
       </nav>
       <nav aria-label="法律">
         <h2>法律</h2>
         <p class="quiet">这些文件以英文提供，以英文版本为准并具有约束力。</p>
         <ul>
-          <li><a href="../legal/eula.html">许可协议</a></li>
-          <li><a href="../legal/privacy.html">隐私政策</a></li>
-          <li><a href="../legal/terms-of-sale.html">销售条款</a></li>
-          <li><a href="../legal/refunds.html">退款政策</a></li>
+          <li><a href="../legal/eula">许可协议</a></li>
+          <li><a href="../legal/privacy">隐私政策</a></li>
+          <li><a href="../legal/terms-of-sale">销售条款</a></li>
+          <li><a href="../legal/refunds">退款政策</a></li>
         </ul>
       </nav>
     </div>
-    <div class="wrap footer-base">
+    <div class="wrap footer-base" id="languages">
       <p>&copy; 2026 Ilias Pelekas。联系方式：<a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
-      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。</p>
-      <p class="lang-switch" role="navigation" aria-label="语言"><a href="../index.html" hreflang="en" lang="en">English</a> · <a href="../es/index.html" hreflang="es" lang="es">Español</a> · <a href="../it/index.html" hreflang="it" lang="it">Italiano</a> · <a href="../pl/index.html" hreflang="pl" lang="pl">Polski</a> · <a href="../zh-hans/index.html" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a> · <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a> · <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a> · <a href="../pt-br/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a> · <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a> · <a href="../nl/index.html" hreflang="nl" lang="nl">Nederlands</a></p>
+      <p>Windows 是 Microsoft 公司集团的商标。Chrome 是 Google LLC 的商标。Apple、iPhone、Apple Watch、Face ID、Touch ID 和 Safari 是 Apple Inc. 在美国及其他国家/地区注册的商标。</p>
+      <nav class="lang-switch" aria-label="语言"><ul><li><a href="../" hreflang="en" lang="en">English</a></li><li><a href="../es/" hreflang="es" lang="es">Español</a></li><li><a href="../it/" hreflang="it" lang="it">Italiano</a></li><li><a href="../pl/" hreflang="pl" lang="pl">Polski</a></li><li><a href="../zh-hans/" hreflang="zh-Hans" lang="zh-Hans" aria-current="true">简体中文</a></li><li><a href="../ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="../de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="../pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../ko/" hreflang="ko" lang="ko">한국어</a></li><li><a href="../nl/" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../fr/" hreflang="fr" lang="fr">Français</a></li></ul></nav>
     </div>
   </footer>
 </body>

@@ -3,6 +3,7 @@ package app.localgatekeys.android.backup
 import app.localgatekeys.android.editor.CountingStore
 import app.localgatekeys.android.editor.PHONE_DEVICE
 import app.localgatekeys.android.editor.syncState
+import app.localgatekeys.android.pro.ItemLimit
 import app.localgatekeys.android.pro.LicenseKeys
 import app.localgatekeys.android.sync.GatedStore
 import app.localgatekeys.android.sync.LockedStore
@@ -67,6 +68,15 @@ class PhoneRestoreTest {
         assertEquals(0, r.restore(again).new)
     }
 
+    @Test fun a_restore_forgets_the_removal_watch() {
+        val store = CountingStore()
+        var forgotten = 0
+        val r = PhoneRestore(store, { false }, TestClock(now), installId = { INSTALL_ID }, onRestored = { forgotten++ })
+        val states = listOf(live(noteRecord(noteId(1), "Note 1", 1_799_000_000L), mapOf(OTHER_PHONE to 1L)))
+        r.restore(r.plan(backupOf(states)))
+        assertEquals("an old removal notice must not erase the restored vault", 1, forgotten)
+    }
+
     @Test fun a_backup_never_overwrites_a_newer_version() {
         val mine = noteRecord(noteId(1), "Newer here", 1_799_900_000)
         val store = joined(mine to mapOf("desk" to 5L))
@@ -88,20 +98,21 @@ class PhoneRestoreTest {
 
     @Test fun free_plan_keeps_the_newest_new_items_and_holds_back_the_rest() {
         val store = CountingStore(StoreSnapshot(sync = syncState()))
-        val states = (1..6).map { live(noteRecord(noteId(it), "Note $it", 1_799_000_000L + it), mapOf(OTHER_PHONE to 1L)) }
+        val free = ItemLimit.FREE_ITEMS
+        val states = (1..free + 2).map { live(noteRecord(noteId(it), "Note $it", 1_799_000_000L + it), mapOf(OTHER_PHONE to 1L)) }
         val plan = restorer(store).plan(backupOf(states))
-        assertEquals(4, plan.new); assertEquals(2, plan.heldBack)
+        assertEquals(free, plan.new); assertEquals(2, plan.heldBack)
         val report = restorer(store).restore(plan)
-        assertEquals(4, report.new); assertEquals(2, report.heldBack)
-        assertEquals((3..6).map { noteId(it) }.toSet(), store.snapshot.records.keys)
+        assertEquals(free, report.new); assertEquals(2, report.heldBack)
+        assertEquals((3..free + 2).map { noteId(it) }.toSet(), store.snapshot.records.keys)
         // Pro: no cap.
         val pro = CountingStore()
         val all = restorer(pro, isPro = true).plan(backupOf(states))
-        assertEquals(6, all.new); assertEquals(0, all.heldBack)
+        assertEquals(free + 2, all.new); assertEquals(0, all.heldBack)
     }
 
     @Test fun ties_on_the_stamp_keep_the_lower_id() {
-        val store = CountingStore(StoreSnapshot(records = (11..13).associate { noteId(it) to wrap(noteRecord(noteId(it), "Mine $it", 1)) }))
+        val store = CountingStore(StoreSnapshot(records = (100 until 100 + ItemLimit.FREE_ITEMS - 1).associate { noteId(it) to wrap(noteRecord(noteId(it), "Mine $it", 1)) }))
         val states = (1..3).map { live(noteRecord(noteId(it), "Same $it", 1_799_000_000), mapOf(OTHER_PHONE to 1L)) }
         val plan = restorer(store).plan(backupOf(states))
         assertEquals(1, plan.new); assertEquals(2, plan.heldBack)
@@ -122,19 +133,19 @@ class PhoneRestoreTest {
             return store to (fresh + theirs)
         }
         // Two free slots: both new items fit, the copy does not, so the concurrent state is held back (ours stays).
-        val (tight, states) = setup(localNotes = 2)
+        val (tight, states) = setup(localNotes = ItemLimit.FREE_ITEMS - 2)
         val plan = restorer(tight).plan(backupOf(states))
         assertEquals(2, plan.new); assertEquals(1, plan.heldBack)
         restorer(tight).restore(plan)
-        assertEquals(4, tight.snapshot.records.size)
+        assertEquals(ItemLimit.FREE_ITEMS, tight.snapshot.records.size)
         assertEquals("Edited here", title(tight, noteId(1)))
         // Three free slots: the copy fits too and counts as a new item.
-        val (roomy, states2) = setup(localNotes = 1)
+        val (roomy, states2) = setup(localNotes = ItemLimit.FREE_ITEMS - 3)
         val plan2 = restorer(roomy).plan(backupOf(states2))
         assertEquals(3, plan2.new); assertEquals(0, plan2.heldBack)
         val report = restorer(roomy).restore(plan2)
         assertEquals(3, report.new)
-        assertEquals(4, roomy.snapshot.records.size)
+        assertEquals(ItemLimit.FREE_ITEMS, roomy.snapshot.records.size)
         assertTrue(roomy.snapshot.records.values.any { it.toString().contains("(sync conflict)") })
     }
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sub-plan 06: the Wear OS pinned-codes tile. -->
+    <string name="app_name" translatable="false">LocalGateKeys</string>
+    <string name="tile_label">Pinned codes</string>
+    <string name="tile_description">Your pinned two-factor codes from LocalGateKeys on your phone.</string>
+    <string name="tile_no_data">Open LocalGateKeys on your phone</string>
+    <string name="tile_locked">Unlock LocalGateKeys on your phone to see codes</string>
+    <string name="tile_locked_immediately">Set Auto-lock to 1 minute or longer on your phone to see codes here</string>
+    <string name="tile_empty">Pin a code in LocalGateKeys</string>
+    <string name="tile_watch_locked">Unlock your watch to see codes</string>
+    <string name="tile_updated_now">Updated just now</string>
+    <string name="tile_updated_minutes">Updated %1$d min ago</string>
+    <string name="tile_updated_hours">Updated %1$d h ago</string>
+    <string name="tile_updated_days">Updated %1$d d ago</string>
+</resources>

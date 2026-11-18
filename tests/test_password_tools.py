@@ -5,6 +5,8 @@ import re
 
 import pytest
 
+from localvault.site_features import SiteFeatures
+
 from localvault.password_tools import (
     COMMON_PASSWORDS,
     DEFAULT_SYMBOLS,
@@ -13,6 +15,7 @@ from localvault.password_tools import (
     assess_password,
     breach_scan,
     estimate_strength,
+    generate_from_options,
     generate_from_preferences,
     generate_passphrase,
     generate_password,
@@ -198,11 +201,15 @@ def test_vault_health_categorizes_every_entry_once() -> None:
     now = 1_700_000_000
     entries = [
         {"id": "weak", "label": "Weak", "username": "u", "password": "password", "updated_at": now, "totp": {"secret": "A"}},
-        {"id": "r1", "label": "Reuse 1", "username": "u", "password": "SharedSecret!2024xyz", "updated_at": now, "totp": None},
-        {"id": "r2", "label": "Reuse 2", "username": "u", "password": "SharedSecret!2024xyz", "updated_at": now - 400 * 86400},
+        {"id": "r1", "label": "Reuse 1", "username": "u", "password": "SharedSecret!2024xyz", "updated_at": now, "totp": None,
+         "scope": {"origin": "https://shop.test"}},
+        {"id": "r2", "label": "Reuse 2", "username": "u", "password": "SharedSecret!2024xyz", "updated_at": now - 400 * 86400,
+         "scope": {"origin": "https://shop.test"}},
         {"id": "ok", "label": "Fine", "username": "u", "password": generate_password(24), "updated_at": now, "totp": {"secret": "B"}},
     ]
-    report = vault_health(entries, now=now)
+    # no_2fa means "the site offers TOTP and this login has none", so it needs the site data
+    assert vault_health(entries, now=now)["no_2fa_ids"] == []
+    report = vault_health(entries, now=now, features=SiteFeatures({"shop.test": ["totp"]}))
     findings = {row["id"]: row for row in report["rows"]}
     assert findings["weak"]["categories"] == ("weak",)
     assert findings["r1"]["categories"] == ("reused", "no_2fa")
@@ -274,3 +281,30 @@ def test_breach_scan_records_errors_without_stopping() -> None:
     )
     assert outcome["errors"] == 1 and outcome["checked"] == 2
     assert notes["a"] and not notes["b"]
+
+
+def test_answer_mode_word_count() -> None:
+    assert len(generate_from_options(GeneratorOptions(mode="answer")).split(" ")) == 3
+    assert len(generate_from_options(GeneratorOptions(mode="answer", answer_words=1)).split(" ")) == 2
+    assert len(generate_from_options(GeneratorOptions(mode="answer", answer_words=99)).split(" ")) == 6
+    assert normalize_generator_options({"mode": "answer", "answer_words": 99}).answer_words == 6
+    assert normalize_generator_options({"mode": "answer", "answer_words": 0}).answer_words == 2
+
+
+def test_answer_mode_charset() -> None:
+    for _ in range(50):
+        assert re.fullmatch(r"[a-z]+( [a-z]+)+", generate_from_options(GeneratorOptions(mode="answer")))
+
+
+def test_answer_words_from_eff_list() -> None:
+    words = set(load_wordlist())
+    for _ in range(50):
+        assert set(generate_from_options(GeneratorOptions(mode="answer", answer_words=6)).split(" ")) <= words
+
+
+def test_answer_mode_preferences_never_generate_a_phrase_for_new_logins():
+    from localvault.password_tools import generate_from_preferences
+
+    for _ in range(20):
+        value = generate_from_preferences({"mode": "answer"})
+        assert " " not in value and len(value) >= 8

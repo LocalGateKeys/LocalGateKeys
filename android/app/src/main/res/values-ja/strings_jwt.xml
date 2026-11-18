@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JWT decode on API-key items (Developer Pack Task 10). -->
+<resources>
+    <string name="jwt_title">トークン</string>
+    <string name="jwt_alg">アルゴリズム</string>
+    <string name="jwt_iss">発行者</string>
+    <string name="jwt_sub">サブジェクト</string>
+    <string name="jwt_aud">オーディエンス</string>
+    <string name="jwt_iat">発行日時</string>
+    <string name="jwt_nbf">有効開始</string>
+    <string name="jwt_exp">有効期限</string>
+    <string name="jwt_expired">期限切れ</string>
+    <string name="jwt_unchecked">署名は未確認</string>
+    <string name="jwt_setExpiry">トークンから有効期限を設定</string>
+    <string name="jwt_expirySet">有効期限を %1$s に設定しました。</string>
+    <string name="jwt_notSaved">有効期限を設定できませんでした。</string>
+</resources>

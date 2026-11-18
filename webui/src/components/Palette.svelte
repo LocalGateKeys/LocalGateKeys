@@ -1,5 +1,6 @@
 <script>
   /** Ctrl+K command palette: items and actions; > actions, # tags, @ collections. */
+  import { dialog } from '../lib/dialog.js';
   import { call } from '../lib/api.js';
   import { t } from '../lib/i18n.svelte.js';
   import { okOrToast, toast } from '../lib/toast.js';
@@ -8,6 +9,7 @@
 
   let query = $state('');
   let rows = $state([]);
+  let vault = $state('');
   let active = $state(0);
   let input = $state();
   let seq = 0;
@@ -17,6 +19,7 @@
     const result = await call('palette_query', query, 'everything');
     if (mine !== seq || !result.ok) return;
     rows = result.rows;
+    vault = result.vault ?? '';
     active = 0;
   }
 
@@ -41,7 +44,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={onclose}>
-  <div class="palette glass" role="dialog" aria-modal="true" aria-label={t('palette.title')} tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+  <div class="palette glass" role="dialog" aria-modal="true" use:dialog aria-label={t('palette.title')} tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
     <input
       bind:this={input}
       role="combobox"
@@ -53,6 +56,7 @@
       oninput={refresh}
       onkeydown={key}
     />
+    {#if vault}<p class="vault">{t('palette.vault', { name: vault })}</p>{/if}
     <div id="palette-rows" role="listbox" aria-label={t('palette.results')}>
       {#each rows as row, i (i)}
         {#if i === 0 || rows[i - 1].group !== row.group}<div class="group-label">{row.group}</div>{/if}
@@ -75,5 +79,6 @@
   .row { display: flex; gap: 10px; padding: 7px 10px; border-radius: 8px; cursor: pointer; }
   .row[aria-selected="true"] { background: var(--glass-hover); }
   .sub { color: var(--text-muted); margin-left: auto; font-size: 12.5px; }
+  .vault { color: var(--text-faint); font-size: 12px; margin: 0; padding: 0 10px 6px; }
   .none { color: var(--text-muted); padding: 10px; margin: 0; }
 </style>

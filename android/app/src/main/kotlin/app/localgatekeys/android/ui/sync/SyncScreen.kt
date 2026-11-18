@@ -70,6 +70,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.localgatekeys.android.sync.SyncCoordinator
+import app.localgatekeys.android.ui.pro.UpgradeSheet
 import app.localgatekeys.android.sync.SyncStatus
 import app.localgatekeys.android.sync.SyncWording
 import app.localgatekeys.android.ui.shell.Overlay
@@ -114,6 +115,9 @@ private enum class Sheet { SCANNER, PASTE, FIND_AGAIN }
 
 private enum class Confirm { LEAVE1, LEAVE2, RESET1, RESET2, ROLLBACK }
 
+/** An open removal sheet: "I lost a device" ([lost]) or "Remove a device" with [initial] preselected. */
+private data class RemoveRequest(val lost: Boolean, val initial: String?)
+
 /**
  * The Sync tab (from `ios/App/Sync/SyncScreen.swift`): status (spinner, status line, conflict copies, Cancel while a QR
  * join connects, the last action's error or result, Sync now), the Wi-Fi card (pair by QR: scan or paste), the cloud
@@ -142,9 +146,21 @@ fun SyncScreen(sync: SyncCoordinator, folderPicker: FolderPicking? = null, confi
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     var confirm by remember { mutableStateOf<Confirm?>(null) }
     var localError by remember { mutableStateOf<String?>(null) }
+    var removeRequest by remember { mutableStateOf<RemoveRequest?>(null) }
+    var needsPro by remember { mutableStateOf<Int?>(null) }
+    var upgradeOpen by remember { mutableStateOf(false) }
+    var confirmDevices by remember { mutableStateOf(false) }
+    var confirmedText by remember { mutableStateOf<String?>(null) }
+    var hostSheet by remember { mutableStateOf(false) }
+    val host = sync.host
+    val pro = LocalProModel.current
+    val proState = pro?.state?.collectAsStateWithLifecycle()
+    val isPro = proState?.value?.isPro == true
+    val words = remember(txt) { SyncWording(txt) }
     val folderFlow = remember(sync) { FolderJoinFlow(sync, txt) }
     val folderForm by folderFlow.form.collectAsStateWithLifecycle()
     val folderError by folderFlow.error.collectAsStateWithLifecycle()
+    val freshKeyText by folderFlow.freshKeyText.collectAsStateWithLifecycle()
     val list = rememberLazyListState()
     LaunchedEffect(sync) { sync.refreshMembership() }
     // A refused join (often reported after the scanner closes) is always brought into view.
@@ -257,8 +273,10 @@ fun SyncScreen(sync: SyncCoordinator, folderPicker: FolderPicking? = null, confi
                                 ActionButton(txt.s(R.string.sync_scan_qr), enabled = !busy) { localError = null; sheet = Sheet.SCANNER }
                                 ActionButton(txt.s(R.string.sync_paste_code), enabled = !busy) { sheet = Sheet.PASTE }
                             }
-                            else -> Footnote(txt.s(SyncScreenText.WIFI_FOLDER_ONLY))
+                            // A Wi-Fi group this phone hosts is shown by the host part below.
+                            membership.hasFolder || host == null -> Footnote(txt.s(SyncScreenText.WIFI_FOLDER_ONLY))
                         }
+                        host?.let { WifiHostSection(it, membership, busy) { hostSheet = true } }
                     }
                 }
                 item(key = "folder") {
@@ -274,12 +292,69 @@ fun SyncScreen(sync: SyncCoordinator, folderPicker: FolderPicking? = null, confi
                             membership.joined -> {
                                 Footnote(txt.s(SyncScreenText.FOLDER_JOINED))
                                 Footnote(txt.s(FolderJoinText.GOOGLE_DRIVE_NOTICE))
-                                pickFolder?.let { ActionButton(txt.s(R.string.sync_use_group_folder), enabled = !busy, onClick = it) }
+                                pickFolder?.let { pick ->
+                                    ActionButton(txt.s(R.string.sync_use_group_folder), enabled = !busy) { folderFlow.startJoin(); pick() }
+                                    ActionButton(txt.s(R.string.sync_add_folder_to_group), enabled = !busy) {
+                                        if (isPro) {
+                                            sync.clearActionError(); folderFlow.startAdd(); pick()
+                                        } else {
+                                            needsPro = R.string.sync_start_folder_needs_pro
+                                        }
+                                    }
+                                }
                             }
                             else -> {
                                 Footnote(txt.s(SyncScreenText.FOLDER_NOT_JOINED))
                                 Footnote(txt.s(FolderJoinText.GOOGLE_DRIVE_NOTICE))
-                                pickFolder?.let { ActionButton(txt.s(R.string.sync_join_folder), enabled = !busy, onClick = it) }
+                                pickFolder?.let { pick ->
+                                    ActionButton(txt.s(R.string.sync_join_folder), enabled = !busy) { folderFlow.startJoin(); pick() }
+                                    ActionButton(txt.s(R.string.sync_start_folder), enabled = !busy) {
+                                        if (isPro) {
+                                            sync.clearActionError(); folderFlow.startCreate(); pick()
+                                        } else {
+                                            needsPro = R.string.sync_start_folder_needs_pro
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (membership.hasFolder) {
+                    item(key = "members") {
+                        Section(txt.s(R.string.sync_members_title), Modifier.testTag("sync-members")) {
+                            Text(txt.s(R.string.sync_this_device), color = c.text, style = MaterialTheme.typography.bodyLarge)
+                            membership.deviceId?.let {
+                                Text(words.thisDeviceLabel(it, membership.names), color = c.secondaryText, style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("sync-own-id"))
+                            }
+                            val unconfirmed = membership.unconfirmed.toSet()
+                            for (id in membership.members) {
+                                HorizontalDivider(thickness = 0.5.dp, color = c.separator)
+                                Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).testTag("sync-member-$id"), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+                                        Text(RemovalText.displayName(id, membership, words), color = c.text, style = MaterialTheme.typography.bodyLarge)
+                                        if (id in unconfirmed) {
+                                            Text(txt.s(R.string.sync_unconfirmed_detail), color = c.secondaryText, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
+                                    TextButton(
+                                        { if (isPro) { localError = null; sync.clearActionError(); removeRequest = RemoveRequest(false, id) } else needsPro = R.string.sync_remove_needs_pro },
+                                        enabled = !busy,
+                                    ) { Text(txt.s(R.string.sync_remove_button), color = if (busy) c.secondaryText else c.danger) }
+                                }
+                            }
+                            if (membership.unconfirmed.isNotEmpty()) {
+                                Footnote(txt.s(R.string.sync_unconfirmed_text))
+                                ActionButton(txt.s(R.string.sync_these_are_my_devices), enabled = !busy) { confirmDevices = true }
+                            }
+                            confirmedText?.let { Text(it, color = c.success, style = MaterialTheme.typography.bodyMedium) }
+                            if (membership.members.isNotEmpty()) {
+                                ActionButton(txt.s(R.string.sync_remove_a_device), enabled = !busy) {
+                                    if (isPro) { localError = null; sync.clearActionError(); removeRequest = RemoveRequest(false, null) } else needsPro = R.string.sync_remove_needs_pro
+                                }
+                                ActionButton(txt.s(R.string.sync_lost_a_device), enabled = !busy) {
+                                    if (isPro) { localError = null; sync.clearActionError(); removeRequest = RemoveRequest(true, null) } else needsPro = R.string.sync_remove_needs_pro
+                                }
                             }
                         }
                     }
@@ -332,6 +407,20 @@ fun SyncScreen(sync: SyncCoordinator, folderPicker: FolderPicking? = null, confi
             }
             null -> Unit
         }
+        removeRequest?.let { request ->
+            Overlay {
+                RemoveDeviceSheet(
+                    membership, request.lost, request.initial, busy, actionError,
+                    onCancel = { removeRequest = null },
+                    onRemove = { ids, keep, password -> sync.removeDevices(ids, password, keep) },
+                    onClose = { removeRequest = null },
+                )
+            }
+        }
+        host?.let { HostPairingOverlay(it, hostSheet) { hostSheet = false } }
+        if (upgradeOpen && pro != null) {
+            Overlay { UpgradeSheet(pro, null, onClose = { upgradeOpen = false }) }
+        }
         folderForm?.let { form ->
             Overlay {
                 FolderPasswordSheet(
@@ -343,6 +432,47 @@ fun SyncScreen(sync: SyncCoordinator, folderPicker: FolderPicking? = null, confi
         }
     }
 
+    freshKeyText?.let { text ->
+        AlertDialog(
+            onDismissRequest = { scope.launch { folderFlow.cancelFreshKey() } },
+            title = { Text(txt.s(R.string.sync_new_sync_key)) },
+            text = { Text(text) },
+            confirmButton = {
+                TextButton({ scope.launch { folderFlow.confirmFreshKey() } }) { Text(stringResource(R.string.common_continue), color = c.accentText) }
+            },
+            dismissButton = {
+                TextButton({ scope.launch { folderFlow.cancelFreshKey() } }) { Text(stringResource(R.string.common_cancel), color = c.accentText) }
+            },
+        )
+    }
+    needsPro?.let { proText ->
+        AlertDialog(
+            onDismissRequest = { needsPro = null },
+            text = { Text(txt.s(proText)) },
+            confirmButton = {
+                if (pro != null) {
+                    TextButton({ needsPro = null; upgradeOpen = true }) { Text(txt.s(R.string.settings_upgrade), color = c.accentText) }
+                }
+            },
+            dismissButton = { TextButton({ needsPro = null }) { Text(stringResource(R.string.common_cancel), color = c.accentText) } },
+        )
+    }
+    if (confirmDevices) {
+        val ids = membership.unconfirmed
+        val shown = ids.joinToString(", ") { RemovalText.displayName(it, membership, words) }
+        AlertDialog(
+            onDismissRequest = { confirmDevices = false },
+            title = { Text(txt.s(R.string.sync_confirm_devices)) },
+            text = { Text(txt.s(R.string.sync_are_these_your_devices, shown)) },
+            confirmButton = {
+                TextButton({
+                    confirmDevices = false
+                    scope.launch { if (sync.confirmMembers(ids)) confirmedText = txt.s(R.string.sync_confirmed_list, shown) }
+                }) { Text(txt.s(R.string.sync_these_are_my_devices), color = c.accentText) }
+            },
+            dismissButton = { TextButton({ confirmDevices = false }) { Text(stringResource(R.string.common_cancel), color = c.accentText) } },
+        )
+    }
     if (confirm == Confirm.ROLLBACK) {
         AlertDialog(
             onDismissRequest = { confirm = null },
@@ -456,7 +586,7 @@ private fun PasteCodeSheet(onCancel: () -> Unit, onJoin: (String) -> Unit) {
 }
 
 @Composable
-private fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+internal fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier.fillMaxWidth().lgkGroupSurface().padding(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -465,7 +595,7 @@ private fun Card(modifier: Modifier = Modifier, content: @Composable ColumnScope
 }
 
 @Composable
-private fun Section(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+internal fun Section(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(modifier.fillMaxWidth()) {
         Text(
             title, color = LgkTheme.colors.secondaryText, style = MaterialTheme.typography.labelLarge,
@@ -476,13 +606,13 @@ private fun Section(title: String, modifier: Modifier = Modifier, content: @Comp
 }
 
 @Composable
-private fun Footnote(text: String) {
+internal fun Footnote(text: String) {
     Text(text, color = LgkTheme.colors.secondaryText, style = MaterialTheme.typography.bodySmall)
 }
 
 /** A button drawn as a list row (the iPhone's List button): full width, a hairline above unless [divider] is false. */
 @Composable
-private fun ActionButton(
+internal fun ActionButton(
     label: String,
     enabled: Boolean = true,
     bold: Boolean = false,

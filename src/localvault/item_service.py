@@ -6,9 +6,11 @@ without needing a second key or cache.
 """
 from __future__ import annotations
 
+import contextlib
 import copy
 import time
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
+from contextvars import ContextVar
 from typing import Any
 
 from .item_schema import (
@@ -50,6 +52,44 @@ _LICENSE_SECRET_ALIASES = {
 RELEASABLE_SECRET_KINDS = frozenset({"license"}) | SECRET_ITEM_KINDS
 
 _WEB_ENTRY_SECRETS = ("password", "password_history", "totp", "recovery_codes")
+
+
+class ReadOnlyCollection(VaultError):
+    """The item is in a collection someone shared with this vault read-only (sub-plan 07)."""
+
+    def __init__(self) -> None:
+        super().__init__("This item is in a shared collection you can only read")
+
+
+#: True while sync writes into the vault (``sync_writes``): the owner's changes land in read-only items.
+_SYNC_WRITES: ContextVar[bool] = ContextVar("lgk_item_sync_writes", default=False)
+
+
+@contextlib.contextmanager
+def sync_writes() -> Iterator[None]:
+    """Inside: the vault bridge applies synced changes, so read-only collections do not refuse them."""
+    token = _SYNC_WRITES.set(True)
+    try:
+        yield
+    finally:
+        _SYNC_WRITES.reset(token)
+
+
+def check_writable(session: Any, *records: Any) -> None:
+    """Raise ``ReadOnlyCollection`` if any of *records* is in a collection shared read-only with *session*.
+
+    *records* are the item before and after a change (a move into or out of such a collection is
+    refused too).  Sessions without share groups (``read_only_collection_ids`` absent) allow all.
+    """
+    if _SYNC_WRITES.get():
+        return
+    read_only = getattr(session, "read_only_collection_ids", None)
+    if not read_only:
+        return
+    for record in records:
+        ids = record.get("collection_ids") if isinstance(record, Mapping) else None
+        if isinstance(ids, (list, tuple)) and not read_only.isdisjoint(ids):
+            raise ReadOnlyCollection()
 
 
 class ItemService:
@@ -164,6 +204,7 @@ class ItemService:
         if len(items) >= MAX_ITEMS:
             raise ItemSchemaError("The typed item limit has been reached")
         validated = validate_item(item, known_collection_ids=self._known_collection_ids(payload))
+        check_writable(self.session, validated)
         self._validate_references(validated, payload)
         items.append(validated)
         payload["updated_at"] = int(time.time())
@@ -426,31 +467,131 @@ class ItemService:
                        credential_id: str = "", private_key: str = "", algorithm: str = "",
                        created: str = "", notes: str = "", user_name: str = "",
                        user_display_name: str = "", rp_name: str = "", discoverable: bool = True,
-                       **metadata: Any) -> str:
-        """Store a passkey record (created by a website or imported)."""
+                       unconfirmed: bool = False, **metadata: Any) -> str:
+        """Store a passkey record (created by a website or imported).
+
+        *unconfirmed*: the website's page has not yet confirmed it received the
+        credential (``passkey_broker``); see ``confirm_passkey`` and
+        ``remove_unconfirmed_passkey``.
+        """
         return self._create_secret_kind("passkey", title, {
             "relying_party_id": relying_party_id, "user_handle": user_handle,
             "credential_id": credential_id, "private_key": private_key, "algorithm": algorithm,
             "created": created, "notes": notes, "user_name": user_name,
             "user_display_name": user_display_name, "rp_name": rp_name, "discoverable": discoverable,
+            "unconfirmed": True if unconfirmed else None,
         }, **metadata)
 
+    def _unconfirmed_passkey(self, item_id: str) -> dict[str, Any] | None:
+        item = next((value for value in self._items() if value.get("id") == item_id), None)
+        if item is None or item.get("kind") != "passkey":
+            return None
+        payload = item.get("payload")
+        return item if isinstance(payload, dict) and payload.get("unconfirmed") is True else None
+
+    def unconfirmed_passkey_ids(self) -> list[str]:
+        """IDs of the live passkeys still waiting for their page's confirmation."""
+        return [item["id"] for item in self._items()
+                if item.get("kind") == "passkey" and isinstance(item.get("payload"), dict)
+                and item["payload"].get("unconfirmed") is True]
+
+    def confirm_passkey(self, item_id: str) -> bool:
+        """Clear the unconfirmed mark: the passkey is offered for sign-in and syncs from now on.
+
+        False (nothing written) when *item_id* is not a live unconfirmed passkey.
+        """
+        item = self._unconfirmed_passkey(item_id)
+        if item is None:
+            return False
+        del item["payload"]["unconfirmed"]
+        try:
+            self.session.save()
+        except BaseException:
+            item["payload"]["unconfirmed"] = True
+            raise
+        return True
+
+    def remove_unconfirmed_passkey(self, item_id: str) -> bool:
+        """Remove an unconfirmed passkey for good: no trash row, no history snapshot.
+
+        A passkey the website never received has no use, and a trash or
+        history copy would keep its private key in the vault. Only a live
+        passkey that is still unconfirmed is removed (one the user edited
+        clears the mark, so it is not, nor is one that was confirmed); False
+        when nothing was removed.
+        """
+        item = self._unconfirmed_passkey(item_id)
+        if item is None:
+            return False
+        payload = self._payload()
+        items = self._items()
+        index = items.index(item)
+        items.pop(index)
+        payload["updated_at"] = int(time.time())
+        try:
+            self.session.save()
+        except BaseException:
+            # save() may already have put the committed payload back; keep a plain list consistent too.
+            if not any(value is item for value in items):
+                items.insert(index, item)
+            raise
+        return True
+
     def passkey_records(self, rp_id: str) -> list[dict[str, Any]]:
-        """Return the live passkeys for one relying party, private key included.
+        """Return the live, confirmed passkeys for one relying party, private key included.
 
         Only the broker's WebAuthn handlers use this: they sign inside the
-        agent and never release the key.  Trashed items are not included.
+        agent and never release the key.  Trashed items are not included, nor
+        unconfirmed ones (a website may never have received them), nor ones
+        travel mode hides on this device (contract 2.3).
         """
+        from .travel import hidden_id_set
+
+        hidden = hidden_id_set(self.session)
         records = []
         for item in self._items():
             payload = item.get("payload")
             if item.get("kind") != "passkey" or not isinstance(payload, dict):
+                continue
+            if str(item.get("id")) in hidden:
+                continue
+            if payload.get("unconfirmed") is True:
                 continue
             if payload.get("relying_party_id") != rp_id:
                 continue
             records.append({**copy.deepcopy(payload), "id": item["id"], "title": item.get("title", "")})
         records.sort(key=lambda record: (record["title"].casefold(), record["id"]))
         return records
+
+    def passkey_metadata(self) -> list[dict[str, str]]:
+        """Names and IDs of every live passkey, for Windows' credential metadata cache.
+
+        Never key material: only these six fields are copied, so the private
+        key never leaves the vault payload.  Unconfirmed passkeys and passkeys
+        travel mode hides on this device are left out (contract 2.3).
+        """
+        from .travel import hidden_id_set
+
+        hidden = hidden_id_set(self.session)
+        entries = []
+        for item in self._items():
+            payload = item.get("payload")
+            if item.get("kind") != "passkey" or not isinstance(payload, dict):
+                continue
+            if str(item.get("id")) in hidden:
+                continue
+            if payload.get("unconfirmed") is True:
+                continue
+            entries.append({
+                "credential_id": str(payload.get("credential_id", "") or ""),
+                "rp_id": str(payload.get("relying_party_id", "") or ""),
+                "rp_name": str(payload.get("rp_name", "") or ""),
+                "user_id": str(payload.get("user_handle", "") or ""),
+                "user_name": str(payload.get("user_name", "") or ""),
+                "user_display_name": str(payload.get("user_display_name", "") or ""),
+            })
+        entries.sort(key=lambda entry: (entry["rp_id"], entry["user_name"], entry["credential_id"]))
+        return entries
 
     def card_fill_view(self, item_id: str, *, expected_revision: int | None = None) -> dict[str, Any]:
         """Return the browser-fillable projection of one card.
@@ -546,8 +687,13 @@ class ItemService:
         entries = self._payload().get("entries", [])
         if not isinstance(entries, list):
             raise VaultError("Vault entries are malformed")
+        from .travel import hidden_id_set
+
+        hidden = hidden_id_set(self.session)  # travel mode: hidden logins are never offered (2.3)
         result = []
         for entry in candidates_for(entries, url):
+            if str(entry.get("id")) in hidden:
+                continue
             redacted = copy.deepcopy(entry)
             for key in _WEB_ENTRY_SECRETS:
                 redacted.pop(key, None)
@@ -589,9 +735,14 @@ class ItemService:
             if not isinstance(typed_payload, Mapping):
                 raise ItemSchemaError("typed item payload must be an object")
             candidate["payload"].update(copy.deepcopy(dict(typed_payload)))
+        if candidate.get("kind") == "passkey" and isinstance(candidate.get("payload"), dict):
+            # Only create_passkey(unconfirmed=True) sets the mark. An update never sets it, and the user's own
+            # edit clears it: the passkey is then theirs, so a late discard no longer removes it.
+            candidate["payload"].pop("unconfirmed", None)
         candidate["updated_at"] = int(time.time())
         candidate["revision"] = int(candidate.get("revision", 1)) + 1
         validated = validate_item(candidate, known_collection_ids=self._known_collection_ids(payload))
+        check_writable(self.session, original, validated)
         self._validate_references(validated, payload)
         # Editing a form without changing its semantic values is a no-op: it
         # must not consume a revision or create a history snapshot.  The
@@ -809,6 +960,7 @@ class ItemService:
         item = next((value for value in items if value.get("id") == item_id), None)
         if item is None:
             return False
+        check_writable(self.session, item)
         if (item.get("kind") == "document"
                 and any(item_id in value.get("payload", {}).get("document_ids", [])
                         for value in items if value is not item and isinstance(value, dict))):
@@ -856,6 +1008,7 @@ class ItemService:
                        and value["entry"].get("kind") not in {"web", "desktop"}), None)
         if record is None:
             return False
+        check_writable(self.session, record["entry"])
         if any(value.get("id") == item_id for value in self._items()):
             raise VaultError("A live item with this ID already exists")
         items = self._items()

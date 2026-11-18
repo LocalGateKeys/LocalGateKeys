@@ -6,6 +6,9 @@ import re
 import urllib.request
 from collections.abc import Callable
 
+from . import net_ledger
+from .version import APP_VERSION
+
 
 class BreachCheckError(RuntimeError):
     pass
@@ -17,9 +20,11 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 def _fetch(prefix: str) -> str:
     if not re.fullmatch(r"[0-9A-F]{5}", prefix): raise BreachCheckError("Invalid hash prefix")
     request = urllib.request.Request("https://api.pwnedpasswords.com/range/" + prefix,
-                                     headers={"Add-Padding": "true", "User-Agent": "LocalGateKeys/0.3.0"})
+                                     headers={"Add-Padding": "true", "User-Agent": "LocalGateKeys/" + APP_VERSION})
     try:
-        with urllib.request.build_opener(_NoRedirect()).open(request, timeout=10) as response:
+        # Recorded as host + result only: never the path, so never the hash prefix.
+        with net_ledger.open_url(request, purpose=net_ledger.BREACH_RANGE, timeout=10,
+                                 handlers=(_NoRedirect(),)) as response:
             if response.status != 200: raise BreachCheckError("Service unavailable")
             raw = response.read(200001)
             if len(raw) > 200000: raise BreachCheckError("Response too large")
@@ -34,7 +39,7 @@ def check_password(password: str, *, consent: bool,
         raise BreachCheckError("External breach checks are disabled in strict offline mode")
     if not consent: raise BreachCheckError("Explicit consent is required for an external check")
     # SHA-1 is mandated by the HIBP range API (k-anonymity prefix), not used for security.
-    digest = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()  # noqa: S324
+    digest = hashlib.sha1(password.encode("utf-8"), usedforsecurity=False).hexdigest().upper()  # noqa: S324
     response = fetch(digest[:5])
     count = 0
     valid = 0

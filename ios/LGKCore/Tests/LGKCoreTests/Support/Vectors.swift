@@ -8,6 +8,14 @@ enum Vectors {
         return u.appendingPathComponent("tests/vectors/sync", isDirectory: true)
     }()
 
+    /// `<repo>/tests/vectors/<relative>`, for the vectors that are not under `sync` (health, ...).
+    static func shared(_ relative: String) -> URL {
+        root.deletingLastPathComponent().appendingPathComponent(relative)
+    }
+
+    /// Shared-collection vectors (sub-plan 07): `<repo>/tests/vectors/share/collections/<relative>`.
+    static func shareCollections(_ relative: String) -> URL { shared("share/collections/\(relative)") }
+
     static func url(_ relative: String) -> URL { root.appendingPathComponent(relative) }
 
     static func data(_ relative: String) throws -> Data { try Data(contentsOf: url(relative)) }

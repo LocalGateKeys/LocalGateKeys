@@ -49,10 +49,6 @@ class PasswordHistoryModel(
         return ok
     }
 
-    fun copy(index: Int) {
-        clipboard.copy(entries[index].password)
-    }
-
     override fun toString(): String = "PasswordHistoryModel(entries=${entries.size}, revealed=${_revealed.value})"
 
     companion object {

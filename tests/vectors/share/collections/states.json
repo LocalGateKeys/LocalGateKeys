@@ -1,0 +1,487 @@
+{
+  "description": "Personal collection states (vault_bridge 'Personal collections'): valid wrappers with their digests (sha256 of canonical JSON), and malformed ones check_remote_state refuses.",
+  "malformed": [
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_extra_field",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "revision": 4,
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_shared_group_id",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "shared_group_id": "g",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_name_outer_space",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": " Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_name_empty",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_name_too_long",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_description_too_long",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_nul",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "a\u0000b",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_updated_before_created",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999000
+        },
+        "schema": 1,
+        "updated_at": 1799999000
+      }
+    },
+    {
+      "id": "col:3F2A6C1E-8B4D-4E7A-9C05-D1E2F3A4B5C6",
+      "name": "catalog_uppercase_uuid",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3F2A6C1E-8B4D-4E7A-9C05-D1E2F3A4B5C6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "name": "catalog_id_mismatch",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "catalog_bool_time",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": true,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "name": "membership_unsorted",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "name": "membership_duplicate",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "name": "membership_empty",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "name": "membership_too_many",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "00000000-0000-4000-8000-000000000000",
+            "00000000-0000-4000-8000-000000000001",
+            "00000000-0000-4000-8000-000000000002",
+            "00000000-0000-4000-8000-000000000003",
+            "00000000-0000-4000-8000-000000000004",
+            "00000000-0000-4000-8000-000000000005",
+            "00000000-0000-4000-8000-000000000006",
+            "00000000-0000-4000-8000-000000000007",
+            "00000000-0000-4000-8000-000000000008",
+            "00000000-0000-4000-8000-000000000009",
+            "00000000-0000-4000-8000-00000000000a",
+            "00000000-0000-4000-8000-00000000000b",
+            "00000000-0000-4000-8000-00000000000c",
+            "00000000-0000-4000-8000-00000000000d",
+            "00000000-0000-4000-8000-00000000000e",
+            "00000000-0000-4000-8000-00000000000f",
+            "00000000-0000-4000-8000-000000000010",
+            "00000000-0000-4000-8000-000000000011",
+            "00000000-0000-4000-8000-000000000012",
+            "00000000-0000-4000-8000-000000000013",
+            "00000000-0000-4000-8000-000000000014"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "cm:22222222-2222-4222-8222-222222222222",
+      "name": "membership_item_mismatch",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "name": "membership_bad_uuid",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "not-a-uuid"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "csl:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "link_bad_mode",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share-link",
+          "mode": "write",
+          "role": "member"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "csl:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "link_bad_role",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share-link",
+          "mode": "read",
+          "role": "admin"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "csl:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "link_extra_group_id",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "group_id": "g",
+          "kind": "share-link",
+          "mode": "read",
+          "role": "member"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "unknown_kind",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "folder",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "plain_id",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "name": "wrong_rank",
+      "verdict": "bad-remote",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 5
+      }
+    }
+  ],
+  "prefixes": {
+    "catalog": "col:",
+    "link": "csl:",
+    "membership": "cm:"
+  },
+  "valid": [
+    {
+      "digest": "1fa57bc3b2d1781b7698817021b285d2b55b038a296399a2d7e6b731a42005ce",
+      "id": "col:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "created_at": 1799999100,
+          "description": "Shared at home",
+          "kind": "collection",
+          "name": "Family",
+          "updated_at": 1799999200
+        },
+        "schema": 1,
+        "updated_at": 1799999200
+      }
+    },
+    {
+      "digest": "f72bf82c3e5d258600eecc6c10712ccaa4fd6c87549b1edb35becccc28d81f2d",
+      "id": "cm:11111111-1111-4111-8111-111111111111",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_ids": [
+            "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+            "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+          ],
+          "item_id": "11111111-1111-4111-8111-111111111111",
+          "kind": "membership"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    },
+    {
+      "digest": "6d2fb4c21e41391e28722146eebf86c02236827ebbce35cb8af25c00bb1473ad",
+      "id": "csl:3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+      "wrapper": {
+        "ns": "collection",
+        "record": {
+          "collection_id": "3f2a6c1e-8b4d-4e7a-9c05-d1e2f3a4b5c6",
+          "kind": "share-link",
+          "mode": "read",
+          "role": "member"
+        },
+        "schema": 1,
+        "updated_at": 0
+      }
+    }
+  ]
+}

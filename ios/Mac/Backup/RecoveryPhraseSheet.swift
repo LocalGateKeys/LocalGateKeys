@@ -42,11 +42,11 @@ struct RecoveryPhraseChallenge {
 /// Settings › Unlocking › Recovery phrase: the master password, then the 24 words (shown once, never copied or
 /// stored), then three of them typed back; only then is the phrase saved. Copy from Windows `app/recovery.py`.
 struct RecoveryPhraseSheet: View {
-    static let intro = String(localized: "A 24-word recovery phrase can replace a forgotten master password. It is shown once, never stored by LocalGateKeys, and replaces any earlier phrase.")
-    static let cardIntro = String(localized: "Write these 24 words down in order and keep them sealed, away from this Mac and your backups. Anyone with the phrase can open the vault. It is shown only now; LocalGateKeys does not store it and cannot show it again.")
+    nonisolated static let intro = String(localized: "A 24-word recovery phrase can replace a forgotten master password. It is shown once, never stored by LocalGateKeys, and replaces any earlier phrase.")
+    nonisolated static let cardIntro = String(localized: "Write these 24 words down in order and keep them sealed, away from this Mac and your backups. Anyone with the phrase can open the vault. It is shown only now; LocalGateKeys does not store it and cannot show it again.")
     static let mismatch = String(localized: "Those words do not match the phrase in that order. Check your written copy and try again, or go back to the phrase.")
     static let confirmed = String(localized: "Recovery phrase confirmed. Keep the written copy sealed and separate from your backups; it is not stored anywhere by LocalGateKeys.")
-    static let removeIntro = String(localized: "The recovery phrase will no longer open this vault. Backups made while it was set still open with it.")
+    nonisolated static let removeIntro = String(localized: "The recovery phrase will no longer open this vault. Backups made while it was set still open with it.")
 
     enum Mode { case create, remove }
     private enum Step { case password, words, confirm, done }
@@ -54,6 +54,8 @@ struct RecoveryPhraseSheet: View {
     let passwords: any MasterPasswordService
     let mode: Mode
     let onClose: () -> Void
+    /// The emergency kit's facts, when this sheet is opened where they are known; nil hides the print button.
+    var kitFacts: (@MainActor () -> EmergencyKitDocument.Facts)?
     @Environment(\.macTheme) private var theme
     @State private var step = Step.password
     @State private var password = ""
@@ -114,6 +116,11 @@ struct RecoveryPhraseSheet: View {
             .privacySensitive()
             .padding(12)
             .background(RoundedRectangle(cornerRadius: 10).fill(theme.panelBorder.opacity(0.25)))
+            if let kitFacts {
+                // The words go straight to the print job; they are not kept anywhere else and go with `forget()`.
+                Button("Print emergency kit with this phrase…") { EmergencyKitDocument.print(kitFacts(), words: words) }
+                    .buttonStyle(GlassButtonStyle())
+            }
             HStack {
                 Button("Cancel", action: close).buttonStyle(GlassButtonStyle()).keyboardShortcut(.cancelAction)
                 Spacer()

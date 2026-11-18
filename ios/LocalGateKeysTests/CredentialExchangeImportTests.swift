@@ -89,9 +89,49 @@ final class CredentialExchangeImportTests: XCTestCase {
         release?.resume()
         await task.value
         XCTAssertEqual(calls, 1)
-        XCTAssertEqual(model.message, "1 added")
+        XCTAssertNil(model.message)
+        XCTAssertEqual(model.review?.counts.added, 1)
         XCTAssertEqual(model.pendingToken, second, "a token that arrived during the run stays pending")
         XCTAssertFalse(model.isRunning)
+        XCTAssertNil(model.start(importer: importer), "the next token waits until the review is closed")
+        model.confirm(importer: importer)
+        XCTAssertEqual(model.message, "1 added")
+        XCTAssertNil(model.review)
+    }
+
+    /// Scan A10-L1: nothing is written, and no existing password changes, before the user says Import.
+    @MainActor
+    func testReviewBeforeAnyWrite() async throws {
+        let store = MemoryStore()
+        let importer = VaultImporter(store: store, isPro: { true }, now: { Date() }, random: SystemRandomSource())
+        _ = try importer.importCandidates([login(1)], unsupported: 0)
+        let revision = try store.load().revision
+        let changed = ImportCandidate(title: "Site 1", kind: .login(LoginFields(url: "https://s1.example.test", username: "u",
+                                                                              password: "attacker", notes: "", otpauth: nil)))
+        let model = CredentialExchangeModel(fetch: { _ in ([changed, self.login(2)], 0) })
+        model.received(token: UUID())
+        await model.start(importer: importer)?.value
+        let review = try XCTUnwrap(model.review)
+        XCTAssertEqual(review.counts.added, 1)
+        XCTAssertEqual(review.counts.updated, 1)
+        XCTAssertEqual(try store.load().revision, revision, "nothing written before Import")
+        XCTAssertNil(model.pendingToken)
+
+        model.discard()
+        XCTAssertNil(model.review)
+        XCTAssertNil(model.message)
+        XCTAssertEqual(try store.load().revision, revision, "Cancel writes nothing")
+    }
+
+    /// A duress session drops the token without reading it and shows nothing.
+    @MainActor
+    func testDropPendingIsSilent() {
+        let model = CredentialExchangeModel(fetch: { _ in XCTFail("must not fetch"); return ([], 0) })
+        model.received(token: UUID())
+        model.dropPending()
+        XCTAssertNil(model.pendingToken)
+        XCTAssertNil(model.message)
+        XCTAssertNil(model.review)
     }
 
     @MainActor

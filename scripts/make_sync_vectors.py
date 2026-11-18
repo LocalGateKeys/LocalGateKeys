@@ -67,12 +67,24 @@ from localvault.sync.pairing import (
     PairingOffer,
     PairingSession,
     build_enrollment_request,
+    enrollment_commit,
+    enrollment_reveal,
     offer_qr_payload,
     open_enrollment_reply,
+    open_enrollment_reveal,
     parse_qr_payload,
     seal_enrollment_reply,
 )
-from localvault.sync.transport import SecureChannel, create_session_hello, version_refusal
+from localvault.sync.transport import (
+    SEALED_HELLO_PLAINTEXT_BYTES,
+    SecureChannel,
+    create_session_hello,
+    open_initiator_hello,
+    open_responder_hello,
+    seal_initiator_hello,
+    seal_responder_hello,
+    version_refusal,
+)
 from localvault.sync.vault_bridge import CONFLICT_SUFFIX, _license_wrapper, _wrapper, normal_form
 from localvault.totp import TotpError
 from localvault.updates import canonical_json
@@ -146,6 +158,16 @@ GENERATED_FILES = tuple(sorted((
     "lan/messages/03_response_view_1.bin",
     "lan/qr_payload.txt",
     "lan/session.json",
+    "lan/v3/enroll.json",
+    "lan/v3/enroll_reply.bin",
+    "lan/v3/enroll_request.bin",
+    "lan/v3/enroll_reveal.bin",
+    "lan/v3/frame_initiator.bin",
+    "lan/v3/frame_responder.bin",
+    "lan/v3/qr_payload.txt",
+    "lan/v3/sealed_hello_initiator.bin",
+    "lan/v3/sealed_hello_responder.bin",
+    "lan/v3/session.json",
     "normalise/entries.json",
     "license_state.json",
     "normalise/items.json",
@@ -1032,15 +1054,17 @@ def paired(identity: DeviceIdentity) -> PairedDevice:
 
 class LanSession:
     """One LAN connection: *initiator* and the other device, fixed session id, hello nonces and
-    ephemeral keys (protocol version 2).
+    ephemeral keys (protocol version 2, or 3 with *version*: the same hellos and key recipe with the
+    ``v3`` labels; the sealed first frames are built by ``lan_v3_files``).
 
     The desktop opens one connection per request/response (``sync_with`` makes a new connection,
     hello pair, session id and key for every chunk request), so every frame counter here is 1.
     """
 
     def __init__(self, label: str, identities: dict[str, DeviceIdentity], *, initiator: str = "A",
-                 counters: tuple[int, int] = (1, 1)) -> None:
+                 counters: tuple[int, int] = (1, 1), version: int = 2) -> None:
         self.label = label
+        self.version = version
         self.initiator_name = initiator
         self.responder_name = "B" if initiator == "A" else "A"
         self.session_id = seed(f"lan|{label}|session-id")[:16]
@@ -1049,10 +1073,10 @@ class LanSession:
         self.eph = {role: seed(f"lan|{label}|ephemeral|{role}") for role in ("initiator", "responder")}
         self.hello_a = create_session_hello(self.a, GROUP_ID, self.session_id, counter=counters[0],
                                             _nonce=seed(f"lan|{label}|hello-nonce|initiator"),
-                                            _ephemeral=self.eph["initiator"])
+                                            _ephemeral=self.eph["initiator"], version=version)
         self.hello_b = create_session_hello(self.b, GROUP_ID, self.session_id, counter=counters[1],
                                             _nonce=seed(f"lan|{label}|hello-nonce|responder"),
-                                            _ephemeral=self.eph["responder"])
+                                            _ephemeral=self.eph["responder"], version=version)
         self.initiator = SecureChannel.from_paired_identities(
             self.a, paired(self.b), group_id=GROUP_ID, session_id=self.session_id, role="initiator",
             local_hello=self.hello_a, remote_hello=self.hello_b)
@@ -1069,8 +1093,9 @@ class LanSession:
             x25519.X25519PublicKey.from_public_bytes(self.hello_b.ephemeral_public))
         assert self.ephemeral_shared == x25519.X25519PrivateKey.from_private_bytes(self.eph["responder"]).exchange(
             x25519.X25519PublicKey.from_public_bytes(self.hello_a.ephemeral_public))
-        self.salt = hashlib.sha256(b"localgatekeys|sync|session-salt|v2|" + self.transcript).digest()
-        self.info = b"localgatekeys|sync|session-key|v2|" + self.session_id
+        tag = f"v{version}|".encode("ascii")
+        self.salt = hashlib.sha256(b"localgatekeys|sync|session-salt|" + tag + self.transcript).digest()
+        self.info = b"localgatekeys|sync|session-key|" + tag + self.session_id
         self.ikm = self.ephemeral_shared + self.shared
         self.key = HKDF(algorithm=hashes.SHA256(), length=32, salt=self.salt, info=self.info).derive(self.ikm)
         assert self.key == self.initiator._key == self.responder._key
@@ -1231,7 +1256,8 @@ def lan_session_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> t
         "are the first connection. Every .bin file and every frame_hex INCLUDES the 4-byte big-endian "
         "length prefix (README.md).",
         "group_id": GROUP_ID,
-        "version_refusal": version_refusal().decode("ascii"),
+        # what a released version-2 responder sends (a version-3 build sends version 3, lan/v3/session.json)
+        "version_refusal": '{"refused":"version","version":2}',
         "legacy_hello": legacy_hello(identities),
         "sessions": sessions,
     })
@@ -1303,6 +1329,238 @@ def lan_session_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> t
              "chunk_1_b": info_b["size"] - CHUNK_BYTES, "last_a": info_a["notes_characters_last_item"],
              "last_b": info_b["notes_characters_last_item"]}
     return files, facts
+
+
+# --- LAN protocol version 3: sealed hello, commit-then-reveal enrollment ------------------------
+
+#: docs/formats/LAN_SYNC_V3.md
+SEALED_LABEL = b"localgatekeys|sync|sealed-hello|v3|"
+
+
+def _canonical_ascii(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=True, separators=(",", ":"), sort_keys=True).encode("ascii")
+
+
+def _padded(inner: bytes) -> bytes:
+    return len(inner).to_bytes(2, "big") + inner + bytes(SEALED_HELLO_PLAINTEXT_BYTES - 2 - len(inner))
+
+
+def _refuses(call: Any) -> bool:
+    try:
+        call()
+    except Exception:  # noqa: BLE001 - any refusal will do; the tests name the exact error
+        return True
+    return False
+
+
+def lan_v3_session_files(identities: dict[str, DeviceIdentity]) -> dict[str, bytes]:
+    """Two version-3 connections (A initiates, B initiates): sealed first frames, then the session."""
+    files: dict[str, bytes] = {}
+    sessions = []
+    for name, initiator in (("a-initiates", "A"), ("b-initiates", "B")):
+        session = LanSession(f"v3|{name}", identities, initiator=initiator, version=3)
+        assert session.hello_a.version == session.hello_b.version == 3
+        seal_private = seed(f"lan|v3|{name}|seal-ephemeral")
+        first, ctx_i = seal_initiator_hello(session.hello_a, session.b.exchange_public_key, _ephemeral=seal_private)
+        raw = json.loads(first)
+        opened, ctx_r = open_initiator_hello(raw, session.b)
+        assert opened.to_bytes() == session.hello_a.to_bytes()
+        answer = seal_responder_hello(session.hello_b, ctx_r)
+        assert open_responder_hello(answer, ctx_i).to_bytes() == session.hello_b.to_bytes()
+        # nobody but the intended responder can open it: C (same group) and the sender cannot
+        for outsider in (identities["C"], session.a):
+            assert _refuses(lambda frame=raw, ident=outsider: open_initiator_hello(frame, ident))
+
+        # the same again from the documented recipe, not from transport.py
+        private = x25519.X25519PrivateKey.from_private_bytes(seal_private)
+        eph_public = private.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        static = session.b.exchange_public_key
+        es = private.exchange(x25519.X25519PublicKey.from_public_bytes(static))
+        assert es == session.b.exchange_key.exchange(x25519.X25519PublicKey.from_public_bytes(eph_public))
+        salt = eph_public + static
+        keys = {role: HKDF(algorithm=hashes.SHA256(), length=32, salt=salt,
+                           info=SEALED_LABEL + role.encode("ascii")).derive(es)
+                for role in ("initiator", "responder")}
+        aad = SEALED_LABEL + eph_public
+        plain_i, plain_r = _padded(session.hello_a.to_bytes()), _padded(session.hello_b.to_bytes())
+        box_i = AESGCM(keys["initiator"]).encrypt(bytes(12), plain_i, aad)
+        box_r = AESGCM(keys["responder"]).encrypt(bytes(12), plain_r, aad)
+        assert first == _canonical_ascii({"box": b64(box_i), "eph": b64(eph_public), "signature": "", "version": 3})
+        assert answer == _canonical_ascii({"box": b64(box_r), "version": 3})
+        for frame in (first, answer):
+            for ident in (session.a, session.b):
+                assert ident.device_id.encode() not in frame
+                assert b64(ident.signing_public_key).encode() not in frame
+                assert b64(ident.exchange_public_key).encode() not in frame
+            assert GROUP_ID.encode() not in frame
+
+        transfer = seed(f"lan|v3|{name}|transfer").hex()[:32]
+        request = encode_message({"type": "next", "transfer": transfer, "seq": 1})
+        response = encode_message({"type": "error", "reason": "bad-chunk"})
+        req, req_frame, resp, resp_frame = session.round_trip(request, response)
+        req["plaintext"], resp["plaintext"] = request.decode("ascii"), response.decode("ascii")
+        sessions.append({
+            "name": name,
+            **session.key_json(),
+            "sealed_hello": {
+                "ephemeral_private_hex": seal_private.hex(),
+                "ephemeral_public_hex": eph_public.hex(),
+                "responder_static_public_hex": static.hex(),
+                "es_hex": es.hex(),
+                "hkdf_salt_hex": salt.hex(),
+                "info_initiator": (SEALED_LABEL + b"initiator").decode("ascii"),
+                "info_responder": (SEALED_LABEL + b"responder").decode("ascii"),
+                "key_initiator_hex": keys["initiator"].hex(),
+                "key_responder_hex": keys["responder"].hex(),
+                "nonce_hex": bytes(12).hex(),
+                "aad_hex": aad.hex(),
+                "initiator_inner_length": len(session.hello_a.to_bytes()),
+                "initiator_plaintext_sha256": hashlib.sha256(plain_i).hexdigest(),
+                "responder_inner_length": len(session.hello_b.to_bytes()),
+                "responder_plaintext_sha256": hashlib.sha256(plain_r).hexdigest(),
+                "initiator_frame": first.decode("ascii"),
+                "responder_frame": answer.decode("ascii"),
+            },
+            "request": {**req, "frame_hex": req_frame.hex()},
+            "response": {**resp, "frame_hex": resp_frame.hex()},
+        })
+        if name == "a-initiates":
+            files["lan/v3/sealed_hello_initiator.bin"] = prefixed(first)
+            files["lan/v3/sealed_hello_responder.bin"] = prefixed(answer)
+            files["lan/v3/frame_initiator.bin"] = req_frame
+            files["lan/v3/frame_responder.bin"] = resp_frame
+    assert version_refusal() == b'{"refused":"version","version":3}'
+    files["lan/v3/session.json"] = dumps({
+        "description": "Two LAN connections of protocol version 3 (sealed hello, docs/formats/LAN_SYNC_V3.md) "
+        "of A and B: the first has A as initiator, the second B. Each lists the two inner version-3 hellos "
+        "(same fields as version 2, signed with the session-hello|v3| label), the sealed first frame of the "
+        "initiator and the sealed answer of the responder with every intermediate value, the session key "
+        "(session-salt|v3| and session-key|v3| labels, otherwise as version 2) and one sealed request and "
+        "response (frame metadata version stays 2). lan/v3/*.bin are the first connection; every .bin file "
+        "and frame_hex includes the 4-byte big-endian length prefix. A sealed first frame must open only "
+        "with the intended responder's exchange key: C and A cannot open the first connection's frame.",
+        "group_id": GROUP_ID,
+        "sealed_plaintext_bytes": SEALED_HELLO_PLAINTEXT_BYTES,
+        "version_refusal": version_refusal().decode("ascii"),
+        "pinning": "A device pinned to version 3 for a peer answers that peer's clear-text version-2 hello "
+        "with version_refusal (never with a hello) and never sends a clear-text hello itself.",
+        "sessions": sessions,
+    })
+    return files
+
+
+def lan_v3_enroll_files(identities: dict[str, DeviceIdentity], gk1: GroupKey) -> dict[str, bytes]:
+    """QR enrollment with a version-2 offer (commitment in the QR, reveal after the request)."""
+    from localvault.sync import pairing as pr
+
+    rand = DetRand("lan-v3")
+    inviter, invitee = identities["A"], identities["B"]
+    reveal = rand(32)
+    offer = PairingOffer(
+        offer_id="e5f6a7b8-1c2d-4e3f-9a41-526374859607",
+        group_id=GROUP_ID,
+        endpoint_host="192.168.1.20",
+        endpoint_port=48201,
+        inviter_device_id=inviter.device_id,
+        inviter_signing_public=inviter.signing_public_key,
+        inviter_exchange_public=inviter.exchange_public_key,
+        certificate_fingerprint=inviter.fingerprint,
+        expires_at=T0 + 120,
+        transcript_nonce=rand(32),
+        pairing_secret=rand(32),
+        code="27364918",
+        version=2,
+        commit=enrollment_commit(reveal),
+        reveal=reveal,
+    )
+    commit = hashlib.sha256(b"localgatekeys|sync|enroll-commit|v3|" + reveal).digest()
+    assert offer.commit == commit
+    qr = offer_qr_payload(offer)
+    parsed = parse_qr_payload(qr)
+    assert "reveal" not in parsed and parsed["commit"] == b64(commit)
+    scanned = PairingOffer.from_bundle_dict(parsed)
+    assert scanned.commit == commit and scanned.reveal is None
+    now = T0 + 30
+    endpoint, name = ("192.168.1.31", 48202), DEVICE_NAMES["B"]
+    req_eph, req_nonce = rand(32), rand(12)
+    request = build_enrollment_request(scanned, invitee, endpoint=endpoint, name=name, now=now,
+                                       _eph_seed=req_eph, _nonce=req_nonce)
+    _peer, verified = PairingSession(offer).accept_enrollment(inviter, request, now=now)
+    reveal_frame = enrollment_reveal(offer)
+    assert reveal_frame == pr.ENROLL_REVEAL_MAGIC + _canonical_ascii({"reveal": b64(reveal)})
+    assert open_enrollment_reveal(scanned, reveal_frame) == reveal
+    wrong = pr.ENROLL_REVEAL_MAGIC + _canonical_ascii({"reveal": b64(rand(32))})
+    assert _refuses(lambda: open_enrollment_reveal(scanned, wrong))
+    rep_eph, rep_nonce = rand(32), rand(12)
+    reply = seal_enrollment_reply(inviter, offer, verified, GROUP_ID, gk1.epoch, gk1.key,
+                                  _eph_seed=rep_eph, _nonce=rep_nonce)
+    assert open_enrollment_reply(scanned, invitee, reply, endpoint=endpoint, name=name,
+                                 reveal=reveal) == (GROUP_ID, gk1.epoch, gk1.key)
+    # a reply without the reveal is refused: the new device must have seen the reveal first
+    assert _refuses(lambda: open_enrollment_reply(scanned, invitee, reply, endpoint=endpoint, name=name))
+    transcript = verified.transcript
+    assert json.loads(transcript)["version"] == 3
+    digest = hashlib.sha256(b"localgatekeys|sync|enroll-verify|v3|" + transcript + reveal).digest()
+    code = f"{int.from_bytes(digest[:4], 'big') % 10**6:06d}"
+    assert code == verified.code
+    outer = json.loads(request[len(pr.ENROLL_REQUEST_MAGIC):])
+    key = pr._hkdf(x25519.X25519PrivateKey.from_private_bytes(req_eph).exchange(
+        x25519.X25519PublicKey.from_public_bytes(offer.inviter_exchange_public)), offer.transcript_nonce,
+        pr._REQUEST_INFO + offer.offer_id.encode("ascii"))
+    body = AESGCM(key).decrypt(base64.b64decode(outer["nonce"]), base64.b64decode(outer["ct"]),
+                               pr._canonical({"offer_id": outer["offer_id"], "eph": outer["eph"]}))
+    assert json.loads(body)["version"] == 3
+    expected = {
+        "description": "QR enrollment with a version-2 offer (commit-then-reveal, docs/formats/LAN_SYNC_V3.md) "
+        "of device B by device A at epoch 1. The QR carries commit = SHA-256(commit_label + reveal); the "
+        "request body and transcript have version 3; after the request verifies, A sends the reveal frame "
+        "(lan/v3/enroll_reveal.bin, no length prefix, like the other enrollment frames) on the same "
+        "connection and then the usual reply. The code covers the reveal; B shows it only after the reveal "
+        "matches the commitment and refuses a reply without it. Request and reply encryption are as in "
+        "lan/expected_lan.json.",
+        "now": now,
+        "qr_payload": qr,
+        "offer_bundle": parsed,
+        "reveal_hex": reveal.hex(),
+        "commit_label": "localgatekeys|sync|enroll-commit|v3|",
+        "commit_hex": commit.hex(),
+        "request": {
+            "device_id": verified.device_id,
+            "name": name,
+            "invitee_endpoint": {"host": endpoint[0], "port": endpoint[1]},
+            "transcript": transcript.decode("ascii"),
+            "ephemeral_private_hex": req_eph.hex(),
+            "nonce_b64": b64(req_nonce),
+            "plaintext": body.decode("ascii"),
+        },
+        "reveal_frame": {
+            "magic": "LGKENROLLRV1\\n",
+            "magic_hex": pr.ENROLL_REVEAL_MAGIC.hex(),
+            "text": reveal_frame.decode("ascii"),
+        },
+        "verification_code": {
+            "label": "localgatekeys|sync|enroll-verify|v3|",
+            "recipe": "SHA-256(label + transcript + reveal), first 4 bytes big-endian mod 10^6, 6 digits",
+            "code": code,
+        },
+        "reply": {
+            "group_id": GROUP_ID,
+            "epoch": gk1.epoch,
+            "key_hex": gk1.key.hex(),
+            "ephemeral_private_hex": rep_eph.hex(),
+            "nonce_b64": b64(rep_nonce),
+        },
+        "refusals": {
+            "version_2_body_on_version_2_offer": pr.enrollment_refusal("update-needed").decode("ascii"),
+        },
+    }
+    return {
+        "lan/v3/qr_payload.txt": qr.encode("ascii"),
+        "lan/v3/enroll_request.bin": request,
+        "lan/v3/enroll_reveal.bin": reveal_frame,
+        "lan/v3/enroll_reply.bin": reply,
+        "lan/v3/enroll.json": dumps(expected),
+    }
 
 
 # --- normalisation vectors -------------------------------------------------------------------------
@@ -1972,6 +2230,12 @@ the docstrings of `src/localvault/sync/{{group,keyring,engine,pairing}}.py`. The
 | `lan/messages.json` | Metadata of the 2-chunk view exchange: three connections (own hellos, session id and key each), the sealed frames as files, sizes and hashes, both views, and the plaintext of one error message per reason. | Seal the plaintexts yourself and compare with the `.bin` files; open the frames; reassemble both views from the chunks and decode them with the epoch-1 group key. |
 | `lan/messages/*.bin` | The six sealed frames of that exchange, WITH the 4-byte length prefix. | As above. |
 | `lan/lan_ranges.json` | The LAN address ranges and the `test_lan_address_table` cases with the expected result. | Apply the same rule to every case. |
+| `lan/v3/session.json` | Two protocol-version-3 connections of A and B (A initiates; B initiates): the inner version-3 hellos and session key as in `lan/session.json` (with the `v3` labels), plus `sealed_hello`: the sealing ephemeral key pair, the responder's static exchange key, `es`, HKDF salt, both `info` strings, both keys, nonce, AAD, inner lengths, padded-plaintext hashes and both first frames as text. | Seal both hellos yourself and compare the frames byte for byte; open them as the responder and as the initiator; check that A's and C's keys cannot open the initiator frame; re-derive the session key and decrypt the request and response. |
+| `lan/v3/sealed_hello_initiator.bin`, `lan/v3/sealed_hello_responder.bin` | The two sealed first frames of the first version-3 connection, WITH the 4-byte length prefix. | Open with the matching role; the inner hello is the one in `session.json`. |
+| `lan/v3/frame_initiator.bin`, `lan/v3/frame_responder.bin` | The sealed request and response of the first version-3 connection, WITH the 4-byte length prefix. | Decrypt with that session's `key`. |
+| `lan/v3/qr_payload.txt` | The QR text of a version-2 offer (with `commit`), no trailing newline. | Parse it; the bundle is `lan/v3/enroll.json` `offer_bundle`. |
+| `lan/v3/enroll_request.bin`, `lan/v3/enroll_reveal.bin`, `lan/v3/enroll_reply.bin` | The commit-then-reveal enrollment of B by A: the request (body and transcript version 3), the inviter's reveal frame and the reply, no length prefix. | Check the reveal against the commitment, compute the code from transcript and reveal, open the reply with the reveal (and refuse it without). |
+| `lan/v3/enroll.json` | The values of that enrollment: reveal, commitment, transcript, request plaintext, reveal frame text, the code recipe and result, and the `update-needed` refusal sent for a version-2 body. | Compare each value. |
 | `canonical_json.json` | Known answers for canonical JSON in both dialects (`utf8`, `ascii`) plus `rejected` inputs, each naming the decoder that refuses it (see "Canonical JSON known answers"). | Parse each `value_json`, canonicalise, compare the hex; expect a rejection from the named decoder for every `rejected` text. |
 | `keyring_existing_epoch1.json`, `keyring_existing_epoch3.json` | First keyring of a group the creating device (A) already held a key for, at epoch 1 and at epoch 3 (group `{existing}`, two fixed group keys in `expected.json` `existing_group`). `prev_mac` is null at both epochs. | Verify structure and `mac`; open the password wrap with the password in `existing_group`; `accept_keyring` with the matching trusted key and A's identity returns that key. |
 | `keyring_attach.json` | `keyring_existing_epoch1.json` after B attached with the same password (two members, trusted key = the epoch-1 key). | Same checks as above for both A and B; the password wrap, salt and A's entry are unchanged. |
@@ -1984,6 +2248,7 @@ the docstrings of `src/localvault/sync/{{group,keyring,engine,pairing}}.py`. The
 | `witness/sidecar/A.lgksync`, `witness/sidecar/A.lgksig` | A's witness file for `devices/A.lgksync` (format 2, zero records, counter 7, generation 40, witness B: 12, C: 9) and A's signature of it (same "View signature" format). | Decode it, verify the signature with A's key, and take A's generation and witness from it because its group, device, epoch and counter equal those of `devices/A.lgksync`. |
 | `witness/lan_witness_A.bin` | A's LAN `witness` message (ASCII canonical JSON, no newline): `{{"type":"witness","group_id","epoch","view"}}`, `view` = base64 of a witness file with counter 0, generation 40 and witness B: 12. | `parse_message` equivalent accepts it; decode `view` with `expected_device_id` = A and at most 0 records. |
 | `witness/cases.json` | `headers`: format-2 header files (valid and every rejection) with the expected decode result; `witness_file_matches`: witness files that do or do not belong to `devices/A.lgksync`; `checks`: inputs and outputs of the witness rule; `constants`. | Run your decoder, your match rule and your check on every case and compare. |
+| `removal/notices.json`, `removal/writer.json`, `removal/watch.json` | Signed removal notices (`src/localvault/sync/removal.py`): `verify_notice` cases (valid and every rejection), the exact writer output for fixed removals, and the watch file (parse, derive, pin). See "Removal notices". | Run your notice verifier, writer and watch reader on every case and compare. |
 
 ## Rollback witnesses (view format 2, 2026-10-29)
 
@@ -2127,6 +2392,26 @@ LAN addresses either (no listed network contains them). An IPv6 address with a z
 `fe80::1%1`) is refused too: the zone names an interface of the writing device, so it never appears in
 a pairing QR or an endpoint.
 
+## LAN protocol version 3 (sealed hello, commit-then-reveal)
+
+Byte-level rules: `docs/formats/LAN_SYNC_V3.md`. A version-3 initiator never sends its hello in clear
+text. Its first frame is `{{"box","eph","signature":"","version":3}}`: `eph` is a fresh X25519 key
+`X_i`, `es = X25519(x_i, S_R)` with the responder's pinned exchange key `S_R`, the keys are
+`HKDF-SHA256(ikm=es, salt=X_i || S_R, info="localgatekeys|sync|sealed-hello|v3|" + role)` for the roles
+`initiator` and `responder`, and `box` is AES-256-GCM (12 zero bytes nonce, AAD
+`"localgatekeys|sync|sealed-hello|v3|" || X_i`) over 1024 bytes: a 2-byte big-endian length, the
+canonical version-3 hello, zero bytes. The responder answers `{{"box","version":3}}` sealed the same way
+with the responder key. The inner hellos and the session key are version 2 with `v3` in the three labels;
+the encrypted frames keep metadata version 2. A released version-2 responder answers the sealed frame
+with `{{"refused":"version","version":2}}` (`lan/session.json` `version_refusal`); a version-3
+responder answers a clear-text hello of a peer it has pinned to version 3 with
+`{{"refused":"version","version":3}}`.
+
+A version-2 pairing offer carries `commit` = SHA-256(`localgatekeys|sync|enroll-commit|v3|` + reveal).
+The request body and transcript of such an offer have version 3; once the request verified, the inviting
+device sends `LGKENROLLRV1\\n` + `{{"reveal":base64}}` before the reply. The code is
+SHA-256(`localgatekeys|sync|enroll-verify|v3|` + transcript + reveal), first 4 bytes big-endian mod 10^6.
+
 ## Item wrapper
 
 Every item state is a wrapper `{{"ns", "schema", "updated_at", "record"}}` (a conflict copy in engine
@@ -2254,6 +2539,32 @@ every credential id from a fixed label; ECDSA signatures are randomised, so no s
   (only when valid: rp id casefolded, `discoverable` defaulting to true); `usable` is
   `passkeys.usable_record(input)` (ES256, a P-256 PKCS#8 key and a non-empty credential id).
 
+## Removal notices (2026-10-31)
+
+`removal/` is made by `scripts/gen_removal_vectors.py` and checked by `tests/test_removal_vectors.py`
+(byte-for-byte regeneration plus every case through the Python code). The removed device is C,
+trusted at epoch 1 (`keyring_epoch1.json`, signers A and B); A's removal writes
+`keyring_epoch2.json` and the notice. D is a stranger (seed SHA-256 of
+`localgatekeys|test|removal-vectors|stranger`). Every time is fixed (`issued_at` = T0 + 600); no
+case depends on the clock. All byte fields are standard padded base64 (`*_b64`); `*_text` is the
+same bytes as text, for reading only (null when not UTF-8).
+
+* `notices.json`: `identities` (Ed25519 seed and public key of A, B, C, D), `keyrings` (name ->
+  `b64`, `source`, `synthetic`: an edited copy whose MAC no longer verifies; `verify_notice` only
+  parses the folder keyring and reads `group_id`, `epoch` and `members[].device_id`), `watches`
+  (name -> watch object as in the watch file) and `cases`: `notice_b64`, `watch`, `folder_keyring`
+  and `expected` = `{{accept, reason, notice}}`. `reason` is the Python `RemovalError` code: null,
+  `bad-notice`, `not-for-this-device`, `stale`, `unknown-signer`, `bad-key`, `bad-signature` or
+  `keyring`, checked in that order. A notice need not be canonical: the signature covers
+  `notice_label` + canonical JSON of the parsed body (all fields but `sig`).
+* `writer.json`: `cases` with the inputs of `make_notice`, the canonical body, the signed message
+  (hex), the signature and the exact notice text (no trailing newline) and its path in the folder;
+  `refusals`: inputs the writer refuses (`bad-notice`).
+* `watch.json`: the watch file C writes (`example`), file names (`paths`), `parse` (bytes ->
+  `load_watch` result, null = ignored), `derive` (`watch_from_state`: signers are the trusted
+  keyring's members with a signing key, minus this device and the unconfirmed members) and
+  `pinned` (`removal.pinned(fresh, old)`).
+
 ## Regenerating
 
 `python scripts/make_sync_vectors.py` (10 Argon2id evaluations at production cost). Randomness
@@ -2276,6 +2587,8 @@ and install links) from `scripts/gen_licence_text_vectors.py` (checked by
 `tests/test_licence_text_vectors.py`). `mac/from_mac/` is written by the Mac core
 (`LGK_WRITE_FROM_MAC=1 swift test --filter GroupCreateTests` in `ios/LGKCore`) and checked by
 `tests/test_sync_from_mac.py`.
+
+`removal/` comes from `python scripts/gen_removal_vectors.py` (no Argon2id, no randomness).
 """
 
 
@@ -2513,6 +2826,8 @@ def generate(out: Path) -> None:
     files.update(witness_files(identities, gk1, devices["A"], states))
     files.update(lan_files(identities, gk1))
     files.update(lan_session)
+    files.update(lan_v3_session_files(identities))
+    files.update(lan_v3_enroll_files(identities, gk1))
     files.update(normalise_files())
     files.update(passkey_files())
 

@@ -2,6 +2,7 @@ package app.localgatekeys.android.autofill
 
 import app.localgatekeys.android.unlock.CountingRandom
 import app.localgatekeys.android.editor.CountingStore
+import app.localgatekeys.android.pro.ItemLimit
 import app.localgatekeys.android.vault.card
 import app.localgatekeys.android.vault.deskLogin
 import app.localgatekeys.android.vault.i
@@ -44,6 +45,28 @@ class FillIndexTest {
         assertFalse(index.toString().contains("example"))
     }
 
+    /** Release check 2026-11-01: with the free plan full, the locked provider still offered "Create passkey". */
+    @Test
+    fun free_plan_full_is_kept_for_the_locked_provider() {
+        val four = snapshot((1..ItemLimit.FREE_ITEMS).map { login("l$it", "https://s$it.example.com", "u") })
+        val three = snapshot((1 until ItemLimit.FREE_ITEMS).map { login("l$it", "https://s$it.example.com", "u") })
+        assertTrue(FillIndex.build(four, isPro = false).freeFull)
+        assertFalse("Pro: never full", FillIndex.build(four, isPro = true).freeFull)
+        assertFalse("a free slot left", FillIndex.build(three, isPro = false).freeFull)
+        assertFalse("built for matching only", FillIndex.build(four).freeFull)
+        // Kept through the sealed file's bytes; an index written before the flag existed reads as not full.
+        val back = FillIndex.decode(FillIndex.build(four, isPro = false).encode())!!
+        assertTrue(back.freeFull)
+        assertEquals((1..ItemLimit.FREE_ITEMS).map { "l$it" }.sorted(), back.entries.map { it.id }.sorted())
+        val old = FillIndex.decode("{\"apps\":{},\"entries\":[],\"v\":1}".toByteArray())!!
+        assertFalse(old.freeFull)
+        // The provider's locked decision: full and no Pro known now hides the entry; a purchase since, or no index, offers it.
+        assertTrue(FillIndex.lockedFreePlanFull(back, isProNow = false))
+        assertFalse(FillIndex.lockedFreePlanFull(back, isProNow = true))
+        assertFalse(FillIndex.lockedFreePlanFull(null, isProNow = false))
+        assertFalse(FillIndex.lockedFreePlanFull(old, isProNow = false))
+    }
+
     @Test
     fun tombstones_left_out_and_pairings_pruned() {
         val s = snapshot(listOf(webLogin, login("w2", "https://b.example.org", "x")), deleted = setOf("w2"))
@@ -77,6 +100,8 @@ class FillIndexTest {
         val got = matcher.match(index, FillTarget.Web("https://accounts.example.com", "com.android.chrome")).map { it.id }
         assertEquals(listOf("d", "a", "b"), got)
         assertTrue(matcher.match(index, FillTarget.Web("https://example.net", "com.android.chrome")).isEmpty())
+        // The browser did not name the scheme: nothing is offered by itself (only the search list, which asks first).
+        assertTrue(matcher.match(index, FillTarget.Web("https://accounts.example.com", "com.android.chrome", schemeKnown = false)).isEmpty())
     }
 
     @Test
@@ -121,7 +146,7 @@ class SaveDecisionTest {
 
     @Test
     fun free_limit_blocks_new_only() {
-        val s = snapshot((1..4).map { login("l$it", "https://s$it.example.com", "u") })
+        val s = snapshot((1..ItemLimit.FREE_ITEMS).map { login("l$it", "https://s$it.example.com", "u") })
         val idx = FillIndex.build(s)
         val t = FillTarget.Web("https://s1.example.com", "com.android.chrome")
         assertEquals(SaveDecision.NeedsPro, SaveDecision.decide(s, t, "other", "x", false, matcher, idx))
@@ -142,11 +167,33 @@ class SaveDecisionTest {
     }
 
     @Test
+    fun new_record_accepts_a_bare_domain_like_the_editor() {
+        // An app's save sheet asks for the website; "shop.example.com" must work as it does in the item editor.
+        val r = SaveDecision.newRecord(" shop.example.com ", "me", "Secret-1", 1_800_000_000, CountingRandom()) as JsonValue.Obj
+        assertEquals(s("https://shop.example.com"), (r.fields["scope"] as JsonValue.Obj).fields["origin"])
+    }
+
+    @Test
     fun updated_record_keeps_old_password_in_history() {
         val rec = login("a", "https://accounts.example.com", "me", "old").fields
         val r = (SaveDecision.updatedRecord(rec, "new", 1_800_000_000) as JsonValue.Obj).fields
         assertEquals(s("new"), r["password"])
         assertEquals(listOf("old"), app.localgatekeys.core.records.PasswordHistory.entries(r).map { it.password })
         assertEquals(i(1_800_000_000), r["updated_at"])
+    }
+
+    @Test
+    fun rebuild_without_a_known_travel_mode_never_lists_hidden_logins() {
+        val a = login("a", "https://a.example", "u")
+        val tagged = JsonValue.Obj(login("b", "https://b.example", "u").fields + ("tags" to JsonValue.Arr(listOf(s("Bank")))))
+        val snap = snapshot(listOf(a, tagged))
+        val travel = app.localgatekeys.core.sync.TravelMode.Setting(true, emptyList(), listOf("bank"), 5)
+        // No stored index and no travel mode given: nothing is written (not an index built with travel off).
+        assertNull(FillIndexStore.next(null, snap, true, null))
+        val first = FillIndexStore.next(null, snap, true, travel)!!
+        assertEquals(listOf("a"), first.entries.map { it.id })
+        // A later rebuild without one keeps the stored travel mode.
+        assertEquals(listOf("a"), FillIndexStore.next(first, snap, true, null)!!.entries.map { it.id })
+        assertEquals(listOf("a", "b"), FillIndexStore.next(first, snap, true, app.localgatekeys.core.sync.TravelMode.Setting.OFF)!!.entries.map { it.id })
     }
 }

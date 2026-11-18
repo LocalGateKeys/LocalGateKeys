@@ -44,6 +44,22 @@ Tests find the vectors through the system property `lgk.repoRoot` (the directory
 `lgk-core/build.gradle.kts`) and fail, never skip, when a vector file is missing. Several tests run Argon2id at
 production cost (128 MiB), so give the JVM memory.
 
+## Dependency verification
+
+`gradle/verification-metadata.xml` holds a sha256 for every dependency and Gradle
+plugin artifact (supply-chain protection: a changed or tampered artifact fails the
+build). After changing `gradle/libs.versions.toml`, a plugin or the Gradle version,
+regenerate and review the diff (new entries only should appear):
+
+```
+./gradlew --refresh-dependencies --write-verification-metadata sha256 :lgk-core:test :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:assembleRelease
+```
+
+If you run `lintDebug`, `lintVitalRelease` or another task that is not in that list,
+add it to the command once so its tool artifacts are recorded as well (the lint tasks
+currently fail here for an unrelated reason, see the implicit `copyAppAssets`
+dependency). Check afterwards with `./gradlew --refresh-dependencies assembleDebug`.
+
 ## The round trip through the desktop
 
 `FromAndroidTest` runs the phone flow: join the A/B/C sync group with the epoch-1 password, merge, create a web login,
@@ -203,6 +219,6 @@ Other commands (see the script's docstring):
 - **System picker allowance.** The 120 s cap and the screen-off lock apply under every auto-lock delay, not
   only "Immediately".
 - **Autofill.** Settings › Autofill opens the system's autofill settings, where you choose LocalGateKeys; the fill and save flows still need their device checks (`RELEASE.md`).
-- **Free plan.** The free 4-item limit stops the phone from adding a fifth item; the upgrade sheet opens instead.
+- **Free plan.** The free 7-item limit stops the phone from adding an eighth item; the upgrade sheet opens instead.
   Items that arrive by sync are kept beyond the limit (seen live: a free phone holding 5 synced items). A backup
   restore fills only the free slots and holds the rest back (the free limit applies to restores).

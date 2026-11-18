@@ -29,13 +29,18 @@ data class GeneratorOptions(
     val separator: String = "-",
     val capitalize: Boolean = false,
     val appendNumber: Boolean = false,
+    /** Security-question answers: 2..6 lowercase words joined by spaces (mode [Mode.ANSWER]). */
+    val answerWords: Int = 3,
 ) {
-    enum class Mode(val raw: String) { PASSWORD("password"), PASSPHRASE("passphrase") }
+    enum class Mode(val raw: String) { PASSWORD("password"), PASSPHRASE("passphrase"), ANSWER("answer") }
 
     /** The Settings row ("New passwords"): `SettingsView.summary`. */
     fun summary(t: Txt): String =
-        if (mode == Mode.PASSWORD) t.plural(R.plurals.generator_summary_password, length, length)
-        else t.plural(R.plurals.generator_summary_passphrase, words, words)
+        when (mode) {
+            Mode.PASSWORD -> t.plural(R.plurals.generator_summary_password, length, length)
+            Mode.PASSPHRASE -> t.plural(R.plurals.generator_summary_passphrase, words, words)
+            Mode.ANSWER -> t.s(R.string.generator_mode_answer)
+        }
 
     /** The iPhone's JSONEncoder keys and values (sorted keys, no spaces). */
     fun toJson(): String {
@@ -47,7 +52,7 @@ data class GeneratorOptions(
             "exclude" to JsonValue.Str(exclude), "minDigits" to JsonValue.Int(minDigits.toLong()),
             "minSymbols" to JsonValue.Int(minSymbols.toLong()), "words" to JsonValue.Int(words.toLong()),
             "separator" to JsonValue.Str(separator), "capitalize" to JsonValue.Bool(capitalize),
-            "appendNumber" to JsonValue.Bool(appendNumber),
+            "appendNumber" to JsonValue.Bool(appendNumber), "answerWords" to JsonValue.Int(answerWords.toLong()),
         )
         return CanonicalJson.encode(JsonValue.Obj(f), Dialect.UTF8).toString(Charsets.UTF_8)
     }
@@ -55,7 +60,8 @@ data class GeneratorOptions(
     companion object {
         /**
          * Options from [toJson] output; null when the text is not JSON, a key is missing, a value has the wrong type or
-         * the mode is unknown (Swift's synthesised Decodable fails the same way). Unknown extra keys are ignored.
+         * the mode is unknown (Swift's decoder fails the same way). Unknown extra keys are ignored; `answerWords` may be
+         * missing (options saved before it existed).
          */
         fun fromJson(text: String): GeneratorOptions? = try {
             val f = CanonicalJson.parse(text.toByteArray(Charsets.UTF_8)).obj().fields
@@ -69,6 +75,7 @@ data class GeneratorOptions(
                 exclude = str("exclude"), minDigits = int("minDigits"), minSymbols = int("minSymbols"),
                 words = int("words"), separator = str("separator"), capitalize = bool("capitalize"),
                 appendNumber = bool("appendNumber"),
+                answerWords = f["answerWords"]?.let { Math.toIntExact(it.long()) } ?: 3,
             )
         } catch (e: Exception) {
             null
@@ -167,11 +174,18 @@ class PasswordGenerator(
     private val wordlist: () -> List<String> = { PassphraseWordlist.packaged },
 ) {
     fun generate(o: GeneratorOptions): String =
-        if (o.mode == GeneratorOptions.Mode.PASSPHRASE) {
-            passphrase(o.words, o.separator, o.capitalize, o.appendNumber)
-        } else {
-            password(o)
+        when (o.mode) {
+            GeneratorOptions.Mode.PASSWORD -> password(o)
+            GeneratorOptions.Mode.PASSPHRASE -> passphrase(o.words, o.separator, o.capitalize, o.appendNumber)
+            GeneratorOptions.Mode.ANSWER -> answer(o.answerWords)
         }
+
+    /** Security-question answer: lowercase words from the passphrase list joined by single spaces. */
+    fun answer(words: Int, wordlist: List<String>? = null): String {
+        val count = words.coerceIn(ANSWER_WORDS_RANGE)
+        val list = (wordlist ?: this.wordlist()).ifEmpty { PassphraseWordlist.FALLBACK }
+        return List(count) { choice(list) }.joinToString(" ")
+    }
 
     fun password(o: GeneratorOptions): String {
         var length = o.length.coerceIn(LENGTH_RANGE)
@@ -250,5 +264,7 @@ class PasswordGenerator(
         /** Desktop `_bounded_int(..., 8, 256)` and `max(3, min(words, 16))`. */
         val LENGTH_RANGE = 8..256
         val WORDS_RANGE = 3..16
+        /** Security-answer word count: 2..6. */
+        val ANSWER_WORDS_RANGE = 2..6
     }
 }

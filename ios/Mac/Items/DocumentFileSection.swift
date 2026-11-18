@@ -32,6 +32,12 @@ struct DocumentFileSection: View {
                         .buttonStyle(PillButtonStyle(primary: true))
                     Button("Save…") { gate.releaseRoutine(item, action: String(localized: "Save the attached file")) { save(ref) } }
                         .buttonStyle(PillButtonStyle(primary: false))
+                    // Settings › Privacy › Open documents in other apps (MacDocumentOpen): the questions first, then the gate.
+                    Button("Open") {
+                        guard MacDocumentOpen.confirm(name: ref.name, onProblem: { problem = $0 }) else { return }
+                        gate.releaseRoutine(item, action: String(localized: "Open the attached file")) { openInDefaultApp(ref) }
+                    }
+                    .buttonStyle(PillButtonStyle(primary: false))
                 } else {
                     Text("The file has not arrived on this Mac yet. Sync with the device that added it.")
                         .foregroundStyle(theme.textMuted)
@@ -59,6 +65,23 @@ struct DocumentFileSection: View {
 
     private func openPreview() {
         do { preview = try DocumentFiles.temporaryCopy(id: item.id, store: store, blobs: blobs) } catch {
+            problem = String(localized: "The file could not be opened. It may be damaged.")
+        }
+    }
+
+    /// A decrypted copy in its own temporary folder, handed to the file's default app; deleted when the vault locks.
+    private func openInDefaultApp(_ ref: AttachmentRef) {
+        let url: URL
+        do {
+            let data = try DocumentFiles.contents(id: item.id, store: store, blobs: blobs).data
+            url = try MacDocumentOpen.writeCopy(data, name: ref.name)
+        } catch MacDocumentOpen.Failure.notAllowed {
+            problem = MacDocumentOpen.notAllowedText; return
+        } catch {
+            problem = String(localized: "The file could not be opened. It may be damaged."); return
+        }
+        if !NSWorkspace.shared.open(url) {
+            try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
             problem = String(localized: "The file could not be opened. It may be damaged.")
         }
     }

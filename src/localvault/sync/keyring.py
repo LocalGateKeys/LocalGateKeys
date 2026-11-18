@@ -30,6 +30,73 @@ Format rules (version 2; version 1 is still read)
   Like the rest of the body they are covered by ``mac``.  The folder transport verifies a
   member's view signatures against this key first (``member_signing_keys``).
 
+* Share groups (sub-plan 07, shared collections): a format-2 keyring MAY carry two more
+  top-level fields, always together (a keyring with only one of them is ``bad-fields``; a
+  format-1 keyring with them is ``bad-fields``)::
+
+    "metadata":{"kind":"share","collection_id","name_ct","shared_mode","owner","owner_key"},
+    "owner_sig":{"members":[device_id, ...],"sig"}
+
+  ``kind`` is ``"share"``; ``collection_id`` a canonical lowercase UUID string; ``shared_mode``
+  ``"read"`` or ``"edit"``; ``owner`` the device id of the member that created the group and
+  ``owner_key`` its raw 32-byte Ed25519 key (``signing_public``), which must equal that member's
+  ``signing_public`` in ``members``: the owner is always listed.  ``name_ct`` is the collection
+  name (1..100 characters, no outer whitespace, so 1..400 UTF-8 bytes) encrypted under ``G``
+  exactly like a member name: ``share_name_key = HKDF(SHA256, 32, salt=group_id utf-8,
+  info=b"localgatekeys|sync|share-name|v1|" + str(epoch)).derive(G)``, ``name_ct`` =
+  base64(nonce (12) || AES-256-GCM(share_name_key).encrypt(nonce, name utf-8, AAD =
+  ``b"lgk-keyring-share-name-v1|" + group_id + b"|" + str(epoch) + b"|" + collection_id``)),
+  29..428 raw bytes.  Nothing in the folder names the collection in clear.
+
+  ``owner_sig`` is the owner's authority over the group (members hold ``G`` too, so the MAC
+  alone cannot stop a member).  ``members`` is the sorted, duplicate-free list of approved
+  member ids (the owner among them, each listed in ``members`` with a ``signing_public``);
+  ``sig`` the owner's Ed25519 signature (64 bytes) over
+  ``b"localgatekeys|sync|share-owner|v1|" + canonical_json({"group_id","epoch","metadata",
+  "members":[{"device_id","exchange_public","signing_public"} of each approved member, in
+  id order]})``.  The structure check verifies it (``bad-owner``, ``bad-owner-sig``), so a
+  share keyring whose metadata, epoch or approved roster was changed by anyone but the owner
+  is refused everywhere.  Only the owner rotates a share keyring (``not-owner``) and every
+  rotation re-encrypts ``name_ct`` and signs the remaining members; a password join carries
+  both fields unchanged, so the new member is listed but not approved until the owner signs
+  again (``owner_approve_members``).  Both fields are covered by ``mac`` as well.  A keyring
+  without them (every personal group, every keyring written before them) reads as before.
+  Random draws: ``create_group`` and ``rotate`` draw the name nonce (12) after every draw of
+  the body.
+
+* Share v2 (format 3, ``docs/superpowers/specs/2026-11-12-collections-crypto-gating.md``): a share
+  keyring whose item views are sealed with a content key ``C`` that only approved members can open.
+  Format 3 is a format-2 share keyring (both share fields required) plus one top-level field::
+
+    "content":{"commit","wraps":{device_id:{"eph","nonce","ct"}}}
+
+  ``C`` is 32 random bytes per epoch; the share's views are sealed with ``GroupKey(group_id, epoch, C)``
+  (``open_content_key``) instead of ``G``, so the share password (which opens ``G``) opens no item.
+  ``commit`` = SHA256(``b"localgatekeys|sync|share-content|v1|" + group_id + b"|" + str(epoch) + b"|" + C``).
+  A content wrap is a device wrap of ``C`` with its own labels: key = HKDF(SHA256, 32, salt=group_id utf-8,
+  info=``b"localgatekeys|sync|content-wrap|v1|" + device_id``) over X25519(eph, member exchange key),
+  AAD = ``b"lgk-keyring-content-wrap-v1|" + group_id + b"|" + str(epoch) + b"|" + device_id``.  The
+  ``wraps`` keys are exactly ``owner_sig.members`` (``bad-content``), and ``owner_sig.sig`` signs
+  ``b"localgatekeys|sync|share-owner|v2|" + canonical_json({"group_id","epoch","metadata","members",
+  "content","kdf","password_wrap","device_wraps","prev_mac"})`` (``members`` the roster as in v1;
+  ``kdf``, ``password_wrap``, ``content`` and ``prev_mac``, null or base64, exactly as in the keyring;
+  ``device_wraps`` the keyring's device wraps of the approved members only, keyed by device id), so only
+  the owner adds, drops or swaps a content wrap, and the owner's signature commits to ``G`` itself: an
+  approved member's device wrap, the password wrap and the chain MAC all open or check only with the
+  ``G`` the owner wrapped (audit 2026-11-12 F-01: before, a removed member holding the old ``G`` could
+  reuse the owner's epoch + 1 signature over wraps of a ``G`` it picked).  A password join changes none
+  of the signed fields (it appends a pending member and its wrap), so it keeps the signature valid.
+  Writers set ``prev_mac`` before signing (null at create; the chain MAC at a rotation).  A format-3
+  keyring without the share
+  fields, or a format-2 one with ``content``, is ``bad-fields``; a format above 3 is ``newer-format``
+  (the app says "update the app").  Joining keeps format 3 and adds no content wrap (the joiner is
+  pending); ``owner_approve_members`` wraps ``C`` to each newly approved member (id order, eph 32 +
+  nonce 12 each); ``rotate`` of a format-3 keyring (or with ``upgrade=True`` of a format-2 share,
+  ``upgrade_share_keyring``) draws like a format-2 share rotation, then ``C`` (32), then one content
+  wrap per approved member in id order; the approved members are the previous ones minus the removed.
+  ``create_group`` with share metadata writes format 3 (``share_format=2`` only for the legacy vectors)
+  and draws ``C`` and the owner's content wrap after the share-name nonce.
+
 * Canonical JSON is ``localvault.updates.canonical_json``; base64 is standard with
   padding, decoded strictly (see ``group.py``); non-finite numbers are rejected.
   Identifiers (``group_id`` and every ``device_id``) are ASCII ``[A-Za-z0-9._:-]``,
@@ -68,7 +135,8 @@ Format rules (version 2; version 1 is still read)
   ``create_group`` (new G, salt, password nonce, then wrap + name nonce per remaining
   member in member order).  ``create_for_existing_group`` draws like ``create_group``
   without G (salt, password nonce, wrap, name nonce); ``attach_with_password`` like
-  ``join_with_password``.
+  ``join_with_password``, and so does ``rejoin_with_password`` (a device that left and comes back
+  with its kept identity: its own entry is rewritten in place, no second entry is added).
 * Sync password: at least 12 characters and ``estimate_strength(pw).score >= 3``.
 
 Trust model
@@ -109,7 +177,10 @@ The keyring is authenticated by knowledge of ``G``.
 * Residual risk: a device that was offline during a removal accepts the first valid
   epoch + 1 keyring it sees; a removed device that still has cloud access and the old
   ``G`` can race the genuine rotation.  Users removing a lost device should also sign
-  it out of the cloud account.
+  it out of the cloud account.  A share v2 keyring (format 3) closes this: its owner
+  signature binds the new ``G`` (above), so only the owner makes an acceptable epoch + 1
+  keyring.  Personal groups and share v1 keyrings (format 2, whose owner signature does
+  not cover the wraps; a removal upgrades a share to v2) keep the race.
 
 Canonical JSON (must be byte-identical on iOS)
 ----------------------------------------------
@@ -156,8 +227,12 @@ from localvault.sync.pairing import DeviceIdentity
 from localvault.updates import canonical_json
 
 FORMAT = 2
-#: Keyring formats this version reads (format 1 has no member signing keys).
-READ_FORMATS = (1, 2)
+#: Keyring formats this version reads (format 1 has no member signing keys; format 3 is a share v2 keyring).
+READ_FORMATS = (1, 2, 3)
+#: The keyring format of a share v2 keyring (item views sealed with the content key).
+SHARE_FORMAT = 3
+#: The share keyring formats ``create_group`` writes (2: share v1, legacy vectors only).
+_SHARE_FORMATS = (2, SHARE_FORMAT)
 KDF_NAME = "argon2id"
 KDF_MEMORY_KIB = 131072
 KDF_ITERATIONS = 4
@@ -193,7 +268,26 @@ _NAME_CT_MAX = _NONCE_LEN + MAX_NAME_LEN + _TAG_LEN
 _TOP_FIELDS = frozenset(
     {"format", "group_id", "epoch", "kdf", "password_wrap", "device_wraps", "members", "prev_mac", "mac"}
 )
+_SHARE_TOP_FIELDS = frozenset({"metadata", "owner_sig"})
 _KDF_FIELDS = frozenset({"name", "salt", "memory_kib", "iterations", "parallelism"})
+_METADATA_FIELDS = frozenset({"kind", "collection_id", "name_ct", "shared_mode", "owner", "owner_key"})
+_SHARE_SPEC_FIELDS = frozenset({"kind", "collection_id", "name", "shared_mode"})
+_OWNER_SIG_FIELDS = frozenset({"members", "sig"})
+SHARE_NAME_AAD = b"lgk-keyring-share-name-v1|"
+SHARE_NAME_INFO = b"localgatekeys|sync|share-name|v1|"
+OWNER_SIG_LABEL = b"localgatekeys|sync|share-owner|v1|"
+OWNER_SIG_LABEL_V2 = b"localgatekeys|sync|share-owner|v2|"
+CONTENT_AAD = b"lgk-keyring-content-wrap-v1|"
+CONTENT_INFO = b"localgatekeys|sync|content-wrap|v1|"
+CONTENT_COMMIT_LABEL = b"localgatekeys|sync|share-content|v1|"
+_CONTENT_FIELDS = frozenset({"commit", "wraps"})
+#: ``metadata.kind`` of a shared-collection keyring.
+SHARE_KIND = "share"
+#: Allowed ``metadata.shared_mode`` values: members only read, or members may edit.
+SHARED_MODES = ("read", "edit")
+MAX_SHARE_NAME_LEN = 100
+_SHARE_NAME_CT_MIN = 12 + 1 + 16
+_SHARE_NAME_CT_MAX = 12 + 4 * MAX_SHARE_NAME_LEN + 16
 _PW_WRAP_FIELDS = frozenset({"nonce", "ct"})
 _DEV_WRAP_FIELDS = frozenset({"eph", "nonce", "ct"})
 _MEMBER_FIELDS_V1 = frozenset({"device_id", "name_ct", "exchange_public", "added_at"})
@@ -314,8 +408,10 @@ def _wrap_password(
 
 
 def _wrap_device(
-    gk: GroupKey, device_id: str, exchange_public: bytes, rand: RandomSource | None = None
+    gk: GroupKey, device_id: str, exchange_public: bytes, rand: RandomSource | None = None, *,
+    info: bytes = DEVICE_INFO, aad_label: bytes = DEVICE_AAD,
 ) -> dict:
+    """Wrap ``gk.key`` to *device_id*'s X25519 key (the device wrap of ``G``; with the content labels, of ``C``)."""
     if rand is None:
         eph = x25519.X25519PrivateKey.generate()
     else:
@@ -325,11 +421,79 @@ def _wrap_device(
     except ValueError as exc:
         raise KeyringError("bad-member-key", "exchange key unusable") from exc
     nonce = _random(rand, _NONCE_LEN)
-    ct = AESGCM(_device_key(shared, gk.group_id, device_id)).encrypt(
-        nonce, gk.key, _device_aad(gk.group_id, gk.epoch, device_id)
-    )
+    key = HKDF(algorithm=hashes.SHA256(), length=_KEY_LEN, salt=gk.group_id.encode("utf-8"),
+               info=info + device_id.encode("ascii")).derive(shared)
+    aad = aad_label + gk.group_id.encode("ascii") + b"|" + str(gk.epoch).encode("ascii") + b"|" + device_id.encode("ascii")
+    ct = AESGCM(key).encrypt(nonce, gk.key, aad)
     eph_pub = eph.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
     return {"eph": _b64e(eph_pub), "nonce": _b64e(nonce), "ct": _b64e(ct)}
+
+
+def _wrap_content(ck: GroupKey, device_id: str, exchange_public: str, rand: RandomSource | None = None) -> dict:
+    """The content wrap of ``C`` (*ck*) for *device_id* (share v2, module docstring)."""
+    return _wrap_device(ck, device_id, _b64d(exchange_public, 32, "exchange_public"), rand,
+                        info=CONTENT_INFO, aad_label=CONTENT_AAD)
+
+
+def _content_commit(ck: GroupKey) -> bytes:
+    """``content.commit``: SHA-256 over the label, group id, epoch and ``C``."""
+    return hashlib.sha256(CONTENT_COMMIT_LABEL + ck.group_id.encode("ascii") + b"|"
+                          + str(ck.epoch).encode("ascii") + b"|" + ck.key).digest()
+
+
+def _check_content_shape(content: object) -> None:
+    c = _fields(content, _CONTENT_FIELDS, "content fields")
+    _b64d(c["commit"], 32, "content commit")
+    wraps = c["wraps"]
+    if not isinstance(wraps, dict):
+        raise KeyringError("bad-content", "content wraps must be an object")
+    for device_id, wrap in wraps.items():
+        if not is_valid_id(device_id):
+            raise KeyringError("bad-content", "content wrap device id")
+        w = _fields(wrap, _DEV_WRAP_FIELDS, "content wrap fields")
+        _b64d(w["eph"], 32, "content wrap eph")
+        _b64d(w["nonce"], _NONCE_LEN, "content wrap nonce")
+        _b64d(w["ct"], _WRAP_CT_LEN, "content wrap ct")
+
+
+def share_version(keyring: Mapping) -> int | None:
+    """1 for a share v1 keyring (items sealed with ``G``), 2 for share v2 (format 3), None for a personal one.
+
+    Call it only on a keyring that passed the structure check.
+    """
+    if "metadata" not in keyring:
+        return None
+    return 2 if keyring["format"] == SHARE_FORMAT else 1
+
+
+def open_content_key(keyring: Mapping, identity: DeviceIdentity) -> GroupKey | None:
+    """``GroupKey(group_id, epoch, C)`` of share v2 *keyring* from this device's content wrap.
+
+    None when the owner has not wrapped ``C`` for this device (not approved yet).  Raises
+    ``KeyringError``: ``not-share-v2`` for any other keyring, ``content-key`` when the wrap does not
+    open or opens a key other than the committed one.  Call it only on an accepted keyring.
+    """
+    if keyring.get("format") != SHARE_FORMAT or "content" not in keyring:
+        raise KeyringError("not-share-v2", "this keyring has no content key")
+    _member(keyring, identity)
+    wrap = keyring["content"]["wraps"].get(identity.device_id)
+    if wrap is None:
+        return None
+    group_id, epoch = keyring["group_id"], keyring["epoch"]
+    try:
+        shared = identity.exchange_key.exchange(x25519.X25519PublicKey.from_public_bytes(_b64d(wrap["eph"], 32, "eph")))
+        key = HKDF(algorithm=hashes.SHA256(), length=_KEY_LEN, salt=group_id.encode("utf-8"),
+                   info=CONTENT_INFO + identity.device_id.encode("ascii")).derive(shared)
+        aad = (CONTENT_AAD + group_id.encode("ascii") + b"|" + str(epoch).encode("ascii") + b"|"
+               + identity.device_id.encode("ascii"))
+        plain = AESGCM(key).decrypt(_b64d(wrap["nonce"], _NONCE_LEN, "nonce"),
+                                    _b64d(wrap["ct"], _WRAP_CT_LEN, "ct"), aad)
+    except (InvalidTag, ValueError) as exc:
+        raise KeyringError("content-key", "the content wrap cannot be opened") from exc
+    ck = GroupKey(group_id, epoch, plain)
+    if not hmac.compare_digest(_content_commit(ck), _b64d(keyring["content"]["commit"], 32, "content commit")):
+        raise KeyringError("content-key", "the content key differs from the committed one")
+    return ck
 
 
 def _name_key(gk: GroupKey) -> bytes:
@@ -556,9 +720,20 @@ def _fields(value: object, expected: frozenset[str], what: str) -> Mapping:
 def verify_keyring_structure(keyring: object, *, _kdf_override: tuple[int, int, int] | None = None) -> None:
     """Validate shape, bounds, KDF parameters and wrap/member sets (no authentication)."""
     profile = _profile(_kdf_override)
-    ring = _fields(keyring, _TOP_FIELDS, "keyring fields")
+    if isinstance(keyring, dict) and type(keyring.get("format")) is int and keyring["format"] > max(READ_FORMATS):
+        raise KeyringError("newer-format", "this keyring needs a newer version of the app")
+    share = isinstance(keyring, dict) and bool(_SHARE_TOP_FIELDS & set(keyring))
+    v2 = isinstance(keyring, dict) and type(keyring.get("format")) is int and keyring["format"] == SHARE_FORMAT
+    expected = _TOP_FIELDS | _SHARE_TOP_FIELDS if share else _TOP_FIELDS
+    ring = _fields(keyring, expected | {"content"} if v2 else expected, "keyring fields")
     if type(ring["format"]) is not int or ring["format"] not in READ_FORMATS:
         raise KeyringError("bad-format", "unsupported keyring format")
+    if v2 and not share:
+        raise KeyringError("bad-fields", "a format-3 keyring is a share keyring")
+    if share:
+        if ring["format"] < 2:
+            raise KeyringError("bad-fields", "a format-1 keyring has no share fields")
+        check_metadata(ring["metadata"])
     member_fields = _MEMBER_FIELDS if ring["format"] >= 2 else _MEMBER_FIELDS_V1
     group_id, epoch = ring["group_id"], ring["epoch"]
     if not is_valid_id(group_id):
@@ -614,6 +789,194 @@ def verify_keyring_structure(keyring: object, *, _kdf_override: tuple[int, int, 
     elif ring["prev_mac"] is not None:  # null: the first keyring of an existing group
         _b64d(ring["prev_mac"], _MAC_LEN, "prev_mac")
     _b64d(ring["mac"], _MAC_LEN, "mac")
+    if v2:
+        _check_content_shape(ring["content"])
+    if share:
+        _check_owner_sig(ring)
+
+
+def _canonical_uuid(value: object) -> bool:
+    try:
+        return isinstance(value, str) and str(uuid.UUID(value)) == value
+    except ValueError:
+        return False
+
+
+def check_share_spec(spec: object) -> dict:
+    """Validate the caller's plaintext share description ``{"kind","collection_id","name","shared_mode"}``."""
+    meta = _fields(spec, _SHARE_SPEC_FIELDS, "share fields")
+    if not isinstance(meta["kind"], str) or meta["kind"] != SHARE_KIND:
+        raise KeyringError("bad-metadata", "unsupported metadata kind")
+    if not _canonical_uuid(meta["collection_id"]):
+        raise KeyringError("bad-metadata", "collection_id must be a canonical UUID")
+    name = meta["name"]
+    if not isinstance(name, str) or not 1 <= len(name) <= MAX_SHARE_NAME_LEN or name != name.strip():
+        raise KeyringError("bad-metadata", "name must be 1..100 characters without outer spaces")
+    try:
+        name.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise KeyringError("bad-metadata", "name is not encodable") from exc
+    if not isinstance(meta["shared_mode"], str) or meta["shared_mode"] not in SHARED_MODES:
+        raise KeyringError("bad-metadata", "shared_mode must be read or edit")
+    return dict(meta)
+
+
+def check_metadata(metadata: object) -> dict:
+    """Validate a stored share ``metadata`` block (see the module docstring); returns a plain dict."""
+    meta = _fields(metadata, _METADATA_FIELDS, "metadata fields")
+    if not isinstance(meta["kind"], str) or meta["kind"] != SHARE_KIND:
+        raise KeyringError("bad-metadata", "unsupported metadata kind")
+    if not _canonical_uuid(meta["collection_id"]):
+        raise KeyringError("bad-metadata", "collection_id must be a canonical UUID")
+    if not _SHARE_NAME_CT_MIN <= len(_b64d_any(meta["name_ct"], "metadata name_ct")) <= _SHARE_NAME_CT_MAX:
+        raise KeyringError("bad-metadata", "name_ct must be 29..428 bytes")
+    if not isinstance(meta["shared_mode"], str) or meta["shared_mode"] not in SHARED_MODES:
+        raise KeyringError("bad-metadata", "shared_mode must be read or edit")
+    if not is_valid_id(meta["owner"]):
+        raise KeyringError("bad-metadata", "owner")
+    _b64d(meta["owner_key"], 32, "metadata owner_key")
+    return dict(meta)
+
+
+def keyring_metadata(keyring: Mapping) -> dict | None:
+    """The stored share ``metadata`` of *keyring* (``name_ct``, not the name), None for a personal group.
+
+    It validates the block but does not authenticate the keyring: decide only refusals on it until
+    the keyring is accepted (``accept_keyring``) or its MAC verified (``join_with_password``).
+    """
+    meta = keyring.get("metadata")
+    return None if meta is None else check_metadata(meta)
+
+
+def _share_name_key(gk: GroupKey) -> bytes:
+    return HKDF(
+        algorithm=hashes.SHA256(),
+        length=_KEY_LEN,
+        salt=gk.group_id.encode("utf-8"),
+        info=SHARE_NAME_INFO + str(gk.epoch).encode("ascii"),
+    ).derive(gk.key)
+
+
+def _share_name_aad(gk: GroupKey, collection_id: str) -> bytes:
+    return (SHARE_NAME_AAD + gk.group_id.encode("ascii") + b"|" + str(gk.epoch).encode("ascii") + b"|"
+            + collection_id.encode("ascii"))
+
+
+def _seal_share_name(gk: GroupKey, collection_id: str, name: str, rand: RandomSource | None = None) -> str:
+    nonce = _random(rand, _NONCE_LEN)
+    ct = AESGCM(_share_name_key(gk)).encrypt(nonce, name.encode("utf-8"), _share_name_aad(gk, collection_id))
+    return _b64e(nonce + ct)
+
+
+def share_name(keyring: Mapping, gk: GroupKey) -> str:
+    """Decrypt the collection name of share *keyring* with its epoch's key *gk*.
+
+    Call it only on a keyring the caller has accepted.  Raises ``KeyringError("bad-metadata")``
+    when the name cannot be read.
+    """
+    meta = check_metadata(keyring["metadata"])
+    try:
+        raw = _b64d_any(meta["name_ct"], "metadata name_ct")
+        plain = AESGCM(_share_name_key(gk)).decrypt(raw[:_NONCE_LEN], raw[_NONCE_LEN:],
+                                                    _share_name_aad(gk, meta["collection_id"]))
+        name = plain.decode("utf-8")
+    except (InvalidTag, UnicodeDecodeError, ValueError) as exc:
+        raise KeyringError("bad-metadata", "the collection name cannot be read") from exc
+    if not 1 <= len(name) <= MAX_SHARE_NAME_LEN or name != name.strip():
+        raise KeyringError("bad-metadata", "the collection name is malformed")
+    return name
+
+
+def _owner_message(ring: Mapping, approved: Iterable[str]) -> bytes:
+    approved = sorted(approved)
+    by_id = {m["device_id"]: m for m in ring["members"]}
+    roster = [{"device_id": d, "exchange_public": by_id[d]["exchange_public"],
+               "signing_public": by_id[d]["signing_public"]} for d in approved]
+    body = {"group_id": ring["group_id"], "epoch": ring["epoch"], "metadata": ring["metadata"], "members": roster}
+    if ring["format"] == SHARE_FORMAT:
+        # Share v2 also binds G (audit 2026-11-12 F-01): the approved members' device wraps, the password
+        # wrap with its KDF, and the chain MAC, so a removed member who still holds the old G cannot reuse
+        # this signature over wraps of a G it picked.  A password join changes none of them.
+        return OWNER_SIG_LABEL_V2 + canonical_json({
+            **body, "content": ring["content"], "kdf": ring["kdf"], "password_wrap": ring["password_wrap"],
+            "device_wraps": {d: ring["device_wraps"][d] for d in approved}, "prev_mac": ring["prev_mac"]})
+    return OWNER_SIG_LABEL + canonical_json(body)
+
+
+def _check_owner_sig(ring: Mapping) -> frozenset[str]:
+    """Verify ``owner_sig`` of a structurally valid share keyring; returns the approved member ids."""
+    meta = ring["metadata"]
+    sig = _fields(ring["owner_sig"], _OWNER_SIG_FIELDS, "owner_sig fields")
+    approved = sig["members"]
+    by_id = {m["device_id"]: m for m in ring["members"]}
+    if (not isinstance(approved, list) or not all(isinstance(d, str) for d in approved)
+            or approved != sorted(set(approved))):
+        raise KeyringError("bad-owner", "owner_sig members must be sorted, unique ids")
+    owner = by_id.get(meta["owner"])
+    if owner is None or owner.get("signing_public") != meta["owner_key"]:
+        raise KeyringError("bad-owner", "the owner is not listed with its key")
+    if meta["owner"] not in approved or any(d not in by_id or by_id[d].get("signing_public") is None
+                                            for d in approved):
+        raise KeyringError("bad-owner", "owner_sig lists a member that is not in the keyring")
+    if ring["format"] == SHARE_FORMAT and set(ring["content"]["wraps"]) != set(approved):
+        raise KeyringError("bad-content", "content wraps must match the approved members exactly")
+    raw_sig = _b64d(sig["sig"], _PROOF_LEN, "owner_sig sig")
+    try:
+        ed25519.Ed25519PublicKey.from_public_bytes(_b64d(meta["owner_key"], 32, "owner_key")).verify(
+            raw_sig, _owner_message(ring, approved))
+    except (InvalidSignature, ValueError) as exc:
+        raise KeyringError("bad-owner-sig", "the owner's signature does not verify") from exc
+    return frozenset(approved)
+
+
+def approved_members(keyring: Mapping) -> frozenset[str] | None:
+    """Member ids the owner approved (share keyring), None for a personal keyring.
+
+    Call it only on a keyring that passed ``verify_keyring_structure`` (which verified the signature).
+    """
+    sig = keyring.get("owner_sig")
+    return None if sig is None else frozenset(sig["members"])
+
+
+def _sign_owner(body: Mapping, identity: DeviceIdentity, approve: Iterable[str] | None = None, *,
+                content: GroupKey | None = None, rand: RandomSource | None = None,
+                reuse: Mapping[str, Mapping] | None = None) -> dict:
+    """*body* with ``owner_sig`` by *identity* (the owner) approving *approve* (None: every member it lists).
+
+    A format-3 *body* also gets its ``content`` block for the content key *content* (``C``): the wraps it
+    already holds for that ``C`` are kept, then *reuse* (the owner's own earlier wraps of this epoch), and
+    every other approved member gets a new wrap, drawn in member id order.
+    """
+    meta = body["metadata"]
+    if meta["owner"] != identity.device_id or meta["owner_key"] != _b64e(identity.signing_public_key):
+        raise KeyringError("not-owner", "only the owner changes a share group")
+    out = {k: v for k, v in body.items() if k not in ("mac", "owner_sig")}
+    listed = {m["device_id"] for m in out["members"]}
+    chosen = listed if approve is None else set(approve) | {identity.device_id}
+    if not chosen <= listed:
+        raise KeyringError("not-member", "an approved device is not a member")
+    approved = sorted(chosen)
+    if out["format"] == SHARE_FORMAT:
+        if "prev_mac" not in out:
+            raise KeyringError("bad-fields", "set prev_mac before the owner signs a share v2 keyring")
+        if content is None:
+            raise KeyringError("content-key", "a share v2 keyring needs its content key")
+        commit = _b64e(_content_commit(content))
+        old = out.get("content")
+        have = dict(old["wraps"]) if isinstance(old, Mapping) and old.get("commit") == commit else {}
+        by_id = {m["device_id"]: m for m in out["members"]}
+        wraps: dict[str, Mapping] = {}
+        for d in approved:
+            if d in have:
+                wraps[d] = have[d]
+            elif reuse is not None and d in reuse:
+                wraps[d] = reuse[d]
+            else:
+                wraps[d] = _wrap_content(content, d, by_id[d]["exchange_public"], rand)
+        out["content"] = {"commit": commit, "wraps": wraps}
+    sig = identity.signing_key.sign(_owner_message(out, approved))
+    out["owner_sig"] = {"members": approved, "sig": _b64e(sig)}
+    return out
 
 
 def _check_member_proof(group_id: str, m: Mapping) -> None:
@@ -714,7 +1077,7 @@ def _with_member(keyring: Mapping, gk: GroupKey, identity: DeviceIdentity, name:
     """*keyring* (authenticated under *gk*) plus *identity* and its wrap; ``prev_mac`` carried over."""
     body = {k: v for k, v in keyring.items() if k != "mac"}
     entry, wrap = _member_entry(gk, _new_member(identity, name, now), rand)
-    body["format"] = FORMAT  # a format-1 keyring is written back as format 2
+    body["format"] = max(FORMAT, keyring["format"])  # a format-1 keyring is written back as format 2; 3 stays 3
     body["members"] = [*(_as_format2(m) for m in keyring["members"]), entry]
     body["device_wraps"] = {**keyring["device_wraps"], identity.device_id: wrap}
     return _finish(body, gk, None, keyring["prev_mac"])
@@ -729,17 +1092,40 @@ def create_group(
     _rand: RandomSource | None = None,
     _now: int | None = None,
     _group_id: str | None = None,
+    metadata: Mapping | None = None,
+    share_format: int = SHARE_FORMAT,
 ) -> tuple[dict, GroupKey]:
     """Create a new group (epoch 1) with *identity* as its first member.
 
+    *metadata* (``{"kind":"share","collection_id","name","shared_mode"}``, plaintext) makes it a
+    share group owned by *identity*: the name is sealed into ``name_ct`` and the owner signs
+    (``owner_sig``); the keyring is share v2 (format 3, ``C`` wrapped to the owner) unless
+    *share_format* is 2 (share v1: only the legacy vectors and the migration tests write it).
+    None (every personal group) writes neither field.
     ``_rand``, ``_now`` and ``_group_id`` exist only for the deterministic test vectors.
     """
+    if share_format not in _SHARE_FORMATS:
+        raise KeyringError("bad-format", "unsupported share format")
+    spec = None if metadata is None else check_share_spec(metadata)
     _check_password(password)
     _check_identity(identity)
     _check_name(name)
     profile = _profile(_kdf_override)
     gk = GroupKey(str(uuid.uuid4()) if _group_id is None else _group_id, 1, _random(_rand, _KEY_LEN))
     body = _fresh_body(gk, password, [_new_member(identity, name, _now)], profile, _rand)
+    if spec is not None:
+        body["metadata"] = {
+            "kind": SHARE_KIND, "collection_id": spec["collection_id"],
+            "name_ct": _seal_share_name(gk, spec["collection_id"], spec["name"], _rand),
+            "shared_mode": spec["shared_mode"], "owner": identity.device_id,
+            "owner_key": _b64e(identity.signing_public_key),
+        }
+        content = None
+        if share_format == SHARE_FORMAT:
+            body["format"] = SHARE_FORMAT
+            body["prev_mac"] = None  # signed by the owner (share v2)
+            content = GroupKey(gk.group_id, gk.epoch, _random(_rand, _KEY_LEN))
+        body = _sign_owner(body, identity, content=content, rand=_rand)
     return _finish(body, gk, None), gk
 
 
@@ -768,6 +1154,64 @@ def join_with_password(
     if not _mac_ok(keyring["mac"], gk.key, gk.group_id, gk.epoch, keyring):
         raise KeyringError("tampered", "keyring MAC does not verify under the group key")
     return _with_member(keyring, gk, identity, name, _rand, _now), gk
+
+
+def listed_with_key(keyring: Mapping, identity: DeviceIdentity) -> bool:
+    """True if *keyring* lists *identity*'s device id with its exchange key (and its signing key, if any).
+
+    A member entry names the device that holds its keys: the same id with another key is another
+    device (or a forgery) and is never rewritten in place.
+    """
+    for m in keyring.get("members") or ():
+        if isinstance(m, Mapping) and m.get("device_id") == identity.device_id:
+            return (m.get("exchange_public") == _b64e(identity.exchange_public_key)
+                    and m.get("signing_public") in (None, _b64e(identity.signing_public_key)))
+    return False
+
+
+def rejoin_with_password(
+    keyring: dict,
+    password: str,
+    identity: DeviceIdentity,
+    name: str,
+    *,
+    _kdf_override: tuple[int, int, int] | None = None,
+    _rand: RandomSource | None = None,
+    _now: int | None = None,
+) -> tuple[dict, GroupKey]:
+    """Join by sync password a group that still lists this device (it left and comes back, same keys).
+
+    Like ``join_with_password``, but the member entry of *identity* is rewritten in place (new device
+    wrap, name and proof, as a join writes a member) instead of a second entry being added, so every
+    reader, older builds included, sees the same member with the same key.  The entry must list the
+    identity's own exchange key (and signing key, if it has one): otherwise ``key-mismatch``; an id
+    that is not listed is ``not-member``.  Draws like ``join_with_password``.
+    """
+    profile = _profile(_kdf_override)
+    verify_keyring_structure(keyring, _kdf_override=_kdf_override)
+    _check_identity(identity)
+    _check_name(name)
+    if not isinstance(password, str):
+        raise KeyringError("password", "wrong sync password or damaged keyring")
+    if "metadata" in keyring:
+        # A share keyring's owner signature covers its members' wraps: only the owner rewrites one.
+        raise KeyringError("share-group", "a shared collection's keyring is not rejoined in place")
+    index = next((i for i, m in enumerate(keyring["members"]) if m["device_id"] == identity.device_id), None)
+    if index is None:
+        raise KeyringError("not-member", "device is not a member of this keyring")
+    if not listed_with_key(keyring, identity):
+        raise KeyringError("key-mismatch", "device key differs from the registered member")
+    gk = _unwrap_password(keyring, password, profile)
+    if not _mac_ok(keyring["mac"], gk.key, gk.group_id, gk.epoch, keyring):
+        raise KeyringError("tampered", "keyring MAC does not verify under the group key")
+    body = {k: v for k, v in keyring.items() if k != "mac"}
+    entry, wrap = _member_entry(gk, _new_member(identity, name, _now), _rand)
+    members = [_as_format2(m) for m in keyring["members"]]
+    members[index] = entry
+    body["format"] = max(FORMAT, keyring["format"])
+    body["members"] = members
+    body["device_wraps"] = {**keyring["device_wraps"], identity.device_id: wrap}
+    return _finish(body, gk, None, keyring["prev_mac"]), gk
 
 
 def create_for_existing_group(
@@ -915,15 +1359,25 @@ def rotate(
     new_password: str,
     *,
     remove: Iterable[str] = (),
+    upgrade: bool = False,
     _kdf_override: tuple[int, int, int] | None = None,
     _rand: RandomSource | None = None,
+    _allow_same_password: bool = False,
 ) -> tuple[dict, GroupKey]:
-    """New ``G``, epoch + 1, new salt and a NEW sync password; drop the *remove* devices."""
+    """New ``G``, epoch + 1, new salt and a NEW sync password; drop the *remove* devices.
+
+    A share v2 keyring (format 3) stays share v2 with a new content key; *upgrade* makes a share v1
+    keyring share v2 in the same rotation (``not-share`` for a personal keyring).  A share v1 rotation
+    approves every remaining member (callers drop pending ones with *remove*); a share v2 rotation keeps
+    the previous approvals minus the removed devices.
+    """
     profile = _profile(_kdf_override)
     _check_password(new_password)
     gk = accept_keyring(keyring, trusted, identity, _kdf_override=_kdf_override)
     if gk.epoch != trusted.epoch:
         raise KeyringError("stale-trust", "adopt the current keyring before rotating")
+    if upgrade and "metadata" not in keyring:
+        raise KeyringError("not-share", "a personal keyring has no share version")
     _member(keyring, identity)
     drop = set(remove)
     have = {m["device_id"] for m in keyring["members"]}
@@ -931,12 +1385,13 @@ def rotate(
         raise KeyringError("cannot-remove-self", "a device cannot remove itself")
     if not drop <= have:
         raise KeyringError("not-member", "device to remove is not a member")
-    try:
-        _unwrap_password(keyring, new_password, profile)
-    except KeyringError:
-        pass
-    else:
-        raise KeyringError("password-reused", "choose a sync password different from the current one")
+    if not _allow_same_password:
+        try:
+            _unwrap_password(keyring, new_password, profile)
+        except KeyringError:
+            pass
+        else:
+            raise KeyringError("password-reused", "choose a sync password different from the current one")
     new_gk = GroupKey(gk.group_id, gk.epoch + 1, _random(_rand, _KEY_LEN))
     names = member_names(keyring, gk)
     remaining = [
@@ -952,4 +1407,83 @@ def rotate(
         if m["device_id"] not in drop
     ]
     body = _fresh_body(new_gk, new_password, remaining, profile, _rand)
+    if "metadata" in keyring:
+        # A share group: only the owner rotates; the name is re-sealed for the new epoch and the
+        # owner approves every remaining member (drop unapproved ones with *remove* first).
+        old = keyring["metadata"]
+        body["metadata"] = {**old, "name_ct": _seal_share_name(new_gk, old["collection_id"],
+                                                               share_name(keyring, gk), _rand)}
+        if upgrade or keyring["format"] == SHARE_FORMAT:
+            body["format"] = SHARE_FORMAT
+            body["prev_mac"] = _b64e(_chain_mac(gk, new_gk))  # signed by the owner (share v2); _finish keeps it
+            content = GroupKey(new_gk.group_id, new_gk.epoch, _random(_rand, _KEY_LEN))
+            keep = (approved_members(keyring) or frozenset()) - drop
+            body = _sign_owner(body, identity, keep, content=content, rand=_rand)
+        else:
+            body = _sign_owner(body, identity)
     return _finish(body, new_gk, gk), new_gk
+
+
+def upgrade_share_keyring(
+    keyring: dict,
+    trusted: GroupKey,
+    identity: DeviceIdentity,
+    password: str,
+    *,
+    _kdf_override: tuple[int, int, int] | None = None,
+    _rand: RandomSource | None = None,
+) -> tuple[dict, GroupKey]:
+    """The owner upgrades share v1 *keyring* to share v2: a rotation to epoch + 1 that removes nobody.
+
+    New ``G`` and a content key ``C`` wrapped to the members already approved (pending ones stay
+    pending).  *password* is the share password for the new epoch: the current one may be kept (it no
+    longer opens any item); it must pass the share password rules.  Refused: ``not-share``,
+    ``already-v2``, ``not-owner`` and what ``rotate`` refuses.
+    """
+    if "metadata" not in keyring:
+        raise KeyringError("not-share", "a personal keyring has no share version")
+    if keyring.get("format") == SHARE_FORMAT:
+        raise KeyringError("already-v2", "this share is already share v2")
+    return rotate(keyring, trusted, identity, password, upgrade=True, _kdf_override=_kdf_override, _rand=_rand,
+                  _allow_same_password=True)
+
+
+def owner_approve_members(
+    keyring: dict,
+    trusted: GroupKey,
+    identity: DeviceIdentity,
+    *,
+    approve: Iterable[str] | None = None,
+    reuse_wraps: Mapping | None = None,
+    _kdf_override: tuple[int, int, int] | None = None,
+    _rand: RandomSource | None = None,
+) -> dict:
+    """The owner (*identity*) approves members of share *keyring* at the trusted epoch.
+
+    The new roster is the members already approved plus *approve* (None: every member).  Same
+    epoch, key, metadata and device wraps; only ``owner_sig`` (and ``mac``) change, ``prev_mac`` is
+    carried.  Share v2: the owner opens ``C`` from its own content wrap and wraps it to each newly
+    approved member (id order); *reuse_wraps* (the ``content`` block of the owner's own stored keyring
+    of this epoch) gives the wraps it already made, so a merge grows from that keyring.  Raises
+    ``not-share``, ``stale-trust``, ``not-owner``, ``not-member``, ``content-key`` (or what
+    ``accept_keyring`` raises).
+    """
+    gk = accept_keyring(keyring, trusted, identity, _kdf_override=_kdf_override)
+    if gk.epoch != trusted.epoch:
+        raise KeyringError("stale-trust", "adopt the current keyring first")
+    if "metadata" not in keyring:
+        raise KeyringError("not-share", "a personal keyring has no owner")
+    _member(keyring, identity)
+    meta = keyring["metadata"]
+    if meta["owner"] != identity.device_id or meta["owner_key"] != _b64e(identity.signing_public_key):
+        raise KeyringError("not-owner", "only the owner changes a share group")
+    chosen = None if approve is None else set(approved_members(keyring) or ()) | set(approve)
+    content = reuse = None
+    if keyring["format"] == SHARE_FORMAT:
+        content = open_content_key(keyring, identity)
+        if content is None:
+            raise KeyringError("content-key", "the owner has no content wrap")
+        if isinstance(reuse_wraps, Mapping) and reuse_wraps.get("commit") == keyring["content"]["commit"]:
+            reuse = reuse_wraps.get("wraps")
+    signed = _sign_owner(keyring, identity, chosen, content=content, rand=_rand, reuse=reuse)
+    return _finish(signed, gk, None, keyring["prev_mac"])

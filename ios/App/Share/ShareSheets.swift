@@ -38,6 +38,8 @@ struct ShareItemSheet: View {
     @State private var share: OutgoingShare?
     @State private var error: String?
     @State private var showsCodeQR = false
+    @State private var options = ShareOptions()
+    @State private var making = false
 
     var body: some View {
         NavigationStack {
@@ -62,13 +64,26 @@ struct ShareItemSheet: View {
                             qr(image, label: String(localized: "Shared item QR"))
                             Text(ShareText.qrHint).font(.footnote).foregroundStyle(Palette.secondaryText)
                         }
-                        Text(ShareText.expiresHint).font(.footnote).foregroundStyle(Palette.secondaryText)
+                        Text(options.expiresHint).font(.footnote).foregroundStyle(Palette.secondaryText)
                     }
                     .listRowBackground(Palette.groupSurface)
                 } else if let error {
                     Text(error).foregroundStyle(Palette.danger).listRowBackground(Palette.groupSurface)
-                } else {
+                } else if making {
                     ProgressView().listRowBackground(Color.clear)
+                } else {
+                    Section {
+                        Picker(ShareText.expiresIn, selection: $options.expiry) {
+                            ForEach(ShareOptions.Expiry.allCases) { Text($0.label).tag($0) }
+                        }
+                        Toggle(ShareText.oneUse, isOn: $options.oneUse)
+                        Text(ShareText.oneUseHint).font(.footnote).foregroundStyle(Palette.secondaryText)
+                    }
+                    .listRowBackground(Palette.groupSurface)
+                    Section {
+                        Button(ShareText.makeCode) { Task { await prepare() } }
+                    }
+                    .listRowBackground(Palette.groupSurface)
                 }
             }
             .scrollContentBackground(.hidden)
@@ -77,7 +92,6 @@ struct ShareItemSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
-        .task { await prepare() }
         .onDisappear { if let share { ShareOutbox.remove(share) } }
     }
 
@@ -92,11 +106,13 @@ struct ShareItemSheet: View {
     }
 
     private func prepare() async {
-        guard share == nil else { return }
-        let item = item
+        guard share == nil, !making else { return }
+        making = true
+        defer { making = false }
+        let item = item, options = options
         // Argon2id takes a moment: off the main thread.
         let made = await Task.detached(priority: .userInitiated) { () -> Result<OutgoingShare, ShareError> in
-            do { return .success(try ShareOutbox.make(item: item, sender: "iPhone", now: SystemClock().now)) }
+            do { return .success(try ShareOutbox.make(item: item, sender: DeviceText.model, now: SystemClock().now, options: options)) }
             catch let e as ShareError { return .failure(e) }
             catch { return .failure(ShareError.cannotWrite) }
         }.value

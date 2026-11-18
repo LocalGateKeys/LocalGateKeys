@@ -4,10 +4,11 @@ import os
 import LGKCore
 import AppSharedMac
 
-/// Writes one scheduled backup (the live one is `MacFullBackup`): staging name, full check, rename, `.sha256.json`.
+/// Writes one scheduled backup (the live one is `MacFullBackup`): a full backup v3 to the public backup key, staging
+/// name, check without a password (design 9.1), rename, `.sha256.json`.
 @MainActor
 protocol ScheduledBackupWriting: AnyObject {
-    func createScheduled(to url: URL, backupPassword: String, passwordKey: DesktopVaultFile.PasswordKey,
+    func createScheduled(to url: URL, record: BackupKeyRecord, passwordKey: DesktopVaultFile.PasswordKey,
                          recovery: RecoveryWrapper.VaultKey?) async throws -> BackupInventory
 }
 
@@ -22,9 +23,10 @@ extension MacFullBackup: ScheduledBackupWriting {}
 /// 1. the folder (bookmark, else `Backups` on this Mac) gets `Scheduled/`; a bookmark that no longer resolves stops
 ///    here with "Choose the backup folder again" — a backup is never silently redirected;
 /// 2. inside the vault's lock (no key rotation, password attempt or restore meanwhile), `MacFullBackup.createScheduled`
-///    writes to a staging name, checks every member and the vault layer, renames it and writes `.sha256.json`;
-/// 3. only then are older scheduled backups of this vault pruned (`keep`), the state file and `BackupHistory` record
-///    the success;
+///    writes a full backup v3 to the public backup key record to a staging name, checks the wrap, every member and the
+///    vault layer without any password, renames it and writes `.sha256.json`;
+/// 3. only then are older scheduled backups of this vault pruned (`keep`; the newest pre-upgrade backup stays, owner
+///    decision Q3), the state file (with the file's SHA-256) and `BackupHistory` record the success;
 /// 4. with a mirror folder, the finished file is copied there (temporary name, SHA-256 compared, renamed) and the
 ///    mirror pruned; a mirror problem never undoes the local backup.
 ///
@@ -89,6 +91,7 @@ final class MacBackupScheduler {
         self.exclusive = exclusive; self.defaultFolder = defaultFolder; self.now = now; self.calendar = calendar
         self.useTimer = startTimer; self.useWake = observeWake
         model.isUnlocked = isUnlocked
+        model.defaultFolder = defaultFolder
         if isUnlocked() { arm() }
         refreshLastSuccess()
     }
@@ -120,16 +123,21 @@ final class MacBackupScheduler {
         wakeObserver = nil
     }
 
-    /// The vault locked: nothing more is checked until the next unlock.
-    func locked() { disarm() }
+    /// The vault locked: nothing more is checked until the next unlock (a failed migration is tried again then).
+    func locked() {
+        disarm()
+        model.migrationFailed = false
+    }
 
     /// The live scheduler over the lock model: a `MacFullBackup` over `lock.store` per run, the vault's lock as the
     /// exclusive section, and the hooks for unlock and master password or phrase changes.
     static func live(lock: MacLockModel, model: BackupScheduleModel) -> MacBackupScheduler {
         let scheduler = MacBackupScheduler(
-            model: model, isUnlocked: { [weak lock] in lock?.state == .unlocked },
+            // Scheduled backups are of the real vault: none run inside the duress password's session (sub-plan 08).
+            model: model, isUnlocked: { [weak lock] in lock?.state == .unlocked && lock?.isSecondSession == false },
             makeWriter: { [weak lock] in
-                guard let lock, lock.state == .unlocked, let store = lock.store, let profile = lock.desktopProfile else { return nil }
+                guard let lock, lock.state == .unlocked, !lock.isSecondSession,
+                      let store = lock.store, let profile = lock.desktopProfile else { return nil }
                 return MacFullBackup(store: store, profile: profile, passwords: lock, gate: StrictItemGate(passwords: lock), local: lock,
                                      attachmentFolder: AttachmentFiles.localFolder())
             },
@@ -139,13 +147,21 @@ final class MacBackupScheduler {
             },
             defaultFolder: { [weak lock] in lock.map { MacFullBackup.backupsFolder($0.vaultDirectory) } })
         lock.onLock.append { [weak scheduler] in scheduler?.locked() }
-        lock.onUnlock.append { [weak scheduler] in
-            guard let scheduler else { return }
+        lock.onUnlock.append { [weak scheduler, weak model, weak lock] in
+            guard let scheduler, lock?.isSecondSession != true else { return }
+            let schedule = model
             scheduler.arm()
-            // Just after the window is up (Windows: 3 s after unlock).
-            Task { @MainActor in try? await Task.sleep(nanoseconds: 3_000_000_000); scheduler.unlocked(now: scheduler.now()) }
+            Task { @MainActor in
+                // The move from a stored backup password to a public key record (design section 5), before any run.
+                await schedule?.migrateIfNeeded()
+                // Just after the window is up (Windows: 3 s after unlock).
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                scheduler.unlocked(now: scheduler.now())
+            }
         }
         lock.onRecoveryPhraseChange.append { [weak model] removed in model?.recoveryPhraseChanged(removed: removed) }
+        // A new vault (first one, or after an erase) starts without a seen backup key (design 16c).
+        lock.onFreshVault.append { [weak model] in model?.freshVault() }
         return scheduler
     }
 
@@ -158,7 +174,7 @@ final class MacBackupScheduler {
     @discardableResult
     func tick(now: Date) -> Bool {
         let model = self.model
-        guard isUnlocked(), model.frequency != "off", runTask == nil, model.keychain != nil else { return false }
+        guard isUnlocked(), model.frequency != "off", runTask == nil, model.keychain != nil, !model.operationInFlight else { return false }
         let base: URL
         do {
             guard let chosen = try model.resolveFolder() ?? defaultFolder() else { return false }
@@ -172,9 +188,26 @@ final class MacBackupScheduler {
         // If the clock goes backwards after a failure, the interval is negative and the retry stays blocked until the
         // clock passes failedAt + 30 minutes again (Python `ScheduleRunner` behaves the same).
         if let failedAt, now.timeIntervalSince(failedAt) < BackupSchedule.retryAfter { return false }
-        guard model.hasPassword, var secret = model.secret() else {
-            if !model.skipWarned { model.skipWarned = true; model.lastNotice = BackupScheduleModel.skippedText }
+        func skip(_ text: String) -> Bool {
+            if !model.skipWarned { model.skipWarned = true; model.lastNotice = text }
             return false
+        }
+        // Rollback, or a missing or damaged record once one was seen here (design 2.3, 16c): no run until proof.
+        if model.paused { return skip(BackupScheduleModel.pausedSkippedText) }
+        switch model.keyState {
+        case .legacy:
+            // A stored password from before the update: migrated first (normally at unlock), never used for a run.
+            if model.migrationFailed { return skip(BackupScheduleModel.migrationFailedText) }
+            model.startMigration()
+            return false
+        case .damaged: return skip(BackupScheduleModel.damagedSkippedText)
+        case .unreadable: return skip(BackupScheduleModel.unreadableText)
+        case .none, .locked: return skip(BackupScheduleModel.skippedText)
+        case .ready: break
+        }
+        // One box holds the only copy of the keys, zeroed in place after the run (review L3).
+        guard let secret = model.secret().map(ScheduleSecretBox.init), let record = secret.value.backupKey else {
+            return skip(BackupScheduleModel.skippedText)
         }
         guard let writer = makeWriter() else { secret.wipe(); return false }
         #if DEBUG
@@ -182,13 +215,15 @@ final class MacBackupScheduler {
         #endif
         let (keep, mirror) = (model.keep, model.mirror == nil ? nil : model.resolveMirror())
         let hadMirror = model.mirror != nil
-        let taken = secret
-        secret.wipe()
-        runTask = Task { [weak self] in
-            var secret = taken
-            defer { secret.wipe() }
-            await self?.run(writer: writer, secret: secret, base: base, directory: directory, keep: keep, when: now,
-                            mirror: mirror, hadMirror: hadMirror)
+        model.runInFlight = true
+        // The model is held strongly, so `runInFlight` is always cleared, even if the scheduler is gone (review L2).
+        runTask = Task { [weak self, model] in
+            defer {
+                secret.wipe()
+                model.runInFlight = false
+            }
+            await self?.run(writer: writer, secret: secret.value, record: record, base: base, directory: directory, keep: keep,
+                            when: now, mirror: mirror, hadMirror: hadMirror)
             self?.runTask = nil
         }
         return true
@@ -213,8 +248,8 @@ final class MacBackupScheduler {
 
     // MARK: one run
 
-    private func run(writer: any ScheduledBackupWriting, secret: ScheduledBackupSecret, base: URL, directory: URL, keep: Int,
-                     when: Date, mirror: URL?, hadMirror: Bool) async {
+    private func run(writer: any ScheduledBackupWriting, secret: ScheduledBackupSecret, record: BackupKeyRecord, base: URL,
+                     directory: URL, keep: Int, when: Date, mirror: URL?, hadMirror: Bool) async {
         let scoped = base.startAccessingSecurityScopedResource()
         defer { if scoped { base.stopAccessingSecurityScopedResource() } }
         let destination: URL
@@ -225,8 +260,8 @@ final class MacBackupScheduler {
                                                                   calendar: self.calendar)
                 // A failed `.sha256.json` write throws here: the renamed .lgk is verified but has no manifest, and since
                 // this counts as a failure nothing is pruned below, so every older backup stays.
-                _ = try await writer.createScheduled(to: target, backupPassword: secret.backupPassword,
-                                                     passwordKey: secret.passwordKey, recovery: secret.recovery)
+                _ = try await writer.createScheduled(to: target, record: record, passwordKey: secret.passwordKey,
+                                                     recovery: secret.recovery)
                 return target
             }
         } catch MacVaultError.busy {
@@ -242,8 +277,12 @@ final class MacBackupScheduler {
             return
         }
         failedAt = nil
-        BackupSchedule.prune(in: directory, tag: BackupScheduleModel.profileTag, keep: keep, protect: destination)
-        do { try BackupSchedule.writeLastSuccess(directory, when) } catch {
+        // Q3: the newest pre-upgrade backup is found (headers only) before the first prune after the migration.
+        model.resolveProtectOld(in: directory)
+        let protectOld = model.protectedOld
+        BackupSchedule.prune(in: directory, tag: BackupScheduleModel.profileTag, keep: keep, protect: destination, protectOld: protectOld)
+        let sha256 = try? ChecksumManifest.sha256(of: destination)
+        do { try BackupSchedule.writeLastSuccess(directory, when, sha256: sha256) } catch {
             Self.log.error("Scheduled backup state not saved: \(String(describing: type(of: error)), privacy: .public)")
         }
         history.lastBackup = when
@@ -254,7 +293,7 @@ final class MacBackupScheduler {
         do {
             guard isUnlocked() else { return }   // locked meanwhile: nothing more runs
             guard let mirror else { throw RecoveryError(BackupScheduleModel.chooseMirrorAgainText) }
-            try Self.mirror(destination, to: mirror, keep: keep)
+            try Self.mirror(destination, to: mirror, keep: keep, protectOld: protectOld, expectedSHA256: sha256)
             model.lastNotice = BackupScheduleModel.mirroredText
         } catch {
             Self.log.error("Mirror copy failed: \(String(describing: type(of: error)), privacy: .public)")
@@ -265,8 +304,10 @@ final class MacBackupScheduler {
     }
 
     /// Windows `mirror_backup`: only a scheduled backup of this vault; never into a missing root or the local folder;
-    /// temporary name, SHA-256 compared with the source, renamed, then the mirror pruned.
-    nonisolated static func mirror(_ source: URL, to mirror: URL, keep: Int) throws {
+    /// temporary name, SHA-256 compared with the source (and the run's `last_sha256`, design 9.1 step 4), renamed,
+    /// then the mirror pruned (the protected pre-upgrade name kept, Q3).
+    nonisolated static func mirror(_ source: URL, to mirror: URL, keep: Int, protectOld: Set<String> = [],
+                                   expectedSHA256: String? = nil) throws {
         let tag = BackupScheduleModel.profileTag
         guard BackupSchedule.parse(source.lastPathComponent, tag: tag) != nil else {
             throw RecoveryError(String(localized: "Only scheduled LocalGateKeys backups are mirrored"))
@@ -284,7 +325,8 @@ final class MacBackupScheduler {
         defer { try? FileManager.default.removeItem(at: temporary) }
         do {
             try FileManager.default.copyItem(at: source, to: temporary)
-            guard try ChecksumManifest.sha256(of: temporary) == ChecksumManifest.sha256(of: source) else {
+            let copied = try ChecksumManifest.sha256(of: temporary)
+            guard copied == (try ChecksumManifest.sha256(of: source)), expectedSHA256 == nil || copied == expectedSHA256 else {
                 throw RecoveryError(String(localized: "The mirror copy did not match the backup"))
             }
             let destination = mirror.appendingPathComponent(source.lastPathComponent)
@@ -293,11 +335,18 @@ final class MacBackupScheduler {
             } else {
                 try FileManager.default.moveItem(at: temporary, to: destination)
             }
-            BackupSchedule.prune(in: mirror, tag: tag, keep: keep, protect: destination)
+            BackupSchedule.prune(in: mirror, tag: tag, keep: keep, protect: destination, protectOld: protectOld)
         } catch let e as RecoveryError {
             throw e
         } catch {
             throw RecoveryError(String(localized: "Could not copy the backup to the mirror folder"))
         }
     }
+}
+
+/// The scheduled-backup secret of one run, shared by the run task without copies, zeroed in place at the end.
+final class ScheduleSecretBox: @unchecked Sendable {
+    private(set) var value: ScheduledBackupSecret
+    init(_ value: ScheduledBackupSecret) { self.value = value }
+    func wipe() { value.wipe() }
 }

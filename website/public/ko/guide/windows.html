@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys Windows용 사용자 가이드</title>
+  <meta name="description" content="Windows 10 및 11에서 LocalGateKeys를 설정, 잠금 해제, 자동 입력, 가져오기, 백업, 동기화하는 방법을 단계별로 안내합니다.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/windows">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/windows">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/windows">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/windows">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/windows">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/windows">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/windows">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/windows">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/windows">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/windows">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/windows">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/windows">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys Windows용 사용자 가이드">
+  <meta property="og:description" content="Windows 10 및 11에서 LocalGateKeys를 설정, 잠금 해제, 자동 입력, 가져오기, 백업, 동기화하는 방법을 단계별로 안내합니다.">
+  <meta property="og:url" content="https://localgatekeys.app/ko/guide/windows">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="LocalGateKeys 로고: Windows, Mac, iPhone용 비밀번호 관리자.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys Windows용 사용자 가이드">
+  <meta name="twitter:description" content="Windows 10 및 11에서 LocalGateKeys를 설정, 잠금 해제, 자동 입력, 가져오기, 백업, 동기화하는 방법을 단계별로 안내합니다.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">본문으로 건너뛰기</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../ko/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="메인">
+        <ul class="nav">
+          <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/help">가이드</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/support">지원</a></li>
+          <li><a class="nav-cta" href="../../ko/download">다운로드</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>메뉴</summary>
+        <nav aria-label="메인">
+          <ul class="nav nav-stack">
+            <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/help">가이드</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/support">지원</a></li>
+          <li><a class="nav-cta" href="../../ko/download">다운로드</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>언어</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko" aria-current="true">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>Windows용 LocalGateKeys</h1>
+  <p class="lead">이 기기의 모든 화면과 기능을 단계별로 안내합니다. 모든 제목은 공유할 수 있는 링크입니다.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="플랫폼">
+    <ul><li><a class="help-tab" href="../../ko/guide/windows" aria-current="page">Windows</a></li><li><a class="help-tab" href="../../ko/guide/mac">Mac</a></li><li><a class="help-tab" href="../../ko/guide/iphone">iPhone 및 iPad</a></li><li><a class="help-tab" href="../../ko/guide/android">Android</a></li><li><a class="help-tab" href="../../ko/guide/extension">브라우저 확장 프로그램</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>모든 기기에서 알아 두면 좋은 점</h2>
+    <ul>
+      <li><strong>보관함은 사용자의 기기에만 있습니다.</strong> 계정이 없으며 비밀번호를 보관하는 LocalGateKeys 서버도 없습니다.</li>
+      <li><strong>마스터 비밀번호나 앱 비밀번호는 누구도 재설정할 수 없습니다.</strong> 복구 문구를 설정하고 종이에 적어 보관하십시오.</li>
+      <li><strong>Free</strong>는 항목을 최대 7개까지 보관합니다. <strong>Pro</strong>(US$29.99, 한 번 결제)는 무제한 항목, 2단계 인증 코드, 파일, 동기화를 제공합니다. 이미 있는 항목의 편집, 삭제, 입력은 절대 차단되지 않습니다.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="windows" aria-labelledby="windows-title">
+    <h2 class="panel-title" id="windows-title">Windows 주제</h2>
+    <p class="panel-lead">Windows 10(버전 2004 이상) 및 Windows 11, 64비트. Microsoft Store 또는 <a href="../../ko/download">다운로드 페이지</a>에서 설치합니다.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Windows 주제">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">이 탭의 내용</summary>
+          <ol>
+            <li><a href="#win-setup">처음 시작과 프로필</a></li>
+            <li><a href="#win-unlock">잠금 해제와 잠금</a></li>
+            <li><a href="#win-screen">기본 창</a></li>
+            <li><a href="#win-items">항목 추가 및 편집</a></li>
+            <li><a href="#win-trash">삭제, 휴지통, 실행 취소</a></li>
+            <li><a href="#win-search">검색, 팔레트, 빠른 액세스</a></li>
+            <li><a href="#win-generator">비밀번호 생성기</a></li>
+            <li><a href="#win-security">보안 센터</a></li>
+            <li><a href="#win-2fa">2단계 인증 코드와 QR</a></li>
+            <li><a href="#win-import">가져오기</a></li>
+            <li><a href="#win-export">내보내기와 전송</a></li>
+            <li><a href="#win-backups">백업과 복원</a></li>
+            <li><a href="#win-sync">동기화</a></li>
+            <li><a href="#win-share">항목 공유</a></li>
+            <li><a href="#win-apps">Windows 앱 입력</a></li>
+            <li><a href="#win-shared">공유 컬렉션</a></li>
+            <li><a href="#win-safety">긴급 액세스와 강요 대비 비밀번호</a></li>
+            <li><a href="#win-dev">개발자 도구와 AI 에이전트</a></li>
+            <li><a href="#win-settings">설정</a></li>
+            <li><a href="#win-pro">Pro 라이선스</a></li>
+            <li><a href="#win-updates">업데이트</a></li>
+            <li><a href="#win-keys">키보드 단축키</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="win-setup">
+          <h3><a href="#win-setup">처음 시작과 프로필</a></h3>
+          <ol>
+            <li>LocalGateKeys를 엽니다. 12자 이상의 <strong>마스터 비밀번호</strong>를 입력하고 <strong>비밀번호 확인</strong>에 다시 입력한 다음 <strong>보관함 만들기</strong>를 선택합니다.</li>
+            <li>이어서 <strong>LocalGateKeys 설정</strong> 가이드가 다섯 단계로 진행됩니다. 보관함 만들기, <strong>Windows Hello 설정</strong>, 비밀번호 <strong>가져오기</strong>, <strong>복구 문구 열기</strong>(저장했음을 확인하기 위해 단어 세 개를 다시 입력), 브라우저 확장 프로그램의 <strong>연결 테스트</strong>입니다.</li>
+            <li>모든 단계는 <strong>건너뛰기</strong>할 수 있습니다. 건너뛴 단계는 보관함의 <em>설정 마무리</em> 카드에 남아 있으며 <strong>설정 계속</strong>과 <strong>숨기기</strong>가 있습니다.</li>
+          </ol>
+          <p class="tip"><strong>팁.</strong> 가이드를 다시 보려면 설정 › 도움말 및 진단 › <strong>설정 다시 보기</strong>를 선택합니다.</p>
+          <h4>프로필</h4>
+          <p>각 프로필은 자체 마스터 비밀번호가 있는 별도의 보관함입니다. 예를 들어 업무용과 가정용으로 나눌 수 있습니다.</p>
+          <ul>
+            <li>잠금 해제 화면에서 <strong>다른 프로필 사용</strong>을 선택한 다음 <strong>프로필 만들기</strong>를 선택하고 <strong>프로필 이름</strong>을 입력합니다.</li>
+            <li>프로필을 편집하려면 Ctrl+K를 누르고 <strong>프로필 전환</strong>을 실행합니다. 여기에서 <strong>프로필 추가</strong>, <strong>편집</strong>, <strong>사진…</strong> 및 <strong>강조 색상</strong> 설정, <strong>제거</strong>를 할 수 있습니다.</li>
+            <li>트레이 메뉴의 <strong>잠그고 사용자 전환</strong>은 잠근 후 바로 프로필 선택으로 이동합니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-unlock">
+          <h3><a href="#win-unlock">잠금 해제와 잠금</a></h3>
+          <h4>잠금 해제 방법</h4>
+          <ul>
+            <li><strong>마스터 비밀번호</strong>를 입력한 다음 <strong>잠금 해제</strong>. 항상 작동합니다.</li>
+            <li><strong>Windows Hello로 잠금 해제</strong>: 지문, 얼굴 또는 PIN. 설정 › 잠금 해제 › Windows Hello › <strong>설정</strong>에서 설정합니다. <strong>Windows Hello 자동 시작</strong>(기본적으로 켜짐)은 창이 열리자마자 확인 창을 표시합니다.</li>
+            <li><strong>대신 카메라 사용</strong>: 일반 웹캠을 이용한 얼굴 대조로, PC에서 처리됩니다. Windows Hello보다 덜 안전합니다. <strong>카메라 확인 설정</strong>으로 설정합니다.</li>
+          </ul>
+          <h4>마스터 비밀번호를 잊으셨습니까?</h4>
+          <ol>
+            <li>잠금 해제 화면에서 <strong>잊으셨습니까? 복구 문구 사용</strong>을 선택합니다.</li>
+            <li>24개 단어를 공백으로 구분하여 입력합니다.</li>
+            <li>새 마스터 비밀번호(12자 이상)를 정하고 두 번 입력한 다음 <strong>보관함 복구</strong>를 선택합니다.</li>
+          </ol>
+          <p class="note"><strong>그 후</strong> Windows Hello와 카메라 확인을 다시 설정합니다. 복구 문구는 계속 사용할 수 있습니다.</p>
+          <h4>마스터 비밀번호 변경</h4>
+          <p>설정 › 잠금 해제 › 마스터 비밀번호 › <strong>변경…</strong>. 현재 비밀번호와 새 비밀번호(두 번)를 입력합니다. 복구 문구를 계속 사용하려면 24개 단어도 입력하십시오. 그렇지 않으면 나중에 새 문구를 만드십시오. 이미 만든 백업은 만들 때의 비밀번호를 유지합니다.</p>
+          <h4>잠금</h4>
+          <ul>
+            <li>상단 막대의 <strong>잠금</strong> 버튼 또는 <kbd>Ctrl</kbd>+<kbd>L</kbd>.</li>
+            <li><strong>긴급 잠금</strong>: Windows 어디서나 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd>. 즉시 잠그고 진행 중인 입력을 취소합니다.</li>
+            <li>설정 › 잠금:
+              <ul>
+                <li><strong>비활성 후 잠금</strong>: 안 함 또는 1분에서 24시간.</li>
+                <li><strong>Windows가 잠기면 잠금</strong>(Win+L, 사용자 전환, 로그아웃) 및 <strong>절전 시 잠금</strong>(덮개 닫기, 절전, 최대 절전).</li>
+                <li><strong>잠금 해제 상태 최대 시간</strong>: 무엇을 하고 있든 적용되는 고정 제한입니다.</li>
+                <li><strong>활동 기준</strong>: 컴퓨터 활동 또는 보관함 활동.</li>
+                <li>브라우저 확장 프로그램에 <strong>2FA 코드를 전달하기 전에 확인</strong>.</li>
+              </ul>
+            </li>
+          </ul>
+          <p>트레이 아이콘 메뉴에는 <strong>LocalGateKeys 열기</strong>, <strong>보관함 잠금 해제</strong>, <strong>보관함 잠금</strong>, <strong>잠금 및 사용자 전환</strong>, <strong>빠른 액세스</strong>, <strong>업데이트 확인</strong>, <strong>브라우저 통합</strong> 및 <strong>데스크톱 채우기 아이콘</strong> 스위치, <strong>종료</strong>가 있습니다.</p>
+        </article>
+
+        <article class="topic" id="win-screen">
+          <h3><a href="#win-screen">기본 창</a></h3>
+          <dl class="defs">
+            <dt>사이드바 · 보관함</dt><dd><strong>모든 항목</strong>, <strong>즐겨찾기</strong>, <strong>최근 사용</strong>.</dd>
+            <dt>사이드바 · 유형</dt><dd>보유한 유형마다 한 줄씩 표시됩니다. 로그인, 카드, 신원 정보, 보안 메모, 문서, Wi-Fi, 패스키 등.</dd>
+            <dt>사이드바 · 컬렉션 및 보기</dt><dd>컬렉션과 고정한 보기.</dd>
+            <dt>사이드바 · 도구</dt><dd>보안 센터, 비밀번호 생성기, 동기화 및 기기, 기기 및 연결, 가져오기 및 내보내기, 휴지통. <strong>설정</strong>은 맨 아래에 있습니다. 알림은 홈의 <em>예정</em> 카드에서, 활동은 보안 센터에서, QR 코드 스캔은 <kbd>Ctrl</kbd>+<kbd>K</kbd>로, 라이선스는 설정 › 요금제 및 동기화에서 엽니다. <kbd>Ctrl</kbd>+<kbd>K</kbd>로 모든 페이지에 갈 수 있습니다.</dd>
+            <dt>상단 막대</dt><dd>검색 상자, <strong>새 항목</strong>, <strong>잠금</strong>, 명령 팔레트용 <strong>Ctrl K</strong>.</dd>
+            <dt>홈</dt><dd>비밀번호 상태, 백업 및 복구, 예정, 생성기 카드와 <strong>일회용 코드</strong>(코드를 클릭하면 복사).</dd>
+          </dl>
+          <h4>항목 목록</h4>
+          <ul>
+            <li>필터: <strong>전체</strong>, <strong>확인 필요</strong>, <strong>2FA 없음</strong>, <strong>만료 예정</strong>.</li>
+            <li><strong>정렬</strong>: 제목 A–Z, 제목 Z–A, 수정한 날짜, 만든 날짜.</li>
+            <li>행의 표시는 유출되었거나 약하거나 재사용된 비밀번호를 나타냅니다.</li>
+            <li>행을 마우스 오른쪽 버튼으로 클릭(또는 <kbd>Shift</kbd>+<kbd>F10</kbd>)하면 편집, 사용자 이름 복사, 비밀번호 복사, 2FA 코드 복사, 웹사이트 열기, 공유…, 즐겨찾기에 추가, 휴지통으로 이동…을 사용할 수 있습니다.</li>
+          </ul>
+          <h4>세부 정보 창</h4>
+          <p>선택한 항목의 필드를 표시합니다. 비밀번호는 클릭할 때까지 숨겨져 있습니다. 버튼으로 사용자 이름, 비밀번호, 2FA 코드를 복사하고, 웹사이트를 열고, <strong>편집</strong>, <strong>공유</strong>, <strong>휴지통으로 이동</strong>할 수 있습니다. 문서에는 <strong>파일 열기</strong>, <strong>안전한 미리 보기</strong>, <strong>사본 저장…</strong>, <strong>파일 바꾸기…</strong>가 추가됩니다.</p>
+        </article>
+
+        <article class="topic" id="win-items">
+          <h3><a href="#win-items">항목 추가 및 편집</a></h3>
+          <ol>
+            <li><strong>새 항목</strong>을 선택하거나 <kbd>Ctrl</kbd>+<kbd>N</kbd>을 누릅니다.</li>
+            <li>유형을 선택합니다(클릭, 번호 누르기 또는 이름 입력):
+              <ul>
+                <li><em>로그인</em>: 웹사이트 로그인, 데스크톱 앱 로그인, 패스키</li>
+                <li><em>금융</em>: 결제 카드, 은행 계좌 · <em>개인</em>: 신원 정보, 보안 메모, 문서</li>
+                <li><em>기술</em>: SSH 키, API 키, Wi-Fi 네트워크, 북마크 · <em>소유물</em>: 라이선스, 구독, 보증, 구매</li>
+              </ul>
+            </li>
+            <li>필드를 입력하고 <strong>저장</strong>을 선택합니다. 저장하지 않은 변경 사항이 있는 상태로 나가면 <em>변경 사항을 삭제하시겠습니까?</em>라고 묻습니다.</li>
+          </ol>
+          <h4>로그인 자세히 보기</h4>
+          <ul>
+            <li><strong>제목</strong>, <strong>웹사이트</strong>, <strong>사용자 이름</strong>, <strong>비밀번호</strong>, <strong>메모</strong>.</li>
+            <li>비밀번호 옆의 <strong>변경</strong>으로 새 비밀번호를 직접 입력하거나, <strong>암호 문구</strong>, <strong>무작위</strong>, <strong>PIN</strong> 중에서 골라 만들 수 있습니다. 웹사이트에서도 변경한 다음 저장하십시오.</li>
+            <li><strong>2단계 인증</strong>: 사이트의 설정 키를 여기에 붙여 넣습니다(Pro). <a href="#win-2fa">2단계 인증 코드</a>를 참조하십시오.</li>
+            <li><strong>사용자 지정 필드</strong>: 그 밖의 정보는 <strong>필드 추가</strong>로 입력합니다. 필드를 숨김으로 표시하면 비밀번호처럼 취급됩니다.</li>
+            <li><strong>비밀번호 기록</strong>: 이전 비밀번호는 최대 5개까지 암호화되어 1년간 보관됩니다. <strong>이전 비밀번호 복사</strong> 또는 <strong>이 비밀번호 복원</strong>.</li>
+            <li><strong>복구 코드</strong>: 한 줄에 하나씩. <strong>다음 코드 복사 후 사용</strong>은 하나를 복사하고 목록에서 제거합니다.</li>
+            <li><strong>자동 채우기 규칙</strong>: 채우기(클릭 시 또는 끔), 채운 후 로그인(기본값, 안 함 또는 항상), 항상 마스터 비밀번호 요청, 브라우저의 변경 사항 저장 제안.</li>
+          </ul>
+          <h4>기타 유형</h4>
+          <p>각 유형에는 고유한 필드가 있습니다. 날짜는 YYYY-MM-DD 형식으로 입력합니다. 모든 항목은 <strong>즐겨찾기</strong>로 지정하고 <strong>태그</strong>(쉼표로 구분)를 달 수 있습니다. 문서는 <strong>파일 선택 후 저장</strong>을 사용합니다(Pro).</p>
+          <h4>컬렉션과 미리 알림</h4>
+          <ul>
+            <li>컬렉션으로 항목을 원하는 대로 묶을 수 있습니다: <strong>컬렉션 추가</strong>, <strong>이름 바꾸기</strong>, <strong>보관</strong>. 다른 기기와 동기화되며, 다른 사람과 공유할 수도 있습니다(<a href="#win-shared">공유 컬렉션</a> 참고).</li>
+            <li><strong>미리 알림</strong>에는 곧 만료되거나 기한이 지난 항목이 <strong>완료</strong> 및 <strong>1일 후 다시 알림</strong>과 함께 표시됩니다.</li>
+            <li><strong>활동</strong>에는 보관함에서 일어난 일의 기록이 표시됩니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-trash">
+          <h3><a href="#win-trash">삭제, 휴지통, 실행 취소</a></h3>
+          <ol>
+            <li>항목을 선택하고 <strong>휴지통으로 이동</strong>을 선택하거나 <kbd>Delete</kbd>를 누릅니다.</li>
+            <li><strong>실행 취소</strong>가 있는 메시지가 나타납니다. 클릭하면 항목이 바로 돌아옵니다.</li>
+            <li>나중에 도구 › <strong>휴지통</strong>을 열고 <strong>선택 항목 복원</strong>, <strong>선택 항목 삭제</strong>, <strong>휴지통 비우기</strong>를 사용합니다. 휴지통에서 삭제하면 되돌릴 수 없습니다.</li>
+          </ol>
+          <p>설정 › 개인 정보 › <strong>삭제한 항목 보관 기간</strong>에서 7, 14, 30, 90일을 선택하고, <strong>휴지통 자동 비우기</strong>로 자동으로 비울 수 있습니다.</p>
+        </article>
+
+        <article class="topic" id="win-search">
+          <h3><a href="#win-search">검색, 명령 팔레트, 빠른 액세스</a></h3>
+          <ul>
+            <li><strong>검색</strong>: <kbd>Ctrl</kbd>+<kbd>F</kbd>를 누르고 입력한 다음 <kbd>Enter</kbd>로 첫 결과를 열거나 <kbd>↓</kbd>로 목록으로 이동합니다.</li>
+            <li><strong>명령 팔레트</strong>: <kbd>Ctrl</kbd>+<kbd>K</kbd>로 항목과 작업을 찾습니다. <code>&gt;</code>로 시작하면 작업만(지금 백업, 비밀번호 생성, 지금 잠그기, 동기화 상태…), <code>#</code>는 태그, <code>@</code>는 컬렉션을 찾습니다.</li>
+            <li><strong>빠른 액세스</strong>: Windows 어디서나 <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd>를 누르면 LocalGateKeys가 빠른 액세스 페이지로 열려 로그인, 메모, 북마크를 찾을 수 있습니다. 단축키는 설정 › 자동 채우기 › 빠른 액세스에서 변경합니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-generator">
+          <h3><a href="#win-generator">비밀번호 생성기</a></h3>
+          <p>홈의 <strong>생성기</strong> 카드 또는 Ctrl+K › 비밀번호 생성에서 엽니다.</p>
+          <ul>
+            <li><strong>무작위</strong>: 길이와 사용할 문자(A–Z, a–z, 0–9, 기호)를 선택합니다.</li>
+            <li><strong>암호 문구</strong>: 단어 수를 선택합니다. 입력하기 쉽고, 충분히 길면 똑같이 강력합니다.</li>
+            <li><strong>다시 생성</strong>으로 새로 만들고 <strong>복사</strong>로 복사합니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-security">
+          <h3><a href="#win-security">보안 센터와 비밀번호 상태</a></h3>
+          <p>도구 › <strong>보안 센터</strong>에는 먼저 고쳐야 할 항목이 표시됩니다. 약하거나 재사용되거나 오래되거나 유출된 비밀번호와 2FA를 사용할 수 있는 로그인입니다.</p>
+          <ul>
+            <li><strong>모두 유출 확인</strong>은 비밀번호를 Have I Been Pwned 목록과 비교합니다. PC 밖으로 나가는 것은 해시의 처음 5자뿐이며 비밀번호는 절대 나가지 않습니다.</li>
+            <li>유출 확인을 사용하려면 설정 › 개인 정보에서 두 가지를 바꿔야 합니다. <strong>엄격한 오프라인 모드</strong>(기본적으로 켜짐)를 끄고 <strong>유출 확인</strong>을 켭니다. 엄격한 오프라인 모드는 유출 확인, 웹사이트 아이콘 및 기타 모든 네트워크 요청을 차단합니다.</li>
+            <li><strong>비밀번호 상태</strong>에서 <strong>항목 열기</strong> 또는 <strong>비밀번호 변경</strong>으로 항목을 수정합니다.</li>
+          </ul>
+          <p>보안 센터 아래쪽의 <strong>네트워크 활동</strong>에는 LocalGateKeys가 온라인에 접속한 때와 이유(업데이트 확인, 유출 확인, 웹사이트 아이콘, 내 기기와의 동기화)가 모두 표시됩니다.</p>
+        </article>
+
+        <article class="topic" id="win-2fa">
+          <h3><a href="#win-2fa">2단계 인증 코드와 QR 스캔</a> <span class="badge-pro">Pro</span></h3>
+          <p>LocalGateKeys는 사이트가 비밀번호 다음에 요구하는 6자리 코드를 표시할 수 있으므로 별도의 인증 앱이 필요 없습니다.</p>
+          <ol>
+            <li>웹사이트에서 2단계 인증/인증 앱 로그인을 켜서 QR 코드가 표시되게 합니다.</li>
+            <li>LocalGateKeys에서 Ctrl+K › <strong>QR 코드 스캔</strong>을 선택합니다. 다음 세 가지 방법 중 하나로 이미지를 가져옵니다.
+              <ul>
+                <li><strong>스크린샷 붙여넣기</strong>: <kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>를 누르고 QR 코드를 선택한 다음 <kbd>Ctrl</kbd>+<kbd>V</kbd>를 누릅니다.</li>
+                <li><strong>이미지 선택…</strong>(PNG, JPEG, BMP)하거나 이미지를 끌어다 놓습니다.</li>
+                <li><strong>웹캠 사용</strong>을 선택하고 코드가 표시된 휴대폰 화면을 웹캠에 비춥니다.</li>
+              </ul>
+            </li>
+            <li>해당하는 로그인 또는 <strong>새 로그인</strong>을 선택한 다음 <strong>편집기에서 열기</strong>와 <strong>저장</strong>을 선택합니다.</li>
+            <li>웹사이트에 현재 코드를 입력하여 2FA 설정을 마칩니다.</li>
+          </ol>
+          <p>설정 키나 <code>otpauth://</code> 링크를 로그인의 <strong>2단계 인증</strong> 섹션에 바로 붙여 넣을 수도 있습니다.</p>
+          <h4>Google Authenticator에서 옮기기</h4>
+          <ol>
+            <li>Google Authenticator에서 <strong>계정 이전 › 내보내기</strong>를 선택합니다.</li>
+            <li>표시된 QR 코드를 스캔합니다(코드가 여러 개이면 각각 스캔: "코드 3개 중 1개 스캔됨").</li>
+            <li>계정을 선택하고 <strong>기존 로그인에 추가</strong> 또는 새 로그인을 선택한 다음 <strong>추가</strong>를 선택합니다. 중복은 건너뜁니다.</li>
+          </ol>
+          <p class="note">이렇게 만든 새 로그인에는 <code>needs-password</code> 태그가 붙습니다. 실제 비밀번호는 나중에 입력하십시오. 이미지는 메모리에서만 읽히며 저장되지 않습니다. Free에서는 이미 있는 코드는 계속 작동하지만 추가하거나 변경하려면 Pro가 필요합니다.</p>
+        </article>
+
+        <article class="topic" id="win-import">
+          <h3><a href="#win-import">다른 비밀번호 관리자에서 가져오기</a></h3>
+          <ol>
+            <li>이전 앱에서 비밀번호를 내보냅니다(아래 목록 참조).</li>
+            <li>LocalGateKeys에서 도구 › 가져오기 및 내보내기 › <strong>비밀번호 및 항목 가져오기…</strong>를 열고 파일을 선택합니다. 형식은 자동으로 인식됩니다. 암호화된 파일은 <strong>가져오기 비밀번호</strong>를 요청합니다.</li>
+            <li>알 수 없는 앱의 일반 CSV는 <strong>열 선택</strong>을 표시합니다. 어떤 열이 제목, 사용자 이름, 비밀번호 등인지 지정합니다.</li>
+            <li>각 행을 검토합니다: 추가, 건너뛰기, 바꾸기, 병합, 둘 다 유지. <strong>새 항목 모두 추가</strong>, <strong>충돌 모두 바꾸기</strong>, <strong>모두 건너뛰기</strong>로 한 번에 처리할 수 있습니다.</li>
+            <li><strong>가져오기</strong>를 선택합니다. 모두 한 번에 들어가며, 하나라도 실패하면 아무것도 기록되지 않습니다.</li>
+            <li><strong>내보낸 파일을 삭제하십시오</strong>. 비밀번호가 암호화되지 않은 상태로 들어 있습니다.</li>
+          </ol>
+          <table>
+            <thead><tr><th scope="col">가져올 앱</th><th scope="col">파일</th></tr></thead>
+            <tbody>
+              <tr><td>1Password 8</td><td>.1pux 또는 CSV</td></tr>
+              <tr><td>Bitwarden</td><td>JSON(비밀번호로 보호된 파일 포함) 또는 CSV</td></tr>
+              <tr><td>LastPass</td><td>CSV</td></tr>
+              <tr><td>Dashlane</td><td>zip 또는 CSV</td></tr>
+              <tr><td>KeePass 2 / KeePassXC</td><td>.kdbx(직접 열기), XML 또는 CSV</td></tr>
+              <tr><td>Proton Pass</td><td>JSON zip 또는 CSV(PGP 없이 내보내기)</td></tr>
+              <tr><td>Chrome, Edge, Brave, Firefox</td><td>CSV</td></tr>
+              <tr><td>Safari / Apple 암호</td><td>CSV</td></tr>
+              <tr><td>그 밖의 앱</td><td>CSV(열 선택 가능)</td></tr>
+            </tbody>
+          </table>
+          <p class="note">가져오지 않는 것: 휴지통, 비밀번호 기록, 패스키, 첨부 파일. <code>http://</code> 사이트는 https로 저장됩니다. 웹사이트나 비밀번호가 없는 항목은 보안 메모가 됩니다. Free에서는 7개 항목 제한이 적용됩니다. 다른 비밀번호 관리자의 Credential Exchange(CXF, <code>.json</code> 또는 <code>.cxf</code>) 파일도 인식되며 패스키도 함께 가져옵니다.</p>
+        </article>
+
+        <article class="topic" id="win-export">
+          <h3><a href="#win-export">내보내기와 암호화 전송</a></h3>
+          <p>도구 › 가져오기 및 내보내기 › <strong>내보내기…</strong>에서 제공하는 형식:</p>
+          <ul>
+            <li><strong>KeePass KDBX 4</strong>: 직접 정한 비밀번호(12자 이상)로 암호화됩니다. 안전한 선택입니다.</li>
+            <li>Bitwarden 호환 CSV, Bitwarden JSON, KeePass 2 XML: <em>암호화되지 않습니다</em>. 사용 후 삭제하십시오.</li>
+            <li><strong>Credential Exchange (CXF) JSON</strong>: 고른 로그인, 메모, 패스키를 다른 비밀번호 관리자용으로 내보냅니다. <em>암호화되지 않으며</em>, 패스키 개인 키는 동의한 경우에만 포함됩니다.</li>
+            <li>2FA 코드도 가져가려면 <strong>일회용 비밀번호(2FA) 비밀 키 포함</strong>을 선택합니다.</li>
+          </ul>
+          <p><strong>암호화 전송…</strong>은 선택한 항목(즐겨찾기, 유형, 태그 기준)을 비밀번호로 보호된 패키지에 담아 다른 프로필이나 PC로 옮깁니다. 받는 쪽에서 <strong>패키지 가져오기</strong>, <strong>검사</strong>, <strong>미리 보기</strong>를 선택한 다음 가져옵니다.</p>
+        </article>
+
+        <article class="topic" id="win-backups">
+          <h3><a href="#win-backups">백업과 복원</a></h3>
+          <h4>예약 백업(권장)</h4>
+          <ol>
+            <li>설정 › 백업 › <strong>백업 비밀번호</strong> › <strong>설정…</strong>. 12자 이상을 사용하고 <strong>적어 두십시오</strong>.</li>
+            <li><strong>예약 백업</strong>: 매일 또는 매주, <strong>시간</strong>과 <strong>요일</strong>을 지정합니다.</li>
+            <li><strong>클라우드 사본</strong> › <strong>선택…</strong>에서 USB 드라이브나 두 번째 디스크 같은 폴더를 골라 두 번째 사본을 만듭니다.</li>
+            <li><strong>이전 예약 백업</strong>: 최신 백업만 유지하거나, 최신 백업과 그 이전 백업을 유지합니다.</li>
+            <li><strong>주간 복원 테스트</strong>: 매주 LocalGateKeys가 예약 백업을 복원할 수 있는지 확인합니다. 아무것도 저장되지 않습니다. <strong>보관할 자동 백업 수</strong>로 남길 자동 백업 수를 정합니다.</li>
+          </ol>
+          <p class="note">백업은 보관함이 잠금 해제되어 있을 때만 실행됩니다. 앱이 닫혀 있어 놓친 백업은 다음 잠금 해제 때 실행됩니다.</p>
+          <h4>백업 및 복원 페이지</h4>
+          <p>백업 및 복구 카드, Ctrl+K, 또는 잠금 해제 화면의 <strong>백업 및 복원</strong>에서 엽니다.</p>
+          <ul>
+            <li><strong>백업 만들기</strong>: 자체 비밀번호가 있는 암호화된 <code>.lgk</code> 파일.</li>
+            <li><strong>백업 확인</strong>: 보관함을 건드리지 않고 파일이 열리는지 확인합니다.</li>
+            <li><strong>백업 복원</strong>: 백업 비밀번호와 백업 당시의 마스터 비밀번호가 필요합니다. 새 프로필로 복원할 수도 있습니다.</li>
+            <li><strong>복원 테스트</strong>: 임시 사본을 열어 백업이 작동하는지 확인한 다음 <strong>테스트 사본 삭제</strong>를 선택합니다.</li>
+            <li><strong>복구 문구</strong>(설정 / 교체…)와 인쇄용 시트인 <strong>복구 키트 만들기</strong>.</li>
+          </ul>
+          <h4>휴대폰 백업 복원</h4>
+          <p>가져오기 및 내보내기 › <strong>휴대폰 백업 복원…</strong>에서 iPhone 앱의 <code>.lgkm</code> 파일을 선택하고, 비밀번호를 입력한 뒤 <strong>미리 보기</strong>, <strong>복원</strong>을 선택합니다. 항목은 보관함에 추가되며 아무것도 지워지지 않습니다.</p>
+        </article>
+
+        <article class="topic" id="win-sync">
+          <h3><a href="#win-sync">기기 간 동기화</a> <span class="badge-pro">Pro</span></h3>
+          <p>동기화는 잠금 해제 상태에서만 실행됩니다. 잠금 해제할 때, 5분마다, 변경 후 몇 초 뒤에 실행됩니다. 두 가지 방법이 있으며 둘 다 사용할 수 있습니다.</p>
+          <h4>Wi-Fi(같은 네트워크의 휴대폰 또는 다른 PC)</h4>
+          <ol>
+            <li>동기화 및 기기 › <strong>Wi-Fi 동기화 켜기…</strong>. 제안된 주소와 포트(47821)를 그대로 두고, 요청되면 <strong>Windows 방화벽에서 허용</strong>을 선택합니다.</li>
+            <li><strong>QR 코드 표시…</strong>를 선택합니다. 코드는 120초 동안 한 번만 작동합니다.</li>
+            <li>휴대폰 앱의 동기화 탭에서 스캔합니다. 다른 PC의 경우 <strong>코드 텍스트 복사</strong>를 선택하고 그 PC에서 <strong>QR 텍스트로 참여…</strong>를 사용합니다.</li>
+            <li>두 기기에 6자리 코드가 표시됩니다. 일치할 때만 <strong>수락</strong>을 선택하고, 그렇지 않으면 <strong>거절</strong>을 선택합니다.</li>
+            <li>페어링 직후 실수였다면 <strong>실행 취소</strong>로 새 기기를 제거할 수 있습니다.</li>
+          </ol>
+          <p>PC 주소가 바뀌면 휴대폰에서 <strong>다시 찾기</strong>를 선택합니다.</p>
+          <h4>클라우드 폴더(Dropbox, iCloud Drive…)</h4>
+          <ol>
+            <li>첫 번째 기기에서: <strong>동기화 그룹 만들기…</strong>를 선택하고, 클라우드 앱이 동기화하는 폴더를 고른 뒤 강력한 동기화 비밀번호(12자 이상)를 설정합니다.</li>
+            <li>다른 각 기기에서: <strong>폴더에 참여…</strong>를 선택하고 <em>LocalGateKeys Sync</em>가 있는 폴더를 고른 뒤 동기화 비밀번호를 입력합니다.</li>
+          </ol>
+          <p>클라우드에는 암호화된 파일만 보입니다.</p>
+          <p class="note">OneDrive와 Google Drive는 Apple 관련 문제가 해결될 때까지 현재 동기화에 사용할 수 없습니다. Dropbox, iCloud Drive 또는 Wi-Fi 동기화를 사용하십시오.</p>
+          <h4>동기화 관리</h4>
+          <ul>
+            <li>동기화 상태 페이지(사이드바의 동기화 표시를 클릭)에서 <strong>지금 동기화</strong>.</li>
+            <li><strong>기기 제거…</strong>(새 동기화 비밀번호를 설정), <strong>동기화 비밀번호 변경…</strong>.</li>
+            <li><strong>동기화 나가기…</strong>는 항목을 유지하고 그룹 정보를 지웁니다. <strong>이 PC에서 동기화 재설정…</strong>은 키도 지웁니다(두 번 확인).</li>
+            <li>한 항목이 두 기기에서 동시에 변경되면 추가 사본의 제목에 <em>(동기화 충돌)</em>이 붙습니다.</li>
+          </ul>
+          <p class="note">그룹의 모든 기기에 Pro가 필요합니다. Pro가 있는 iPhone과 페어링한 Free PC는 동기화를 통해 라이선스를 이어받아 Pro가 됩니다(<a href="#win-pro">Pro 라이선스</a> 참고). 그룹당 최대 16대의 기기를 연결할 수 있습니다.</p>
+        </article>
+
+        <article class="topic" id="win-share">
+          <h3><a href="#win-share">다른 사람과 항목 공유</a></h3>
+          <ol>
+            <li>항목을 선택하고 <strong>공유</strong>, <strong>공유 만들기</strong>를 차례로 선택합니다.</li>
+            <li>LocalGateKeys에 여섯 단어로 된 <strong>공유 코드</strong>가 표시됩니다. <strong>파일로 저장…</strong>(<code>.lgkshare</code>) 또는 <strong>QR 코드 표시</strong>를 선택합니다.</li>
+            <li>파일을 보내고, 여섯 단어는 전화나 직접 만나서 등 <em>다른 방법으로</em> 상대방에게 알려 줍니다.</li>
+          </ol>
+          <p><strong>받기:</strong> <code>.lgkshare</code> 파일을 두 번 클릭하거나 Ctrl+K › 받은 공유 항목 › <strong>공유 항목 열기…</strong>를 선택합니다. 여섯 단어를 입력하고 <strong>미리 보기</strong>를 확인한 다음 <strong>보관함에 저장</strong>, <strong>둘 다 유지</strong> 또는 <strong>거절</strong>을 선택합니다. 패스키, 문서, 파일이 첨부된 항목은 공유할 수 없습니다.</p>
+        </article>
+
+        <article class="topic" id="win-apps">
+          <h3><a href="#win-apps">Windows 앱 입력</a></h3>
+          <p>LocalGateKeys는 웹사이트뿐 아니라 일반 Windows 프로그램의 로그인 창도 입력할 수 있습니다.</p>
+          <ol>
+            <li>프로그램의 로그인 창을 엽니다.</li>
+            <li><kbd>Ctrl</kbd>+<kbd>N</kbd>을 누르고 <strong>데스크톱 앱 로그인</strong>을 선택한 다음 <strong>앱 검사…</strong>를 선택합니다.</li>
+            <li><strong>로그인 필드 지정</strong>: 사용자 이름과 비밀번호 입력란을 가리킵니다. 원하면 <strong>로그인 버튼 지정…</strong>.</li>
+            <li><strong>로그인 저장</strong>.</li>
+            <li>다음부터는 해당 프로그램에서 <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd>를 누르거나 비밀번호 입력란 옆의 입력 버튼을 클릭합니다.</li>
+          </ol>
+          <p>업데이트 후 프로그램이 바뀌면 로그인을 열고 <strong>앱 바인딩…</strong> › <strong>바인딩 새로 고침…</strong>을 선택합니다. LocalGateKeys는 창 구성만 읽으며 입력하는 내용은 절대 읽지 않습니다.</p>
+        </article>
+
+        <article class="topic" id="win-shared">
+          <h3><a href="#win-shared">공유 컬렉션</a> <span class="badge-pro">Pro</span></h3>
+          <p>모두가 접근할 수 있는 폴더(예: 공유 OneDrive 폴더)를 통해 가족이나 팀과 컬렉션 하나를 공유하세요. 컬렉션을 열고 <strong>컬렉션 공유</strong>를 선택한 뒤 폴더, 구성원의 편집 또는 보기 전용 여부, 공유 비밀번호를 정합니다.</p>
+          <p>다른 사람은 <strong>공유 컬렉션에 참여</strong>를 선택하고 폴더를 고른 뒤 공유 비밀번호를 입력합니다. 그러면 내가 <strong>참여 승인</strong>을 선택합니다. 폴더를 거치는 것은 그 컬렉션뿐이며 다른 항목은 비공개로 유지됩니다. 언제든 사람을 제거하거나 <strong>공유 중지</strong> 또는 나가기를 할 수 있습니다.</p>
+        </article>
+
+        <article class="topic" id="win-safety">
+          <h3><a href="#win-safety">긴급 액세스와 강요 대비 비밀번호</a> <span class="badge-pro">Pro</span></h3>
+          <ul>
+            <li><strong>긴급 액세스</strong>(Pro): 백업 및 복원 페이지에서 <strong>긴급 액세스 설정</strong>을 선택합니다. 복구 문구가 신뢰하는 사람들을 위한 조각으로 나뉘며, 필요한 조각 수와 대기 기간을 정합니다. 각 보유자에게 해당 종이나 조각 파일을 전달하세요.</li>
+            <li>충분한 보유자가 공유 폴더를 통해 액세스를 요청하면 내 기기에 요청이 표시되고, 대기 기간이 끝날 때까지 <strong>거부</strong>할 수 있습니다. 보유자는 <strong>액세스를 받았습니다</strong>를 선택하고 조각을 추가한 뒤 <strong>액세스 요청</strong>을 선택합니다. 승인되면 보관함이 새 프로필로 열립니다.</li>
+            <li>같은 페이지의 <strong>유산 팩</strong>은 상속인을 위한 메모(유언장 위치, 해지할 계정, 기기, 조각 보유자)를 만든 다음 인쇄할 <strong>비상 키트</strong>를 만듭니다.</li>
+            <li><strong>강요 대비 비밀번호</strong>(Pro): 설정 › 잠금 해제 › <strong>강요 대비 비밀번호</strong> › <strong>설정</strong>. 누군가 잠금 해제를 강요할 때 쓰는 두 번째 마스터 비밀번호입니다. 고른 항목만 있는 별도의 보관함이 열리고, 실제 보관함은 설정한 시간 동안 마스터 비밀번호를 거부합니다. Windows, Mac, iPhone, Android에서 쓸 수 있습니다.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="win-dev">
+          <h3><a href="#win-dev">개발자 도구와 AI 에이전트</a></h3>
+          <p>설정 › <strong>개발자</strong>에서 보관함의 SSH 키를 이 PC의 ssh와 Git에 제공해 로그인과 커밋 서명에 쓸 수 있습니다. 서명할 때마다 승인을 요청합니다. <strong>생성</strong>은 보관함에 새 Ed25519 키를 만듭니다.</p>
+          <p><strong>AI 에이전트가 LocalGateKeys를 사용하도록 허용</strong>을 켜면 Claude Code 같은 에이전트가 MCP로 연결할 수 있습니다. 로그인이나 읽기는 매번 승인하며, 에이전트는 비밀번호를 볼 수 없고 모든 요청이 기록됩니다. Microsoft Store 버전에서는 <code>claude mcp add localgatekeys -- LocalGateKeysNativeHost.exe mcp</code>로 추가합니다.</p>
+        </article>
+
+        <article class="topic" id="win-settings">
+          <h3><a href="#win-settings">설정</a></h3>
+          <p>상단의 <strong>설정 검색</strong> 상자(<kbd>Ctrl</kbd>+<kbd>F</kbd>)로 모든 옵션을 찾을 수 있습니다. 변경 사항은 즉시 저장됩니다.</p>
+          <dl class="defs">
+            <dt>잠금 해제</dt><dd>Windows Hello, 보안 키, 카메라 확인, 키 파일, YubiKey, 마스터 비밀번호, 복구 문구.</dd>
+            <dt>잠금</dt><dd>자동 잠금 시간과 조건(<a href="#win-unlock">잠금 해제와 잠금</a> 참조).</dd>
+            <dt>자동 입력</dt><dd>브라우저 자동 입력, <strong>패스키에 LocalGateKeys 제안</strong>, 데스크톱 앱 자동 입력, 입력 후 로그인, 빠른 액세스 단축키. <strong>Windows 패스키에 LocalGateKeys 사용</strong>을 켜면 Windows 11의 모든 앱과 브라우저에서 패스키를 쓸 수 있으며, 매번 사용자의 승인을 받습니다.</dd>
+            <dt>개인 정보</dt><dd><strong>클립보드 지우기 시간</strong>(5초에서 5분), 유출 확인, 엄격한 오프라인 모드, 스크린샷 및 화면 공유에서 숨기기, 휴지통 보관 기간, 다른 앱에서 문서 열기.</dd>
+            <dt>백업</dt><dd><a href="#win-backups">백업과 복원</a>을 참조하십시오.</dd>
+            <dt>모양 및 앱</dt><dd><strong>테마</strong> 시스템, 라이트, 다크, <strong>언어</strong>, <strong>Windows와 함께 시작</strong>(잠긴 상태로 시작), <strong>트레이에서 계속 실행</strong>, 업데이트.</dd>
+            <dt>요금제 및 동기화</dt><dd>라이선스, 기기 동기화, <strong>동기화에서 제거되면 이 기기 지우기</strong>.</dd>
+            <dt>개발자</dt><dd>SSH 에이전트와 Git 서명, AI 에이전트(<a href="#win-dev">개발자 도구와 AI 에이전트</a> 참고).</dd>
+            <dt>도움말 및 진단</dt><dd>키보드 단축키, 설정 다시 보기, 기기 및 연결, 오류 로그, 법적 고지 페이지.</dd>
+          </dl>
+        </article>
+
+        <article class="topic" id="win-pro">
+          <h3><a href="#win-pro">Pro 라이선스</a></h3>
+          <ol>
+            <li><a href="../../ko/pricing">가격 페이지</a>에서 Pro를 구매합니다. 키(<code>LGK1-</code>로 시작)는 이메일로 전송됩니다.</li>
+            <li>설정 › 요금제 및 동기화 › <strong>라이선스</strong>를 열고 키를 붙여 넣은 다음 <strong>설치</strong>를 선택하거나, <code>.lgklicense</code> 파일이면 <strong>파일 열기…</strong>를 선택합니다.</li>
+          </ol>
+          <p>iPhone 앱에서 Pro를 구매했나요? PC를 iPhone과 페어링하면(<a href="#win-sync">동기화</a> 참고) Free PC가 동기화를 통해 Pro가 됩니다. 또는 iPhone의 설정에서 <strong>키 복사</strong>를 선택해 같은 방법으로 PC에 설치하세요. 라이선스 페이지에는 무료 7개 항목 중 몇 개를 사용했는지 표시됩니다. 자세한 내용은 <a href="../../ko/licence">Pro 라이선스</a>를 참고하세요.</p>
+        </article>
+
+        <article class="topic" id="win-updates">
+          <h3><a href="#win-updates">업데이트</a></h3>
+          <p>Microsoft Store의 LocalGateKeys는 Store를 통해 자동으로 업데이트됩니다. 아직 이전 설치 프로그램 버전을 사용 중이신가요? 마지막 업데이트는 0.4.12입니다. Windows 설정 › 앱 › 설치된 앱에서 제거한 다음 Microsoft Store에서 LocalGateKeys를 설치하세요. 보관함은 그대로 남아 있으며 같은 마스터 비밀번호로 열립니다.</p>
+        </article>
+
+        <article class="topic" id="win-keys">
+          <h3><a href="#win-keys">키보드 단축키</a></h3>
+          <p>앱에서 <kbd>F1</kbd> 또는 <kbd>?</kbd>를 누르면 이 목록이 표시됩니다.</p>
+          <table class="keys">
+            <tbody>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>K</kbd></th><td>명령 팔레트</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>F</kbd></th><td>검색</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>N</kbd></th><td>새 항목</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>L</kbd></th><td>잠금</td></tr>
+              <tr><th scope="row"><kbd>Esc</kbd></th><td>뒤로</td></tr>
+              <tr><th scope="row"><kbd>Enter</kbd></th><td>선택한 항목 열기</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>C</kbd></th><td>비밀번호 복사(먼저 확인)</td></tr>
+              <tr><th scope="row"><kbd>Delete</kbd></th><td>휴지통으로 이동</td></tr>
+              <tr><th scope="row"><kbd>Shift</kbd>+<kbd>F10</kbd></th><td>항목 메뉴</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd></th><td>긴급 잠금, Windows 어디서나</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>K</kbd></th><td>빠른 액세스, Windows 어디서나</td></tr>
+              <tr><th scope="row"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd></th><td>연결된 Windows 앱 입력</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../ko/help">전체 사용자 가이드를 한 페이지에서 보기</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>보관함을 내 기기에 두는 Windows, Mac 및 iPhone용 비밀번호 관리자입니다.</p>
+        <p class="quiet">이 웹사이트는 쿠키를 사용하지 않는 Cloudflare Web Analytics로 페이지 방문 수를 집계합니다. 광고 추적기를 사용하지 않으며 쿠키를 설정하지 않습니다.</p>
+      </div>
+      <nav aria-label="제품">
+        <h2>제품</h2>
+        <ul>
+          <li><a href="../../ko/features">기능</a></li>
+          <li><a href="../../ko/pricing">가격</a></li>
+          <li><a href="../../ko/download">다운로드</a></li>
+          <li><a href="../../ko/get-started">시작하기</a></li>
+          <li><a href="../../ko/switch/">갈아타기</a></li>
+          <li><a href="../../buy">Pro 구매</a></li>
+          <li><a href="../../ko/licence">내 Pro 라이선스</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">라이선스 복구</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="도움말">
+        <h2>도움말</h2>
+        <ul>
+          <li><a href="../../ko/help">사용자 가이드</a></li>
+          <li><a href="../../ko/support">지원 및 FAQ</a></li>
+          <li><a href="../../ko/security">보안</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">취약점 신고</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="법률">
+        <h2>법률</h2>
+        <p class="quiet">이 문서는 영어로 작성되어 있으며, 적용되고 구속력을 갖는 것은 영어본입니다.</p>
+        <ul>
+          <li><a href="../../legal/eula">라이선스 계약</a></li>
+          <li><a href="../../legal/privacy">개인정보 처리방침</a></li>
+          <li><a href="../../legal/terms-of-sale">판매 약관</a></li>
+          <li><a href="../../legal/refunds">환불 정책</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. 문의: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows는 Microsoft 그룹 회사의 상표입니다. Chrome은 Google LLC의 상표입니다. Apple, iPhone, Apple Watch, Face ID, Touch ID, Safari는 미국 및 기타 국가에 등록된 Apple Inc.의 상표입니다.</p>
+      <nav class="lang-switch" aria-label="언어"><ul><li><a href="../../guide/windows" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/windows" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/windows" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/windows" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/windows" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/windows" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/windows" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/windows" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="../../ko/guide/windows" hreflang="ko" lang="ko" aria-current="true">한국어</a></li><li><a href="../../nl/guide/windows" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/windows" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

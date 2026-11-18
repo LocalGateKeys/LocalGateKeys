@@ -9,13 +9,16 @@ public struct HealthLogin: Sendable, Equatable {
     public let hasTOTP: Bool
     /// nil = unknown, never counted as old.
     public let updatedAt: Date?
+    /// Every saved URL (`scope.origin`, `scope.urls[].url`), for the not-HTTPS and site feature checks.
+    public let urls: [String]
 
-    public init(id: String, title: String, password: String, hasTOTP: Bool, updatedAt: Date?) {
+    public init(id: String, title: String, password: String, hasTOTP: Bool, updatedAt: Date?, urls: [String] = []) {
         self.id = id
         self.title = title
         self.password = password
         self.hasTOTP = hasTOTP
         self.updatedAt = updatedAt
+        self.urls = urls
     }
 }
 
@@ -53,10 +56,15 @@ public struct VaultHealth: Sendable, Equatable {
     public let total: Int
     public let weak: Set<String>
     public let reused: Set<String>
+    /// The site supports TOTP and the login has none; empty without site features.
     public let noTwoFactor: Set<String>
     /// Not part of the score; shown in the Security centre only.
     public let old: Set<String>
     public let breached: Set<String>
+    /// Not part of the score: a saved URL is plain http:// on a host that is not loopback.
+    public let insecure: Set<String>
+    /// Not part of the score: the site supports passkeys and none is saved for its registrable domain.
+    public let passkeyAvailable: Set<String>
     /// nil when there are no logins.
     public let score: Int?
     public let label: String
@@ -64,8 +72,10 @@ public struct VaultHealth: Sendable, Equatable {
     public let attention: Set<String>
 
     public static func compute(_ logins: [HealthLogin], breached: Set<String>, now: Date,
-                               cache: StrengthCache = StrengthCache()) -> VaultHealth {
+                               cache: StrengthCache = StrengthCache(), features: SiteFeatures = .empty,
+                               passkeyDomains: Set<String> = []) -> VaultHealth {
         var weak = Set<String>(), noTwoFactor = Set<String>(), old = Set<String>()
+        var insecure = Set<String>(), passkeyAvailable = Set<String>()
         var byDigest: [Data: [String]] = [:]
         let ids = Set(logins.map(\.id))
         for login in logins {
@@ -76,7 +86,15 @@ public struct VaultHealth: Sendable, Equatable {
                 byDigest[digest, default: []].append(login.id)
                 if cache.score(for: login.password, digest: digest) <= 1 { weak.insert(login.id) }
             }
-            if !login.hasTOTP { noTwoFactor.insert(login.id) }
+            let web = URLMatcher.webHosts(login.urls)
+            if web.insecure { insecure.insert(login.id) }
+            let domains: Set<String> = features.isEmpty ? [] : Set(web.hosts.compactMap { features.registrableDomain(of: $0) })
+            if !login.hasTOTP, domains.contains(where: { features.supports(host: $0, feature: "totp") }) {
+                noTwoFactor.insert(login.id)
+            }
+            if domains.contains(where: { features.supports(host: $0, feature: "passkey") && !passkeyDomains.contains($0) }) {
+                passkeyAvailable.insert(login.id)
+            }
             if let updated = login.updatedAt, now.timeIntervalSince(updated) > oldAfter { old.insert(login.id) }
         }
         let reused = Set(byDigest.values.filter { $0.count > 1 }.flatMap { $0 })
@@ -93,7 +111,7 @@ public struct VaultHealth: Sendable, Equatable {
         default: label = String(localized: "Poor", bundle: .module)
         }
         return VaultHealth(total: total, weak: weak, reused: reused, noTwoFactor: noTwoFactor, old: old,
-                           breached: breachedLogins, score: score, label: label, attention: attention)
+                           breached: breachedLogins, insecure: insecure, passkeyAvailable: passkeyAvailable, score: score, label: label, attention: attention)
     }
 
     /// The single tag shown on a row: "Breached" > "Weak" > "Reused".

@@ -37,7 +37,13 @@ object AttachmentSync {
     const val BLOB_SUFFIX = ".lgkblob"
     const val CAP_SUFFIX = ".lgkcap"
     const val CAP_SIG_SUFFIX = ".lgkcap.lgksig"
+    /** The same kind of file advertising the `heir` feature (sub-plan 08): this device reads the emergency access plan. */
+    const val HEIR_CAP_SUFFIX = ".lgkheircap"
+    const val HEIR_CAP_SIG_SUFFIX = ".lgkheircap.lgksig"
     const val MAX_CAP_BYTES = 4096
+    /** The view counter of the heir capability file (desktop `CAP_COUNTERS["heir"]`, review M1): 2^53 - 1, which no real
+     *  view, heartbeat or documents capability carries. */
+    const val HEIR_CAP_COUNTER: Long = 9_007_199_254_740_991L
     const val MAX_NAME = 255
     const val MAX_MIME = 255
     private const val KEY_LEN = 32

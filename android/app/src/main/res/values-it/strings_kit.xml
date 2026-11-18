@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Kit di emergenza</string>
+    <string name="kit_intro">Conserva questa pagina offline e separata dal telefono. Spiega come rientrare in LocalGateKeys se dimentichi la password dell’app.</string>
+    <string name="kit_device">Telefono</string>
+    <string name="kit_date">Data</string>
+    <string name="kit_version">Versione di LocalGateKeys</string>
+    <string name="kit_app_password">Password dell’app (scrivila a mano o conservala separata da questa pagina):</string>
+    <string name="kit_phrase_heading">Frase di recupero (%1$d parole, in ordine)</string>
+    <string name="kit_steps_heading">Come rientrare</string>
+    <string name="kit_step1">Nella schermata di blocco di LocalGateKeys, tocca «%1$s».</string>
+    <string name="kit_step2">Inserisci le %1$d parole qui sopra, in ordine.</string>
+    <string name="kit_step3">Scegli una nuova password dell’app. Le tue password non cambiano.</string>
+    <string name="kit_step4">Se il telefono è perso o la cassaforte non c’è più, installa LocalGateKeys su un telefono nuovo, poi ripristina l’ultimo file di backup o sincronizza dal tuo PC o da un altro telefono.</string>
+    <string name="kit_warning">Tratta questa pagina come la tua cassaforte. Un PDF salvato con la frase di recupero è delicato quanto la cassaforte stessa: custodisci la carta sotto chiave ed elimina ogni PDF salvato quando hai finito.</string>
+    <string name="kit_print_with_phrase">Stampa kit di emergenza con questa frase</string>
+    <string name="kit_print_blank">Stampa kit di emergenza (caselle della frase vuote)</string>
+</resources>

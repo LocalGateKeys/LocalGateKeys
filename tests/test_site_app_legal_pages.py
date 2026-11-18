@@ -44,6 +44,7 @@ def test_app_page_has_no_shop_links_or_names(rel):
 @pytest.mark.parametrize("rel", APP_PAGES)
 def test_app_page_names_no_other_vendor(rel):
     text = re.sub(r"<[^>]+>", " ", _read(rel))
+    # Owner 2026-11-10: Google Analytics was removed, so no vendor exception is needed here.
     assert VENDORS.findall(text) == [], f"{rel} names another vendor"
 
 

@@ -41,6 +41,8 @@
 	<string>$(LGK_APP_KEYCHAIN_GROUP)</string>
 	<key>LGKKeychainGroup</key>
 	<string>$(LGK_KEYCHAIN_GROUP)</string>
+	<key>LGKSafariAppGroup</key>
+	<string>$(LGK_SAFARI_APP_GROUP)</string>
 	<key>LGKSafariKeychainGroup</key>
 	<string>$(LGK_SAFARI_KEYCHAIN_GROUP)</string>
 	<key>LSApplicationCategoryType</key>

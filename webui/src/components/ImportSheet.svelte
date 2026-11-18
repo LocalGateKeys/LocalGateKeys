@@ -5,6 +5,7 @@
   import { toast } from '../lib/toast.js';
   import Button from './Button.svelte';
   import Field from './Field.svelte';
+  import SwitchReport from './SwitchReport.svelte';
 
   let { onclose } = $props();
   let step = $state('start'); // start | password | mapping | review
@@ -16,6 +17,7 @@
   let error = $state('');
   let busy = $state(false);
   let progress = $state('');
+  let report = $state(null);
 
   $effect(() => {
     const off = on('import.progress', (d) => { if (d.handle === opened?.handle) progress = d.text; });
@@ -61,6 +63,7 @@
     busy = true; error = '';
     const r = await call('import_apply', opened.handle);
     busy = false; progress = '';
+    if (r.ok && r.report) { toast(r.report.toast); report = r.report; opened = null; step = 'report'; return; }
     if (r.ok) { toast(r.title, r.message); opened = null; onclose(); return; }
     if (r.error.code === 'import_cancelled') { toast(r.error.message); opened = null; onclose(); return; }
     if (r.error.code !== 'cancelled') error = r.error.message;
@@ -72,7 +75,7 @@
 
 <div class="sheet glass" role="dialog" aria-label={t('importSheet.dialog')}>
   <header>
-    <h2>{step === 'review' ? t('importSheet.titleReview') : step === 'mapping' ? t('importSheet.titleColumns') : t('importSheet.titleStart')}</h2>
+    <h2>{step === 'report' ? t('switchReport.title') : step === 'review' ? t('importSheet.titleReview') : step === 'mapping' ? t('importSheet.titleColumns') : t('importSheet.titleStart')}</h2>
     <button class="close" aria-label={t('common.close')} onclick={onclose}>✕</button>
   </header>
   {#if step === 'start'}
@@ -129,6 +132,8 @@
     {/if}
     {#if progress}<p class="muted" role="status">{progress}</p>{/if}
     <footer><Button label={t('common.cancel')} onclick={cancel} /><Button label={t('importSheet.import')} variant="primary" busy={busy} busyLabel={t('importSheet.importing')} onclick={apply} /></footer>
+  {:else if step === 'report' && report}
+    <SwitchReport {report} ondone={onclose} />
   {/if}
   {#if error}<p class="error pre" role="alert">{error}</p>{/if}
 </div>

@@ -249,7 +249,9 @@ final class MacFolderSyncTests: XCTestCase {
         await c.model.pickFolder(.add)
         expect(false, await c.model.submitFolder(password: Self.password, again: Self.password))
         let text = try XCTUnwrap(c.model.freshKeyText)
-        XCTAssertEqual(text, SyncPageModel.lanRemovedFolderText(peers: ["Windows PC"]))
+        let windows = try XCTUnwrap(c.model.peers.first { $0.name.hasPrefix("Windows PC") }?.name)
+        XCTAssertTrue(windows.hasPrefix("Windows PC · Device "))
+        XCTAssertEqual(text, SyncPageModel.lanRemovedFolderText(peers: [windows]))
         XCTAssertTrue(text.contains("Until then they don't sync with this Mac.\n\nContinue?"))
         XCTAssertFalse(text.contains("Old iPhone"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: folder.appendingPathComponent(FolderLayout.keyringPath).path),

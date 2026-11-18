@@ -191,7 +191,8 @@ def test_attachment_key_and_plaintext_buffers_are_zeroed(case_dir: Path, monkeyp
             return self._inner.encrypt(*args)
 
         def decrypt_into(self, nonce: bytes, data: Any, aad: bytes, buffer: bytearray) -> int:
-            # Only attachment decryptions: the vault's own save also builds an AESGCM (with the live data key).
+            # Every decryption into a buffer is recorded: the vault's own save only encrypts, and the one other
+            # decryption, the place in its rollback mark, is kept out below (no marks store for this test).
             if isinstance(self._key, bytearray):
                 keys.append(self._key)
             buffers.append(buffer)
@@ -199,12 +200,18 @@ def test_attachment_key_and_plaintext_buffers_are_zeroed(case_dir: Path, monkeyp
 
     monkeypatch.setattr(attachments_module, "AESGCM", SpyAESGCM)
     # Reads decrypt through the vault helper (R-7: it falls back when decrypt_into is missing).
+    from localvault import outside_marks
     from localvault import vault as vault_module
 
     monkeypatch.setattr(vault_module, "AESGCM", SpyAESGCM)
-    assert store.read_bytes(attachment_id) == b"synthetic secret document"
-    store.export(attachment_id, case_dir / "copy.txt")
+    previous = outside_marks.set_backend(None)  # as on a platform without the store: no rollback mark is read
+    try:
+        assert store.read_bytes(attachment_id) == b"synthetic secret document"
+        store.export(attachment_id, case_dir / "copy.txt")
+    finally:
+        outside_marks.set_backend(previous)
     assert len(keys) == 2 and len(buffers) == 2
+    assert all(len(buffer) == len(b"synthetic secret document") for buffer in buffers)
     assert all(not any(key) for key in keys)
     assert all(not any(buffer) for buffer in buffers)
 

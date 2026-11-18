@@ -118,7 +118,8 @@ data class Acknowledgement(val name: String, val licence: String, val text: Stri
 
         /**
          * What the app ships (the release runtime classpath): [load] reads a bundled asset's text. AndroidX and ZXing are
-         * Apache-2.0; Argon2 runs through argon2kt (MIT) over the reference C code (CC0); the core uses Bouncy Castle.
+         * Apache-2.0; Argon2 runs through argon2kt (MIT) over the reference C code (CC0); the core uses Bouncy Castle;
+         * YubiKit (Apache-2.0) reads YubiKeys.
          */
         fun all(load: (String) -> String): List<Acknowledgement> = listOf(
             Acknowledgement("argon2kt", "MIT", load("licenses/argon2kt-LICENSE.txt")),
@@ -127,6 +128,14 @@ data class Acknowledgement(val name: String, val licence: String, val text: Stri
             Acknowledgement("AndroidX and Jetpack Compose", "Apache-2.0", load(APACHE)),
             Acknowledgement("Kotlin and kotlinx.coroutines", "Apache-2.0", load(APACHE)),
             Acknowledgement("ZXing", "Apache-2.0", load(APACHE)),
+            // The YubiKey reader (key file and YubiKey unlocking) and what it brings: SLF4J's API (no logger is bound,
+            // so it logs nothing) and the JSpecify annotations.
+            Acknowledgement("YubiKit for Android", "Apache-2.0", load(APACHE)),
+            Acknowledgement("JSpecify", "Apache-2.0", load(APACHE)),
+            // The Wi-Fi host's announcement on Android 10-12 (it uses the same SLF4J API, logging nothing).
+            Acknowledgement("JmDNS", "Apache-2.0", load(APACHE)),
+            Acknowledgement("SLF4J API", "MIT", load("licenses/slf4j-LICENSE.txt")),
+            Acknowledgement("2FA Directory (site data)", "MIT, CC BY 4.0", load("licenses/site-features-NOTICE.txt")),
         )
     }
 }

@@ -223,6 +223,7 @@ export async function decodeNotification(signedPayload, options) {
     notificationType: notification.notificationType,
     subtype: notification.subtype,
     notificationUUID: notification.notificationUUID,
+    signedDate: notification.signedDate,
     environment: notification.data?.environment,
     transaction,
   };

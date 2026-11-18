@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App password key file and YubiKey (KeePass unlocking Task 9). -->
+<resources>
+    <string name="factors_required_keyfile">この保管庫にはキーファイルも必要です。</string>
+    <string name="factors_required_yubikey">この保管庫には YubiKey も必要です。</string>
+    <string name="factors_required_both">この保管庫にはキーファイルと YubiKey も必要です。</string>
+    <string name="factors_keyfile_mismatch">この保管庫のキーファイルではありません。</string>
+    <string name="factors_yubikey_mismatch">この保管庫の YubiKey ではありません。</string>
+    <string name="factors_keyfile_invalid">このファイルはキーファイルとして使用できません。</string>
+    <string name="factors_yubikey_bad_answer">YubiKey が正しく応答しませんでした。スロット %1$d が HMAC-SHA1 チャレンジレスポンスに設定されているか確認してください。</string>
+    <string name="factors_yubikey_removed">YubiKey にもう一度触れてください。</string>
+    <string name="factors_yubikey_timeout">タッチが検出されませんでした。YubiKey が点滅したら触れてください。</string>
+    <string name="factors_yubikey_slot_not_configured">この YubiKey のスロット %1$d はチャレンジレスポンス用に設定されていません。Yubico Authenticator で「Slots」を選び、スロット %1$d を Challenge-response (HMAC-SHA1) に設定してください。</string>
+    <string name="factors_keyfile_unreadable">キーファイル %1$s を読み取れませんでした。もう一度選んでください。</string>
+    <string name="factors_keyfile_too_large">このファイルはキーファイルとしては大きすぎます。</string>
+    <string name="factors_removed_by_phrase">キーファイル / YubiKey を削除しました。もう一度追加してください。</string>
+    <string name="factors_prompt_no_keyfile">キーファイルが選択されていません</string>
+    <string name="factors_prompt_keyfile">キーファイル: %1$s</string>
+    <string name="factors_prompt_choose">キーファイルを選択…</string>
+    <string name="factors_touch_title">YubiKey に触れてください</string>
+    <string name="factors_section">キーファイルと YubiKey</string>
+    <string name="factors_keyfile">キーファイル</string>
+    <string name="factors_yubikey">YubiKey</string>
+    <string name="factors_keyfile_set">キーファイル設定済み</string>
+    <string name="factors_keyfile_none">キーファイルなし</string>
+    <string name="factors_yubikey_set">YubiKey 設定済み (スロット %1$d)</string>
+    <string name="factors_yubikey_none">YubiKey なし</string>
+    <string name="factors_add_keyfile">キーファイルを追加…</string>
+    <string name="factors_create_keyfile">キーファイルを作成…</string>
+    <string name="factors_add_yubikey">YubiKey を追加</string>
+    <string name="factors_slot">スロット</string>
+    <string name="factors_remove_keyfile">キーファイルを削除</string>
+    <string name="factors_remove_yubikey">YubiKey を削除</string>
+    <string name="factors_remove_confirm">これ以降、保管庫のロック解除にこの要素は不要になります。</string>
+    <string name="factors_keyfile_added">キーファイル %1$s を追加しました。</string>
+    <string name="factors_keyfile_created">キーファイル %1$s を作成して追加しました。コピーを安全な場所に保管してください。</string>
+    <string name="factors_yubikey_added">YubiKey を追加しました (スロット %1$d)。</string>
+    <string name="factors_keyfile_removed">キーファイルを削除しました。</string>
+    <string name="factors_yubikey_removed_done">YubiKey を削除しました。</string>
+    <string name="factors_yubikey_setup">LocalGateKeys が YubiKey をプログラムすることはありません。Yubico Authenticator で設定してください: Slots、Challenge-response、HMAC-SHA1、スロット 2 (またはスロット 1)。バックアップの YubiKey には同じシークレットが必要です。</string>
+    <string name="factors_always_ask">キーファイル / YubiKey を常に要求</string>
+    <string name="factors_always_ask_needs_factor">先にキーファイルまたは YubiKey を追加してください。</string>
+    <string name="factors_shortcuts_off">先に「キーファイル / YubiKey を常に要求」をオフにしてください。</string>
+    <string name="factors_failed">キーファイルまたは YubiKey を変更できませんでした。</string>
+    <string name="factors_yubikey_no_transport">YubiKey をスマートフォンにかざすには NFC をオンにするか、YubiKey を接続してください。</string>
+    <string name="factors_prompt_remember">このキーファイルをこのスマートフォンに記憶する</string>
+    <string name="factors_prompt_yubikey">YubiKey をスマートフォンの背面にかざすか、接続して触れてください (スロット %1$d)。</string>
+    <string name="factors_sheet_title">ロックを解除するには LocalGateKeys を開いてください</string>
+    <string name="factors_sheet_text">アプリパスワードにはキーファイルまたは YubiKey が必要で、それを求められるのはアプリだけです。</string>
+    <string name="factors_sheet_open">LocalGateKeys を開く</string>
+    <string name="factors_needs_app_password">キーファイルまたは YubiKey を追加するには、アプリパスワードをオンにしてください</string>
+    <string name="factors_footer">以後、アプリパスワードに加えてキーファイルまたは YubiKey が必要になります。リカバリーフレーズは、それらがなくてもロックを解除できます。</string>
+    <string name="factors_always_ask_note">キーファイルまたは YubiKey が設定されている間、指紋または顔によるロック解除をオフにします。</string>
+    <string name="factors_remember">キーファイルの場所をこのスマートフォンに記憶する</string>
+    <string name="factors_password_text">アプリパスワードを入力してください。設定済みのキーファイルまたは YubiKey も求められます。</string>
+    <string name="factors_add_confirm">今後、ロック解除にはアプリパスワードとこの要素が必要です。リカバリーフレーズは、これがなくてもロックを解除できます。</string>
+</resources>

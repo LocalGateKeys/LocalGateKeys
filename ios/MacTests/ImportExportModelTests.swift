@@ -36,7 +36,7 @@ private final class ExportFakeVault: MasterPasswordService {
 final class ImportExportModelTests: XCTestCase {
     private static let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         .appendingPathComponent("../..").standardized
-    private var dir: URL!
+    nonisolated(unsafe) private var dir: URL!
 
     override func setUpWithError() throws {
         dir = FileManager.default.temporaryDirectory.appendingPathComponent("lgk-import-\(UUID().uuidString)")
@@ -77,6 +77,42 @@ final class ImportExportModelTests: XCTestCase {
         XCTAssertNil(m.review)
         XCTAssertEqual(store.snapshot.records.count, 2)
         XCTAssertNotNil(m.message)
+    }
+
+    /// Feature pack §6.1: the switch report counts what was committed, the journal is kept in the Mac-local data,
+    /// and Undo moves what the import added to Recently deleted (here a fake that deletes) and removes the journal.
+    func testImportReportAndUndo() async throws {
+        let store = ExportMemoryStore()
+        let local = InMemoryLocalData()
+        let (m, _) = model(store, local: local)
+        var trashed: [String] = []
+        m.moveToTrash = { ids in
+            for id in ids { store.snapshot.records[id] = nil }
+            trashed += ids
+            return ids
+        }
+        await m.importFile(url: try file("Passwords.csv", Self.appleCSV))
+        _ = await m.commitReview()
+        let report = try XCTUnwrap(m.report)
+        XCTAssertEqual(report.counts, [ImportReport.KindCount(kind: "web", count: 2)])
+        XCTAssertTrue(report.canUndo)
+        XCTAssertEqual(local.localData?.lastImport?.created.count, 2)
+        XCTAssertNotNil(m.undoableImport)
+        m.undoLastImport()
+        XCTAssertEqual(trashed.count, 2)
+        XCTAssertTrue(store.snapshot.records.isEmpty)
+        XCTAssertNil(local.localData?.lastImport, "one level of undo")
+        XCTAssertNil(m.report)
+        XCTAssertNil(m.undoableImport)
+    }
+
+    func testNoUndoWithoutRecentlyDeleted() async throws {
+        let store = ExportMemoryStore()
+        let (m, _) = model(store, local: InMemoryLocalData())
+        await m.importFile(url: try file("Passwords.csv", Self.appleCSV))
+        _ = await m.commitReview()
+        XCTAssertNotNil(m.report)
+        XCTAssertNil(m.undoableImport, "the window gives Recently deleted; without it there is no Undo")
     }
 
     func testUnknownFileIsRefused() async throws {
@@ -174,6 +210,45 @@ final class ImportExportModelTests: XCTestCase {
         // The confirmation is used once.
         try FileManager.default.removeItem(at: out)
         let again = await m.exportCSV(to: out)
+        XCTAssertFalse(again)
+    }
+
+    func testCXFExportNeedsTheMasterPassword() async throws {
+        let store = ExportMemoryStore()
+        let (m, gate) = model(store)
+        await m.importFile(url: try file("Passwords.csv", Self.appleCSV))
+        _ = await m.commitReview()
+        let out = dir.appendingPathComponent("export.json")
+        m.requestCXFExport()
+        XCTAssertTrue(m.choosingCXF)
+        XCTAssertEqual(m.cxfChoices.count, 2)
+        let chosen = m.cxfChoices.filter { $0.detail.contains("ada") }.map(\.id)
+        XCTAssertEqual(chosen.count, 1)
+        // Not without the master password (the model enforces the gate itself).
+        let direct = await m.exportCXF(to: out, ids: chosen)
+        XCTAssertFalse(direct)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: out.path))
+        XCTAssertFalse(m.checkCXFSelection([]))
+        XCTAssertNotNil(m.cxfMessage)
+        XCTAssertTrue(m.checkCXFSelection(chosen))
+        m.acceptCXFSelection(chosen, choose: { out })
+        XCTAssertFalse(m.choosingCXF)
+        let request = try XCTUnwrap(gate.pending, "the master password is asked")
+        XCTAssertEqual(request.level, .strict)
+        await gate.submit("wrong")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: out.path))
+        await gate.submit("correct horse")
+        _ = await m.exportTask?.value
+        let data = try Data(contentsOf: out)
+        let r = try CXFImport.candidates(fromAccountJSON: data)
+        XCTAssertEqual(r.candidates.count, 1)
+        guard case .login(let f) = r.candidates.first?.kind else { return XCTFail("not a login") }
+        XCTAssertEqual(f.username, "ada")
+        XCTAssertEqual(f.password, "pw-one")
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("pw-two"))
+        // The confirmation is used once.
+        try FileManager.default.removeItem(at: out)
+        let again = await m.exportCXF(to: out, ids: chosen)
         XCTAssertFalse(again)
     }
 

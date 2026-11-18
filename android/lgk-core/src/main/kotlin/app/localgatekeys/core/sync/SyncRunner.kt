@@ -5,6 +5,8 @@ import app.localgatekeys.core.engine.ItemState
 import app.localgatekeys.core.engine.PeerView
 import app.localgatekeys.core.json.JsonValue
 import app.localgatekeys.core.primitives.Scalars
+import app.localgatekeys.core.recovery.Heir
+import app.localgatekeys.core.recovery.HeirException
 import app.localgatekeys.core.records.Namespace
 import app.localgatekeys.core.records.RecordException
 import app.localgatekeys.core.records.SyncMeta
@@ -28,6 +30,11 @@ object SyncRunner {
      *   for a newer wrapper schema; detail `<device>:<item>`); the rest of that view merges.
      * - An apply that still fails gives `apply-failed`; nothing is applied but `ownStates` carries the local view.
      * - A store that cannot be read for sync gives `local-data` and no `ownStates` (publish nothing).
+     * - Personal collections (sub-plan 07 Task 5j, desktop `run_merge(collections=)`): with [collections] (every peer of
+     *   the run reads them: a folder member's signed `.lgkcol`, a Wi-Fi peer's `features`) the collection states are
+     *   merged and published too ([CollectionSync]); without, the peers' collection states are dropped before the merge
+     *   and none of this device's are built or tombstoned. [shares] (this device's share records) applies in both:
+     *   read-only share items are never changed here by another of this person's devices.
      */
     fun run(
         store: StoreSnapshot,
@@ -37,10 +44,12 @@ object SyncRunner {
         licenseKeys: Map<String, ByteArray> = emptyMap(),
         known: Set<String> = emptySet(),
         documents: ((AttachmentRef) -> Boolean)? = null,
+        collections: Boolean = false,
+        shares: CollectionShares = CollectionShares.NONE,
     ): RunReport {
         val issues = ArrayList<SyncIssue>()
         val local = try {
-            SyncMeta.localView(store.records, store.meta, device, now)
+            SyncMeta.localView(store.records, store.meta, device, now, collections, shares)
         } catch (e: Exception) {
             issues.add(SyncIssue("local-data", (e.message ?: e.toString())))
             return RunReport(issues = issues)
@@ -48,14 +57,19 @@ object SyncRunner {
         val localSkipped = local.skipped.entries.sortedWith { a, b -> Scalars.compare(a.key, b.key) }.map { it.key to it.value }
         val knownAll = known + device + views.map { it.deviceId }
         val plausible = views.map { view ->
+            // A run without collections strips the peers' collection states (live or tombstone) before the merge, so they
+            // never touch the stored ones (desktop `run_merge(collections=False)`).
             val kept = view.states.filter { s ->
+                if (!collections && CollectionStates.isStateId(s.itemId)) return@filter false
                 val why = Plausibility.implausibleVv(s.vv, local.states[s.itemId]?.vv, knownAll)
                 if (why != null) issues.add(SyncIssue("implausible-vv", "${view.deviceId}:${s.itemId}"))
                 why == null
             }
             if (kept.size == view.states.size) view else PeerView(view.deviceId, kept)
         }
-        val fold = Engine.fold(local.states, plausible, device) { state -> check(state, licenseKeys, documents) }
+        val heirLocal = store.records[Heir.STATE_ID].takeIf { store.meta[Heir.STATE_ID]?.deleted != true }
+            ?.let { (it as? JsonValue.Obj)?.fields?.get("record") }
+        val fold = Engine.fold(local.states, plausible, device) { state -> check(state, licenseKeys, documents, collections, heirLocal) }
         for (dev in fold.badViews) issues.add(SyncIssue("bad-peer-data", dev))
         for (q in fold.quarantined) {
             val kind = when (q.reason) {
@@ -65,7 +79,7 @@ object SyncRunner {
             issues.add(SyncIssue(kind, "${q.device}:${q.item}"))
         }
         val applied = try {
-            SyncMeta.applyRemote(fold.outcome, store.records, local.meta, device, now, licenseKeys, documents)
+            SyncMeta.applyRemote(fold.outcome, store.records, local.meta, device, now, licenseKeys, documents, collections, shares)
         } catch (e: Exception) {
             issues.add(SyncIssue("apply-failed", (e.message ?: e.toString())))
             return RunReport(
@@ -74,7 +88,7 @@ object SyncRunner {
             )
         }
         val final = try {
-            SyncMeta.localView(applied.records, applied.meta, device, now)
+            SyncMeta.localView(applied.records, applied.meta, device, now, collections, shares)
         } catch (e: Exception) {
             issues.add(SyncIssue("local-data", (e.message ?: e.toString())))
             return RunReport(skipped = localSkipped, issues = issues)
@@ -96,10 +110,32 @@ object SyncRunner {
     /**
      * The bridge's refusal for a state the fold wants to store, or null (plays the desktop per-record apply check,
      * `vault_bridge.check_remote_state`; phone restore uses it to leave unreadable backup states out before the free cap).
+     * With [collections], a collection state (or the engine's conflict copy of one) is checked as one
+     * ([CollectionStates.unwrap]); without, it is refused like any record under a reserved id.
      */
-    fun check(state: ItemState, licenseKeys: Map<String, ByteArray>, documents: ((AttachmentRef) -> Boolean)? = null): String? {
+    fun check(
+        state: ItemState,
+        licenseKeys: Map<String, ByteArray>,
+        documents: ((AttachmentRef) -> Boolean)? = null,
+        collections: Boolean = false,
+        /** This phone's stored emergency access plan record: a remote plan that re-keys it is quarantined. */
+        heirLocal: JsonValue? = null,
+    ): String? {
         if (state.deleted) return null
         val item = state.item ?: return null
+        if (collections && CollectionSync.isCollectionState(state)) {
+            // A state under a `col:`/`cm:`/`csl:` id is never a copy: a stray `id` is checked (and refused) as what the
+            // apply unwraps, so it is quarantined alone (desktop `check_remote_state`, `is_copy=False`).
+            val isCopy = (item as? JsonValue.Obj)?.fields?.get("id") != null && !CollectionStates.isStateId(state.itemId)
+            return try {
+                CollectionStates.unwrap(state, isCopy)
+                null
+            } catch (e: RecordException) {
+                e.reason ?: "bad-remote"
+            } catch (e: Exception) {
+                "bad-remote"
+            }
+        }
         val isCopy: Boolean
         if (item is JsonValue.Obj) {
             // applyRemote drops these without a word: a licence this build cannot verify, or a licence conflict copy.
@@ -110,7 +146,14 @@ object SyncRunner {
             isCopy = false
         }
         return try {
-            Wrapper.unwrap(state, isCopy, licenseKeys, documents)
+            val (ns, record) = Wrapper.unwrap(state, isCopy, licenseKeys, documents)
+            if (ns == Namespace.HEIR && !isCopy) {
+                try {
+                    Heir.mergeSynced(heirLocal, record)
+                } catch (e: HeirException) {
+                    return "bad-remote" // another device cannot silently re-key the plan
+                }
+            }
             null
         } catch (e: RecordException) {
             e.reason ?: "bad-remote"

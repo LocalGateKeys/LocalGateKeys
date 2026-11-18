@@ -21,6 +21,7 @@ import app.localgatekeys.core.lan.LanSyncException
 import app.localgatekeys.core.lan.LanTransport
 import app.localgatekeys.core.lan.PairingOffer
 import app.localgatekeys.core.lan.PinnedPeer
+import app.localgatekeys.core.lan.SealedHello
 import app.localgatekeys.core.lan.SecureChannel
 import app.localgatekeys.core.lan.SessionHello
 import app.localgatekeys.core.primitives.Base64Std
@@ -178,12 +179,16 @@ class SocketLanTransportTest {
         return responder { s, _ ->
             val input = s.getInputStream()
             val out = s.getOutputStream()
-            val hello = SessionHello.parse(LanTransport.decodeFrame(readFrame(input)))
+            // LAN sync version 3: the client's hello is sealed to the host's exchange key, and so is the answer.
+            val (hello, seal) = SealedHello.openInitiator(LanTransport.decodeFrame(readFrame(input)), host)
             SessionHello.verify(hello, pinnedB, groupKey.groupId)
             holdHello?.await()
-            val mine = SessionHello.make(host, groupKey.groupId, hello.sessionId, counter.incrementAndGet(), SystemRandomSource())
+            val mine = SessionHello.make(
+                host, groupKey.groupId, hello.sessionId, counter.incrementAndGet(), SystemRandomSource(), LanTransport.VERSION,
+            )
             val channel = SecureChannel(host, pinnedB, groupKey.groupId, hello.sessionId, SecureChannel.Role.RESPONDER, mine, hello)
-            out.write(LanTransport.encodeFrame(mine.toBytes())); out.flush()
+            out.write(LanTransport.encodeFrame(SealedHello.sealResponder(mine, seal))); out.flush()
+            seal.wipe()
             val parsed = LanMessages.parse(channel.open(readFrame(input)))
             if (parsed !is LanMessage.View) {
                 // A responder from before witness messages (2026-10-29) answers anything else with bad-message.
@@ -266,6 +271,48 @@ class SocketLanTransportTest {
         val peer = responder { s, _ -> readFrame(s.getInputStream()) } // reads the request, then hangs up
         val e = failure { transport().enroll(peer.endpoint, request()) {} } as LanSocketException
         assertEquals(e.message, LanFailure.CLOSED_BY_PEER, e.kind)
+    }
+
+    // MARK: LAN sync v3: the inviter's reveal frame before its reply (LAN_SYNC_V3.md 3.2)
+
+    /** Reads the request, then writes each of [frames] (unframed payloads) on the same connection. */
+    private fun revealing(vararg frames: ByteArray) = responder { s, _ ->
+        readFrame(s.getInputStream())
+        s.getOutputStream().apply { frames.forEach { write(LanTransport.encodeFrame(it)) }; flush() }
+        awaitClientClose(s)
+    }
+
+    private val revealFrame: ByteArray by lazy { SyncVectors.data("lan/v3/enroll_reveal.bin") }
+
+    @Test fun the_reveal_goes_to_on_interim_before_the_reply_is_read() {
+        val reply = Enrollment.REPLY_MAGIC + "{}".toByteArray()
+        val peer = revealing(revealFrame, reply)
+        val interims = ArrayList<ByteArray>()
+        val connected = AtomicInteger()
+        val got = transport().enroll(peer.endpoint, request(), { connected.incrementAndGet() }) { interims.add(it) }
+        assertEquals(1, connected.get())
+        assertEquals(1, interims.size)
+        assertArrayEquals(revealFrame, interims[0])
+        assertArrayEquals(reply, got)
+        // No reveal: the reply is the first frame and onInterim is never called (a version-1 offer).
+        interims.clear()
+        assertArrayEquals(reply, transport().enroll(revealing(reply).endpoint, request(), {}) { interims.add(it) })
+        assertTrue(interims.isEmpty())
+    }
+
+    @Test fun a_second_reveal_or_an_aborting_check_ends_the_enrollment() {
+        val e = failure { transport().enroll(revealing(revealFrame, revealFrame).endpoint, request(), {}) {} } as LanSocketException
+        assertEquals("enrollment reply is malformed", e.message)
+        // The caller's check of the reveal throws: nothing more is read, the failure is the caller's.
+        val abort = IllegalStateException("reveal does not match")
+        val thrown = failure {
+            transport().enroll(revealing(revealFrame, Enrollment.REPLY_MAGIC).endpoint, request(), {}) { throw abort }
+        }
+        assertTrue(thrown.toString(), thrown === abort)
+        val big = failure {
+            transport().enroll(revealing(revealFrame, Enrollment.REPLY_MAGIC + ByteArray(Enrollment.MAX_BYTES)).endpoint, request(), {}) {}
+        } as LanSocketException
+        assertEquals("enrollment reply exceeds the bound", big.message)
     }
 
     // MARK: frame bounds
@@ -806,11 +853,14 @@ class SocketLanTransportTest {
         val (report, slots, _) = lanRunWith(d)
         assertEquals(emptyList<String>(), report.issues.map { it.kind })
         assertEquals(1, d.browses.get())
-        // The view exchange at the found host, then (format 1) the one witness message to the same host.
+        // The view exchange at the found host, then the `features` message (a peer not yet known to read collections,
+        // sub-plan 07), (format 1) the one witness message and the one `heir-hello` probe (sub-plan 08), all to the
+        // same host.
         val found = LanEndpoint("192.168.50.2", 47821)
-        assertEquals(listOf(oldAddress, found, found), d.dialled.toList())
+        assertEquals(listOf(oldAddress, found, found, found, found), d.dialled.toList())
         assertEquals(found, slots.pairedPeer()?.endpoint)
-        assertTrue(host.errors.toString(), host.errors.isEmpty())
+        // This test host does not know `heir-hello` (like an older desktop): its one refusal of it is the only error.
+        assertEquals(host.errors.toString(), listOf("bad-message"), host.errors.map { (it as? app.localgatekeys.core.lan.LanSyncException)?.reason })
     }
 
     @Test fun the_pinned_address_that_answers_is_used_without_a_browse() {

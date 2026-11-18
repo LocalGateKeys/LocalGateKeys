@@ -1,10 +1,15 @@
-# LocalGateKeys personal installer build
+# LocalGateKeys frozen executable build
+
+LocalGateKeys for Windows ships only through the Microsoft Store. The Inno
+Setup installer was removed on 2026-11-18. `scripts\build_personal_installer.ps1`
+(name kept to avoid churn) builds the frozen executables that
+`scripts\build_msix_package.ps1` packs into the MSIX.
 
 Run from a normal (non-elevated) PowerShell on Windows:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\build_personal_installer.ps1
+.\scripts\build_personal_installer.ps1 -OutputRoot ci-build   # frozen executables (MSIX input)
 ```
 
 Prerequisites:
@@ -15,8 +20,6 @@ Prerequisites:
   the script do it.
 - Node.js 20+ with npm: the script runs `npm ci` and `npm run build` in `webui\`
   (the WebView2 window) before PyInstaller.
-- Inno Setup 6, unless you pass `-SkipInstaller`. If it is installed somewhere
-  non-standard, pass `-IsccPath "C:\path\to\ISCC.exe"`.
 - Windows SDK `signtool.exe` only when signing.
 
 What the script does, in order:
@@ -28,15 +31,14 @@ What the script does, in order:
 3. Fetches/verifies the two hash-pinned OpenCV Zoo models (`-Offline` requires
    them to be pre-staged) and runs the environment preflight.
 4. Deletes prior generated `build-personal\agent`, `build-personal\native`,
-   `dist-personal`, and `dist-installer` contents, then freezes both executables
-   with PyInstaller (UPX disabled).
-5. Signs both executables when a certificate was supplied, runs each with
+   `dist-personal`, and `dist-installer` contents, then freezes
+   `LocalGateKeys`, `LocalGateKeysNativeHost` and `lgk` with PyInstaller (UPX
+   disabled).
+5. Signs the executables when a certificate was supplied, runs each with
    `--check-build`, and rejects payloads containing demo/test directories or
    user-data files such as `vault.json`, `profiles.json`, `agent-state.json`.
 6. Writes the CycloneDX SBOM (`scripts\generate_sbom.ps1`).
-7. Compiles the installer with Inno Setup (skipped with `-SkipInstaller`),
-   signs/verifies it, and writes the `.sha256` sidecar.
-8. Writes `LocalGateKeys-Setup-Personal.manifest.json` with payload hashes,
+7. Writes `LocalGateKeys-Setup-Personal.manifest.json` with payload hashes,
    tool versions, SBOM hash, `signed` state and `source_date_epoch`.
 
 ## Switches
@@ -51,9 +53,9 @@ What the script does, in order:
 | `-Release` | Release build: dependencies from the hash-pinned lock (unless `-Offline` with a wheelhouse) and the Python minimum is enforced. Implied by `-CertificateThumbprint` / `-PfxPath`. |
 | `-UseEnvironment` | Release builds only: package the venv as it is instead of reinstalling the lock. |
 | `-MinimumPythonVersion <x.y.z>` | Oldest Python the frozen runtime may come from (default `3.14.9`). Release builds fail below it; other builds warn. |
-| `-SkipInstaller` | Stop after PyInstaller, self-check, SBOM and manifest (CI smoke). |
+| `-SkipInstaller` | Accepted for older command lines; has no effect. |
 | `-SkipSbom` | Skip SBOM generation (not for releases). |
-| `-CertificateThumbprint <sha1>` | Sign with a certificate from the Windows certificate store (preferred). Inno Setup then also signs the uninstaller. |
+| `-CertificateThumbprint <sha1>` | Sign with a certificate from the Windows certificate store (preferred). |
 | `-PfxPath <file> -PfxPassword (Read-Host -AsSecureString)` | Sign with a PFX file. |
 | `-SignToolPath <signtool.exe>` | Override auto-detection from the Windows SDK. |
 | `-TimestampUrl <url>` | RFC 3161 TSA; default `http://timestamp.digicert.com`. |
@@ -61,15 +63,11 @@ What the script does, in order:
 Without a certificate the script prints an **UNSIGNED build** warning and the
 manifest records `"signed": false`. Do not publish such a build.
 
-Successful output (under `dist-installer\`):
+Successful output: the executables under `dist-personal\`, and under
+`dist-installer\` (folder name kept for CI):
 
-- `LocalGateKeys-Setup-Personal.exe` and `.sha256`
 - `LocalGateKeys-Setup-Personal.manifest.json`
-- `LocalGateKeys-Setup-Personal.sbom.cdx.json` and `.sha256`
-
-The installer does not consume `%LOCALAPPDATA%\LocalVaultPrototype`. On first
-LocalGateKeys startup, legacy data is only detected and offered for explicit
-import; choosing **Start fresh** does not delete the legacy source.
+- `LocalGateKeys-Setup-Personal.sbom.cdx.json`
 
 See [../docs/RELEASE_CHECKLIST.md](../docs/RELEASE_CHECKLIST.md) for the full
 release procedure, including the reproducible-build comparison.

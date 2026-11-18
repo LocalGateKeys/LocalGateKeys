@@ -14,6 +14,9 @@ struct AutoFillLogin: Equatable, Sendable {
     let password: String
     /// `totp` of the record, when it has a secret.
     let totp: TOTPSpec?
+    /// The record's saved origin (`scope.origin`, as stored), when it has one: the Safari "just filled" marker is
+    /// written for it (`SafariFillMarker`), also for a QuickType fill, which names no page.
+    var origin: String? = nil
 
     struct TOTPSpec: Equatable, Sendable {
         let secret: String, algorithm: String, digits: Int, period: Int
@@ -46,9 +49,10 @@ struct AutoFillMatcher: Sendable {
 
     /// Live web logins of a snapshot: not deleted, entry namespace, decodable.
     static func logins(_ snapshot: StoreSnapshot) -> [(record: [String: JSONValue], login: AutoFillLogin)] {
-        snapshot.records.keys.sorted(by: Scalars.less).compactMap { id in
+        let records = snapshot.itemRecords   // never a collection state
+        return records.keys.sorted(by: Scalars.less).compactMap { id in
             if snapshot.meta[id]?.deleted == true { return nil }
-            guard case .object(let w)? = snapshot.records[id], case .string(let ns)? = w["ns"],
+            guard case .object(let w)? = records[id], case .string(let ns)? = w["ns"],
                   Scalars.equal(ns, Namespace.entry.rawValue), case .object(let r)? = w["record"],
                   case .string(let kind)? = r["kind"], Scalars.equal(kind, "web") else { return nil }
             return (r, login(id: id, record: r))
@@ -66,8 +70,11 @@ struct AutoFillMatcher: Sendable {
         }
         var title = str("title")
         if title.isEmpty { title = str("label") }
-        if title.isEmpty, case .object(let scope)? = r["scope"], case .string(let o)? = scope["origin"] { title = o }
-        return AutoFillLogin(id: id, title: title, username: str("username"), password: str("password"), totp: totp)
+        var origin: String?
+        if case .object(let scope)? = r["scope"], case .string(let o)? = scope["origin"], !o.isEmpty { origin = o }
+        if title.isEmpty, let origin { title = origin }
+        return AutoFillLogin(id: id, title: title, username: str("username"), password: str("password"), totp: totp,
+                             origin: origin)
     }
 
     /// The page URLs a login may be offered on, as the desktop broker does before matching: only those whose

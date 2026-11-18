@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LocalGateKeys para Android: guia do usuário</title>
+  <meta name="description" content="Como funciona o app LocalGateKeys para Android: configuração, preenchimento automático, códigos 2FA, importação, backups e sincronização.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0A1226">
+  <meta name="referrer" content="no-referrer">
+  <link rel="canonical" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="en" href="https://localgatekeys.app/guide/android">
+  <link rel="alternate" hreflang="es" href="https://localgatekeys.app/es/guide/android">
+  <link rel="alternate" hreflang="it" href="https://localgatekeys.app/it/guide/android">
+  <link rel="alternate" hreflang="pl" href="https://localgatekeys.app/pl/guide/android">
+  <link rel="alternate" hreflang="zh-Hans" href="https://localgatekeys.app/zh-hans/guide/android">
+  <link rel="alternate" hreflang="ja" href="https://localgatekeys.app/ja/guide/android">
+  <link rel="alternate" hreflang="de" href="https://localgatekeys.app/de/guide/android">
+  <link rel="alternate" hreflang="pt-BR" href="https://localgatekeys.app/pt-br/guide/android">
+  <link rel="alternate" hreflang="ko" href="https://localgatekeys.app/ko/guide/android">
+  <link rel="alternate" hreflang="nl" href="https://localgatekeys.app/nl/guide/android">
+  <link rel="alternate" hreflang="fr" href="https://localgatekeys.app/fr/guide/android">
+  <link rel="alternate" hreflang="x-default" href="https://localgatekeys.app/guide/android">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LocalGateKeys">
+  <meta property="og:title" content="LocalGateKeys para Android: guia do usuário">
+  <meta property="og:description" content="Como funciona o app LocalGateKeys para Android: configuração, preenchimento automático, códigos 2FA, importação, backups e sincronização.">
+  <meta property="og:url" content="https://localgatekeys.app/pt-br/guide/android">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:image" content="https://localgatekeys.app/brand/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="O logotipo do LocalGateKeys: um gerenciador de senhas para Windows, Mac e iPhone.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LocalGateKeys para Android: guia do usuário">
+  <meta name="twitter:description" content="Como funciona o app LocalGateKeys para Android: configuração, preenchimento automático, códigos 2FA, importação, backups e sincronização.">
+  <meta name="twitter:image" content="https://localgatekeys.app/brand/og-image.png">
+  <link rel="icon" href="../../brand/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../../brand/icon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="../../brand/icon-256.png">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body class="help-page">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="../../pt-br/">
+        <img src="../../brand/icon.svg" alt="" width="30" height="30">
+        <span>LocalGateKeys</span>
+      </a>
+      <nav class="nav-wide" aria-label="Principal">
+        <ul class="nav">
+          <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/help">Guia</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/support">Suporte</a></li>
+          <li><a class="nav-cta" href="../../pt-br/download">Baixar</a></li>
+        </ul>
+      </nav>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <nav aria-label="Principal">
+          <ul class="nav nav-stack">
+            <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/help">Guia</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/support">Suporte</a></li>
+          <li><a class="nav-cta" href="../../pt-br/download">Baixar</a></li>
+          </ul>
+        </nav>
+      </details>
+      <details class="lang-menu">
+        <summary><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Idioma</span></summary>
+        <ul class="lang-menu-list"><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul>
+      </details>
+    </div>
+  </header>
+
+  <main id="main">
+<div class="wrap page-head">
+  <h1>LocalGateKeys para Android</h1>
+  <p class="lead">Ajuda passo a passo para cada tela e recurso neste dispositivo. Cada título é um link que você pode compartilhar.</p>
+</div>
+
+<div class="wrap page-body help guide-single">
+
+  <nav class="help-tabs glass" aria-label="Plataformas">
+    <ul><li><a class="help-tab" href="../../pt-br/guide/windows">Windows</a></li><li><a class="help-tab" href="../../pt-br/guide/mac">Mac</a></li><li><a class="help-tab" href="../../pt-br/guide/iphone">iPhone e iPad</a></li><li><a class="help-tab" href="../../pt-br/guide/android" aria-current="page">Android</a></li><li><a class="help-tab" href="../../pt-br/guide/extension">Extensão do navegador</a></li></ul>
+  </nav>
+
+  <aside class="help-basics glass">
+    <h2>Bom saber em qualquer dispositivo</h2>
+    <ul>
+      <li><strong>Seu cofre fica nos seus dispositivos.</strong> Não há conta nem servidor do LocalGateKeys guardando suas senhas.</li>
+      <li><strong>Ninguém pode redefinir sua senha mestra ou a senha do app.</strong> Configure uma frase de recuperação e guarde-a no papel.</li>
+      <li>O <strong>Free</strong> guarda até 7 itens. O <strong>Pro</strong> (US$29.99, pagamento único) adiciona itens ilimitados, códigos de dois fatores, arquivos e sincronização. Editar, excluir e preencher os itens que você já tem nunca é bloqueado.</li>
+    </ul>
+  </aside>
+
+  <section class="help-panel" id="android" aria-labelledby="android-title">
+    <h2 class="panel-title" id="android-title">Tópicos do Android</h2>
+    <p class="callout-soon"><strong>Em breve.</strong> O app para Android ainda não está no Google Play. Este guia mostra como ele vai funcionar.</p>
+    <p class="panel-lead">O app tem quatro abas: <strong>Cofre</strong>, <strong>Sincronização</strong>, <strong>Segurança</strong> e <strong>Configurações</strong>. A pesquisa é a lupa no topo da aba Cofre.</p>
+
+    <div class="help-layout">
+      <nav class="help-toc" aria-label="Tópicos do Android">
+        <details class="help-toc-box" open>
+          <summary class="help-toc-title">Nesta aba</summary>
+          <ol>
+            <li><a href="#and-setup">Primeiro uso e desbloqueio</a></li>
+            <li><a href="#and-apppw">Senha do app e recuperação</a></li>
+            <li><a href="#and-items">Itens</a></li>
+            <li><a href="#and-search">Pesquisa e ações</a></li>
+            <li><a href="#and-generator">Gerador de senhas</a></li>
+            <li><a href="#and-2fa">Códigos de dois fatores</a></li>
+            <li><a href="#and-autofill">Preenchimento automático</a></li>
+            <li><a href="#and-passkeys">Chaves de acesso</a></li>
+            <li><a href="#and-import">Importar</a></li>
+            <li><a href="#and-backups">Backups</a></li>
+            <li><a href="#and-sync">Sincronização</a></li>
+            <li><a href="#and-share">Compartilhamento</a></li>
+            <li><a href="#and-settings">Configurações e Pro</a></li>
+          </ol>
+        </details>
+      </nav>
+
+      <div class="help-content prose">
+
+        <article class="topic" id="and-setup">
+          <h3><a href="#and-setup">Primeiro uso e desbloqueio</a></h3>
+          <p>Seu cofre abre com a digital, o rosto ou o bloqueio de tela do celular. (O celular precisa ter bloqueio de tela.) Segue uma configuração rápida: desbloquear com digital, <strong>Importar…</strong>, uma senha do app opcional e <strong>Abrir configurações de preenchimento automático</strong>. Pule qualquer etapa; o cartão <em>Concluir a configuração</em> leva você de volta.</p>
+          <p>Configurações › Bloqueio e segurança define <strong>Bloquear automaticamente ao sair do app</strong> (de Imediatamente a 1 hora) e <strong>Bloquear por inatividade</strong> (de 1 a 30 minutos, ou Nunca), e tem <strong>Bloquear agora</strong>. O app fica oculto na visão de apps recentes.</p>
+        </article>
+
+        <article class="topic" id="and-apppw">
+          <h3><a href="#and-apppw">Senha do app e frase de recuperação</a></h3>
+          <ol>
+            <li>Configurações › Bloqueio e segurança › ative <strong>Usar uma senha do app</strong>, escolha uma e toque em <strong>Continuar</strong>. A partir daí, é ela, e não o bloqueio de tela, que abre o LocalGateKeys.</li>
+            <li>Anote a frase de recuperação de 24 palavras, toque em <strong>Anotei</strong>, digite as palavras pedidas e toque em <strong>Ativar senha do app</strong>.</li>
+          </ol>
+          <p>Esqueceu? Toque em <strong>Esqueceu a senha do app?</strong>, digite as 24 palavras e escolha uma nova. <strong>Alterar senha do app</strong>, e a chave <strong>Usar uma senha do app</strong> para desativá-la, ficam em Configurações › Bloqueio e segurança.</p>
+          <p class="note">Depois de restaurar um celular a partir de um backup do Google, o cofre não pode ser aberto (a chave dele não entra no backup). Escolha <strong>Começar do zero</strong> e depois sincronize com seu PC para recuperar tudo.</p>
+        </article>
+
+        <article class="topic" id="and-items">
+          <h3><a href="#and-items">Itens</a></h3>
+          <ul>
+            <li>Toque em <strong>+</strong> e escolha um tipo: Login de site, Nota, Cartão de pagamento, Identidade, Conta bancária, Compra, Assinatura, Garantia, Rede Wi-Fi, Licença, Chave de API, Chave SSH, Favorito do navegador.</li>
+            <li>Abra um item para copiar campos, <strong>Abrir site</strong>, <strong>Editar</strong>, <strong>Excluir</strong> ou <strong>Adicionar aos favoritos</strong>.</li>
+            <li><strong>Histórico de senhas</strong>: copie ou restaure uma senha anterior.</li>
+            <li><strong>Adicionar um arquivo</strong> (Pro): tire uma foto, escolha uma foto ou um arquivo, até 25 MB cada.</li>
+            <li><strong>Ordenar</strong> por título ou data, favoritos primeiro.</li>
+          </ul>
+        </article>
+
+        <article class="topic" id="and-search">
+          <h3><a href="#and-search">Pesquisa e ações</a></h3>
+          <p>Toque na lupa da aba Cofre e digite um nome, ou comece com <code>&gt;</code> para ações como Exportar backup, Gerar senha, Importar senhas, Bloquear, Receber item compartilhado, Escanear código QR para parear e Sincronizar agora.</p>
+        </article>
+
+        <article class="topic" id="and-generator">
+          <h3><a href="#and-generator">Gerador de senhas</a></h3>
+          <p><strong>Senha</strong> (comprimento, maiúsculas e minúsculas, dígitos, símbolos, evitar caracteres parecidos) ou <strong>Frase secreta</strong> (palavras, maiúsculas, adicionar um número, separador). <strong>Gerar de novo</strong> e depois <strong>Copiar</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-2fa">
+          <h3><a href="#and-2fa">Códigos de dois fatores</a> <span class="badge-pro">Pro</span></h3>
+          <p>Edite um login e toque em <strong>Escanear código QR</strong> ao lado do campo 2FA, ou digite a chave de configuração. Os códigos aparecem no item e na linha <strong>Códigos</strong>: toque num para copiá-lo.</p>
+        </article>
+
+        <article class="topic" id="and-autofill">
+          <h3><a href="#and-autofill">Preenchimento automático</a></h3>
+          <ol>
+            <li>Configurações › Preenchimento automático › <strong>Abrir configurações do preenchimento automático</strong> e escolha o LocalGateKeys. (Se não abrir, pesquise <em>Serviço de preenchimento automático</em> nas Configurações do celular.)</li>
+            <li>Toque numa caixa de login em qualquer app ou site e escolha seu login nas sugestões. Desbloqueie quando for pedido.</li>
+            <li>Depois de entrar em algum lugar novo, escolha <strong>Salvar</strong> em <em>Salvar login?</em>, ou <strong>Atualizar senha</strong> quando ela mudou.</li>
+          </ol>
+        </article>
+
+        <article class="topic" id="and-passkeys">
+          <h3><a href="#and-passkeys">Chaves de acesso</a></h3>
+          <p>Ative Configurações › Autopreenchimento › <strong>Oferecer o LocalGateKeys para chaves de acesso</strong>. Quando um site ou app oferecer uma chave de acesso, escolha o LocalGateKeys; depois entre com <strong>Use sua chave de acesso</strong>.</p>
+        </article>
+
+        <article class="topic" id="and-import">
+          <h3><a href="#and-import">Importar</a></h3>
+          <p>Configurações › Sincronização e dados › <strong>Importar de um arquivo</strong> › <strong>Escolher arquivo de exportação</strong>: Chrome, Edge, Brave, Firefox, Senhas da Apple, <code>.json</code> do Bitwarden (também protegido por senha), <code>.1pux</code> do 1Password ou qualquer CSV. Revise tudo e depois importe. Em seguida, exclua o arquivo exportado.</p>
+        </article>
+
+        <article class="topic" id="and-backups">
+          <h3><a href="#and-backups">Backups</a></h3>
+          <p><strong>Exportar backup…</strong> salva um arquivo <code>.lgkm</code> criptografado com uma senha que você escolhe (ela não pode ser recuperada). <strong>Restaurar de um backup…</strong> abre um, mostra uma pré-visualização e nunca sobrescreve um item mais novo. Funciona com o PC e o iPhone também.</p>
+        </article>
+
+        <article class="topic" id="and-sync">
+          <h3><a href="#and-sync">Sincronizar com seu PC</a> <span class="badge-pro">Pro</span></h3>
+          <ol>
+            <li>No PC escolha <strong>Mostrar código QR</strong> no cartão Wi-Fi.</li>
+            <li>No celular, aba Sincronização › <strong>Escanear código QR</strong> (ou <strong>Colar texto do código</strong>).</li>
+            <li>Confira se os dois mostram o mesmo código e aceite no PC.</li>
+          </ol>
+          <p>Ou <strong>Entrar numa pasta…</strong> no Dropbox ou Nextcloud com a senha de sincronização. O PC também precisa do Pro.</p>
+          <p class="note">OneDrive e Google Drive estão indisponíveis para sincronização por enquanto, até que um problema com a Apple seja resolvido. Use Dropbox, Nextcloud ou a sincronização por Wi-Fi.</p>
+        </article>
+
+        <article class="topic" id="and-share">
+          <h3><a href="#and-share">Compartilhamento</a></h3>
+          <p>Abra um item, toque em Compartilhar e depois em <strong>Enviar como arquivo…</strong> ou <strong>Mostrar como QR code</strong>, e diga as seis palavras separadamente. Para receber: Configurações › Sincronização e dados › <strong>Receber um item compartilhado</strong>, digite as seis palavras, toque em <strong>Abrir</strong> e depois em <strong>Adicionar ao cofre</strong>. O compartilhamento abre uma vez em até 24 horas; três códigos errados o excluem. Chaves de acesso e arquivos não podem ser compartilhados.</p>
+        </article>
+
+        <article class="topic" id="and-settings">
+          <h3><a href="#and-settings">Configurações e Pro</a></h3>
+          <ul>
+            <li><strong>Aparência</strong>: Sistema, Claro ou Escuro, e suas iniciais.</li>
+            <li><strong>Bloqueio e segurança</strong> tem <strong>Limpar a área de transferência após</strong>, <strong>Privacidade</strong> tem <strong>Ocultar senhas até serem tocadas</strong>, e <strong>Sincronização e dados</strong> tem <strong>Apagar o cofre deste celular</strong> (só este celular). O Android só deixa o app verificar a área de transferência enquanto ele está aberto: uma cópia feita pelo bloco de Configurações rápidas ou logo antes de trocar de app é apagada na próxima vez que você abrir o LocalGateKeys.</li>
+            <li><strong>Pro</strong> (no topo das Configurações): <strong>Fazer upgrade</strong> e comprar uma vez pelo Google Play, <strong>Restaurar compras</strong> em outro celular com a mesma conta Google e <strong>Copiar chave</strong> para desbloquear o Windows também.</li>
+            <li><strong>Senha de coação</strong> (Pro): uma segunda senha do app para quando alguém força você a desbloquear. Ela abre um cofre separado só com os itens que você escolher, e seu cofre passa a recusar a senha do app pelas horas definidas. Ative primeiro a senha do app e depois configure em Ajustes, em <strong>Senha de coação</strong>.</li>
+            <li><strong>Exportar para um arquivo CXF…</strong> grava os logins, notas e chaves de acesso escolhidos em um arquivo Credential Exchange que outros gerenciadores podem importar. O arquivo não é criptografado.</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <p class="guide-all"><a href="../../pt-br/help">O guia completo em uma página</a></p>
+</div>
+
+<script src="../../guide.js"></script>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-about">
+        <p class="footer-brand"><img src="../../brand/icon.svg" alt="" width="26" height="26"><span>LocalGateKeys</span></p>
+        <p>Um gerenciador de senhas para Windows, Mac e iPhone que mantém seu cofre nos seus próprios dispositivos.</p>
+        <p class="quiet">Este site conta as visitas com o Cloudflare Web Analytics, que não usa cookies. Não usa rastreadores de anúncios e não define cookies.</p>
+      </div>
+      <nav aria-label="Produto">
+        <h2>Produto</h2>
+        <ul>
+          <li><a href="../../pt-br/features">Recursos</a></li>
+          <li><a href="../../pt-br/pricing">Preços</a></li>
+          <li><a href="../../pt-br/download">Baixar</a></li>
+          <li><a href="../../pt-br/get-started">Primeiros passos</a></li>
+          <li><a href="../../pt-br/switch/">Migrar</a></li>
+          <li><a href="../../buy">Comprar o Pro</a></li>
+          <li><a href="../../pt-br/licence">Sua licença Pro</a></li>
+          <li><a href="https://licenses.localgatekeys.app/recover">Recuperar sua licença</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Ajuda">
+        <h2>Ajuda</h2>
+        <ul>
+          <li><a href="../../pt-br/help">Guia do usuário</a></li>
+          <li><a href="../../pt-br/support">Suporte e perguntas frequentes</a></li>
+          <li><a href="../../pt-br/security">Segurança</a></li>
+          <li><a href="../../legal/vulnerability-disclosure">Relatar uma vulnerabilidade</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Jurídico">
+        <h2>Jurídico</h2>
+        <p class="quiet">Estes documentos estão em inglês, e a versão em inglês é a que se aplica e a vinculante.</p>
+        <ul>
+          <li><a href="../../legal/eula">Contrato de licença</a></li>
+          <li><a href="../../legal/privacy">Política de privacidade</a></li>
+          <li><a href="../../legal/terms-of-sale">Termos de venda</a></li>
+          <li><a href="../../legal/refunds">Política de reembolso</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="wrap footer-base" id="languages">
+      <p>&copy; 2026 Ilias Pelekas. Contato: <a href="mailto:support@localgatekeys.app">support@localgatekeys.app</a></p>
+      <p>Windows é uma marca registrada do grupo de empresas Microsoft. Chrome é uma marca registrada da Google LLC. Apple, iPhone, Apple Watch, Face ID, Touch ID e Safari são marcas registradas da Apple Inc., registradas nos EUA e em outros países.</p>
+      <nav class="lang-switch" aria-label="Idioma"><ul><li><a href="../../guide/android" hreflang="en" lang="en">English</a></li><li><a href="../../es/guide/android" hreflang="es" lang="es">Español</a></li><li><a href="../../it/guide/android" hreflang="it" lang="it">Italiano</a></li><li><a href="../../pl/guide/android" hreflang="pl" lang="pl">Polski</a></li><li><a href="../../zh-hans/guide/android" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="../../ja/guide/android" hreflang="ja" lang="ja">日本語</a></li><li><a href="../../de/guide/android" hreflang="de" lang="de">Deutsch</a></li><li><a href="../../pt-br/guide/android" hreflang="pt-BR" lang="pt-BR" aria-current="true">Português (Brasil)</a></li><li><a href="../../ko/guide/android" hreflang="ko" lang="ko">한국어</a></li><li><a href="../../nl/guide/android" hreflang="nl" lang="nl">Nederlands</a></li><li><a href="../../fr/guide/android" hreflang="fr" lang="fr">Français</a></li></ul></nav>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tile_label">Vastgezette codes</string>
+    <string name="tile_description">Je vastgezette tweestapscodes uit LocalGateKeys op je telefoon.</string>
+    <string name="tile_no_data">Open LocalGateKeys op je telefoon</string>
+    <string name="tile_locked">Ontgrendel LocalGateKeys op je telefoon om codes te zien</string>
+    <string name="tile_locked_immediately">Zet automatisch vergrendelen op je telefoon op 1 minuut of langer om hier codes te zien</string>
+    <string name="tile_empty">Zet een code vast in LocalGateKeys</string>
+    <string name="tile_watch_locked">Ontgrendel je horloge om codes te zien</string>
+    <string name="tile_updated_now">Zojuist bijgewerkt</string>
+    <string name="tile_updated_minutes">%1$d min geleden bijgewerkt</string>
+    <string name="tile_updated_hours">%1$d u geleden bijgewerkt</string>
+    <string name="tile_updated_days">%1$d d geleden bijgewerkt</string>
+</resources>

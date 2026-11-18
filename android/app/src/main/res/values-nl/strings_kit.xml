@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Printable emergency kit (Quick Wins Task 13). -->
+<resources>
+    <string name="kit_title">Noodkit</string>
+    <string name="kit_intro">Bewaar deze pagina offline en gescheiden van je telefoon. Er staat op hoe je weer in LocalGateKeys komt als je het app-wachtwoord vergeet.</string>
+    <string name="kit_device">Telefoon</string>
+    <string name="kit_date">Datum</string>
+    <string name="kit_version">LocalGateKeys-versie</string>
+    <string name="kit_app_password">App-wachtwoord (schrijf het met de hand op of bewaar het apart van deze pagina):</string>
+    <string name="kit_phrase_heading">Herstelzin (%1$d woorden, op volgorde)</string>
+    <string name="kit_steps_heading">Zo kom je weer binnen</string>
+    <string name="kit_step1">Tik op het vergrendelscherm van LocalGateKeys op “%1$s”.</string>
+    <string name="kit_step2">Typ de %1$d woorden hierboven op volgorde.</string>
+    <string name="kit_step3">Kies een nieuw app-wachtwoord. Je wachtwoorden blijven ongewijzigd.</string>
+    <string name="kit_step4">Als de telefoon kwijt is of de kluis weg is, installeer je LocalGateKeys op een nieuwe telefoon en zet je je laatste back-upbestand terug of synchroniseer je vanaf je pc of een andere telefoon.</string>
+    <string name="kit_warning">Behandel deze pagina als je kluis. Een opgeslagen pdf met de herstelzin erop is net zo gevoelig als de kluis zelf: berg het papier veilig op en verwijder opgeslagen pdf’s als je klaar bent.</string>
+    <string name="kit_print_with_phrase">Noodkit met deze zin afdrukken</string>
+    <string name="kit_print_blank">Noodkit afdrukken (zinvakjes leeg)</string>
+</resources>

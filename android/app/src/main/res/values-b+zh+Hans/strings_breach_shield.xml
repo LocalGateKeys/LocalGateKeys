@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">已验证的网站</string>
+    <string name="autofill_site_related">相关网站</string>
+    <string name="autofill_site_lookalike">仿冒网站</string>
+    <string name="autofill_site_new">新网站</string>
+    <string name="autofill_guard_title">这是正确的网站吗？</string>
+    <string name="autofill_guard_body">%1$s 看起来像保存了你登录信息的 %2$s，但它是另一个网站。只有在确定时才继续。</string>
+    <string name="autofill_guard_body_mixed">%1$s 混用了不同字母表的字母，这是常见的网络钓鱼手法。只有在确定时才继续。</string>
+    <string name="autofill_guard_continue">在 %1$s 上继续</string>
+    <string name="autofill_guard_go_back">返回</string>
+    <string name="autofill_same_account_title">这是与 %1$s 相同的账户吗？</string>
+    <string name="autofill_same_account_body">%1$s 与保存了你登录信息的 %2$s 名称相同，但后缀不同。只有在是同一家公司时才继续。</string>
+    <string name="autofill_same_account_yes">同一账户</string>
+    <string name="autofill_pick_other_site_body">此登录信息保存在 %2$s，而不是 %1$s。只有确定这是正确的网站时，才在 %1$s 上填写。</string>
+    <string name="autofill_pick_no_site_body">此登录信息没有保存网站。只有确定这是正确的网站时，才在 %1$s 上填写。</string>
+    <string name="autofill_pick_scheme_unknown_body">浏览器没有说明 %1$s 是否为安全页面 (https)。只有在确定时才填写。</string>
+</resources>

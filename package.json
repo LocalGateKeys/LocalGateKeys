@@ -6,10 +6,12 @@
   "scripts": {
     "test": "node --test tests/*.cjs tests/extension/*.test.cjs",
     "build:firefox": "node browser-extension/build-firefox-manifest.cjs",
+    "lint:firefox": "npm run build:firefox && web-ext lint --source-dir build/firefox-extension",
     "build:store": "node browser-extension/build-store-package.cjs",
     "build:safari": "node browser-extension/build-safari-extension.cjs"
   },
   "devDependencies": {
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "web-ext": "10.8.0"
   }
 }

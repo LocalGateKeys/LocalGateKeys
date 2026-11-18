@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wi-Fi QR and the answer generator (Quick Wins Task 10). -->
+<resources>
+    <string name="detail_wifi_show_qr">显示二维码</string>
+    <string name="detail_wifi_qr_hint">图片中包含 Wi-Fi 密码。只向你希望连接的人展示。</string>
+    <string name="detail_wifi_enterprise_no_qr">企业网络无法通过二维码分享。</string>
+    <string name="generator_mode_answer">答案</string>
+</resources>

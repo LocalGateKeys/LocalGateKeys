@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Lookalike-site warnings (sub-plan 09). Texts follow the desktop and extension catalogs. -->
+<resources>
+    <string name="autofill_site_verified">Zweryfikowana witryna</string>
+    <string name="autofill_site_related">Powiązana witryna</string>
+    <string name="autofill_site_lookalike">Witryna podszywająca się</string>
+    <string name="autofill_site_new">Nowa witryna</string>
+    <string name="autofill_guard_title">Czy to właściwa witryna?</string>
+    <string name="autofill_guard_body">%1$s wygląda jak %2$s, gdzie zapisano Twój login, ale to inna witryna. Kontynuuj tylko, jeśli masz pewność.</string>
+    <string name="autofill_guard_body_mixed">%1$s łączy litery z różnych alfabetów, co jest częstą sztuczką phishingową. Kontynuuj tylko, jeśli masz pewność.</string>
+    <string name="autofill_guard_continue">Kontynuuj w %1$s</string>
+    <string name="autofill_guard_go_back">Wróć</string>
+    <string name="autofill_same_account_title">Czy to to samo konto co w %1$s?</string>
+    <string name="autofill_same_account_body">%1$s ma tę samą nazwę co %2$s, gdzie zapisano Twój login, ale inną końcówkę. Kontynuuj tylko, jeśli to ta sama firma.</string>
+    <string name="autofill_same_account_yes">To samo konto</string>
+    <string name="autofill_pick_other_site_body">Ten login jest zapisany dla %2$s, nie dla %1$s. Wypełnij go w %1$s tylko wtedy, gdy masz pewność, że to właściwa witryna.</string>
+    <string name="autofill_pick_no_site_body">Ten login nie ma zapisanej witryny. Wypełnij go w %1$s tylko wtedy, gdy masz pewność, że to właściwa witryna.</string>
+    <string name="autofill_pick_scheme_unknown_body">Przeglądarka nie podała, czy %1$s to bezpieczna strona (https). Wypełnij tylko wtedy, gdy masz pewność.</string>
+</resources>

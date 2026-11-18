@@ -1,5 +1,6 @@
 package app.localgatekeys.android.passkey
 
+import app.localgatekeys.core.sync.TravelMode
 import app.localgatekeys.android.R
 import android.app.PendingIntent
 import android.content.Context
@@ -51,7 +52,8 @@ class LgkCredentialProviderService : CredentialProviderService() {
         callback: OutcomeReceiver<BeginGetCredentialResponse, GetCredentialException>,
     ) {
         val response = try {
-            ProviderEntries.begin(this, app, request)
+            // Sub-plan 08: nothing is offered while a duress session is open or the vault is held after one.
+            if (app.duress.servicesBlocked()) BeginGetCredentialResponse() else ProviderEntries.begin(this, app, request)
         } catch (e: Exception) {
             BeginGetCredentialResponse()
         }
@@ -65,7 +67,7 @@ class LgkCredentialProviderService : CredentialProviderService() {
     ) {
         val b = BeginCreateCredentialResponse.Builder()
         try {
-            val offer = when (request) {
+            val offer = !app.duress.servicesBlocked() && when (request) {
                 is BeginCreatePublicKeyCredentialRequest -> app.settings.passkeyProvider && !fullWithoutPro()
                 is BeginCreatePasswordCredentialRequest -> !fullWithoutPro()
                 else -> false
@@ -80,10 +82,16 @@ class LgkCredentialProviderService : CredentialProviderService() {
         callback.onResult(b.build())
     }
 
-    /** Known only while unlocked; when locked the sheet re-checks after the unlock and refuses with NEEDS_PRO. */
+    /**
+     * Unlocked: from the vault. Locked: from the fill index's [FillIndex.freeFull] (written at every load and save, no
+     * secret), so a full free plan offers no entry (release check 2026-11-01: Chrome listed "Create passkey" and it failed
+     * after the unlock). The sheet still re-checks after the unlock and refuses with NEEDS_PRO.
+     */
     private fun fullWithoutPro(): Boolean {
-        val vault = app.lock.vault.value ?: return false
-        if (app.lock.state.value != AppLockModel.State.UNLOCKED) return false
+        val vault = app.lock.vault.value
+        if (vault == null || app.lock.state.value != AppLockModel.State.UNLOCKED) {
+            return FillIndex.lockedFreePlanFull(app.fillIndex.read(), app.pro.isPro)
+        }
         val s = vault.store.load()
         app.pro.update(s)
         return !app.pro.isPro && !ItemLimit.allows(ItemLimit.Action.CREATE, s, false)
@@ -149,7 +157,12 @@ object ProviderEntries {
                     val req = AssertionRequest.parse(option.requestJson)
                     val caller = CallerOrigin(app.privilegedBrowsers, app.urlMatcher.rules)
                         .verify(info.packageName, certs(info), origin(info, app), req.rpId, option.clientDataHash)
-                    for (c in PasskeyVault.candidates(open.store.load(), caller.rpId, req.allowed)) {
+                    // Travel mode (contract section 2.3): hidden passkeys are not offered on this phone.
+                    val snap = open.store.load()
+                    // Read from the vault's own local data; unreadable offers no passkey at all (fail closed, scan A-M4).
+                    val travel = app.travelFor(open) ?: continue
+                    val hidden = TravelMode.hiddenIds(snap, travel)
+                    for (c in PasskeyVault.candidates(snap, caller.rpId, req.allowed).filter { it.itemId !in hidden }) {
                         val intent = Intent(context, PasskeyActivity::class.java).setAction(PasskeyActivity.GET).putExtra(PasskeyActivity.ITEM, c.itemId)
                         b.addCredentialEntry(
                             PublicKeyCredentialEntry.Builder(context, c.userName.ifEmpty { c.title }, pending(context, intent), option)
@@ -163,7 +176,9 @@ object ProviderEntries {
                         needsUnlock = needsUnlock || open == null
                         continue
                     }
-                    val index = app.fillIndex.read() ?: open?.let { FillIndex.build(it.store.load()) } ?: continue
+                    // No stored index: built from the open vault with this phone's travel mode; unreadable offers
+                    // nothing (hidden logins never reach the suggestions).
+                    val index = app.fillIndex.read() ?: open?.let { o -> app.travelFor(o)?.let { t -> FillIndex.build(o.store.load(), travel = t) } } ?: continue
                     val target = passwordTarget(info, app)
                     for (m in FillMatcher(app.urlMatcher).match(index, target).take(5)) {
                         val intent = Intent(context, PasskeyActivity::class.java).setAction(PasskeyActivity.PASSWORD).putExtra(PasskeyActivity.ITEM, m.id)
