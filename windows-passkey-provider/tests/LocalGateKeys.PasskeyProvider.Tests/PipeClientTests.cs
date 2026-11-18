@@ -43,8 +43,9 @@ public class PipeClientTests
             () => Client(server, Environment.ProcessId + 1, check).SendAsync(Request(), CancellationToken.None));
         Assert.Equal("agent_connection_changed", error.Code);
         Assert.Equal("server_pid_mismatch", error.Detail);
-        Assert.True(server.Connected);
+        // The server marks the connection after the client already has it: wait for the server side to finish.
         Assert.Empty(await server.ReceivedAsync());
+        Assert.True(server.Connected);
         Assert.Null(server.Request);
     }
 
