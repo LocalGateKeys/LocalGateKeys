@@ -42,6 +42,17 @@ def _profile_with_files(manager: ProfileManager, name: str) -> tuple[str, Path]:
     return record.id, folder
 
 
+@pytest.fixture(autouse=True)
+def _data_dir_on_the_test_volume(tmp_path: Path, monkeypatch) -> None:
+    """Kept backups are moved with a rename, as in the app, where the profiles live inside the data folder.
+
+    A CI runner keeps the system temp (the default test data folder) on another drive than the checkout.
+    """
+    home = tmp_path / "lgk-data"
+    home.mkdir()
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(home))
+
+
 def test_erase_profile_overwrites_and_removes_everything(tmp_path: Path) -> None:
     manager = ProfileManager(tmp_path / "data")
     keep_id, keep_dir = _profile_with_files(manager, "Keep")

@@ -3,12 +3,18 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location("store_listing_check", ROOT / "scripts" / "store_listing_check.py")
 slc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(slc)
 
 LANGS = ["es", "it", "pl", "zh-Hans", "ja", "de", "pt-BR", "ko", "nl", "fr"]
+
+# The store listings are not part of the public source snapshot.
+pytestmark = pytest.mark.skipif(not (ROOT / "docs" / "store" / "listings").is_dir(),
+                                reason="docs/store/listings is not in this checkout")
 
 
 def _copy_tree(tmp_path: Path) -> Path:

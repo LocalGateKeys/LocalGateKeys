@@ -168,6 +168,8 @@ def test_no_private_folder_is_a_handled_recovery_error(mirror_backup: Path, monk
 
 
 def test_real_restore_stages_on_the_destination_volume(tmp_path: Path, monkeypatch) -> None:
+    # The data folder on the volume of tmp_path (a CI runner keeps the system temp on another drive).
+    monkeypatch.setenv("LOCALGATEKEYS_DATA_DIR", str(tmp_path / "lgk-data"))
     destination = tmp_path / "new" / "deeper" / "vault.json"
     # Same volume: the private folder.
     assert backup_module._full_restore_stage_parent(destination, dry_run=False, stage_parent=None) \

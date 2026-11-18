@@ -660,10 +660,12 @@ def test_keyfile_paths_must_be_regular_files(env, monkeypatch):
             read_keyfile(device)
         assert caught.value.code == "keyfile_unreadable"
     opened = []
-    monkeypatch.setattr(factors_module, "open", lambda *a, **k: opened.append(a), raising=False)
-    monkeypatch.setattr(factors_module.os, "stat", lambda path: SimpleNamespace(st_mode=0o010644))  # a FIFO
-    with pytest.raises(ApiError) as caught:
-        read_keyfile(env.keys / "fifo")
+    # os.stat is the real module's function: the patch is undone here, before any fixture cleans up.
+    with monkeypatch.context() as patch:
+        patch.setattr(factors_module, "open", lambda *a, **k: opened.append(a), raising=False)
+        patch.setattr(factors_module.os, "stat", lambda path, **_k: SimpleNamespace(st_mode=0o010644))  # a FIFO
+        with pytest.raises(ApiError) as caught:
+            read_keyfile(env.keys / "fifo")
     assert caught.value.code == "keyfile_unreadable" and opened == []  # refused before anything is opened
 
 

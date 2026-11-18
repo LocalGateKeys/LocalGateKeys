@@ -152,6 +152,10 @@ class _Links(HTMLParser):
                 self.links += [part.strip().split(" ")[0] for part in value.split(",")]
 
 
+# The public source snapshot has no screenshots; there, links to them are not checked.
+HAS_SCREENSHOTS = (WEBSITE / "src" / "static" / "screenshots").is_dir()
+
+
 def broken_links(root: Path) -> list[str]:
     broken = []
     for path in _html(root):
@@ -162,6 +166,8 @@ def broken_links(root: Path) -> list[str]:
             if parts.scheme or parts.netloc or link.startswith("#"):
                 continue
             target_path = unquote(parts.path)
+            if not HAS_SCREENSHOTS and "screenshots/" in target_path:
+                continue
             if target_path.startswith("/"):
                 target = root / target_path.lstrip("/")
             else:

@@ -50,3 +50,9 @@ browser-extension/**/*.json text eol=lf
 browser-extension/**/*.html text eol=lf
 browser-extension/**/*.css text eol=lf
 browser-extension/**/*.txt text eol=lf
+
+# The website build writes _headers with LF and a test compares it with the source byte for byte.
+website/**/_headers text eol=lf
+
+# Compared byte for byte with browser-extension/site-logos.json (LF, see above).
+src/localvault/assets/site_logos.json text eol=lf
