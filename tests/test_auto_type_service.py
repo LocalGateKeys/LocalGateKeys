@@ -532,9 +532,9 @@ def test_text_goes_in_short_batches_with_the_window_checked_before_each():
     real = at.still_target
     at_run_steps = [("text", "abcdefghij"), ("key", "enter")]
 
-    def counting(p, target):
+    def counting(p, target, *typed):
         checks.append(1)
-        return real(p, target)
+        return real(p, target, *typed)
 
     import unittest.mock as mock
 
