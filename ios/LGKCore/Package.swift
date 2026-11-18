@@ -9,7 +9,7 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14), .watchOS(.v10)],
     products: [.library(name: "LGKCore", targets: ["LGKCore"])],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "5.1.1"),
     ],
     targets: [
         .target(name: "CArgon2", path: "Sources/CArgon2", publicHeadersPath: "include"),
