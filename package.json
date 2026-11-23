@@ -11,7 +11,7 @@
     "build:safari": "node browser-extension/build-safari-extension.cjs"
   },
   "devDependencies": {
-    "jsdom": "26.1.0",
+    "jsdom": "31.0.1",
     "web-ext": "10.8.0"
   }
 }
